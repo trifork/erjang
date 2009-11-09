@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="src" path="erl"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="lib/asm-3.2.jar" sourcepath="lib/src.zip"/>
+	<classpathentry kind="lib" path="lib/asm-commons-3.2.jar" sourcepath="lib/src.zip"/>
+	<classpathentry kind="lib" path="/Users/krab/Systems/antlr-3.2/lib/antlr-3.2.jar" sourcepath="/Users/krab/Downloads/antlr-3.2/runtime/Java/src/main/java"/>
+	<classpathentry kind="lib" path="/erjang/lib/asm-3.2.jar" sourcepath="/Users/krab/Downloads/asm-3.2/src.zip"/>
+	<classpathentry kind="lib" path="/erjang/lib/asm-analysis-3.2.jar"/>
+	<classpathentry kind="lib" path="/erjang/lib/asm-commons-3.2.jar"/>
+	<classpathentry kind="lib" path="/erjang/lib/asm-tree-3.2.jar"/>
+	<classpathentry kind="lib" path="/erjang/lib/asm-util-3.2.jar"/>
+	<classpathentry kind="lib" path="lib/OtpErlang.jar" sourcepath="/Users/krab/Systems/otp_src_R13B02-1/lib/jinterface/java_src"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
