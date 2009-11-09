@@ -1,5 +1,7 @@
 package org.erlang;
 
+import org.erlang.bif.Type;
+
 public class EBIF {
 
 	@bif
@@ -69,7 +71,7 @@ public class EBIF {
 		return list.length();
 	}
 
-	@bif(name="length", guard=true)
+	@bif(name="length", type=Type.GUARD)
 	static public EInteger length$guard(EObject list) {
 		ESeq seq;
 		if ((seq = list.asSeq()) != null) {
@@ -102,7 +104,7 @@ public class EBIF {
 
 	// floats
 
-	@bif
+	@bif(type=Type.ARITHBIF)
 	static public double fdiv(double v1, double v2) {
 		if (v2 == 0.0)
 			throw ERT.badarith("erlang", "/", v1, v2);
@@ -110,16 +112,18 @@ public class EBIF {
 		return v1 / v2;
 	}
 
-	static public double $minus$(double v1, double v2) {
+	@bif(type=Type.ARITHBIF)
+	static public double fsub(double v1, double v2) {
 		return v1 - v2;
 	}
 
-	static public double $plus$(double v1, double v2) {
+	@bif(type=Type.ARITHBIF)
+	static public double fadd(double v1, double v2) {
 		return v1 + v2;
 	}
 
-	@bif(name="fmul") 
-	static public double $multiply$(double v1, double v2) {
+	@bif(type=Type.ARITHBIF)
+	static public double fmul(double v1, double v2) {
 		return v1 * v2;
 	}
 
@@ -146,8 +150,8 @@ public class EBIF {
 		throw ERT.badarg((Throwable) null, "erlang", "-", v1, v2);
 	}
 
-	@bif(name="-", guard=true)
-	static public ENumber $minus$$guard(EObject v1, EObject v2) {
+	@bif(name="-", type=Type.GUARD)
+	static public ENumber subtract$guard(EObject v1, EObject v2) {
 		ENumber n1;
 		if ((n1 = v1.asNumber()) != null) {
 			ENumber n2;
@@ -196,6 +200,7 @@ public class EBIF {
 		return Math.floor(d);
 	}
 
+	@bif(name="round")
 	static public double round(double d) {
 		return Math.round(d);
 	}
@@ -212,7 +217,7 @@ public class EBIF {
 		throw ERT.badarg("erlang", "rem", v1, v2);
 	}
 
-	@bif(name="trunc", guard=true)
+	@bif(name="trunc", type=Type.GUARD)
 	static public ENumber rem$guard(EObject v1, EObject v2) {
 		ENumber n1;
 		if ((n1 = v1.asNumber()) != null) {
@@ -233,7 +238,7 @@ public class EBIF {
 		throw ERT.badarg("erlang", "rem", v1, v2);
 	}
 
-	@bif(name="abs",guard=true)
+	@bif(name="abs", type=Type.GUARD)
 	static public ENumber abs$guard(EObject v1) {
 		ENumber num;
 		if ((num = v1.asNumber()) != null) {

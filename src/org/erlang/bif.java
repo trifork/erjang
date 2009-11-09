@@ -9,14 +9,17 @@ public @interface bif {
 
 	/** name */
 	String name() default "__SELF__";
-	
-	/** is this a guard bif? */
-	boolean guard() default false;
 
+	/** */
+	Type type() default Type.DEFAULT;
+	
 	/** module this bif belongs to */
 	String module() default "erlang";
 	
-	/** export from module */
-	boolean export() default false;
-	
+	public enum Type {
+		DEFAULT, 
+		GUARD, 
+		ARITHBIF
+	}
+
 }

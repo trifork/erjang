@@ -1,13 +1,13 @@
 package org.erlang.beam;
 
+import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.erlang.EBIF;
 import org.erlang.EObject;
 import org.erlang.bif;
 import org.objectweb.asm.Type;
-
-import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.Map;
 
 public class BIFUtil {
 
@@ -164,7 +164,7 @@ public class BIFUtil {
 			Method method = m[i];
 			bif ann = method.getAnnotation(bif.class);
 			if (ann != null) {
-				Map<String, BIFHandler> tab = ann.guard() ? guard_bifs : bifs;
+				Map<String, BIFHandler> tab = ann.type()==org.erlang.bif.Type.GUARD ? guard_bifs : bifs;
 				
 				String bifName = ann.name();
 				if (bifName.equals("__SELF__")) {
