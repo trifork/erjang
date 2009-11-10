@@ -1,9 +1,8 @@
-package org.erlang.beam;
+package erjang.beam;
 
 import java.io.File;
 import java.io.IOException;
 
-import org.erlang.ETuple;
 
 import com.ericsson.otp.erlang.OtpAuthException;
 import com.ericsson.otp.erlang.OtpConnection;
@@ -15,6 +14,9 @@ import com.ericsson.otp.erlang.OtpErlangString;
 import com.ericsson.otp.erlang.OtpErlangTuple;
 import com.ericsson.otp.erlang.OtpPeer;
 import com.ericsson.otp.erlang.OtpSelf;
+
+import erjang.ETuple;
+import erjang.beam.analysis.BeamTypeAnalysis;
 
 public class ErlangBeamDisLoader extends BeamLoader {
 
@@ -59,7 +61,7 @@ public class ErlangBeamDisLoader extends BeamLoader {
 	public static void main(String[] args) throws IOException, OtpAuthException {
 		System.setProperty("OtpConnection.trace", "4");
 		ErlangBeamDisLoader foo = new ErlangBeamDisLoader();
-		BeamFile loaded = foo.load(new File("/Users/krab/Systems/otp_src_R13B02-1/lib/appmon/ebin/appmon.beam"));
+		BeamFile loaded = foo.load(new File("/Users/krab/Systems/otp_src_R13B02-1/lib/compiler/ebin/beam_disasm.beam"));
 		loaded.accept(new BeamTypeAnalysis());
 	}
 

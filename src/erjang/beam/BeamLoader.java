@@ -1,4 +1,4 @@
-package org.erlang.beam;
+package erjang.beam;
 
 import java.io.File;
 import java.io.IOException;

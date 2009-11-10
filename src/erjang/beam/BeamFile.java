@@ -1,13 +1,13 @@
-package org.erlang.beam;
+package erjang.beam;
 
-import org.erlang.EAtom;
-import org.erlang.EInteger;
-import org.erlang.EList;
-import org.erlang.EObject;
-import org.erlang.ESeq;
-import org.erlang.ETerm;
-import org.erlang.ETuple;
-import org.erlang.ETuple0;
+import erjang.EAtom;
+import erjang.EInteger;
+import erjang.EList;
+import erjang.EObject;
+import erjang.ESeq;
+import erjang.ETerm;
+import erjang.ETuple;
+import erjang.ETuple0;
 
 public class BeamFile {
 
@@ -46,30 +46,30 @@ public class BeamFile {
 		code = data.nth(6).asSeq();
 	}
 
-	static class ModuleVisitor {
+	public static class ModuleVisitor {
 
-		void visitModule(EAtom name) {
+		protected void visitModule(EAtom name) {
 		}
 
 		/** list of {Fun,Arity,Entry} */
-		void visitExport(EAtom fun, int arity, int entry) {
+		protected void visitExport(EAtom fun, int arity, int entry) {
 		}
 
 		/** list of {Atom,Value} */
-		void visitAttribute(EAtom att, EObject eObject) {
+		protected void visitAttribute(EAtom att, EObject eObject) {
 		}
 
 		/** Visit function */
-		FunctionVisitor visitFunction(EAtom name, int arity, int startLabel) {
+		protected FunctionVisitor visitFunction(EAtom name, int arity, int startLabel) {
 			return new FunctionVisitor();
 		}
 
-		void visitEnd() {
+		protected void visitEnd() {
 		}
 
 	}
 
-	static class FunctionVisitor {
+	public static class FunctionVisitor {
 		public void visitEnd() {
 		}
 

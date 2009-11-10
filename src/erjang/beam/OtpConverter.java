@@ -1,19 +1,11 @@
-package org.erlang.beam;
+package erjang.beam;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import org.erlang.EAtom;
-import org.erlang.ECons;
-import org.erlang.EDouble;
-import org.erlang.EInteger;
-import org.erlang.EList;
-import org.erlang.ERT;
-import org.erlang.EString;
-import org.erlang.ETerm;
-import org.erlang.ETuple;
 
 import com.ericsson.otp.erlang.OtpErlangAtom;
+import com.ericsson.otp.erlang.OtpErlangBinary;
 import com.ericsson.otp.erlang.OtpErlangDouble;
 import com.ericsson.otp.erlang.OtpErlangList;
 import com.ericsson.otp.erlang.OtpErlangLong;
@@ -21,10 +13,28 @@ import com.ericsson.otp.erlang.OtpErlangObject;
 import com.ericsson.otp.erlang.OtpErlangString;
 import com.ericsson.otp.erlang.OtpErlangTuple;
 
+import erjang.EAtom;
+import erjang.EBinary;
+import erjang.ECons;
+import erjang.EDouble;
+import erjang.EInteger;
+import erjang.EList;
+import erjang.ERT;
+import erjang.EString;
+import erjang.ETerm;
+import erjang.ETuple;
+
 abstract class Converter<T> {
 	abstract ETerm conv(T obj);
 }
 
+/**
+ * Convert terms to/from jinterface's classes.
+ * 
+ * Until I rewrite jinterface, this will have to do.  
+ * 
+ * @author krab
+ */
 public class OtpConverter {
 
 	static Map<Class, Converter> conv = new HashMap<Class, Converter>();
@@ -79,7 +89,13 @@ public class OtpConverter {
 				return new EDouble(obj.doubleValue());
 			}
 		});
-	}
+
+		add(OtpErlangBinary.class, new Converter<OtpErlangBinary>() {
+			ETerm conv(OtpErlangBinary obj) {
+				return new EBinary(obj.binaryValue());
+			}
+		});
+}
 
 	public static ETerm convert(OtpErlangObject value) {
 

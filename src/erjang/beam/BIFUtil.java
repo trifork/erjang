@@ -1,15 +1,34 @@
-package org.erlang.beam;
+package erjang.beam;
 
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.erlang.EBIF;
-import org.erlang.EObject;
-import org.erlang.bif;
 import org.objectweb.asm.Type;
 
+import erjang.EObject;
+import erjang.BIF;
+import erjang.modules.BinOps;
+import erjang.modules.ErlangModule;
+
+
+/**
+ * Used by the compiler to find and mange BIF definitions.
+ * 
+ * To add bifs, add the classes to the first "static" block below.
+ * 
+ * @author krab
+ */
 public class BIFUtil {
+
+	static Map<String, BIFHandler> bifs = new HashMap<String, BIFHandler>();
+	static Map<String, BIFHandler> guard_bifs = new HashMap<String, BIFHandler>();
+
+	static {
+		registerBifs(ErlangModule.class);
+		registerBifs(BinOps.class);
+	}
+
 
 	static class Args {
 		private static final Type EOBJECT_TYPE = null;
@@ -121,7 +140,7 @@ public class BIFUtil {
 					throw new Error("no bif " + javaName + "" + args);
 				}
 
-				System.err.println("missed opportunity: "+name+"/"+parmTypes.length+" "+args);
+				System.err.println("missed opportunity: "+name+"/"+parmTypes.length+" "+args+", using "+m);
 			}
 
 			return Type.getType(m.getReturnType());
@@ -135,9 +154,6 @@ public class BIFUtil {
 
 	}
 
-	static Map<String, BIFHandler> bifs = new HashMap<String, BIFHandler>();
-	static Map<String, BIFHandler> guard_bifs = new HashMap<String, BIFHandler>();
-
 	public static Type getBifResult(String name, Type[] parmTypes,
 			boolean isGuard) {
 
@@ -147,27 +163,22 @@ public class BIFUtil {
 		if (tab.containsKey(name)) {
 			bif = tab.get(name);
 		} else {
-			throw new Error("no bif named '"+name+"'");
+			throw new Error("no "+(isGuard?"guard":"normal")+" bif named '"+name+"'");
 		}
 
 		return bif.getResult(parmTypes);
 	}
 
-	static {
-		Class<?> clazz = EBIF.class;
-		registerBifs(clazz);
-	}
-
-	private static void registerBifs(Class<?> clazz) {
+	public static void registerBifs(Class<?> clazz) {
 		Method[] m = clazz.getMethods();
 		for (int i = 0; i < m.length; i++) {
 			Method method = m[i];
-			bif ann = method.getAnnotation(bif.class);
+			BIF ann = method.getAnnotation(BIF.class);
 			if (ann != null) {
-				Map<String, BIFHandler> tab = ann.type()==org.erlang.bif.Type.GUARD ? guard_bifs : bifs;
+				Map<String, BIFHandler> tab = ann.type()==erjang.BIF.Type.GUARD ? guard_bifs : bifs;
 				
 				String bifName = ann.name();
-				if (bifName.equals("__SELF__")) {
+				if (bifName.equals("__SELFNAME__")) {
 					bifName = method.getName();
 				}
 				BIFHandler h = tab.get(bifName);

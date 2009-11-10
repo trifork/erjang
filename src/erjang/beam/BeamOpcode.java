@@ -1,6 +1,6 @@
-package org.erlang.beam;
+package erjang.beam;
 
-import org.erlang.EAtom;
+import erjang.EAtom;
 
 public enum BeamOpcode {
 
@@ -138,7 +138,7 @@ public enum BeamOpcode {
 	static EAtom CATCH = EAtom.intern("catch");
 	static EAtom RETURN = EAtom.intern("return");
 	
-	static BeamOpcode get(EAtom sym) {
+	static public BeamOpcode get(EAtom sym) {
 		String name = sym.getName();
 		if (sym == TRY) return K_try;
 		if (sym == CATCH) return K_catch;
