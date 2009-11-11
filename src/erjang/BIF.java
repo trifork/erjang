@@ -1,21 +1,38 @@
-package org.erlang;
+/**
+ * This file is part of Erjang - A JVM-based Erlang VM
+ *
+ * Copyright (c) 2009 by Trifork
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *  
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ **/
+
+package erjang;
 
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-@java.lang.annotation.Retention(RetentionPolicy.RUNTIME)
-@java.lang.annotation.Target(ElementType.METHOD)
-public @interface bif {
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
+public @interface BIF {
 
 	/** name */
-	String name() default "__SELF__";
+	String name() default "__SELFNAME__";
 
 	/** */
 	Type type() default Type.DEFAULT;
-	
-	/** module this bif belongs to */
-	String module() default "erlang";
-	
+		
 	public enum Type {
 		DEFAULT, 
 		GUARD, 
