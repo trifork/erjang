@@ -1,9 +1,9 @@
 /**
  * 
  */
-package org.erlang.jbeam;
+package erjang.jbeam;
 
-import org.erlang.EAtom;
+import erjang.EAtom;
 
 public enum BeamFileTag {
 

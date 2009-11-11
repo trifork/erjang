@@ -1,6 +1,6 @@
 // $ANTLR 3.1.2 /Users/krab/Documents/humio/erlang/src/org/erlang/jbeam/beam2.g 2009-11-03 13:44:09
 
-  package org.erlang.jbeam;
+  package erjang.jbeam;
 
 
 import org.antlr.runtime.*;

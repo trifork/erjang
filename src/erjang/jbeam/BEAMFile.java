@@ -1,4 +1,4 @@
-package org.erlang.jbeam;
+package erjang.jbeam;
 
 import java.io.FileOutputStream;
 import java.util.ArrayList;
@@ -6,32 +6,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.erlang.EModule;
-import org.erlang.jbeam.ops.AllocateZero;
-import org.erlang.jbeam.ops.AttributesDecl;
-import org.erlang.jbeam.ops.BasicBlock;
-import org.erlang.jbeam.ops.Call;
-import org.erlang.jbeam.ops.CallExtOnly;
-import org.erlang.jbeam.ops.CodeAdapter;
-import org.erlang.jbeam.ops.CompilationInfo;
-import org.erlang.jbeam.ops.Deallocate;
-import org.erlang.jbeam.ops.ExportsDecl;
-import org.erlang.jbeam.ops.ExternalFunction;
-import org.erlang.jbeam.ops.FileDecl;
-import org.erlang.jbeam.ops.FuncInfo;
-import org.erlang.jbeam.ops.FunctionAdapter;
-import org.erlang.jbeam.ops.FunctionDecl;
-import org.erlang.jbeam.ops.GCBif;
-import org.erlang.jbeam.ops.Insn;
-import org.erlang.jbeam.ops.ModuleDecl;
-import org.erlang.jbeam.ops.Move;
-import org.erlang.jbeam.ops.PutInsn;
-import org.erlang.jbeam.ops.PutToupleInsn;
-import org.erlang.jbeam.ops.Register;
-import org.erlang.jbeam.ops.RegisterX;
-import org.erlang.jbeam.ops.RegisterY;
-import org.erlang.jbeam.ops.Return;
-import org.erlang.jbeam.ops.Test;
 import org.objectweb.asm.ClassAdapter;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
@@ -41,17 +15,44 @@ import org.objectweb.asm.Type;
 
 import com.sun.xml.internal.ws.org.objectweb.asm.Opcodes;
 
-import org.erlang.EAtom;
-import org.erlang.ECons;
-import org.erlang.EFun;
-import org.erlang.EFunRef;
-import org.erlang.EInteger;
-import org.erlang.EList;
-import org.erlang.EObject;
-import org.erlang.ESeq;
-import org.erlang.EString;
-import org.erlang.ETerm;
-import org.erlang.ETuple;
+import erjang.EAtom;
+import erjang.ECons;
+import erjang.EFun;
+import erjang.EFunRef;
+import erjang.EInteger;
+import erjang.EList;
+import erjang.EModule;
+import erjang.EObject;
+import erjang.ESeq;
+import erjang.EString;
+import erjang.ETerm;
+import erjang.ETuple;
+import erjang.jbeam.ops.AllocateZero;
+import erjang.jbeam.ops.AttributesDecl;
+import erjang.jbeam.ops.BasicBlock;
+import erjang.jbeam.ops.Call;
+import erjang.jbeam.ops.CallExtOnly;
+import erjang.jbeam.ops.CodeAdapter;
+import erjang.jbeam.ops.CompilationInfo;
+import erjang.jbeam.ops.Deallocate;
+import erjang.jbeam.ops.ExportsDecl;
+import erjang.jbeam.ops.ExternalFunction;
+import erjang.jbeam.ops.FileDecl;
+import erjang.jbeam.ops.FuncInfo;
+import erjang.jbeam.ops.FunctionAdapter;
+import erjang.jbeam.ops.FunctionDecl;
+import erjang.jbeam.ops.GCBif;
+import erjang.jbeam.ops.Insn;
+import erjang.jbeam.ops.ModuleDecl;
+import erjang.jbeam.ops.Move;
+import erjang.jbeam.ops.PutInsn;
+import erjang.jbeam.ops.PutToupleInsn;
+import erjang.jbeam.ops.Register;
+import erjang.jbeam.ops.RegisterX;
+import erjang.jbeam.ops.RegisterY;
+import erjang.jbeam.ops.Return;
+import erjang.jbeam.ops.Test;
+
 
 public class BEAMFile {
 
