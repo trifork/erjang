@@ -1,4 +1,4 @@
-package org.erlang.jbeam.ops;
+package erjang.jbeam.ops;
 
 
 public class Move extends Insn {

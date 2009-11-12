@@ -1,8 +1,9 @@
-package org.erlang.jbeam.ops;
+package erjang.jbeam.ops;
 
-import org.erlang.EFun;
-import org.erlang.ETerm;
 import org.objectweb.asm.Type;
+
+import erjang.EFun;
+import erjang.ETerm;
 
 public class CallExtOnly extends Insn {
 

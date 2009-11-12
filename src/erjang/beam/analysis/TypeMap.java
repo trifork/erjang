@@ -1,17 +1,32 @@
 /**
- * 
- */
-package org.erlang.beam;
+ * This file is part of Erjang - A JVM-based Erlang VM
+ *
+ * Copyright (c) 2009 by Trifork
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *  
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ **/
+package erjang.beam.analysis;
 
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Set;
 import java.util.TreeSet;
 
-import org.erlang.EObject;
-import org.erlang.ETuple;
-import org.erlang.ETuple2;
 import org.objectweb.asm.Type;
+
+import erjang.EObject;
+import erjang.ETuple;
+import erjang.ETuple2;
 
 class TypeMap {
 	private static Type TYPE_EOBJECT = Type.getType(EObject.class);
@@ -20,15 +35,15 @@ class TypeMap {
 
 	private static Type[] NO_TYPES = new Type[0];
 	private Type[] xregs, yregs, fregs;
-	private int stacksize; // number of y-regs
+	final int stacksize; // number of y-regs
 
 	final BasicBlock bb;
-
 
 	public TypeMap(BasicBlock bb) {
 		xregs = NO_TYPES;
 		yregs = NO_TYPES;
 		fregs = NO_TYPES;
+		stacksize = 0;
 		this.bb = bb;
 	}
 
@@ -103,7 +118,8 @@ class TypeMap {
 		}
 	}
 
-	private TypeMap(Type[] xregs, Type[] yregs, Type[] fregs, int stacksize, BasicBlock bb) {
+	private TypeMap(Type[] xregs, Type[] yregs, Type[] fregs, int stacksize,
+			BasicBlock bb) {
 		super();
 		this.xregs = xregs;
 		this.yregs = yregs;
@@ -124,6 +140,9 @@ class TypeMap {
 	}
 
 	private static boolean eqy(TypeMap me, TypeMap other) {
+		if (me.stacksize != other.stacksize)
+			return false;
+
 		int stacksize = Math.min(me.stacksize, other.stacksize);
 		for (int i = 0; i < stacksize; i++) {
 			if (!eq(me.gety(i), other.gety(i)))
@@ -158,11 +177,20 @@ class TypeMap {
 		Type[] new_y = yregs;
 		int new_stacksize = stacksize;
 		if (!eqy(this, other)) {
-			new_stacksize = Math.min(stacksize, other.stacksize);
-			new_y = new Type[new_stacksize];
-			for (int i = 0; i < new_stacksize; i++) {
-				new_y[new_stacksize - i - 1] = merge(this.gety(i), other
-						.gety(i));
+
+			if (stacksize != other.stacksize) {
+				// yank stack!
+				new_stacksize = 0;
+				new_y = NO_TYPES;
+			} else {
+
+				// the smaller stack-size wins
+				new_stacksize = Math.min(stacksize, other.stacksize);
+				new_y = new Type[new_stacksize];
+				for (int i = 0; i < new_stacksize; i++) {
+					new_y[new_stacksize - i - 1] = merge(this.gety(i), other
+							.gety(i));
+				}
 			}
 		}
 
@@ -212,7 +240,7 @@ class TypeMap {
 
 		if (eq(getx(reg), t))
 			return this;
-		
+
 		Type[] new_xregs;
 		if (xregs.length <= reg) {
 			new_xregs = grow(xregs, reg);
@@ -332,5 +360,22 @@ class TypeMap {
 		}
 	}
 
+	public int max_xreg() {
+		int max = 0;
+		for (int i = 0; i < xregs.length; i++) {
+			if (xregs[i] != null)
+				max = i;
+		}
+		return max + 1;
+	}
+
+	public int max_freg() {
+		int max = 0;
+		for (int i = 0; i < fregs.length; i++) {
+			if (fregs[i] != null)
+				max = i;
+		}
+		return max + 1;
+	}
 
 }

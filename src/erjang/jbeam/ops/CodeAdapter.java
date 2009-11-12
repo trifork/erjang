@@ -1,11 +1,12 @@
-package org.erlang.jbeam.ops;
+package erjang.jbeam.ops;
 
-import org.erlang.EObject;
-import org.erlang.ETerm;
-import org.erlang.jbeam.BEAMFile;
 import org.objectweb.asm.MethodAdapter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
+
+import erjang.EObject;
+import erjang.ETerm;
+import erjang.jbeam.BEAMFile;
 
 public class CodeAdapter extends MethodAdapter {
 

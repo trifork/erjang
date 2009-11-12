@@ -1,6 +1,6 @@
-package org.erlang.jbeam.ops;
+package erjang.jbeam.ops;
 
-import org.erlang.EString;
+import erjang.EString;
 
 public class FileDecl extends Stmt {
 

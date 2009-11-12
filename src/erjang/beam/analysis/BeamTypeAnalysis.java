@@ -1,8 +1,27 @@
-package org.erlang.beam;
+/**
+ * This file is part of Erjang - A JVM-based Erlang VM
+ *
+ * Copyright (c) 2009 by Trifork
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *  
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ **/
+
+package erjang.beam.analysis;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -10,39 +29,67 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-import org.erlang.EAtom;
-import org.erlang.ECons;
-import org.erlang.EDouble;
-import org.erlang.EFun;
-import org.erlang.EInteger;
-import org.erlang.EList;
-import org.erlang.ENil;
-import org.erlang.EObject;
-import org.erlang.EPID;
-import org.erlang.EPort;
-import org.erlang.ESeq;
-import org.erlang.ETerm;
-import org.erlang.ETuple;
-import org.erlang.ETuple2;
-import org.erlang.beam.BeamFile.FunctionVisitor;
-import org.erlang.beam.BeamFile.LabeledBlockVisitor;
-import org.erlang.beam.BeamFile.ModuleVisitor;
 import org.objectweb.asm.Type;
+import org.objectweb.asm.commons.Method;
 
-public class BeamTypeAnalysis extends ModuleVisitor {
+import erjang.EAtom;
+import erjang.EBinMatchState;
+import erjang.EBinary;
+import erjang.ECons;
+import erjang.EDouble;
+import erjang.EFun;
+import erjang.EInteger;
+import erjang.EList;
+import erjang.ENil;
+import erjang.ENumber;
+import erjang.EObject;
+import erjang.EPID;
+import erjang.EPort;
+import erjang.ESeq;
+import erjang.ETerm;
+import erjang.ETuple;
+import erjang.ETuple2;
+import erjang.beam.Arg;
+import erjang.beam.BIF;
+import erjang.beam.BIFUtil;
+import erjang.beam.BeamCodeBlock;
+import erjang.beam.BeamFunction;
+import erjang.beam.BeamInstruction;
+import erjang.beam.BeamOpcode;
+import erjang.beam.BlockVisitor;
+import erjang.beam.BlockVisitor2;
+import erjang.beam.ExtFunc;
+import erjang.beam.FunctionAdapter;
+import erjang.beam.FunctionVisitor;
+import erjang.beam.FunctionVisitor2;
+import erjang.beam.ModuleAdapter;
+import erjang.beam.ModuleVisitor;
+import erjang.beam.Arg.Kind;
+
+public class BeamTypeAnalysis extends ModuleAdapter {
+
+	/**
+	 * 
+	 */
+	public BeamTypeAnalysis(ModuleVisitor mv) {
+		super(mv);
+	}
 
 	static final Type EINTEGER_TYPE = Type.getType(EInteger.class);
+	static final Type ENUMBER_TYPE = Type.getType(ENumber.class);
 	static final Type EOBJECT_TYPE = Type.getType(EObject.class);
 	static final Type EDOUBLE_TYPE = Type.getType(EDouble.class);
 	static final Type ENIL_TYPE = Type.getType(ENil.class);
 	static final Type EATOM_TYPE = Type.getType(EAtom.class);
 	static final Type ETUPLE_TYPE = Type.getType(ETuple.class);
+	static final Type EBINARY_TYPE = Type.getType(EBinary.class);
 	static final Type ECONS_TYPE = Type.getType(ECons.class);
 	static final Type ESEQ_TYPE = Type.getType(ESeq.class);
 	static final Type ELIST_TYPE = Type.getType(EList.class);
 	static final Type EFUN_TYPE = Type.getType(EFun.class);
 	static final Type EPID_TYPE = Type.getType(EPID.class);
 	static final Type EPORT_TYPE = Type.getType(EPort.class);
+	static final Type EMATCHSTATE_TYPE = Type.getType(EBinMatchState.class);
 
 	static final ETerm X_ATOM = EAtom.intern("x");
 	static final ETerm Y_ATOM = EAtom.intern("y");
@@ -54,16 +101,24 @@ public class BeamTypeAnalysis extends ModuleVisitor {
 	static final ETerm LITERAL_ATOM = EAtom.intern("literal");
 	static final ETerm NOFAIL_ATOM = EAtom.intern("nofail");
 	static final ETerm F_ATOM = EAtom.intern("f");
+	static final ETerm FIELD_FLAGS_ATOM = EAtom.intern("field_flags");
+	static final ETerm EXTFUNC_ATOM = EAtom.intern("extfunc");
 
 	private static final ETuple X0_REG = ETuple.make(new ETerm[] { X_ATOM,
 			new EInteger(0) });
+	private EAtom moduleName;
+
+	private List<FV> functions = new ArrayList<FV>();
 
 	@Override
-	FunctionVisitor visitFunction(EAtom name, int arity, int startLabel) {
-		return new FV(name, arity, startLabel);
+	public FunctionVisitor visitFunction(EAtom name, int arity, int startLabel) {
+		FV f = new FV(super.visitFunction(name, arity, startLabel), name,
+				arity, startLabel);
+		functions.add(f);
+		return f;
 	}
 
-	class FV extends FunctionVisitor {
+	class FV extends FunctionAdapter implements BeamFunction {
 
 		BasicBlock makeBasicBlock(int label, int index) {
 			assert ((label & 0xffff) == label);
@@ -86,7 +141,9 @@ public class BeamTypeAnalysis extends ModuleVisitor {
 
 			boolean change = false;
 
+			int iter = 0;
 			do {
+				iter += 1;
 				for (int n = all.length - 1; n >= 0; n--) {
 
 					BasicBlock bb = bbs.get(all[n]);
@@ -113,6 +170,9 @@ public class BeamTypeAnalysis extends ModuleVisitor {
 
 				}
 			} while (change);
+
+			// System.err.println("live analysis for " + name + "/" + arity
+			// + " completed in " + iter + " iterations.");
 		}
 
 		public TypeMap getTypeMap(int i) {
@@ -140,7 +200,16 @@ public class BeamTypeAnalysis extends ModuleVisitor {
 					}
 				});
 
-		public FV(EAtom name, int arity, int startLabel) {
+		public int max_stack;
+
+		public int max_xreg;
+
+		public int max_freg;
+
+		private boolean is_tail_recursive;
+
+		public FV(FunctionVisitor fv, EAtom name, int arity, int startLabel) {
+			super(fv);
 			this.name = name;
 			this.arity = arity;
 			this.startLabel = startLabel;
@@ -166,13 +235,16 @@ public class BeamTypeAnalysis extends ModuleVisitor {
 				throw t;
 			}
 
+			// woo!
+			live_analysis();
+
 			SortedSet<Integer> labels = new TreeSet<Integer>();
 			labels.addAll(lbs.keySet());
 
 			boolean has_unreachable_code = false;
 			for (int i : labels) {
 				lb = lbs.get(i);
-				if (lb.isUnreached()) {
+				if (lb.isDeadCode()) {
 					if (BeamOpcode.get(lb.insns.get(0).nth(1).asAtom()) == BeamOpcode.func_info) {
 						// ignore this
 					} else {
@@ -184,6 +256,27 @@ public class BeamTypeAnalysis extends ModuleVisitor {
 			if (has_unreachable_code) {
 				this.dump();
 			}
+
+			function_visit_end();
+
+		}
+
+		private void function_visit_end() {
+
+			if (fv instanceof FunctionVisitor2) {
+				((FunctionVisitor2) fv).visitMaxs(this.max_xreg,
+						this.max_stack, this.max_freg, this.is_tail_recursive);
+			}
+
+			for (LabeledBlock block : this.lbs.values()) {
+
+				BlockVisitor vis = super.fv
+						.visitLabeledBlock(block.block_label);
+
+				block.accept(vis);
+			}
+
+			super.fv.visitEnd();
 		}
 
 		private void dump() {
@@ -197,7 +290,7 @@ public class BeamTypeAnalysis extends ModuleVisitor {
 		}
 
 		@Override
-		public LabeledBlockVisitor visitLabeledBlock(int label) {
+		public BlockVisitor visitLabeledBlock(int label) {
 			return get_lb(label, true);
 		}
 
@@ -225,7 +318,7 @@ public class BeamTypeAnalysis extends ModuleVisitor {
 			}
 		}
 
-		class LabeledBlock extends LabeledBlockVisitor {
+		class LabeledBlock implements BlockVisitor, BeamCodeBlock {
 
 			private final int block_label;
 			TypeMap initial;
@@ -237,7 +330,258 @@ public class BeamTypeAnalysis extends ModuleVisitor {
 				initial = null;
 			}
 
-			public boolean isUnreached() {
+			/**
+			 * @param vis
+			 */
+			public void accept(BlockVisitor vis) {
+
+				if (!isDeadCode()) {
+
+					if (vis instanceof BlockVisitor2) {
+						accept_2((BlockVisitor2) vis);
+					} else {
+						accept_1(vis);
+					}
+
+				}
+
+				vis.visitEnd();
+			}
+
+			private void accept_1(BlockVisitor vis) {
+				for (int i = 0; i < insns.size(); i++) {
+					ETuple insn = insns.get(i);
+					BeamOpcode opcode = BeamOpcode.get(insn.nth(1).asAtom());
+					vis.visitInsn(opcode, insn);
+				}
+			}
+
+			private void accept_2(BlockVisitor2 vis) {
+				for (int insn_idx = 0; insn_idx < insns.size(); insn_idx++) {
+					ETuple insn = insns.get(insn_idx);
+					BeamOpcode opcode = BeamOpcode.get(insn.nth(1).asAtom());
+
+					switch (opcode) {
+					case func_info:
+						vis.visitInsn(opcode, (Arg) new ExtFunc(insn.nth(2)
+								.asAtom(), insn.nth(3).asAtom(), insn.nth(4)
+								.asInt()));
+						break;
+						
+					case fconv:
+					case fmove:
+					case move: {
+						System.err.println(insn);
+						Arg arg1 = decode_arg(insn_idx, insn.nth(2));
+						Arg arg2 = decode_arg(insn_idx, insn.nth(3));
+						
+						if (arg2.kind != Kind.F) {
+							if (arg1.kind == Kind.F) {
+								arg2 = new Arg(arg2, EDOUBLE_TYPE);
+							} else {
+								arg2 = new Arg(arg2, arg1.type);
+							}
+						} else {
+							// arg2.kind == F
+						}
+						
+						vis.visitInsn(opcode, arg1, arg2);
+						break;
+					}
+
+					case arithfbif:
+					{
+						System.err.println("gen: "+insn);
+						EAtom name = insn.nth(2).asAtom();
+						int failLabel = decode_labelref(insn.nth(3));
+						ESeq parms = insn.nth(4).asSeq();
+						Arg[] in = decode_args(insn_idx, parms.toArray());
+						Arg out = decode_out_arg(insn_idx, insn.nth(5));
+
+						BIF bif = BIFUtil.getMethod(name.getName(), parmTypes(
+								this.map[insn_idx], parms), failLabel != 0);
+
+						
+						vis.visitInsn(opcode, failLabel, in, out, bif);
+						break;
+					}
+
+					case gc_bif:
+					case bif:
+					{
+						System.err.println("gen: "+insn);
+						EAtom name = insn.nth(2).asAtom();
+						int failLabel = decode_labelref(insn.nth(3));
+						ESeq parms = insn.nth(5).asSeq();
+						Arg[] in = decode_args(insn_idx, parms.toArray());
+						Arg out = decode_out_arg(insn_idx, insn.nth(6));
+
+						BIF bif = BIFUtil.getMethod(name.getName(), parmTypes(
+								this.map[insn_idx], parms), failLabel != 0);
+
+						
+						vis.visitInsn(opcode, failLabel, in, out, bif);
+						break;
+					}
+						
+					case test:
+						accept_2_test(vis, insn, insn_idx);
+						break;
+
+					case K_return:
+						vis.visitInsn(opcode);
+						break;
+						
+					case test_heap:
+						break;
+						
+					case fclearerror:
+					case fcheckerror:
+						break;
+						
+					case call_ext_only:
+					{
+						boolean is_tail = true;
+						boolean is_external = true;
+						int arg_count = insn.nth(2).asInt();
+						Arg[] args = new Arg[arg_count];
+						for (int i = 0; i < arg_count; i++) {
+							args[i] = new Arg(Kind.X, i, this.map[insn_idx].getx(i));
+						}
+						ETuple ft = insn.nth(3).asTuple();
+						if (ft.nth(1) != EXTFUNC_ATOM) throw new Error();
+						ExtFunc fun = new ExtFunc(ft.nth(2).asAtom(), ft.nth(3).asAtom(), ft.nth(4).asInt());
+						vis.visitCall(fun, args, is_tail, is_external);
+					}
+						break;
+						
+					default:
+						throw new Error("unhandled insn: " + insn);
+					}
+
+				}
+			}
+
+			private void accept_2_test(BlockVisitor2 vis, ETuple insn,
+					int insn_idx) {
+
+				int failLabel = decode_labelref(insn.nth(3));
+
+				Arg[] args = decode_args(insn_idx, insn.nth(4).asSeq()
+						.toArray());
+
+				BeamOpcode test = BeamOpcode.get(insn.nth(2).asAtom());
+				switch (test) {
+				case is_list:
+					vis.visitTest(test, failLabel, args[0], ECONS_TYPE);
+					break;
+
+				case is_nonempty_list:
+					vis.visitTest(test, failLabel, args[0], ESEQ_TYPE);
+					break;
+
+				case is_nil:
+					vis.visitTest(test, failLabel, args[0], ENIL_TYPE);
+					break;
+
+				case is_eq:
+					vis.visitTest(test, failLabel, args, (Arg)null, Type.VOID_TYPE);
+					break;
+					
+				default:
+					throw new Error("unhandled test: " + insn + " at index "
+							+ insn_idx);
+				}
+
+			}
+
+			/**
+			 * @param insn_idx
+			 * @param array
+			 * @return
+			 */
+			private Arg[] decode_args(int insn_idx, EObject[] input) {
+				Arg[] output = new Arg[input.length];
+				for (int i = 0; i < input.length; i++) {
+					output[i] = decode_arg(insn_idx, input[i]);
+				}
+				return output;
+			}
+
+			/**
+			 * @param insnIdx
+			 * @param eObject
+			 * @return
+			 */
+			private Arg decode_arg(int insn_idx, EObject src) {
+				TypeMap current = this.map[insn_idx];
+
+				if (src instanceof ETuple2) {
+					ETuple2 tup = (ETuple2) src;
+					if (tup.elem1 == X_ATOM) {
+						int xreg = tup.elem2.asInt();
+						return new Arg(Arg.Kind.X, xreg, current.getx(xreg));
+					} else if (tup.elem1 == Y_ATOM) {
+						int yreg = tup.elem2.asInt();
+						return new Arg(Arg.Kind.Y, current.get_ypos(yreg),
+								current.gety(yreg));
+					} else if (tup.elem1 == FR_ATOM) {
+						int freg = tup.elem2.asInt();
+						return new Arg(Arg.Kind.F, freg, Type.DOUBLE_TYPE);
+					} else if (tup.elem1 == ATOM_ATOM) {
+						return new Arg(tup.elem2);
+					} else if (tup.elem1 == LITERAL_ATOM) {
+						return new Arg(tup.elem2);
+					} else if (tup.elem1 == INTEGER_ATOM) {
+						if (tup.elem2.asInteger() != null) {
+							return new Arg(tup.elem2, Type.INT_TYPE);
+						} else {
+							return new Arg(tup.elem2);
+						}
+					} else if (tup.elem1 == FLOAT_ATOM) {
+						return new Arg(tup.elem2, Type.DOUBLE_TYPE);
+					}
+
+				} else if (src == NIL_ATOM) {
+					return new Arg(src);
+
+				}
+
+				return null;
+
+			}
+
+			private Arg decode_out_arg(int insn_idx, EObject src) {
+				TypeMap current = this.map[insn_idx];
+
+				if (src instanceof ETuple2) {
+					ETuple2 tup = (ETuple2) src;
+					if (tup.elem1 == X_ATOM) {
+						int xreg = tup.elem2.asInt();
+						return new Arg(Arg.Kind.X, xreg);
+					} else if (tup.elem1 == Y_ATOM) {
+						int yreg = tup.elem2.asInt();
+						return new Arg(Arg.Kind.Y, current.get_ypos(yreg));
+					} else if (tup.elem1 == FR_ATOM) {
+						int freg = tup.elem2.asInt();
+						return new Arg(Arg.Kind.F, freg);
+					} 
+				}
+
+				throw new Error();
+
+			}
+
+			/**
+			 * @param nth
+			 * @return
+			 */
+			private int decode_labelref(EObject f_tup) {
+				assert (f_tup.asTuple().nth(1) == F_ATOM);
+				return f_tup.asTuple().nth(2).asInt();
+			}
+
+			public boolean isDeadCode() {
 				return initial == null;
 			}
 
@@ -267,11 +611,14 @@ public class BeamTypeAnalysis extends ModuleVisitor {
 				map = new TypeMap[insns.size()];
 
 				next_insn: for (int insn_idx = 0; insn_idx < insns.size(); insn_idx++) {
-					
+
+					update_max_regs(current);
+
 					if (is_term(last_opcode)) {
-						throw new Error("how did we get here then...? "+this.block_label+":"+insn_idx);
+						throw new Error("how did we get here then...? "
+								+ this.block_label + ":" + insn_idx);
 					}
-					
+
 					map[insn_idx] = current;
 					ETuple insn = insns.get(insn_idx);
 					BeamOpcode code = BeamOpcode.get(insn.nth(1).asAtom());
@@ -285,21 +632,23 @@ public class BeamTypeAnalysis extends ModuleVisitor {
 					case move: {
 						EObject src = insn.nth(2);
 						EObject dst = insn.nth(3);
-						
+
 						Type srcType = getType(current, src);
 
+						boolean boxed = false;
 						if (sizeof(current, src) > sizeof(current, dst)) {
 							System.err.println(insn);
-							if (getType(current, src) == Type.INT_TYPE) {
-								current = setType(current, dst, EINTEGER_TYPE);
-							} else if (getType(current, src) == Type.DOUBLE_TYPE) {
+							if (getType(current, src).equals(Type.DOUBLE_TYPE)) {
 								current = setType(current, dst, EDOUBLE_TYPE);
+								boxed = true;
 							} else {
 								throw new Error("why?" + insn);
 							}
 						}
 
-						current = setType(current, (ETuple2) dst, srcType);
+						if (!boxed) {
+							current = setType(current, (ETuple2) dst, srcType);
+						}
 						continue next_insn;
 					}
 
@@ -340,8 +689,7 @@ public class BeamTypeAnalysis extends ModuleVisitor {
 
 						// System.err.println(insn);
 						current = branch(current, insn.nth(3), insn_idx);
-						
-						
+
 						EAtom name = insn.nth(2).asAtom();
 						ESeq parms = insn.nth(5).asSeq();
 
@@ -431,7 +779,7 @@ public class BeamTypeAnalysis extends ModuleVisitor {
 					}
 
 					case put_list: {
-						
+
 						Type head_type = getType(current, insn.nth(2));
 						Type tail_type = getType(current, insn.nth(3));
 
@@ -458,6 +806,34 @@ public class BeamTypeAnalysis extends ModuleVisitor {
 						continue next_insn;
 					}
 
+					case K_try:
+						current = setType(current, insn.nth(2), EOBJECT_TYPE);
+						current = branch(current, insn.nth(3), insn_idx);
+						continue next_insn;
+
+					case try_case_end:
+					case try_end:
+						// no exception happened
+						continue next_insn;
+
+					case try_case:
+						getType(current, insn.nth(2));
+						current = current.setx(0, EATOM_TYPE); // reason
+						current = current.setx(1, EOBJECT_TYPE); // value
+						current = current.setx(2, EOBJECT_TYPE); // trace
+						continue next_insn;
+
+					case raise:
+						boolean is_guard = false;
+						if (insn.nth(2).asTuple().nth(2).asInt() != 0) {
+							is_guard = true;
+						}
+
+						checkArgs(current, insn.nth(3), insn);
+						current = setType(current, insn.nth(4), EOBJECT_TYPE);
+
+						continue next_insn;
+
 					case K_catch:
 						current = branch(current, insn.nth(3), insn_idx);
 						continue next_insn;
@@ -477,14 +853,13 @@ public class BeamTypeAnalysis extends ModuleVisitor {
 						continue next_insn;
 					}
 
-					case remove_message: 
+					case remove_message:
 						// assume this insn overrides X0
 						// current = current.setx(0, EOBJECT_TYPE);
 						continue next_insn;
 
 					case loop_rec_end:
-					case timeout:
-					{
+					case timeout: {
 						// System.err.println(insn);
 						continue next_insn;
 					}
@@ -575,14 +950,13 @@ public class BeamTypeAnalysis extends ModuleVisitor {
 
 					case apply:
 					case call:
-					case call_ext:
-					{
+					case call_ext: {
 						int argCount = insn.nth(2).asInt();
 						current.touchx(0, argCount);
 						current = current.setx(0, EOBJECT_TYPE);
 						continue next_insn;
 					}
-					
+
 						// all these exit
 					case K_return:
 						getType(current, X0_REG);
@@ -592,10 +966,11 @@ public class BeamTypeAnalysis extends ModuleVisitor {
 					case call_only:
 					case call_ext_last:
 					case call_ext_only:
+						is_tail_recursive = true;
 						int argCount = insn.nth(2).asInt();
 						current.touchx(0, argCount);
 						continue next_insn;
-						
+
 					case func_info:
 						continue next_insn;
 
@@ -604,12 +979,18 @@ public class BeamTypeAnalysis extends ModuleVisitor {
 					case case_end:
 						continue next_insn;
 
+					case bs_context_to_binary: {
+						Type ctx = getType(current, insn.nth(2));
+						current = current.setx(0, EBINARY_TYPE);
+						continue next_insn;
+					}
+
 					default:
 						throw new Error("unhandled: " + insn + "::" + current);
 					}
 				}
-				
-				
+
+				update_max_regs(current);
 
 				if (is_term(last_opcode) == false) {
 					LabeledBlock lbv = get_lb(this.block_label + 1, false);
@@ -624,6 +1005,12 @@ public class BeamTypeAnalysis extends ModuleVisitor {
 				}
 			}
 
+			private void update_max_regs(TypeMap current) {
+				max_stack = Math.max(max_stack, current.stacksize);
+				max_xreg = Math.max(max_xreg, current.max_xreg());
+				max_freg = Math.max(max_freg, current.max_freg());
+			}
+
 			boolean is_term(BeamOpcode code) {
 				switch (code) {
 				case K_return:
@@ -635,11 +1022,11 @@ public class BeamTypeAnalysis extends ModuleVisitor {
 				case call_ext_last:
 				case call_ext_only:
 				case func_info:
-					
+
 				case wait:
 				case select_tuple_arity:
 				case select_val:
-					
+
 				case jump:
 					return true;
 				default:
@@ -648,16 +1035,19 @@ public class BeamTypeAnalysis extends ModuleVisitor {
 			}
 
 			private int sizeof(TypeMap current, EObject cell) {
-				
+
 				ETuple at;
-				if ((at=cell.asTuple()) != null) {
+				if ((at = cell.asTuple()) != null) {
 					if (at.arity() == 2) {
-						if (at.nth(1) == X_ATOM) return 32;
-						if (at.nth(1) == Y_ATOM) return 32;
-						if (at.nth(1) == FR_ATOM) return 64;
+						if (at.nth(1) == X_ATOM)
+							return 32;
+						if (at.nth(1) == Y_ATOM)
+							return 32;
+						if (at.nth(1) == FR_ATOM)
+							return 64;
 					}
 				}
-				
+
 				Type t = getType(current, cell);
 				if (t == Type.DOUBLE_TYPE) {
 					return 64;
@@ -666,7 +1056,8 @@ public class BeamTypeAnalysis extends ModuleVisitor {
 				}
 			}
 
-			private Type getBifResult(String name, Type[] parmTypes, boolean is_guard) {
+			private Type getBifResult(String name, Type[] parmTypes,
+					boolean is_guard) {
 				return BIFUtil.getBifResult(name, parmTypes, is_guard);
 			}
 
@@ -701,8 +1092,6 @@ public class BeamTypeAnalysis extends ModuleVisitor {
 
 				current = branch(current, insn.nth(3), insn_idx);
 
-				checkArgs(current, insn.nth(4), insn);
-				
 				EObject[] args = insn.nth(4).asSeq().toArray();
 				EObject arg1 = args[0];
 				EObject arg2 = (args.length > 1) ? args[1] : null;
@@ -710,51 +1099,66 @@ public class BeamTypeAnalysis extends ModuleVisitor {
 				BeamOpcode test = BeamOpcode.get(insn.nth(2).asAtom());
 				switch (test) {
 				case is_nil: {
+					checkArgs(current, insn.nth(4), insn);
 					return setType(current, arg1.asTuple(), ENIL_TYPE);
 				}
 
 				case is_list:
 				case is_nonempty_list: {
+					checkArgs(current, insn.nth(4), insn);
 					return setType(current, arg1.asTuple(), ECONS_TYPE);
 				}
 
+				case is_binary: {
+					checkArgs(current, insn.nth(4), insn);
+					return setType(current, arg1.asTuple(), EBINARY_TYPE);
+				}
 				case is_tuple: {
+					checkArgs(current, insn.nth(4), insn);
 					return setType(current, arg1.asTuple(), ETUPLE_TYPE);
 				}
 
 				case test_arity: {
+					checkArgs(current, insn.nth(4), insn);
 					return setType(current, arg1.asTuple(), getTupleType(arg2
 							.asInt()));
 				}
 
 				case is_boolean:
 				case is_atom: {
+					checkArgs(current, insn.nth(4), insn);
 					return setType(current, arg1.asTuple(), EATOM_TYPE);
 				}
 
 				case is_integer: {
+					checkArgs(current, insn.nth(4), insn);
 					return setType(current, arg1, EINTEGER_TYPE);
 				}
 
 				case is_pid: {
+					checkArgs(current, insn.nth(4), insn);
 					return setType(current, arg1, EPID_TYPE);
 				}
 
 				case is_port: {
+					checkArgs(current, insn.nth(4), insn);
 					return setType(current, arg1, EPORT_TYPE);
 				}
 
 				case is_float: {
+					checkArgs(current, insn.nth(4), insn);
 					return setType(current, arg1, EDOUBLE_TYPE);
 				}
 
 				case is_ge:
 				case is_ne:
 				case is_ne_exact:
+					checkArgs(current, insn.nth(4), insn);
 					return current;
 
 				case is_eq:
 				case is_eq_exact: {
+					checkArgs(current, insn.nth(4), insn);
 					Type t1 = getType(current, arg1);
 					Type t2 = getType(current, arg2);
 
@@ -770,6 +1174,59 @@ public class BeamTypeAnalysis extends ModuleVisitor {
 				}
 
 				case is_lt:
+					checkArgs(current, insn.nth(4), insn);
+					return current;
+
+				case bs_start_match2:
+					check(current, args[0]);
+					current = setType(current, args[3], EMATCHSTATE_TYPE);
+					return current;
+
+				case bs_get_integer2: {
+					if (!EMATCHSTATE_TYPE.equals(getType(current, args[0]))) {
+						throw new Error("matching without a state");
+					}
+
+					ETuple tup;
+					if ((tup = args[3].asTuple()) != null) {
+						if (tup.nth(1) == INTEGER_ATOM
+								&& tup.nth(2).asInt() <= 32) {
+							current = setType(current, args[5], Type.INT_TYPE);
+							return current;
+						}
+					}
+
+					current = setType(current, args[5], ENUMBER_TYPE);
+					return current;
+				}
+
+				case bs_get_binary2: {
+					if (!EMATCHSTATE_TYPE.equals(getType(current, args[0]))) {
+						throw new Error("matching without a state");
+					}
+
+					current = setType(current, args[5], EBINARY_TYPE);
+					return current;
+				}
+
+				case bs_get_float2: {
+					if (!EMATCHSTATE_TYPE.equals(getType(current, args[0]))) {
+						throw new Error("matching without a state");
+					}
+
+					current = setType(current, args[5], Type.DOUBLE_TYPE);
+					return current;
+				}
+
+					// these bit string matchers don't modify registers
+
+				case bs_test_tail2:
+				case bs_test_unit:
+				case bs_skip_bits2:
+
+					if (!EMATCHSTATE_TYPE.equals(getType(current, args[0]))) {
+						throw new Error("matching without a state");
+					}
 
 					return current;
 
@@ -777,6 +1234,12 @@ public class BeamTypeAnalysis extends ModuleVisitor {
 					throw new Error("unhandled test: " + insn);
 				}
 
+			}
+
+			private void check(TypeMap current, EObject src) {
+				if (getType(current, src) == null) {
+					throw new Error("argument has no type");
+				}
 			}
 
 			private TypeMap branch(TypeMap current, EObject nth, int idx) {
@@ -879,6 +1342,8 @@ public class BeamTypeAnalysis extends ModuleVisitor {
 						}
 					} else if (tup.elem1 == FLOAT_ATOM) {
 						return Type.DOUBLE_TYPE;
+					} else if (tup.elem1 == FIELD_FLAGS_ATOM) {
+						return Type.INT_TYPE;
 					}
 
 				} else if (src == NIL_ATOM) {
@@ -891,8 +1356,120 @@ public class BeamTypeAnalysis extends ModuleVisitor {
 				throw new Error("unknown " + src);
 			}
 
+			@Override
+			public BeamInstruction[] getInstructions() {
+
+				BeamInstruction[] res = new BeamInstruction[insns.size()];
+				for (int i = 0; i < insns.size(); i++) {
+					res[i] = new BInsn(insns.get(i), this.map[i]);
+				}
+
+				return res;
+			}
+
+			@Override
+			public int getLabel() {
+				return this.block_label;
+			}
+
+			class BInsn implements BeamInstruction {
+
+				private final ETuple insn;
+				private final TypeMap current;
+
+				public BInsn(ETuple insn, TypeMap current) {
+					this.insn = insn;
+					this.current = current;
+				}
+
+				@Override
+				public BeamOpcode opcode() {
+					return BeamOpcode.get(insn.nth(1).asAtom());
+				}
+
+				@Override
+				public String toString() {
+					return insn.toString();
+				}
+			}
 		}
 
+		@Override
+		public int getArity() {
+			return arity;
+		}
+
+		@Override
+		public String getName() {
+			return name.getName();
+		}
+
+		@Override
+		public String getModuleName() {
+			return moduleName.getName();
+		}
+
+		@Override
+		public boolean isExported() {
+			String externalName = getName() + "/" + getArity();
+			return exports.contains(externalName);
+		}
+
+		@Override
+		public int getFregCount() {
+			return max_freg;
+		}
+
+		@Override
+		public int getXregCount() {
+			return max_xreg;
+		}
+
+		@Override
+		public int getYregCount() {
+			return max_stack;
+		}
+
+		@Override
+		public BeamCodeBlock[] getCodeBlocks() {
+
+			BeamCodeBlock[] blocks = this.lbs.values().toArray(
+					new BeamCodeBlock[0]);
+
+			return blocks;
+		}
+
+		@Override
+		public int getEntryLabel() {
+			return startLabel;
+		}
+
+	}
+
+	public void visitModule(EAtom name) {
+		this.moduleName = name;
+		super.visitModule(name);
+	}
+
+	Set<String> exports = new HashSet<String>();
+
+	/** list of {Fun,Arity,Entry} */
+	public void visitExport(EAtom fun, int arity, int entry) {
+		exports.add(fun.getName() + "/" + arity);
+		super.visitExport(fun, arity, entry);
+	}
+
+	/** list of {Atom,Value} */
+	public void visitAttribute(EAtom att, EObject value) {
+		super.visitAttribute(att, value);
+	}
+
+	public String getModuleName() {
+		return this.moduleName.getName();
+	}
+
+	public BeamFunction[] functions() {
+		return functions.toArray(new BeamFunction[functions.size()]);
 	}
 
 }

@@ -99,4 +99,21 @@ public abstract class ENumber extends ETerm {
 		throw new NotImplemented();
 	}
 
+	/**
+	 * @param v2
+	 * @return
+	 */
+	public ENumber divide(EObject v2) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	/**
+	 * @param d2
+	 * @return
+	 */
+	public ENumber divide(double d2) {
+		throw new NotImplemented();
+	}
+
 }

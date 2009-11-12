@@ -1,9 +1,10 @@
-package org.erlang.jbeam.ops;
+package erjang.jbeam.ops;
 
-import org.erlang.ERT;
-import org.erlang.EAtom;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
+
+import erjang.EAtom;
+import erjang.ERT;
 
 
 public class FuncInfo extends Insn {

@@ -1,4 +1,4 @@
-package org.erlang.jbeam.ops;
+package erjang.jbeam.ops;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -1,6 +1,6 @@
-package org.erlang.jbeam.ops;
+package erjang.jbeam.ops;
 
-import org.erlang.EAtom;
+import erjang.EAtom;
 
 public class ModuleDecl extends Stmt {
 

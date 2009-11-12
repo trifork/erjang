@@ -1,9 +1,9 @@
-package org.erlang.jbeam.ops;
+package erjang.jbeam.ops;
 
-import org.erlang.EAtom;
-import org.erlang.EInteger;
-import org.erlang.ETerm;
-import org.erlang.ETuple;
+import erjang.EAtom;
+import erjang.EInteger;
+import erjang.ETerm;
+import erjang.ETuple;
 
 public class ExternalFunction {
 

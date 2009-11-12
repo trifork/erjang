@@ -1,16 +1,17 @@
-package org.erlang.jbeam.ops;
+package erjang.jbeam.ops;
 
-import org.erlang.EBIF;
-import org.erlang.EAtom;
-import org.erlang.ETerm;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
+
+import erjang.EAtom;
+import erjang.ETerm;
+import erjang.modules.ErlangModule;
 
 public class GCBif extends Insn {
 
 	private static final Type EXCEPTION_TYPE = Type.getType(Exception.class);
 
-	private static final Type BIF_TYPE = Type.getType(EBIF.class);
+	private static final Type BIF_TYPE = Type.getType(ErlangModule.class);
 
 	private static final Type ETERM_TYPE = Type.getType(ETerm.class);
 	

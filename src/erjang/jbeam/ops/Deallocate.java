@@ -1,7 +1,7 @@
-package org.erlang.jbeam.ops;
+package erjang.jbeam.ops;
 
-import org.erlang.jbeam.ops.FunctionAdapter;
-import org.erlang.jbeam.ops.Insn;
+import erjang.jbeam.ops.FunctionAdapter;
+import erjang.jbeam.ops.Insn;
 
 public class Deallocate extends Insn {
 

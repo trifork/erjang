@@ -1,8 +1,9 @@
-package org.erlang.jbeam.ops;
+package erjang.jbeam.ops;
 
-import org.erlang.ETerm;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
+
+import erjang.ETerm;
 
 public abstract class Insn extends Stmt implements Opcodes {
 

@@ -1,17 +1,18 @@
-package org.erlang.jbeam.ops;
+package erjang.jbeam.ops;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import org.erlang.EAtom;
-import org.erlang.ETerm;
-import org.erlang.Tail;
-import org.erlang.jbeam.BEAMFile;
 import org.objectweb.asm.ClassAdapter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
+
+import erjang.EAtom;
+import erjang.ETerm;
+import erjang.Tail;
+import erjang.jbeam.BEAMFile;
 
 public class FunctionAdapter extends CodeAdapter {
 

@@ -1,9 +1,10 @@
-package org.erlang.jbeam.ops;
+package erjang.jbeam.ops;
 
-import org.erlang.EBIF;
-import org.erlang.EAtom;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
+
+import erjang.EAtom;
+import erjang.modules.ErlangModule;
 
 public class Test extends Insn {
 
@@ -11,7 +12,7 @@ public class Test extends Insn {
 	private final Label failto;
 	private final Object[] args;
 
-	private static final Type BIF_TYPE = Type.getType(EBIF.class);
+	private static final Type BIF_TYPE = Type.getType(ErlangModule.class);
 	
 	public Test(EAtom how, Label failto, Object[] args) {
 		this.how = how;

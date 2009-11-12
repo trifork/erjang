@@ -1,6 +1,6 @@
-package org.erlang.jbeam.ops;
+package erjang.jbeam.ops;
 
-import org.erlang.ECons;
+import erjang.ECons;
 
 public class AttributesDecl {
 

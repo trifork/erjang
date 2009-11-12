@@ -1,4 +1,4 @@
-package org.erlang.jbeam.ops;
+package erjang.jbeam.ops;
 
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;

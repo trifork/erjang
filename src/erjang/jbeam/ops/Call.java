@@ -1,8 +1,9 @@
-package org.erlang.jbeam.ops;
+package erjang.jbeam.ops;
 
-import org.erlang.EAtom;
 
 import com.sun.xml.internal.ws.org.objectweb.asm.Opcodes;
+
+import erjang.EAtom;
 
 public class Call extends Insn {
 
