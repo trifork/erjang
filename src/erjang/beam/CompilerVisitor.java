@@ -399,13 +399,14 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					return;
 				}
 
-				if (out.type != null && !out.type.equals(stack_type)) {
-					emit_convert(stack_type, out.type);
-				}
-
 				if (out.kind == Kind.X || out.kind == Kind.Y) {
 					mv.visitVarInsn(ASTORE, var_index(out));
 				} else if (out.kind == Kind.F) {
+					
+					if (!stack_type.equals(Type.DOUBLE_TYPE)) {
+						emit_convert(stack_type, Type.DOUBLE_TYPE);
+					}
+					
 					mv.visitVarInsn(FSTORE, var_index(out));
 				} else {
 					throw new Error();
@@ -442,16 +443,16 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					if (fromType.equals(EINTEGER_TYPE)) {
 						mv.visitFieldInsn(GETFIELD, EINTEGER_TYPE
 								.getInternalName(), "value", "I");
+						return;
 					}
-					return;
 				}
 
 				if (toType.equals(Type.DOUBLE_TYPE)) {
 					if (fromType.equals(EDOUBLE_TYPE)) {
 						mv.visitFieldInsn(GETFIELD, EDOUBLE_TYPE
 								.getInternalName(), "value", "D");
+						return;
 					}
-					return;
 				}
 
 				throw new Error();
@@ -713,18 +714,28 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 				switch (opcode) {
 				case fconv:
-
-				case fmove:
-					push(arg1, arg2.type);
-					pop(arg2, arg2.type);
-					break;
-
 				case move:
-
-					push(arg1, arg2.type);
-					pop(arg2, arg2.type);
-
+				case fmove:
+					if (arg1.kind == Kind.F) {
+						push(arg1, Type.DOUBLE_TYPE);
+						
+						if (arg2.kind == Kind.F) {
+							pop(arg2, Type.DOUBLE_TYPE);
+						} else {
+							emit_convert(Type.DOUBLE_TYPE, EDOUBLE_TYPE);
+							pop(arg2, EDOUBLE_TYPE);							
+						}
+					} else {
+						if (arg2.kind == Kind.F) {
+							push(arg1, Type.DOUBLE_TYPE);
+							pop(arg2, Type.DOUBLE_TYPE);
+						} else {
+							push(arg1, arg1.type);
+							pop(arg2, arg1.type);							
+						}
+					}
 					break;
+
 
 				default:
 					throw new Error("unhandled: " + opcode);
