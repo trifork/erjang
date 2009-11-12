@@ -21,14 +21,10 @@ package erjang.beam;
 
 import erjang.ETuple;
 
-public class LabeledBlockVisitor {
+public interface BlockVisitor {
 
-	public void visitInsn(BeamOpcode opcode, ETuple et) {
-		
-	}
-
-	public void visitEnd() {
-		
-	}
+	public void visitInsn(BeamOpcode opcode, ETuple et);
+	public void visitEnd();
 
 }
+

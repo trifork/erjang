@@ -1,0 +1,77 @@
+/**
+ * This file is part of Erjang - A JVM-based Erlang VM
+ *
+ * Copyright (c) 2009 by Trifork
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *  
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ **/
+
+
+package erjang.beam;
+
+
+import org.objectweb.asm.Type;
+import org.objectweb.asm.commons.Method;
+
+import erjang.EObject;
+
+/**
+ * 
+ */
+public interface BlockVisitor2 extends BlockVisitor {
+
+	void visitInsn(BeamOpcode insn);
+	
+	void visitInsn(BeamOpcode opcode, int failLabel, Arg arg1, Method bif);
+	
+	/** bif, gc_bif, arithfbif */
+	void visitInsn(BeamOpcode opcode, int failLabel, Arg[] in, Arg out, BIF bif);
+
+	/**
+	 * 
+	 * @param test one of is_nil, is_nonempty_list
+	 * @param failLabel
+	 * @param arg1
+	 * @param out TODO
+	 */
+	void visitTest(BeamOpcode test, int failLabel, Arg arg1, Type out);
+
+	void visitInsn(BeamOpcode opcode, Arg arg);
+
+	/**
+	 * @param test
+	 * @param failLabel
+	 * @param args
+	 * @param arg
+	 * @param voidType
+	 */
+	void visitTest(BeamOpcode test, int failLabel, Arg[] args, Arg out,
+			Type voidType);
+
+	/**
+	 * @param opcode
+	 * @param arg1
+	 * @param arg2
+	 */
+	void visitInsn(BeamOpcode opcode, Arg arg1, Arg arg2);
+
+	/**
+	 * @param fun
+	 * @param args
+	 * @param isTail
+	 * @param isExternal
+	 */
+	void visitCall(ExtFunc fun, Arg[] args, boolean isTail, boolean isExternal);
+	
+
+}

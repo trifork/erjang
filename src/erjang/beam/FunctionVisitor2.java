@@ -16,27 +16,15 @@
  * limitations under the License.
  **/
 
+
 package erjang.beam;
 
+/**
+ * 
+ */
+public interface FunctionVisitor2 extends FunctionVisitor {
 
-public interface BeamFunction {
-
-	boolean isExported();
-
-	String getModuleName();
-
-	String getName();
-
-	int getArity();
-
-	int getXregCount();
-
-	int getYregCount();
-
-	int getFregCount();
-
-	int getEntryLabel();
-
-	BeamCodeBlock[] getCodeBlocks();
-
+	public void visitMaxs(int x_count, int y_count, int fp_count,
+			boolean isTailRecursive);
+	
 }

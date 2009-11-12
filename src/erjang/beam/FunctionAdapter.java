@@ -21,10 +21,18 @@ package erjang.beam;
 
 
 public class FunctionAdapter implements FunctionVisitor {
+	
+	protected final FunctionVisitor fv;
+
+	public FunctionAdapter(FunctionVisitor fv) {
+		this.fv = fv;
+	}
+	
 	public void visitEnd() {
+		fv.visitEnd();
 	}
 
-	public LabeledBlockVisitor visitLabeledBlock(int label) {
-		return new LabeledBlockVisitor();
+	public BlockVisitor visitLabeledBlock(int label) {
+		return fv.visitLabeledBlock(label);
 	}
 }

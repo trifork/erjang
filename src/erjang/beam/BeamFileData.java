@@ -1,3 +1,21 @@
+/**
+ * This file is part of Erjang - A JVM-based Erlang VM
+ *
+ * Copyright (c) 2009 by Trifork
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *  
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ **/
+
 package erjang.beam;
 
 import erjang.EAtom;
@@ -9,19 +27,7 @@ import erjang.ETerm;
 import erjang.ETuple;
 import erjang.ETuple0;
 
-public class BeamFile {
-
-	static public class LabeledBlockVisitor {
-
-		public void visitInsn(BeamOpcode opcode, ETuple et) {
-			
-		}
-
-		public void visitEnd() {
-			
-		}
-
-	}
+public class BeamFileData {
 
 	private static final EAtom BEAM_FILE = EAtom.intern("beam_file");
 	private static final EAtom MODULE = EAtom.intern("module");
@@ -36,7 +42,7 @@ public class BeamFile {
 	private ESeq comp_info;
 	private ESeq code;
 
-	public BeamFile(ETuple data) {
+	public BeamFileData(ETuple data) {
 		assert (data.nth(1) == BEAM_FILE);
 
 		module = data.nth(2).asAtom();
@@ -44,38 +50,6 @@ public class BeamFile {
 		attributes = data.nth(4).asSeq();
 		comp_info = data.nth(5).asSeq();
 		code = data.nth(6).asSeq();
-	}
-
-	public static class ModuleVisitor {
-
-		protected void visitModule(EAtom name) {
-		}
-
-		/** list of {Fun,Arity,Entry} */
-		protected void visitExport(EAtom fun, int arity, int entry) {
-		}
-
-		/** list of {Atom,Value} */
-		protected void visitAttribute(EAtom att, EObject eObject) {
-		}
-
-		/** Visit function */
-		protected FunctionVisitor visitFunction(EAtom name, int arity, int startLabel) {
-			return new FunctionVisitor();
-		}
-
-		protected void visitEnd() {
-		}
-
-	}
-
-	public static class FunctionVisitor {
-		public void visitEnd() {
-		}
-
-		public LabeledBlockVisitor visitLabeledBlock(int label) {
-			return new LabeledBlockVisitor();
-		}
 	}
 
 	void accept(ModuleVisitor v) {
@@ -111,7 +85,7 @@ public class BeamFile {
 
 	private void visit_insns(EList insns, FunctionVisitor fv) {
 		
-		LabeledBlockVisitor bbv = null;
+		BlockVisitor bbv = null;
 		
 		for (ESeq insn = (ESeq) insns; insn != ESeq.EMPTY; insn = insn.tail()) {
 

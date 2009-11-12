@@ -16,27 +16,28 @@
  * limitations under the License.
  **/
 
+
 package erjang.beam;
 
+import erjang.EAtom;
 
-public interface BeamFunction {
+/**
+ * 
+ */
+public class ExtFunc extends erjang.beam.Arg {
 
-	boolean isExported();
+	public final EAtom mod;
+	public final EAtom fun;
 
-	String getModuleName();
+	/**
+	 * @param kind
+	 * @param reg
+	 */
+	public ExtFunc(EAtom mod, EAtom fun, int arity) {
+		super(Kind.EXT_FUNC, arity);
+		this.mod = mod;
+		this.fun = fun;
 
-	String getName();
-
-	int getArity();
-
-	int getXregCount();
-
-	int getYregCount();
-
-	int getFregCount();
-
-	int getEntryLabel();
-
-	BeamCodeBlock[] getCodeBlocks();
+	}
 
 }

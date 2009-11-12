@@ -49,7 +49,7 @@ public class ModuleAdapter implements ModuleVisitor  {
 
 	/** Visit function */
 	public FunctionVisitor visitFunction(EAtom name, int arity, int startLabel) {
-		return new FunctionAdapter();
+		return mv.visitFunction(name, arity, startLabel);
 	}
 
 	public void visitEnd() {

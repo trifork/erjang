@@ -25,6 +25,6 @@ public interface FunctionVisitor {
 
 	void visitEnd();
 
-	LabeledBlockVisitor visitLabeledBlock(int label);
+	BlockVisitor visitLabeledBlock(int label);
 
 }

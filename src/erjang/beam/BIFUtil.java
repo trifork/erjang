@@ -1,3 +1,21 @@
+/**
+ * This file is part of Erjang - A JVM-based Erlang VM
+ *
+ * Copyright (c) 2009 by Trifork
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *  
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ **/
+
 package erjang.beam;
 
 import java.lang.reflect.Method;
@@ -6,11 +24,10 @@ import java.util.Map;
 
 import org.objectweb.asm.Type;
 
+import erjang.EAtom;
 import erjang.EObject;
-import erjang.BIF;
 import erjang.modules.BinOps;
 import erjang.modules.ErlangModule;
-
 
 /**
  * Used by the compiler to find and mange BIF definitions.
@@ -28,7 +45,6 @@ public class BIFUtil {
 		registerBifs(ErlangModule.class);
 		registerBifs(BinOps.class);
 	}
-
 
 	static class Args {
 		private static final Type EOBJECT_TYPE = null;
@@ -78,7 +94,7 @@ public class BIFUtil {
 							return false;
 						}
 					}
-					
+
 					return true;
 				}
 			}
@@ -116,7 +132,7 @@ public class BIFUtil {
 
 	static class BIFHandler {
 
-		Map<Args, Method> found = new HashMap<Args, Method>();
+		Map<Args, BIF> found = new HashMap<Args, BIF>();
 
 		private final String name;
 		private final String javaName;
@@ -133,23 +149,53 @@ public class BIFUtil {
 
 		public Type getResult(Type[] parmTypes) {
 			Args args = new Args(parmTypes);
-			Method m = found.get(args);
+			BIF m = found.get(args);
 			if (m == null) {
-				
+
 				if ((m = found.get(args.generic())) == null) {
-					throw new Error("no bif " + javaName + "" + args);
+					throw new Error("no bif erlang:" + EAtom.intern(name) + "/"
+							+ parmTypes.length + " " + args);
 				}
 
-				System.err.println("missed opportunity: "+name+"/"+parmTypes.length+" "+args+", using "+m);
+				System.err.println("missed opportunity erlang:"
+						+ EAtom.intern(name) + "/" + parmTypes.length + " "
+						+ args + ", \n\tusing " + m);
 			}
 
-			return Type.getType(m.getReturnType());
+			return m.getReturnType();
 		}
 
 		public void registerMethod(Method method) {
 			Args a = new Args(method.getParameterTypes());
 
+			found.put(a, new BIF(method));
+		}
+
+		public void registerMethod(BIF method) {
+			Args a = new Args(method.getArgumentTypes());
+
 			found.put(a, method);
+		}
+
+		/**
+		 * @param parmTypes
+		 * @return
+		 */
+		public BIF getMethod(Type[] parmTypes) {
+
+			Args args = new Args(parmTypes);
+			BIF m = found.get(args);
+			if (m == null) {
+
+				if ((m = found.get(args.generic())) == null) {
+					throw new Error("no bif erlang:" + EAtom.intern(name) + "/"
+							+ parmTypes.length + " " + args);
+				}
+
+			}
+
+			return m;
+
 		}
 
 	}
@@ -163,7 +209,8 @@ public class BIFUtil {
 		if (tab.containsKey(name)) {
 			bif = tab.get(name);
 		} else {
-			throw new Error("no "+(isGuard?"guard":"normal")+" bif named '"+name+"'");
+			throw new Error("no " + (isGuard ? "guard" : "normal")
+					+ " bif named '" + name + "'");
 		}
 
 		return bif.getResult(parmTypes);
@@ -173,22 +220,57 @@ public class BIFUtil {
 		Method[] m = clazz.getMethods();
 		for (int i = 0; i < m.length; i++) {
 			Method method = m[i];
-			BIF ann = method.getAnnotation(BIF.class);
+			erjang.BIF ann = method.getAnnotation(erjang.BIF.class);
 			if (ann != null) {
-				Map<String, BIFHandler> tab = ann.type()==erjang.BIF.Type.GUARD ? guard_bifs : bifs;
-				
+				Map<String, BIFHandler> tab = ann.type() == erjang.BIF.Type.GUARD ? guard_bifs
+						: bifs;
+
 				String bifName = ann.name();
 				if (bifName.equals("__SELFNAME__")) {
 					bifName = method.getName();
 				}
 				BIFHandler h = tab.get(bifName);
 				if (h == null) {
-					tab.put(bifName, h=new BIFHandler(bifName));
+					tab.put(bifName, h = new BIFHandler(bifName));
 				}
-				
+
 				h.registerMethod(method);
 			}
 		}
+	}
+
+	/**
+	 * @param name
+	 * @param parmTypes
+	 * @param b
+	 * @return
+	 */
+	public static BIF getMethod(String name, Type[] parmTypes,
+			boolean isGuard) {
+
+		Map<String, BIFHandler> tab = isGuard ? guard_bifs : bifs;
+
+		BIFHandler bif = null;
+		if (tab.containsKey(name)) {
+			bif = tab.get(name);
+		} else {
+			throw new Error("no " + (isGuard ? "guard" : "normal")
+					+ " bif named '" + name + "'");
+		}
+
+		return bif.getMethod(parmTypes);
+	}
+
+	/**
+	 * @param name
+	 * @param args
+	 * @param isGuard
+	 * @return
+	 */
+	public static BIF getMethod(String name, Arg[] args, boolean isGuard) {
+		Type[] parms = new Type[args.length];
+		for (int i = 0; i < args.length; i++) { parms[i] = args[i].type; }
+		return getMethod(name, parms, isGuard);
 	}
 
 }
