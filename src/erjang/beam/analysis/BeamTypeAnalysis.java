@@ -375,6 +375,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						Arg arg1 = decode_arg(insn_idx, insn.nth(2));
 						Arg arg2 = decode_arg(insn_idx, insn.nth(3));
 						
+						
 						if (arg2.kind != Kind.F) {
 							if (arg1.kind == Kind.F) {
 								arg2 = new Arg(arg2, EDOUBLE_TYPE);
