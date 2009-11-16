@@ -24,16 +24,8 @@ public class ERT {
 	public static final EAtom AM_BADMATCH = EAtom.intern("badmatch");
 	public static final EAtom AM_BADARITH = EAtom.intern("badarith");
 
-	public static ETerm cons(EObject h, ETerm t) {
-		if (t instanceof ECons) {
-			return ((ECons) t).cons(h);
-		} else {
-			return new EPair(h, t);
-		}
-	}
-
-	public static ETerm cons(ETerm h, ECons t) {
-		return ((ECons) t).cons(h);
+	public static ETerm cons(EObject h, EObject t) {
+		return t.cons(h);
 	}
 
 	public static ErlangException badarith(ArithmeticException cause,
@@ -63,5 +55,13 @@ public class ERT {
 	public static ErlangException badarg(EObject arg1, int arg2) {
 		throw new ErlangException(AM_BADARG);
 	}
+
+	public static final EAtom ATOM_TRUE = EAtom.intern("true");
+	public static final EAtom ATOM_FALSE = EAtom.intern("false");
+	
+	public static boolean eq(EObject o1, EObject o2) { return o1==null?o2==null:o1.equals(o2); }
+	public static boolean eq(EObject o1, EAtom o2) { return o1==o2; }
+	public static boolean eq(EAtom o1, EObject o2) { return o1==o2; }
+	public static boolean eq(EAtom o1, EAtom o2) { return o1==o2; }
 
 }

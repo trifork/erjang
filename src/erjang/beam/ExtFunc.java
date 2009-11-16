@@ -20,6 +20,7 @@
 package erjang.beam;
 
 import erjang.EAtom;
+import erjang.ETuple;
 
 /**
  * 
@@ -38,6 +39,15 @@ public class ExtFunc extends erjang.beam.Arg {
 		this.mod = mod;
 		this.fun = fun;
 
+	}
+
+	/**
+	 * @param ext
+	 */
+	public ExtFunc(ETuple ext) {
+		super(Kind.EXT_FUNC, ext.elm(3).asInt());
+		this.mod = ext.elm(1).testAtom();
+		this.fun = ext.elm(2).testAtom();
 	}
 
 }

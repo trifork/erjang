@@ -14,8 +14,8 @@ public class BinOps {
 	{
 		ENumber n1;
 		ENumber n2;
-		if ((n1=o1.asNumber()) != null) {
-			if ((n2=o2.asNumber()) != null) {
+		if ((n1=o1.testNumber()) != null) {
+			if ((n2=o2.testNumber()) != null) {
 				return n1.bitAnd(n2);
 			}
 		}
@@ -28,15 +28,15 @@ public class BinOps {
 	static public ENumber band(EObject o1, EObject o2)
 	{
 		EInteger i1, i2;
-		if ((i1=o1.asInteger()) != null && (i2=o2.asInteger()) != null)
+		if ((i1=o1.testInteger()) != null && (i2=o2.testInteger()) != null)
 		{
 			return new EInteger(i1.value & i2.value);
 		}
 		
 		ENumber n1;
 		ENumber n2;
-		if ((n1=o1.asNumber()) != null) {
-			if ((n2=o2.asNumber()) != null) {
+		if ((n1=o1.testNumber()) != null) {
+			if ((n2=o2.testNumber()) != null) {
 				return n1.bitAnd(n2);
 			}
 		}
@@ -57,15 +57,15 @@ public class BinOps {
 	static public ENumber bor(EObject o1, EObject o2)
 	{
 		EInteger i1, i2;
-		if ((i1=o1.asInteger()) != null && (i2=o2.asInteger()) != null)
+		if ((i1=o1.testInteger()) != null && (i2=o2.testInteger()) != null)
 		{
 			return new EInteger(i1.value | i2.value);
 		}
 		
 		ENumber n1;
 		ENumber n2;
-		if ((n1=o1.asNumber()) != null) {
-			if ((n2=o2.asNumber()) != null) {
+		if ((n1=o1.testNumber()) != null) {
+			if ((n2=o2.testNumber()) != null) {
 				return n1.bitOr(n2);
 			}
 		}
@@ -88,15 +88,15 @@ public class BinOps {
 	static public ENumber bsr(EObject o1, EObject o2)
 	{
 		EInteger i1, i2;
-		if ((i1=o1.asInteger()) != null && (i2=o2.asInteger()) != null)
+		if ((i1=o1.testInteger()) != null && (i2=o2.testInteger()) != null)
 		{
 			return new EInteger(i1.value >> i2.value);
 		}
 		
 		ENumber n1;
 		ENumber n2;
-		if ((n1=o1.asNumber()) != null) {
-			if ((n2=o2.asNumber()) != null) {
+		if ((n1=o1.testNumber()) != null) {
+			if ((n2=o2.testNumber()) != null) {
 				return n1.bitShiftRight(n2);
 			}
 		}
@@ -108,15 +108,15 @@ public class BinOps {
 	static public ENumber bsl(EObject o1, EObject o2)
 	{
 		EInteger i1, i2;
-		if ((i1=o1.asInteger()) != null && (i2=o2.asInteger()) != null)
+		if ((i1=o1.testInteger()) != null && (i2=o2.testInteger()) != null)
 		{
 			return new EInteger(i1.value << i2.value);
 		}
 		
 		ENumber n1;
 		ENumber n2;
-		if ((n1=o1.asNumber()) != null) {
-			if ((n2=o2.asNumber()) != null) {
+		if ((n1=o1.testNumber()) != null) {
+			if ((n2=o2.testNumber()) != null) {
 				return n1.bitShiftLeft(n2);
 			}
 		}

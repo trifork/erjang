@@ -26,38 +26,53 @@ import org.objectweb.asm.Type;
 
 import erjang.jbeam.ops.CodeAdapter;
 
-public class EString extends ETerm implements CharSequence {
+public class EString extends ESeq implements CharSequence {
 
 	private static final Charset ISO_LATIN_1 = Charset.forName("ISO-8859-1");
 	
-	byte[] data;
-	int hash;
+	private byte[] data;
+	private int off;
+	private int hash = -1;
 	
 	public EString(String value) {
 		this.hash = value.hashCode();
 		this.data = value.getBytes(ISO_LATIN_1);
 	}
 
+	private EString(byte[] data, int off)
+	{
+		this.data = data;
+		this.off = off;
+	}
+	
 	@Override
 	public int hashCode() {
+		if (hash == -1) { hash = stringValue().hashCode(); }
 		return hash;
 	}
 	
 	public String stringValue() {
-		return new String(data, ISO_LATIN_1);
+		return new String(data, off, data.length-off, ISO_LATIN_1);
 	}
 	
 	@Override
 	public boolean equals(Object obj) {
 		if (obj instanceof EString) {
 			EString es = (EString) obj;
-			return es.hash == hash && Arrays.equals(es.data, data);
-
-		} else if (obj instanceof String) {
-			if ( hash == obj.hashCode() ) {
-				
+			
+			int len1 = data.length-off;
+			int len2 = es.data.length-es.off;
+			
+			if (len1 != len2) return false;
+			
+			for (int i = 0; i < len1; i++) {
+				if (data[off+i] != es.data[es.off+i]) return false;
 			}
 			
+			return true;
+
+		} else if (obj instanceof String) {			
+			return stringValue().equals(obj);
 		}
 		
 		return false;
@@ -65,16 +80,17 @@ public class EString extends ETerm implements CharSequence {
 
 	@Override
 	public char charAt(int index) {
-		return (char) (data[index] & 0xff);
+		return (char) (data[off+index] & 0xff);
 	}
 
 	@Override
 	public int length() {
-		return data.length;
+		return data.length-off;
 	}
 
 	@Override
 	public CharSequence subSequence(final int start, final int end) {		
+		if (end == length()) return new EString(data, off+start);
 		return new SubSequence(start, end-start);
 	}
 	
@@ -108,7 +124,7 @@ public class EString extends ETerm implements CharSequence {
 	}
 
 	void check_subseq(int offset, int length) {
-		if (offset < 0 || length < 0 || (offset+length) > data.length)
+		if (offset < 0 || length < 0 || (offset+length) > length())
 			throw new IllegalArgumentException();
 	}
 	
@@ -136,5 +152,39 @@ public class EString extends ETerm implements CharSequence {
 		return type;
 	}
 
+	/* (non-Javadoc)
+	 * @see erjang.ESeq#cons(erjang.EObject)
+	 */
+	@Override
+	public EList cons(EObject h) {
+		return new EList(h, this);
+	}
+
+	/* (non-Javadoc)
+	 * @see erjang.ESeq#tail()
+	 */
+	@Override
+	public ESeq tail() {
+		if (off == data.length) return ENil.NIL;
+		return new EString(data, off+1);
+	}
+
+	/* (non-Javadoc)
+	 * @see erjang.ECons#head()
+	 */
+	@Override
+	public EInteger head() {
+		return new EInteger(data[off] & 0xff);
+	}
+
+	@Override
+	public ENil testNil() {
+		return length() == 0 ? ENil.NIL : null;
+	}
+
+	public ECons testNonEmptyList() {
+		return length() == 0 ? null : this;
+	}
+	
 
 }

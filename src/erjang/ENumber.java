@@ -34,7 +34,7 @@ public abstract class ENumber extends ETerm {
          }
 	}
 
-	public ENumber asNumber() {
+	public ENumber testNumber() {
 		return this;
 	}
 

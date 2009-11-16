@@ -247,7 +247,7 @@ public class BEAMFile {
 			return sym2enum((EAtom) nth);
 		} else {
 			ETuple stmt = (ETuple) nth;
-			return sym2enum((EAtom) stmt.nth(1));
+			return sym2enum((EAtom) stmt.elm(1));
 		}
 	}
 
@@ -257,7 +257,7 @@ public class BEAMFile {
 	}
 
 	private Object decode(ETuple vec, int i) throws Exception {
-		Object nth = vec.nth(i);
+		Object nth = vec.elm(i);
 		return decode_one(nth);
 	}
 
@@ -277,7 +277,7 @@ public class BEAMFile {
 
 	private Object decode_record(ETuple stmt) throws Exception {
 
-		BeamFileTag opcode = sym2enum((EAtom) stmt.nth(1));
+		BeamFileTag opcode = sym2enum((EAtom) stmt.elm(1));
 		switch (opcode) {
 
 		case file:
@@ -313,10 +313,10 @@ public class BEAMFile {
 			return (Register) new RegisterY(integer(stmt, 2));
 
 		case integer:
-			return (EInteger) stmt.nth(2);
+			return (EInteger) stmt.elm(2);
 
 		case atom:
-			return (EAtom) stmt.nth(2);
+			return (EAtom) stmt.elm(2);
 
 		case test:
 			return (Insn) new Test(atom(stmt, 2), (Label) decode(stmt, 3),
@@ -340,19 +340,19 @@ public class BEAMFile {
 
 		case call: {
 			int nargs = integer(stmt, 2);
-			ETuple vec = (ETuple) stmt.nth(3);
-			EAtom mod = (EAtom) vec.nth(1);
-			EAtom fun = (EAtom) vec.nth(2);
-			EInteger ari = (EInteger) vec.nth(3);
+			ETuple vec = (ETuple) stmt.elm(3);
+			EAtom mod = (EAtom) vec.elm(1);
+			EAtom fun = (EAtom) vec.elm(2);
+			EInteger ari = (EInteger) vec.elm(3);
 			return new Call(nargs, mod, fun, ari.intValue(), false);
 		}
 
 		case call_only: {
 			int nargs = integer(stmt, 2);
-			ETuple vec = (ETuple) stmt.nth(3);
-			EAtom mod = (EAtom) vec.nth(1);
-			EAtom fun = (EAtom) vec.nth(2);
-			EInteger ari = (EInteger) vec.nth(3);
+			ETuple vec = (ETuple) stmt.elm(3);
+			EAtom mod = (EAtom) vec.elm(1);
+			EAtom fun = (EAtom) vec.elm(2);
+			EInteger ari = (EInteger) vec.elm(3);
 			return new Call(nargs, mod, fun, ari.intValue(), true);
 		}
 
@@ -385,11 +385,11 @@ public class BEAMFile {
 	}
 
 	private Object[] decode_list(ETuple stmt, int i) throws Exception {
-		ESeq v = (ESeq) stmt.nth(i);
+		ESeq v = (ESeq) stmt.elm(i);
 
 		Object[] result = new Object[v.count()];
 		int pos = 0;
-		while (v != ECons.EMPTY) {
+		while (v != ECons.NIL) {
 			result[pos++] = decode_record((ETuple) v.head());
 			v = v.tail();
 		}
@@ -397,15 +397,15 @@ public class BEAMFile {
 	}
 
 	private EList list(ETuple stmt, int i) {
-		return (EList) stmt.nth(i);
+		return (EList) stmt.elm(i);
 	}
 
 	private EString string(ETuple stmt, int i) {
-		return (EString) stmt.nth(i);
+		return (EString) stmt.elm(i);
 	}
 
 	private EAtom atom(ETuple stmt, int i) {
-		return (EAtom) stmt.nth(i);
+		return (EAtom) stmt.elm(i);
 	}
 
 	private Register reg(ETuple stmt, int i) throws Exception {
@@ -413,7 +413,7 @@ public class BEAMFile {
 	}
 
 	private int integer(ETuple stmt, int i) {
-		return ((EInteger) stmt.nth(i)).intValue();
+		return ((EInteger) stmt.elm(i)).intValue();
 	}
 
 	BeamFileTag sym2enum(EAtom sym) {
@@ -452,13 +452,13 @@ public class BEAMFile {
 			consts.put(value, str);
 		}
 		
-		if (value != ECons.EMPTY && value instanceof ECons) {
+		if (value != ECons.NIL && value instanceof ECons) {
 			registerConst(((ECons)value).head());
 			registerConst(((ECons)value).tail());
 		} else if (value instanceof ETuple) {
 			ETuple t = (ETuple) value;
 			for (int i = 1; i <= t.arity(); i++) {
-				registerConst(t.nth(i));
+				registerConst(t.elm(i));
 			}
 		}
 		

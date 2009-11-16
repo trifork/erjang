@@ -36,6 +36,10 @@ public class EPair extends ECons {
 		this.tail = t;
 	}
 
+	public ECons testNonEmptyList() {
+		return this;
+	}
+	
 
 	public EObject head() {
 		return head;
@@ -50,14 +54,14 @@ public class EPair extends ECons {
 		StringBuffer sb = new StringBuffer("[");
 		
 		EObject val = this;
-		while (val instanceof ECons && val != EMPTY) {
+		while (val instanceof ECons && val != NIL) {
 			ECons ep = (ECons) val;
 			if (val != this) { sb.append(","); }
 			sb.append(ep.head());
 			val = ep.tail();
 		}
 		
-		if (val != EMPTY) {
+		if (val != NIL) {
 			sb.append('|');
 			sb.append(val);
 		}

@@ -27,7 +27,7 @@ import org.objectweb.asm.Type;
 import erjang.EAtom;
 import erjang.EObject;
 import erjang.modules.BinOps;
-import erjang.modules.ErlangModule;
+import erjang.modules.erl_bif;
 
 /**
  * Used by the compiler to find and mange BIF definitions.
@@ -42,7 +42,7 @@ public class BIFUtil {
 	static Map<String, BIFHandler> guard_bifs = new HashMap<String, BIFHandler>();
 
 	static {
-		registerBifs(ErlangModule.class);
+		registerBifs(erl_bif.class);
 		registerBifs(BinOps.class);
 	}
 

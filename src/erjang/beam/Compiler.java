@@ -18,32 +18,15 @@
 
 package erjang.beam;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.regex.Pattern;
 
-import org.objectweb.asm.AnnotationVisitor;
-import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.Label;
-import org.objectweb.asm.MethodAdapter;
-import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
 
 import com.ericsson.otp.erlang.OtpAuthException;
-import com.sun.tools.javac.resources.compiler;
 
-import erjang.EModule;
-import erjang.EObject;
-import erjang.ErlFun;
-import erjang.Module;
 import erjang.beam.analysis.BeamTypeAnalysis;
 
 public class Compiler implements Opcodes {
@@ -73,9 +56,12 @@ public class Compiler implements Opcodes {
 		// the beam file reader, phase 1
 		BeamFileData reader = loader.load(file);
 
-		// go!
-		reader.accept(analysis);
-
+		try {
+			// go!
+			reader.accept(analysis);
+		} catch (Error e) {
+			e.printStackTrace();
+		}
 		// get byte code data
 		return cw.toByteArray();
 	}
@@ -84,18 +70,19 @@ public class Compiler implements Opcodes {
 
 		File out_dir = new File("out");
 		Compiler cc = new Compiler();
-		
+
 		for (int i = 0; i < args.length; i++) {
-			
+
 			File infile = new File(args[i]);
 			byte[] data = cc.compile(infile);
 			String beam_name = infile.getName();
-			String jbeam_name = beam_name.substring(0, beam_name.lastIndexOf('.')+1) + "jbeam";
-			File outfile = new File(out_dir, beam_name);
-			writeTo(outfile , data);
+			String jbeam_name = beam_name.substring(0, beam_name
+					.lastIndexOf('.') + 1)
+					+ "jbeam";
+			File outfile = new File(out_dir, jbeam_name);
+			writeTo(outfile, data);
 		}
 
-		
 	}
 
 	static void writeTo(File output, byte[] class_data) throws IOException {

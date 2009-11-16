@@ -33,7 +33,7 @@ public class EInteger extends ENumber {
 		this.value = value;
 	}
 	
-	public EInteger asInteger() {
+	public EInteger testInteger() {
 		return this;
 	}
 

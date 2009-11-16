@@ -5,13 +5,13 @@ import org.objectweb.asm.Type;
 
 import erjang.EAtom;
 import erjang.ETerm;
-import erjang.modules.ErlangModule;
+import erjang.modules.erl_bif;
 
 public class GCBif extends Insn {
 
 	private static final Type EXCEPTION_TYPE = Type.getType(Exception.class);
 
-	private static final Type BIF_TYPE = Type.getType(ErlangModule.class);
+	private static final Type BIF_TYPE = Type.getType(erl_bif.class);
 
 	private static final Type ETERM_TYPE = Type.getType(ETerm.class);
 	

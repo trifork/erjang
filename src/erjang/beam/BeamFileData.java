@@ -43,13 +43,13 @@ public class BeamFileData {
 	private ESeq code;
 
 	public BeamFileData(ETuple data) {
-		assert (data.nth(1) == BEAM_FILE);
+		assert (data.elm(1) == BEAM_FILE);
 
-		module = data.nth(2).asAtom();
-		exports = data.nth(3).asSeq();
-		attributes = data.nth(4).asSeq();
-		comp_info = data.nth(5).asSeq();
-		code = data.nth(6).asSeq();
+		module = data.elm(2).testAtom();
+		exports = data.elm(3).testSeq();
+		attributes = data.elm(4).testSeq();
+		comp_info = data.elm(5).testSeq();
+		code = data.elm(6).testSeq();
 	}
 
 	void accept(ModuleVisitor v) {
@@ -59,22 +59,23 @@ public class BeamFileData {
 
 		visit_attributes(v);
 
-		for (ESeq exp = (ESeq) code; exp != ESeq.EMPTY; exp = exp.tail()) {
-			ETuple fun = (ETuple) exp.head();
+		try {
+			for (ESeq exp = (ESeq) code; exp != ESeq.NIL; exp = exp.tail()) {
+				ETuple fun = (ETuple) exp.head();
 
-			visit_function(v, fun);
+				visit_function(v, fun);
+			}
+		} finally {
+			v.visitEnd();
 		}
-
-		v.visitEnd();
-
 	}
 
 	private void visit_function(ModuleVisitor v, ETuple fun) {
 
-		EAtom name = (EAtom) fun.nth(2);
-		int ary = fun.nth(3).asInt();
-		int entry = fun.nth(4).asInt();
-		EList insns = (EList) fun.nth(5);
+		EAtom name = (EAtom) fun.elm(2);
+		int ary = fun.elm(3).asInt();
+		int entry = fun.elm(4).asInt();
+		EList insns = (EList) fun.elm(5);
 
 		FunctionVisitor fv = v.visitFunction(name, ary, entry);
 
@@ -84,28 +85,28 @@ public class BeamFileData {
 	}
 
 	private void visit_insns(EList insns, FunctionVisitor fv) {
-		
+
 		BlockVisitor bbv = null;
-		
-		for (ESeq insn = (ESeq) insns; insn != ESeq.EMPTY; insn = insn.tail()) {
+
+		for (ESeq insn = (ESeq) insns; insn != ESeq.NIL; insn = insn.tail()) {
 
 			EObject i = insn.head();
-			
+
 			if (i instanceof EAtom) {
 				BeamOpcode opcode = BeamOpcode.get((EAtom) i);
-				bbv.visitInsn(opcode, ETuple.make(new EObject[] {i}));
-				
+				bbv.visitInsn(opcode, ETuple.make(new EObject[] { i }));
+
 			} else if (i instanceof ETuple) {
 				ETuple et = (ETuple) i;
-				BeamOpcode opcode = BeamOpcode.get((EAtom) et.nth(1));
-				
+				BeamOpcode opcode = BeamOpcode.get((EAtom) et.elm(1));
+
 				if (opcode == BeamOpcode.label) {
-					EInteger label = (EInteger) et.nth(2);
-					
+					EInteger label = (EInteger) et.elm(2);
+
 					if (bbv != null) {
 						bbv.visitEnd();
 					}
-					
+
 					bbv = fv.visitLabeledBlock(label.asInt());
 				} else {
 					bbv.visitInsn(opcode, et);
@@ -114,25 +115,23 @@ public class BeamFileData {
 				throw new IllegalArgumentException();
 			}
 		}
-		
+
 		if (bbv != null) {
 			bbv.visitEnd();
 		}
 	}
 
 	private void visit_attributes(ModuleVisitor v) {
-		for (ESeq exp = (ESeq) attributes; exp != ESeq.EMPTY; exp = exp
-				.tail()) {
+		for (ESeq exp = (ESeq) attributes; exp != ESeq.NIL; exp = exp.tail()) {
 			ETuple one = (ETuple) exp.head();
-			v.visitAttribute((EAtom) one.nth(1), one.nth(2));
+			v.visitAttribute((EAtom) one.elm(1), one.elm(2));
 		}
 	}
 
 	private void visit_exports(ModuleVisitor v) {
-		for (ESeq exp = (ESeq) exports; exp != ESeq.EMPTY; exp = exp
-				.tail()) {
+		for (ESeq exp = (ESeq) exports; exp != ESeq.NIL; exp = exp.tail()) {
 			ETuple one = (ETuple) exp.head();
-			v.visitExport((EAtom) one.nth(1), one.nth(2).asInt(), one.nth(3)
+			v.visitExport((EAtom) one.elm(1), one.elm(2).asInt(), one.elm(3)
 					.asInt());
 		}
 	}

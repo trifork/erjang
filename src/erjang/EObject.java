@@ -26,19 +26,23 @@ public class EObject {
 	}
 	
 
-	public EAtom asAtom() {
+	public EAtom testAtom() {
 		return null;
 	}
 
-	public ETuple asTuple() {
+	public ECons testNonEmptyList() {
+		return null;
+	}
+	
+	public ETuple testTuple() {
 		return null;
 	}
 
-	public ESeq asSeq() {
+	public ESeq testSeq() {
 		return null;
 	}
 
-	public EPID asPID() {
+	public EPID testPID() {
 		return null;
 	}
 
@@ -46,17 +50,19 @@ public class EObject {
 		throw new RuntimeException("cannot convert " + this + " to int");
 	}
 
-	public ENumber asNumber() {
+	public ENumber testNumber() {
 		return null;
 	}
 
-
-	public ECons asCons() {
+	public ECons testCons() {
 		return null;
 	}
 
+	public EInteger testInteger() {
+		return null;
+	}
 
-	public EInteger asInteger() {
+	public ENil testNil() {
 		return null;
 	}
 

@@ -37,7 +37,7 @@ public class ETuple4 extends ETuple {
 	}
 
 	@Override
-	public EObject nth(int i) {
+	public EObject elm(int i) {
 		switch (i) {
 		case 1:
 			return elem1;

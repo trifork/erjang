@@ -29,10 +29,14 @@ public class EList extends ESeq {
 	private final ESeq tail;
 	
 	public EList(EObject h, ESeq tail) {
-		if (tail == null) tail = EMPTY;
+		if (tail == null) tail = NIL;
 		
 		this.head = h;
 		this.tail = tail;
+	}
+	
+	public ECons testNonEmptyList() {
+		return this;
 	}
 	
 	// only for ENil!
@@ -62,7 +66,7 @@ public class EList extends ESeq {
 		StringBuffer sb = new StringBuffer("[");
 		
 		ESeq val = this;
-		while (val != ECons.EMPTY) {
+		while (val != ECons.NIL) {
 			if (val != this) { sb.append(","); }
 			sb.append(val.head());
 			val = val.tail();

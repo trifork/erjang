@@ -4,7 +4,7 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 
 import erjang.EAtom;
-import erjang.modules.ErlangModule;
+import erjang.modules.erl_bif;
 
 public class Test extends Insn {
 
@@ -12,7 +12,7 @@ public class Test extends Insn {
 	private final Label failto;
 	private final Object[] args;
 
-	private static final Type BIF_TYPE = Type.getType(ErlangModule.class);
+	private static final Type BIF_TYPE = Type.getType(erl_bif.class);
 	
 	public Test(EAtom how, Label failto, Object[] args) {
 		this.how = how;

@@ -37,13 +37,13 @@ import erjang.jbeam.ops.CodeAdapter;
 
 public abstract class ETuple extends ETerm implements Cloneable {
 
-	public ETuple asTuple() {
+	public ETuple testTuple() {
 		return this;
 	}
 
 	public abstract int arity();
 
-	public abstract EObject nth(int i);
+	public abstract EObject elm(int i);
 
 	public static ETuple make(int len) {
 		switch (len) {
@@ -232,7 +232,7 @@ public abstract class ETuple extends ETerm implements Cloneable {
 	private static void create_tuple_nth(int n_cells, ClassAdapter cw,
 			String this_class_name) {
 		MethodVisitor mv;
-		mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "nth", "(I)"
+		mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "elm", "(I)"
 				+ ETERM_TYPE.getDescriptor(), null, null);
 		mv.visitCode();
 
@@ -373,7 +373,7 @@ public abstract class ETuple extends ETerm implements Cloneable {
 		for (int i = 1; i <= this.arity(); i++) {
 			if (i != 1)
 				sb.append(',');
-			sb.append(nth(i));
+			sb.append(elm(i));
 		}
 		sb.append("}");
 		return sb.toString();
@@ -392,7 +392,7 @@ public abstract class ETuple extends ETerm implements Cloneable {
 		for (int i = 0; i < arity(); i++) {
 			fa.visitInsn(Opcodes.DUP);
 
-			fa.emit_const(nth(i + 1));
+			fa.emit_const(elm(i + 1));
 
 			fa.visitFieldInsn(Opcodes.PUTFIELD, type.getInternalName(), "elem"
 					+ (i + 1), ETERM_TYPE.getDescriptor());

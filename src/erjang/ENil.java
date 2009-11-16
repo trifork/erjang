@@ -57,4 +57,10 @@ public class ENil extends ESeq {
 		fa.visitFieldInsn(Opcodes.GETSTATIC, ECONS_TYPE.getInternalName(), "EMPTY", ENIL_TYPE.getDescriptor());
 		return ENIL_TYPE;
 	}
+	
+	public ENil testNil() {
+		return this;
+	}
+
+
 }

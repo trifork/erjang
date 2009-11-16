@@ -72,6 +72,73 @@ public interface BlockVisitor2 extends BlockVisitor {
 	 * @param isExternal
 	 */
 	void visitCall(ExtFunc fun, Arg[] args, boolean isTail, boolean isExternal);
+
+	/**
+	 * @param opcode
+	 * @param ys
+	 */
+	void visitInsn(BeamOpcode opcode, Arg[] ys);
+
+	/**
+	 * @param opcode
+	 * @param efun
+	 * @param freevars
+	 */
+	void visitInsn(BeamOpcode opcode, ExtFunc efun, Arg[] freevars);
+
+	/**
+	 * @param opcode
+	 * @param in
+	 * @param out
+	 */
+	void visitInsn(BeamOpcode opcode, Arg[] in, Arg out);
+
+	/**
+	 * @param opcode
+	 * @param asInt
+	 * @param decodeOutArg
+	 */
+	void visitInsn(BeamOpcode opcode, int val, Arg out);
+
+	/**
+	 * @param opcode
+	 * @param val
+	 * @param tupleReg
+	 * @param i
+	 */
+	void visitInsn(BeamOpcode opcode, Arg val, Arg out, int pos);
+
+	/**
+	 * @param in
+	 * @param failLabel
+	 * @param arities
+	 * @param targets
+	 */
+	void visitSelectTuple(Arg in, int failLabel, int[] arities, int[] targets);
+
+	/**
+	 * @param in
+	 * @param failLabel
+	 * @param values
+	 * @param targets
+	 */
+	void visitSelectValue(Arg in, int failLabel, Arg[] values, int[] targets);
+
+	/**
+	 * @param test
+	 * @param failLabel
+	 * @param arg
+	 * @param arity
+	 * @param tupleType
+	 */
+	void visitTest(BeamOpcode test, int failLabel, Arg arg, int arity,
+			Type tupleType);
+
+	/**
+	 * @param decodeLabelref
+	 */
+	void visitJump(int decodeLabelref);
+
 	
 
 }

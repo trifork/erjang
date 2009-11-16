@@ -48,11 +48,11 @@ public class ErlangException extends RuntimeException {
 		this.reason = reason;
 		this.module = null;
 		this.function = null;
-		this.args = ECons.EMPTY;
+		this.args = ECons.NIL;
 	}
 
 	private ESeq listify(Object[] args) {
-		ESeq res = ESeq.EMPTY;
+		ESeq res = ESeq.NIL;
 		for (int i = args.length-1; i >= 0; i--) {
 			EObject h = erl_value(args[i]);
 			res = res.cons(h);

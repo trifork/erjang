@@ -30,7 +30,7 @@ public class ETuple0 extends ETuple {
 	}
 
 	@Override
-	public EObject nth(int i) {
+	public EObject elm(int i) {
 		return bad_nth(i);
 	}
 	

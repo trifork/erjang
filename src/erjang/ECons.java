@@ -20,12 +20,12 @@ package erjang;
 
 public abstract class ECons extends ETerm {
 
-	public static final ENil EMPTY = new ENil();
+	public static final ENil NIL = new ENil();
 
 	public abstract EObject head();
 	public abstract EObject tail();
 	
-	public ECons asCons() {
+	public ECons testCons() {
 		return this;
 	}
 
@@ -33,7 +33,7 @@ public abstract class ECons extends ETerm {
 	public int count() {
 		EObject cell = tail();
 		int count = 1;
-		while (cell != EMPTY && (cell instanceof ECons)) {
+		while (cell != NIL && (cell instanceof ECons)) {
 			cell = ((ECons)cell).tail();
 			count += 1;
 		}

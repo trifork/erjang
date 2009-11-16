@@ -73,7 +73,7 @@ public class OtpConverter {
 		add(OtpErlangList.class, new Converter<OtpErlangList>() {
 			@Override
 			ETerm conv(OtpErlangList obj) {
-				ETerm tail = obj.getLastTail() == null ? EList.EMPTY
+				ETerm tail = obj.getLastTail() == null ? EList.NIL
 						: convert(obj.getLastTail());
 				for (int i = obj.arity() - 1; i >= 0; i--) {
 					tail = ERT.cons(convert(obj.elementAt(i)), tail);

@@ -20,7 +20,7 @@ package erjang;
 
 public class EPID extends EObject {
 
-	public EPID asPID() {
+	public EPID testPID() {
 		return this;
 	}
 }
