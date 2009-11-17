@@ -23,4 +23,12 @@ public class EPID extends EObject {
 	public EPID testPID() {
 		return this;
 	}
+
+	/**
+	 * @return
+	 */
+	public EString getName() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

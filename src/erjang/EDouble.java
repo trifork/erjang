@@ -19,10 +19,9 @@
 package erjang;
 
 
+import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
-
-import erjang.jbeam.ops.CodeAdapter;
 
 public class EDouble extends ENumber {
 
@@ -31,6 +30,10 @@ public class EDouble extends ENumber {
 	
 	public EDouble(double value) {
 		this.value = value;
+	}
+
+	public EDouble testFloat() {
+		return this;
 	}
 
 	@Override
@@ -55,7 +58,7 @@ public class EDouble extends ENumber {
 	
 
 	@Override
-	public org.objectweb.asm.Type emit_const(CodeAdapter fa) {
+	public org.objectweb.asm.Type emit_const(MethodVisitor fa) {
 
 		Type type = EDOUBLE_TYPE;
 		
@@ -65,6 +68,13 @@ public class EDouble extends ENumber {
 		fa.visitMethodInsn(Opcodes.INVOKESPECIAL, type.getInternalName(), "<init>", "(" + type.getDescriptor() + ")V");
 		
 		return type;		
+	}
+
+	/**
+	 * @return
+	 */
+	public EString to_list() {
+		return new EString(String.valueOf(value));
 	}
 
 

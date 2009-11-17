@@ -66,4 +66,28 @@ public class EObject {
 		return null;
 	}
 
+
+	/**
+	 * @return
+	 */
+	public EBinary testBinary() {
+		return null;
+	}
+
+
+	/**
+	 * @return
+	 */
+	public EPort testPort() {
+		return null;
+	}
+
+
+	/**
+	 * @return
+	 */
+	public EDouble testFloat() {
+		return null;
+	}
+
 }

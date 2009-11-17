@@ -20,8 +20,6 @@ package erjang;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -32,8 +30,6 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.util.CheckClassAdapter;
-
-import erjang.jbeam.ops.CodeAdapter;
 
 public abstract class ETuple extends ETerm implements Cloneable {
 
@@ -109,19 +105,6 @@ public abstract class ETuple extends ETerm implements Cloneable {
 
 	static XClassLoader loader2 = new XClassLoader();
 
-	// "definer" holds a reference to ClassLoader#defineClass
-	static private final Method definer;
-	static {
-		try {
-			definer = ClassLoader.class.getDeclaredMethod("defineClass",
-					new Class[] { String.class, byte[].class, int.class,
-							int.class });
-			definer.setAccessible(true);
-		} catch (Exception e) {
-			throw new ErlangError(e);
-		}
-	}
-
 	@SuppressWarnings("unchecked")
 	static public Class get_tuple_class(int num_cells)  {
 
@@ -135,23 +118,7 @@ public abstract class ETuple extends ETerm implements Cloneable {
 
 		String name = (ETUPLE_NAME + num_cells).replace('/', '.');
 
-		/*
-		 * Class<? extends ETuple> res = (Class<? extends ETuple>)
-		 * loader2.define(name, data);
-		 */
-		Class<? extends ETuple> res;
-		try {
-			res = (Class<? extends ETuple>) definer.invoke(
-					ETuple.class.getClassLoader(), name, data, 0, data.length);
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-		
-		if (!name.equals(res.getName())) {
-			throw new Error();
-		}
-
-		return res;
+		return ERT.defineClass(ETuple.class.getClassLoader(), name, data, 0, data.length);
 	}
 
 	private static byte[] make_tuple_class_data(int num_cells) {
@@ -380,7 +347,7 @@ public abstract class ETuple extends ETerm implements Cloneable {
 	}
 
 	@Override
-	public Type emit_const(CodeAdapter fa) {
+	public Type emit_const(MethodVisitor fa) {
 
 		Type type = Type.getType(this.getClass());
 
@@ -392,7 +359,7 @@ public abstract class ETuple extends ETerm implements Cloneable {
 		for (int i = 0; i < arity(); i++) {
 			fa.visitInsn(Opcodes.DUP);
 
-			fa.emit_const(elm(i + 1));
+			((ETerm)elm(i + 1)).emit_const(fa);
 
 			fa.visitFieldInsn(Opcodes.PUTFIELD, type.getInternalName(), "elem"
 					+ (i + 1), ETERM_TYPE.getDescriptor());

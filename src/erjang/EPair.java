@@ -18,10 +18,9 @@
 
 package erjang;
 
+import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
-
-import erjang.jbeam.ops.CodeAdapter;
 
 public class EPair extends ECons {
 	public final EObject head;
@@ -75,14 +74,16 @@ public class EPair extends ECons {
 	static String CONSTRUCTOR_DESC = "(" + ETERM_TYPE.getDescriptor() + ETERM_TYPE.getDescriptor() + ")V";
 	
 	@Override
-	public Type emit_const(CodeAdapter fa) {
+	public Type emit_const(MethodVisitor fa) {
 		Type type = EPAIR_TYPE;
 		
 		fa.visitTypeInsn(Opcodes.NEW, type.getInternalName());
 		fa.visitInsn(Opcodes.DUP);
 
-		fa.emit_const(head);
-		fa.emit_const(tail);
+
+		((ETerm)head).emit_const(fa);
+		((ETerm)tail).emit_const(fa);
+
 
 		fa.visitMethodInsn(Opcodes.INVOKESPECIAL, type.getInternalName(), "<init>", CONSTRUCTOR_DESC);
 		

@@ -18,6 +18,8 @@
 
 package erjang;
 
+import erjang.modules.erlang;
+
 public abstract class ECons extends ETerm {
 
 	public static final ENil NIL = new ENil();
@@ -39,6 +41,21 @@ public abstract class ECons extends ETerm {
 		}
 		return count;
 	}
+	/**
+	 * @param c1
+	 * @return
+	 */
+	public ECons prepend(ECons list) {
+		if (erlang.is_nil(list)) { return this; }
+		return prepend(list.tail()).cons(list.head());
+	}
 
+	private ECons prepend(EObject o) {
+		if (erlang.is_nil(o)) { return this; }
+		ECons list = o.testCons();
+		if (list == null) { throw ERT.badarg(); }
+		return prepend(list.tail()).cons(list.head());
+	}
+	
 }
 

@@ -18,13 +18,12 @@
 
 package erjang;
 
+import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
-
-import erjang.jbeam.ops.CodeAdapter;
 
 public abstract class ETerm extends EObject {
 
-	public abstract Type emit_const(CodeAdapter fa);
+	public abstract Type emit_const(MethodVisitor mv);
 
 	public int asInt() {
 		return ((EInteger)this).intValue();

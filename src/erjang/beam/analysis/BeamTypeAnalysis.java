@@ -264,7 +264,6 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 		private void function_visit_end() {
 
-			try {
 				if (fv instanceof FunctionVisitor2) {
 					((FunctionVisitor2) fv).visitMaxs(this.max_xreg,
 							this.max_stack, this.max_freg,
@@ -278,9 +277,9 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 					block.accept(vis);
 				}
-			} finally {
+
 				super.fv.visitEnd();
-			}
+			
 		}
 
 		private void dump() {
@@ -373,17 +372,17 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 					switch (opcode) {
 					case func_info:
-						System.err.print("go: " + insn);
-						vis.visitInsn(opcode,
-								(Arg) new ExtFunc(insn.elm(2).testTuple().elm(2)
-										.testAtom(), insn.elm(3).testTuple().elm(2)
-										.testAtom(), insn.elm(4).asInt()));
+						// System.err.print("go: " + insn);
+						vis.visitInsn(opcode, (Arg) new ExtFunc(insn.elm(2)
+								.testTuple().elm(2).testAtom(), insn.elm(3)
+								.testTuple().elm(2).testAtom(), insn.elm(4)
+								.asInt()));
 						break;
 
 					case fconv:
 					case fmove:
 					case move: {
-						System.err.println(insn);
+						// System.err.println(insn);
 						Arg arg1 = decode_arg(insn_idx, insn.elm(2));
 						Arg arg2 = decode_arg(insn_idx, insn.elm(3));
 
@@ -402,7 +401,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					}
 
 					case arithfbif: {
-						System.err.println("gen: " + insn);
+						// System.err.println("gen: " + insn);
 						EAtom name = insn.elm(2).testAtom();
 						int failLabel = decode_labelref(insn.elm(3));
 						ESeq parms = insn.elm(4).testSeq();
@@ -417,7 +416,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					}
 
 					case bif: {
-						System.err.println("gen: " + insn);
+						// System.err.println("gen: " + insn);
 						EAtom name = insn.elm(2).testAtom();
 						int failLabel = decode_labelref(insn.elm(3));
 						ESeq parms = insn.elm(4).testSeq();
@@ -432,7 +431,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					}
 
 					case gc_bif: {
-						System.err.println("gen: " + insn);
+						// System.err.println("gen: " + insn);
 						EAtom name = insn.elm(2).testAtom();
 						int failLabel = decode_labelref(insn.elm(3));
 						ESeq parms = insn.elm(5).testSeq();
@@ -454,7 +453,6 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						vis.visitInsn(opcode);
 						break;
 
-						
 					case allocate_zero: {
 						int depth = type_map.stacksize;
 						int count = insn.elm(2).asInt();
@@ -494,51 +492,56 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 					case apply_last:
 					case apply: {
-						Arg[] args = new Arg[2+insn.elm(2).asInt()];
+						Arg[] args = new Arg[2 + insn.elm(2).asInt()];
 						for (int i = 0; i < args.length; i++) {
-							args[i] = new Arg(Arg.Kind.X, i, map[insn_idx].getx(i));
+							args[i] = new Arg(Arg.Kind.X, i, map[insn_idx]
+									.getx(i));
 						}
 						vis.visitInsn(opcode, args);
 						break;
-						
+
 					}
-						
-					case make_fun2:
-					{
+
+					case make_fun2: {
 						ExtFunc efun = new ExtFunc(insn.elm(2).testTuple());
 						int numfree = insn.elm(5).asInt();
 						Arg[] free = new Arg[numfree];
-						for (int i = 0; i < numfree; i++) { free[i] = new Arg(Arg.Kind.X, i, map[insn_idx].getx(i)); }
+						for (int i = 0; i < numfree; i++) {
+							free[i] = new Arg(Arg.Kind.X, i, map[insn_idx]
+									.getx(i));
+						}
 						vis.visitInsn(opcode, efun, free);
 						break;
 					}
-						
+
 					case init:
-						vis.visitInsn(opcode, decode_arg(insn_idx, insn.elm(2)));
+						vis
+								.visitInsn(opcode, decode_arg(insn_idx, insn
+										.elm(2)));
 						break;
-						
-					case put_list:
-					{
-						Arg[] in = new Arg[] { decode_arg(insn_idx, insn.elm(2)), decode_arg(insn_idx, insn.elm(3)) };
+
+					case put_list: {
+						Arg[] in = new Arg[] {
+								decode_arg(insn_idx, insn.elm(2)),
+								decode_arg(insn_idx, insn.elm(3)) };
 						Arg out = decode_out_arg(insn_idx, insn.elm(4));
-						
+
 						vis.visitInsn(opcode, in, out);
 						break;
 					}
-					
-					case put_tuple:
-					{
-						
+
+					case put_tuple: {
+
 						int arity = insn.elm(2).asInt();
 						Type tupleType = getTupleType(arity);
-						tuple_reg = new Arg (decode_out_arg(insn_idx, insn.elm(3)), tupleType);
+						tuple_reg = new Arg(decode_out_arg(insn_idx, insn
+								.elm(3)), tupleType);
 						vis.visitInsn(opcode, arity, tuple_reg);
 						tuple_pos = 1;
 						break;
 					}
-						
-					case put: 
-					{
+
+					case put: {
 						Arg val = decode_arg(insn_idx, insn.elm(2));
 						vis.visitInsn(opcode, val, tuple_reg, tuple_pos++);
 						break;
@@ -550,32 +553,29 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						int idx = insn.elm(4).asInt();
 
 						vis.visitInsn(opcode, in, out, idx);
-						
+
 						break;
 					}
-					
 
 					case allocate_heap:
 					case allocate:
-					case deallocate:
-					{
+					case deallocate: {
 						// need to zero out refs?
 						break;
 					}
-					
+
 					case select_tuple_arity: {
 						int failLabel = decode_labelref(insn.elm(3));
 						Arg in = decode_arg(insn_idx, insn.elm(2));
 
-						
 						ESeq cases = insn.elm(4).testTuple().elm(2).testSeq();
-						int len = cases.length()/2;
-						
+						int len = cases.length() / 2;
+
 						int[] arities = new int[len];
 						int[] targets = new int[len];
 
 						int idx = 0;
-						
+
 						while (cases != ESeq.NIL) {
 							arities[idx] = cases.head().asInt();
 							EObject target = cases.tail().head();
@@ -584,9 +584,9 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 							cases = cases.tail().tail();
 							idx += 1;
 						}
-						
+
 						vis.visitSelectTuple(in, failLabel, arities, targets);
-						
+
 						break;
 					}
 
@@ -594,68 +594,81 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						Arg in = decode_arg(insn_idx, insn.elm(2));
 						int failLabel = decode_labelref(insn.elm(3));
 						ESeq cases = insn.elm(4).testTuple().elm(2).testSeq();
-						int len = cases.length()/2;
-						
+						int len = cases.length() / 2;
+
 						Arg[] values = new Arg[len];
 						int[] targets = new int[len];
 
 						int idx = 0;
-						
+
 						while (cases != ESeq.NIL) {
-							values[idx] = decode_value (cases.head());
+							values[idx] = decode_value(cases.head());
 							EObject target = cases.tail().head();
 							targets[idx] = decode_labelref(target);
 
 							cases = cases.tail().tail();
 							idx += 1;
 						}
-						
+
 						vis.visitSelectValue(in, failLabel, values, targets);
-						
+
 						break;
 					}
 
-
-					
 					case get_tuple_element: {
-						
+
 						Arg in = decode_arg(insn_idx, insn.elm(2));
 						int idx = insn.elm(3).asInt();
 						Arg out = decode_out_arg(insn_idx, insn.elm(4));
 
 						vis.visitInsn(opcode, in, out, idx);
-						
+
 						break;
 					}
-					
+
 					case jump:
 						vis.visitJump(decode_labelref(insn.elm(2)));
 						break;
-						
+
 					case trim:
 						break;
-					
+
 					case get_list:
-						vis.visitInsn(opcode, new Arg[] { decode_arg(insn_idx, insn.elm(2)), 
-								decode_out_arg(insn_idx, insn.elm(3)), 
-								decode_out_arg(insn_idx, insn.elm(4))
-								});
+						vis.visitInsn(opcode, new Arg[] {
+								decode_arg(insn_idx, insn.elm(2)),
+								decode_out_arg(insn_idx, insn.elm(3)),
+								decode_out_arg(insn_idx, insn.elm(4)) });
 						break;
-						
+
 					case badmatch:
 					case case_end:
-						vis.visitInsn(opcode, decode_arg(insn_idx, insn.elm(2)));
+						vis
+								.visitInsn(opcode, decode_arg(insn_idx, insn
+										.elm(2)));
 						break;
-						
+
 					case if_end:
 						vis.visitInsn(opcode);
 						break;
-						
+
 					case send: {
-						vis.visitInsn(opcode, new Arg[] { new Arg(Arg.Kind.X, 0), new Arg(Arg.Kind.X, 1) });
+						vis.visitInsn(opcode,
+								new Arg[] { new Arg(Arg.Kind.X, 0),
+										new Arg(Arg.Kind.X, 1) });
 						break;
 					}
-						
+
+					case K_catch: {
+						vis.visitInsn(opcode, decode_labelref(insn.elm(3)),
+								decode_arg(insn_idx, insn.elm(2)));
+						break;
+					}
+
+					case catch_end:
+						vis.visitInsn(opcode, /* ignore */-1, decode_arg(
+								insn_idx, insn.elm(2)));
+						break;
+
 					default:
 						throw new Error("unhandled insn: " + insn);
 					}
@@ -670,7 +683,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 				for (int i = 0; i < arg_count; i++) {
 					args[i] = new Arg(Kind.X, i, this.map[insn_idx].getx(i));
 				}
-				
+
 				ETuple ft = insn.elm(3).testTuple();
 				ExtFunc fun;
 				if (ft.elm(1) != EXTFUNC_ATOM)
@@ -678,7 +691,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 							.testAtom(), ft.elm(3).asInt());
 				else
 					fun = new ExtFunc(ft.elm(2).testAtom(), ft.elm(3)
-						.testAtom(), ft.elm(4).asInt());
+							.testAtom(), ft.elm(4).asInt());
 				vis.visitCall(fun, args, is_tail, is_external);
 			}
 
@@ -701,6 +714,14 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					vis.visitTest(test, failLabel, args[0], EINTEGER_TYPE);
 					break;
 
+				case is_float:
+					vis.visitTest(test, failLabel, args[0], EDOUBLE_TYPE);
+					break;
+
+				case is_binary:
+					vis.visitTest(test, failLabel, args[0], EBINARY_TYPE);
+					break;
+
 				case is_list:
 					vis.visitTest(test, failLabel, args[0], ECONS_TYPE);
 					break;
@@ -717,6 +738,14 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					vis.visitTest(test, failLabel, args[0], ENIL_TYPE);
 					break;
 
+				case is_pid:
+					vis.visitTest(test, failLabel, args[0], EPID_TYPE);
+					break;
+
+				case is_port:
+					vis.visitTest(test, failLabel, args[0], EPORT_TYPE);
+					break;
+
 				case is_lt:
 				case is_ge:
 				case is_eq_exact:
@@ -729,10 +758,10 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 				case test_arity:
 					int arity = argExprs[1].asInt();
-					vis.visitTest(test, failLabel, args[0], arity, getTupleType(arity));
+					vis.visitTest(test, failLabel, args[0], arity,
+							getTupleType(arity));
 					break;
-					
-					
+
 				default:
 					throw new Error("unhandled test: " + insn + " at index "
 							+ insn_idx + " // " + test + ":" + test.ordinal());
@@ -828,8 +857,6 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 			}
 
-
-			
 			private Arg decode_out_arg(int insn_idx, EObject src) {
 				TypeMap current = this.map[insn_idx];
 
@@ -918,7 +945,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 						boolean boxed = false;
 						if (sizeof(current, src) > sizeof(current, dst)) {
-							System.err.println(insn);
+							// System.err.println(insn);
 							if (getType(current, src).equals(Type.DOUBLE_TYPE)) {
 								current = setType(current, dst, EDOUBLE_TYPE);
 								boxed = true;
@@ -946,7 +973,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					}
 
 					case arithfbif: {
-						System.err.println(insn);
+						// System.err.println(insn);
 						EAtom name = insn.elm(2).testAtom();
 						ESeq parms = insn.elm(4).testSeq();
 
@@ -1116,10 +1143,11 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						continue next_insn;
 
 					case K_catch:
-						current = branch(current, insn.elm(3), insn_idx);
+						// current = branch(current, insn.elm(3), insn_idx);
 						continue next_insn;
 
 					case catch_end:
+						//throw new Error();
 						continue next_insn;
 
 					case make_fun2: {
@@ -1200,8 +1228,9 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 							EObject value = cases.head();
 							EObject target = cases.tail().head();
 
-							current = setType(current, insn.elm(2), getTupleType(value.asInt()));
-							
+							current = setType(current, insn.elm(2),
+									getTupleType(value.asInt()));
+
 							current = branch(current, target, insn_idx);
 
 							cases = cases.tail().tail();
@@ -1542,6 +1571,9 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 			}
 
 			private Type getTupleType(int arity) {
+
+				ETuple.get_tuple_class(arity);
+
 				String tt = "L" + ETUPLE_TYPE.getInternalName() + arity + ";";
 				return Type.getType(tt);
 			}

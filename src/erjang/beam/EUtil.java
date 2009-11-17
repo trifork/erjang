@@ -36,14 +36,23 @@ public class EUtil {
 			.compile("^([a-z]|[A-Z])\\p{Alnum}*$");
 
 	private static final String EOBJECT_DESC = CompilerVisitor.EOBJECT_TYPE.getDescriptor();
+	private static final String EPROC_DESC = CompilerVisitor.EPROC_TYPE.getDescriptor();
 
 	static Map<Integer, String> signatures = new HashMap<Integer, String>();
+	static Map<Integer, String> noproc_signatures = new HashMap<Integer, String>();
 
-	static String getSignature(int arity) {
+	public static String getSignature(int arity, boolean withProc) {
+		
+		Map<Integer,String> signatures = withProc ? noproc_signatures : EUtil.signatures;
+		
 		String res = signatures.get(arity);
 		if (res == null) {
 			StringBuffer sb = new StringBuffer("(");
 
+			if (withProc) {
+				sb.append(EPROC_DESC);
+			}
+			
 			for (int i = 0; i < arity; i++) {
 				sb.append(EOBJECT_DESC);
 			}

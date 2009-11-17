@@ -1,6 +1,1 @@
-This directory contains an earlier version, which could actually compile to .class files;
-but it was badly broken.
-
-I just keep it around because I intend to grab some snippets of code.
-
-
+This directory contains a simple parser for erlang term files

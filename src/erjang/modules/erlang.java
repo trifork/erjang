@@ -5,29 +5,126 @@ import java.math.BigInteger;
 import erjang.BIF;
 import erjang.EAtom;
 import erjang.EBig;
+import erjang.EBinary;
 import erjang.ECons;
 import erjang.EDouble;
 import erjang.EInteger;
+import erjang.EList;
+import erjang.ENil;
 import erjang.ENode;
 import erjang.ENumber;
 import erjang.EObject;
 import erjang.EPID;
+import erjang.EPort;
 import erjang.ERT;
 import erjang.ESeq;
+import erjang.EString;
 import erjang.ETuple;
 import erjang.ETuple3;
 import erjang.ErlFun;
 import erjang.Module;
 import erjang.NotImplemented;
 import erjang.BIF.Type;
+import erjang.beam.EProc;
 
 @Module("erlang")
-public class erl_bif {
+public class erlang {
 
 	@BIF
 	@ErlFun(export = true)
-	static public EPID self() {
-		return null;
+	static public EPID self(EProc proc) {
+		return proc.self();
+	}
+
+	@BIF
+	@ErlFun(export = true)
+	static public ETuple3 date() {
+		throw new NotImplemented();
+	}
+
+	@BIF
+	@ErlFun(export = true)
+	static public EString integer_to_list(EObject num) {
+		return new EString(num.toString());
+	}
+
+	@BIF
+	@ErlFun(export = true)
+	static public EString list_to_atom(EObject obj) {
+		ECons list;
+		if ((list = obj.testCons()) != null) {
+			return EString.make(list);
+		}
+		throw ERT.badarg();
+	}
+
+	@BIF
+	@ErlFun(export = true)
+	static public EPID list_to_pid(EObject obj) {
+		ECons list;
+		if ((list = obj.testCons()) != null) {
+			EString s = EString.make(list);
+			return ERT.loopkup_pid(s);
+		}
+		throw ERT.badarg();
+	}
+
+	@BIF
+	@ErlFun(export = true)
+	static public EString pid_to_list(EObject obj) {
+		EPID pid;
+		if ((pid = obj.testPID()) != null) {
+			return pid.getName();
+		}
+		throw ERT.badarg();
+	}
+
+	@BIF
+	@ErlFun(export = true)
+	static public EString port_to_list(EObject obj) {
+		EPort port;
+		if ((port = obj.testPort()) != null) {
+			return port.getName();
+		}
+		throw ERT.badarg();
+	}
+
+	@BIF
+	@ErlFun(export = true)
+	static public EString float_to_list(EObject obj) {
+		EDouble value;
+		if ((value = obj.testFloat()) != null) {
+			return value.to_list();
+		}
+		throw ERT.badarg();
+	}
+
+	@BIF
+	@ErlFun(export = true)
+	static public EObject error(EObject err) {
+		throw new NotImplemented();
+	}
+
+	@BIF
+	@ErlFun(export = true)
+	static public EObject get_module_info(EObject mod) {
+		throw new NotImplemented();
+	}
+
+	@BIF
+	@ErlFun(export = true)
+	static public EObject get_module_info(EObject mod, EObject fun) {
+		throw new NotImplemented();
+	}
+
+	@BIF
+	static public EObject setelement(EObject a1, EObject a2, EObject a3) {
+		throw new NotImplemented();
+	}
+
+	@BIF
+	static public EObject setelement(int a1, EObject a2, EObject a3) {
+		throw new NotImplemented();
 	}
 
 	@BIF
@@ -414,6 +511,16 @@ public class erl_bif {
 		return a1.equals(a2);
 	}
 
+	@BIF(name = "=:=", type = Type.GUARD)
+	public static final boolean is_eq_exact$g(EObject a1, EAtom a2) {
+		return a1 == a2;
+	}
+
+	@BIF(name = "=:=", type = Type.GUARD)
+	public static final boolean is_eq_exact$g(EObject a1, EObject a2) {
+		return a1.equals(a2);
+	}
+
 	@BIF(name = "is_ne_exact", type = Type.GUARD)
 	public static final boolean is_ne_exact(EObject a1, EObject a2) {
 		return !a1.equals(a2);
@@ -441,9 +548,82 @@ public class erl_bif {
 		return a1.equals(a2) ? ERT.ATOM_TRUE : ERT.ATOM_FALSE;
 	}
 
-	@BIF
+	@BIF(name = "=:=")
 	public static final EAtom is_eq_exact(EObject a1, EObject a2) {
 		return a1.equals(a2) ? ERT.ATOM_TRUE : ERT.ATOM_FALSE;
+	}
+
+	@BIF(name = "++")
+	public static ECons append(EObject l1, EObject l2) {
+		ECons c1 = is_list(l1);
+		ECons c2 = is_list(l2);
+
+		if (c1 == null || c2 == null)
+			throw ERT.badarg();
+
+		return c2.prepend(c1);
+	}
+
+	@BIF(name = "++")
+	public static ECons append(ECons l1, ECons l2) {
+		return l2.prepend(l1);
+	}
+
+	@BIF(name = "++")
+	public static ECons append(EObject o1, ECons l2) {
+		ECons l1;
+		if ((l1 = is_list(o1)) != null)
+			return l2.prepend(l1);
+		throw ERT.badarg();
+	}
+
+	@BIF
+	public static ECons is_list(EObject o) {
+		return o.testCons();
+	}
+
+	@BIF
+	public static boolean is_nil(EObject o) {
+		return o == ENil.NIL;
+	}
+
+	@BIF
+	@ErlFun(export = true)
+	public static EString atom_to_list(EObject atom) {
+		EAtom am = atom.testAtom();
+		if (am == null)
+			throw ERT.badarg();
+		return new EString(am.getName());
+	}
+
+	@BIF
+	public static EObject process_flag(EObject a1, EObject a2) {
+		throw new NotImplemented();
+	}
+
+	@BIF
+	public static EList nodes() {
+		throw new NotImplemented();
+	}
+
+	@BIF(name = "is_atom", type = Type.GUARD)
+	public static EAtom is_atom$p(EObject obj) {
+		return obj.testAtom();
+	}
+
+	@BIF
+	public static boolean is_atom(EObject obj) {
+		return obj.testAtom() != null;
+	}
+
+	@BIF(name = "is_binary", type = Type.GUARD)
+	public static EBinary is_binary$p(EObject obj) {
+		return obj.testBinary();
+	}
+
+	@BIF
+	public static boolean is_binary(EObject obj) {
+		return obj.testBinary() != null;
 	}
 
 }

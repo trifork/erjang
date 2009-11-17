@@ -18,10 +18,9 @@
 
 package erjang;
 
+import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
-
-import erjang.jbeam.ops.CodeAdapter;
 
 public class EInteger extends ENumber {
 
@@ -61,14 +60,14 @@ public class EInteger extends ENumber {
 	}
 	
 	@Override
-	public org.objectweb.asm.Type emit_const(CodeAdapter fa) {
+	public org.objectweb.asm.Type emit_const(MethodVisitor fa) {
 
 		Type type = EINTEGER_TYPE;
 		
 		fa.visitTypeInsn(Opcodes.NEW, type.getInternalName());
 		fa.visitInsn(Opcodes.DUP);
 		fa.visitLdcInsn(new Integer(value));
-		fa.visitMethodInsn(Opcodes.INVOKESPECIAL, type.getInternalName(), "<init>", "(" + type.getDescriptor() + ")V");
+		fa.visitMethodInsn(Opcodes.INVOKESPECIAL, type.getInternalName(), "<init>", "(I)V");
 		
 		return type;
 	}

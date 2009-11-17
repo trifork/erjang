@@ -18,15 +18,14 @@
 
 package erjang;
 
+import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
-import erjang.jbeam.ops.CodeAdapter;
-
 public class ENil extends ESeq {
 
-	private static final Type ECONS_TYPE = Type.getType(ECons.class);
 	private static final Type ENIL_TYPE = Type.getType(ENil.class);
+	private static final Type ERT_TYPE = Type.getType(ERT.class);
 
 	public ENil() {
 		super();
@@ -53,8 +52,8 @@ public class ENil extends ESeq {
 	}
 
 	@Override
-	public Type emit_const(CodeAdapter fa) {
-		fa.visitFieldInsn(Opcodes.GETSTATIC, ECONS_TYPE.getInternalName(), "EMPTY", ENIL_TYPE.getDescriptor());
+	public Type emit_const(MethodVisitor fa) {
+		fa.visitFieldInsn(Opcodes.GETSTATIC, ERT_TYPE.getInternalName(), "NIL", ENIL_TYPE.getDescriptor());
 		return ENIL_TYPE;
 	}
 	

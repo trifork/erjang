@@ -18,9 +18,8 @@
 
 package erjang;
 
+import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
-
-import erjang.jbeam.ops.CodeAdapter;
 
 public class EBinary extends ETerm {
 
@@ -29,9 +28,11 @@ public class EBinary extends ETerm {
 	}
 
 	@Override
-	public Type emit_const(CodeAdapter fa) {
-		// TODO Auto-generated method stub
-		return null;
+	public Type emit_const(MethodVisitor fa) {
+		throw new NotImplemented();
 	}
 
+	public EBinary testBinary() {
+		return this;
+	}
 }

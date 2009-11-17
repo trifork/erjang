@@ -20,4 +20,12 @@ package erjang;
 
 public class EPort extends EObject {
 
+	/**
+	 * @return
+	 */
+	public EString getName() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }

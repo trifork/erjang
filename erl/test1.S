@@ -1,10 +1,10 @@
 {module, test1}.  %% version = 0
 
-{exports, [{foo,1},{module_info,0},{module_info,1}]}.
+{exports, [{bar,1},{foo,1},{module_info,0},{module_info,1}]}.
 
 {attributes, []}.
 
-{labels, 8}.
+{labels, 12}.
 
 
 {function, foo, 1, 2}.
@@ -26,18 +26,38 @@
     return.
 
 
-{function, module_info, 0, 5}.
+{function, bar, 1, 5}.
   {label,4}.
-    {func_info,{atom,test1},{atom,module_info},0}.
+    {func_info,{atom,test1},{atom,bar},1}.
   {label,5}.
+    {allocate,2,1}.
+    {'catch',{y,1},{f,6}}.
+    {move,{x,0},{y,0}}.
+    {call_ext,1,{extfunc,foo,bar,1}}.
+  {label,6}.
+    {catch_end,{y,1}}.
+    {test,is_eq_exact,{f,7},[{x,0},{y,0}]}.
+    {move,{atom,true},{x,0}}.
+    {deallocate,2}.
+    return.
+  {label,7}.
+    {move,{atom,false},{x,0}}.
+    {deallocate,2}.
+    return.
+
+
+{function, module_info, 0, 9}.
+  {label,8}.
+    {func_info,{atom,test1},{atom,module_info},0}.
+  {label,9}.
     {move,{atom,test1},{x,0}}.
     {call_ext_only,1,{extfunc,erlang,get_module_info,1}}.
 
 
-{function, module_info, 1, 7}.
-  {label,6}.
+{function, module_info, 1, 11}.
+  {label,10}.
     {func_info,{atom,test1},{atom,module_info},1}.
-  {label,7}.
+  {label,11}.
     {move,{x,0},{x,1}}.
     {move,{atom,test1},{x,0}}.
     {call_ext_only,2,{extfunc,erlang,get_module_info,2}}.

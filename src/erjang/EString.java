@@ -18,13 +18,12 @@
 
 package erjang;
 
+import java.io.ByteArrayOutputStream;
 import java.nio.charset.Charset;
-import java.util.Arrays;
 
+import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
-
-import erjang.jbeam.ops.CodeAdapter;
 
 public class EString extends ESeq implements CharSequence {
 
@@ -45,6 +44,38 @@ public class EString extends ESeq implements CharSequence {
 		this.off = off;
 	}
 	
+	/**
+	 * @param list
+	 */
+	public static EString make(ECons list) {
+		if (list instanceof EString) { 
+			return (EString)list;
+			
+		} else {
+			ByteArrayOutputStream barr = new ByteArrayOutputStream();
+			
+			EObject tail = list;
+			while ((list = tail.testNonEmptyList()) != null) {
+				
+				EObject head = list.head();
+				
+				EInteger intval;
+				if ((intval = head.testInteger()) == null) {
+					throw ERT.badarg();
+				}
+				
+				if (intval.value > 255 || intval.value < 0) {
+					throw ERT.badarg();
+				}
+				
+				barr.write( intval.value & 0xff );
+				tail = list.tail();
+			}
+			
+			return new EString(barr.toByteArray(), 0);
+		}
+	}
+
 	@Override
 	public int hashCode() {
 		if (hash == -1) { hash = stringValue().hashCode(); }
@@ -141,7 +172,7 @@ public class EString extends ESeq implements CharSequence {
 	private static final Type STRING_TYPE = Type.getType(String.class);
 
 	@Override
-	public Type emit_const(CodeAdapter fa) {
+	public Type emit_const(MethodVisitor fa) {
 
 		Type type = ESTRING_TYPE;
 		
@@ -186,5 +217,20 @@ public class EString extends ESeq implements CharSequence {
 		return length() == 0 ? null : this;
 	}
 	
-
+	/* (non-Javadoc)
+	 * @see erjang.ECons#prepend(erjang.ECons)
+	 */
+	@Override
+	public ECons prepend(ECons list) {
+		if (list instanceof EString) {
+			// TODO: implement segmented strings
+			EString other = (EString) list;
+			byte[] out = new byte[length() + other.length()];
+			System.arraycopy(other.data, other.off, out, 0, other.length());
+			System.arraycopy(this.data, this.off, out, other.length(), this.length());
+			return new EString(out, out.length);
+		} else {
+			return super.prepend(list);
+		}
+	}
 }

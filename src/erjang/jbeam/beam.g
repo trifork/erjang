@@ -5,13 +5,13 @@ options {
 }
 
 @header {
-   package org.erlang.jbeam; 
-   import org.erlang.*;
+   package erjang.jbeam; 
+   import erjang.*;
 }
 
 @lexer::header {
-   package org.erlang.jbeam; 
-   import org.erlang.*;
+   package erjang.jbeam; 
+   import erjang.*;
 }
 
 @members {
@@ -25,7 +25,7 @@ options {
       
       public static void main(String[] args) throws Exception {
          List<ETerm>  s = parse(new java.io.FileReader("m.dis"));
-         new BEAMFile().init(s);
+         // new BEAMFile().init(s);
          System.out.println(s);
       }
       
@@ -52,7 +52,7 @@ term returns[ETerm t]:
   ;
   
 list returns[ESeq res]
-@init{ res = ECons.EMPTY; ESeq tt = ECons.EMPTY; }
+@init{ res = ECons.NIL; ESeq tt = ECons.NIL; }
 : '[' 
     ( h=term (',' t=tail { tt=t; })?
        { res = tt.cons(h); }
@@ -60,7 +60,7 @@ list returns[ESeq res]
    ']';
 
 tail returns[ESeq res] 
-@init { res=ECons.EMPTY; }
+@init { res=ECons.NIL; }
 :
     h=term 
     (',' t=tail { res=t.cons(h); }

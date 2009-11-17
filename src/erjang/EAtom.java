@@ -21,10 +21,9 @@ package erjang;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
+import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
-
-import erjang.jbeam.ops.CodeAdapter;
 
 public class EAtom extends ETerm implements CharSequence {
 
@@ -141,7 +140,7 @@ public class EAtom extends ETerm implements CharSequence {
 	private static final Type STRING_TYPE = Type.getType(String.class);
 
 	@Override
-	public org.objectweb.asm.Type emit_const(CodeAdapter fa) {
+	public org.objectweb.asm.Type emit_const(MethodVisitor fa) {
 
 		Type type = EATOM_TYPE;
 
@@ -151,6 +150,14 @@ public class EAtom extends ETerm implements CharSequence {
 						+ type.getDescriptor());
 
 		return type;
+	}
+
+	/**
+	 * @param other
+	 * @return
+	 */
+	public int compareTo(EAtom other) {
+		return value.compareTo(other.value);
 	}
 
 }

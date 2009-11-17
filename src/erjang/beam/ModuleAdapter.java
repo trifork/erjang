@@ -53,6 +53,7 @@ public class ModuleAdapter implements ModuleVisitor  {
 	}
 
 	public void visitEnd() {
+		mv.visitEnd();
 	}
 
 }

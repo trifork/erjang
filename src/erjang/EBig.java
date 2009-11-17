@@ -20,11 +20,9 @@ package erjang;
 
 import java.math.BigInteger;
 
-
+import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
-
-import erjang.jbeam.ops.CodeAdapter;
 
 public class EBig extends ENumber {
 
@@ -56,7 +54,7 @@ public class EBig extends ENumber {
 	private static final Type STRING_TYPE = Type.getType(String.class);
 
 	@Override
-	public org.objectweb.asm.Type emit_const(CodeAdapter fa) {
+	public org.objectweb.asm.Type emit_const(MethodVisitor fa) {
 
 		Type type = EBIG_TYPE;
 

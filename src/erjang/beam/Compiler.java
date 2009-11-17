@@ -24,6 +24,7 @@ import java.io.IOException;
 
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.util.CheckClassAdapter;
 
 import com.ericsson.otp.erlang.OtpAuthException;
 
@@ -47,8 +48,11 @@ public class Compiler implements Opcodes {
 		// class writer, phase 4
 		ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
 
+		// 
+		CheckClassAdapter ca = new CheckClassAdapter(cw);
+		
 		// the java bytecode generator, phase 3
-		CompilerVisitor cv = new CompilerVisitor(cw);
+		CompilerVisitor cv = new CompilerVisitor(ca);
 
 		// the type analysis, phase 2
 		BeamTypeAnalysis analysis = new BeamTypeAnalysis(cv);
@@ -78,7 +82,7 @@ public class Compiler implements Opcodes {
 			String beam_name = infile.getName();
 			String jbeam_name = beam_name.substring(0, beam_name
 					.lastIndexOf('.') + 1)
-					+ "jbeam";
+					+ "class";
 			File outfile = new File(out_dir, jbeam_name);
 			writeTo(outfile, data);
 		}
@@ -87,6 +91,8 @@ public class Compiler implements Opcodes {
 
 	static void writeTo(File output, byte[] class_data) throws IOException {
 
+		output.getParentFile().mkdirs();
+		
 		FileOutputStream fo = new FileOutputStream(output);
 		try {
 			fo.write(class_data);
