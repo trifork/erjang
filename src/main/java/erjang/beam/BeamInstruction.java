@@ -20,6 +20,6 @@ package erjang.beam;
 
 public interface BeamInstruction {
 
-	BeamOpcode opcode();
+	public BeamOpcode opcode();
 
 }

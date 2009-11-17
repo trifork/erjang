@@ -30,7 +30,7 @@ public abstract class EModule {
 
 	public EModule() {
 		// we're ready!
-
+		
 	}
 
 	Map<FUN, EFun> exports = new HashMap<FUN, EFun>();
