@@ -24,7 +24,6 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.WeakHashMap;
 
-import erjang.beam.EProc;
 
 public class ErlangException extends RuntimeException {
 

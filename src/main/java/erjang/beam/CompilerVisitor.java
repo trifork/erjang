@@ -50,6 +50,7 @@ import erjang.ENumber;
 import erjang.EObject;
 import erjang.EPID;
 import erjang.EPort;
+import erjang.EProc;
 import erjang.ERT;
 import erjang.ESeq;
 import erjang.EString;

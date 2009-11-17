@@ -17,12 +17,8 @@
  **/
 
 
-package erjang.beam;
+package erjang;
 
-import erjang.EFun;
-import erjang.EObject;
-import erjang.EPID;
-import erjang.NotImplemented;
 
 /**
  * An erlang process

@@ -26,7 +26,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import erjang.beam.Compiler;
-import erjang.beam.EProc;
 
 public abstract class EModule {
 

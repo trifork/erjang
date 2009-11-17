@@ -16,6 +16,7 @@ import erjang.ENumber;
 import erjang.EObject;
 import erjang.EPID;
 import erjang.EPort;
+import erjang.EProc;
 import erjang.ERT;
 import erjang.ESeq;
 import erjang.EString;
@@ -26,7 +27,6 @@ import erjang.ErlFun;
 import erjang.Module;
 import erjang.NotImplemented;
 import erjang.BIF.Type;
-import erjang.beam.EProc;
 
 @Module("erlang")
 public class erlang {

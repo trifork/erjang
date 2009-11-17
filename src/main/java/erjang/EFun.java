@@ -27,7 +27,6 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
 import erjang.beam.CompilerVisitor;
-import erjang.beam.EProc;
 import erjang.beam.EUtil;
 
 public abstract class EFun {
