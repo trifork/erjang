@@ -34,6 +34,5 @@ public class EProc {
 	public EPID self() {
 		throw new NotImplemented();
 	}
-
 	
 }
