@@ -8,5 +8,6 @@
 	<classpathentry kind="lib" path="lib/antlr-3.2.jar"/>
 	<classpathentry kind="lib" path="lib/asm-analysis-3.2.jar"/>
 	<classpathentry kind="lib" path="lib/asm-util-3.2.jar"/>
+	<classpathentry kind="lib" path="lib/asm-tree-3.2.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>

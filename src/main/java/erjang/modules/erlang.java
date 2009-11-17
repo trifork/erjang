@@ -20,6 +20,7 @@ import erjang.ERT;
 import erjang.ESeq;
 import erjang.EString;
 import erjang.ETuple;
+import erjang.ETuple2;
 import erjang.ETuple3;
 import erjang.ErlFun;
 import erjang.Module;
@@ -359,7 +360,7 @@ public class erlang {
 				return n1.add(n2);
 			}
 		}
-		throw ERT.badarg((Throwable) null, "erlang", "+", v1, v2);
+		throw ERT.badarg(v1, v2);
 	}
 
 	@BIF(name = "+")
@@ -380,7 +381,7 @@ public class erlang {
 				return n1.multiply(n2);
 			}
 		}
-		throw ERT.badarg((Throwable) null, "erlang", "+", v1, v2);
+		throw ERT.badarg(v1, v2);
 	}
 
 	@BIF(name = "*")
@@ -626,4 +627,16 @@ public class erlang {
 		return obj.testBinary() != null;
 	}
 
+	@BIF @ErlFun(export=true)
+	public static ETuple2 load_module(EObject mod, EObject bin) {
+		return load_module(mod.testAtom(), bin.testBinary());
+	}
+	
+	@BIF @ErlFun(export=true)
+	public static ETuple2 load_module(EAtom mod, EBinary bin) {
+		if (mod == null || bin == null) throw ERT.badarg();
+		
+		return ERT.load_module(mod, bin);
+	}
+	
 }

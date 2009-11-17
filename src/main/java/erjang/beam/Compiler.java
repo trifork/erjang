@@ -28,7 +28,9 @@ import org.objectweb.asm.util.CheckClassAdapter;
 
 import com.ericsson.otp.erlang.OtpAuthException;
 
+import erjang.EBinary;
 import erjang.beam.analysis.BeamTypeAnalysis;
+import erjang.modules.erlang;
 
 public class Compiler implements Opcodes {
 
@@ -44,6 +46,34 @@ public class Compiler implements Opcodes {
 			loader = new ErlangBeamDisLoader();
 	}
 
+	public static byte[] compile(EBinary data) throws IOException
+	{
+		// class writer, phase 4
+		ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+
+		// 
+		CheckClassAdapter ca = new CheckClassAdapter(cw);
+		
+		// the java bytecode generator, phase 3
+		CompilerVisitor cv = new CompilerVisitor(ca);
+
+		// the type analysis, phase 2
+		BeamTypeAnalysis analysis = new BeamTypeAnalysis(cv);
+
+		// the beam file reader, phase 1
+		BeamFileData reader = loader.load(data.getByteArray());
+
+		try {
+			// go!
+			reader.accept(analysis);
+		} catch (Error e) {
+			e.printStackTrace();
+		}
+		// get byte code data
+		return cw.toByteArray();
+
+	}
+	
 	byte[] compile(File file) throws IOException {
 		// class writer, phase 4
 		ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
@@ -68,6 +98,15 @@ public class Compiler implements Opcodes {
 		}
 		// get byte code data
 		return cw.toByteArray();
+	}
+
+	public static String moduleClassName(String moduleName) {
+		String cn = EUtil.toJavaIdentifier(moduleName);
+	
+		String internalEMname = erlang.class.getName().replace('.', '/');
+		int idx = internalEMname.lastIndexOf('/');
+		String prefix = internalEMname.substring(0, idx + 1);
+		return prefix + cn;
 	}
 
 	public static void main(String[] args) throws Exception {
@@ -102,5 +141,6 @@ public class Compiler implements Opcodes {
 		}
 
 	}
+
 
 }

@@ -23,6 +23,13 @@ import java.io.IOException;
 
 public abstract class BeamLoader {
 
-	abstract BeamFileData load(File file) throws IOException;
+	public abstract BeamFileData load(File file) throws IOException;
+
+	/**
+	 * @param data
+	 * @return
+	 * @throws IOException
+	 */
+	public abstract BeamFileData load(byte[] data) throws IOException;
 	
 }

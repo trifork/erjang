@@ -61,7 +61,6 @@ import erjang.ErlangException;
 import erjang.Module;
 import erjang.beam.Arg.Kind;
 import erjang.beam.CompilerVisitor.ASMFunctionAdapter.ASMBlockVisitor;
-import erjang.modules.erlang;
 
 /**
  * 
@@ -189,12 +188,9 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 	}
 
 	private String getInternalClassName() {
-		String cn = EUtil.toJavaIdentifier(getModuleName());
-
-		String internalEMname = erlang.class.getName().replace('.', '/');
-		int idx = internalEMname.lastIndexOf('/');
-		String prefix = internalEMname.substring(0, idx + 1);
-		return prefix + cn;
+		
+		String moduleName = getModuleName();
+		return Compiler.moduleClassName(moduleName);
 	}
 
 	/**

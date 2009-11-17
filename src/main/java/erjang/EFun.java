@@ -69,7 +69,7 @@ public abstract class EFun {
 		ClassLoader cl = declaringClass.getClassLoader();
 
 		// make sure we have it's superclass loaded
-		getFunClass(ary);
+		get_fun_class(ary);
 		
 		Class<? extends EFun> res_class = ERT.defineClass(cl, clname, data, 0,
 				data.length);
@@ -82,7 +82,7 @@ public abstract class EFun {
 	}
 
 	@SuppressWarnings("unchecked")
-	static Class<? extends EFun> getFunClass(int arity) {
+	static Class<? extends EFun> get_fun_class(int arity) {
 
 		String self_type = EFUN_TYPE.getInternalName() + arity;
 

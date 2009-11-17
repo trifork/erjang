@@ -25,46 +25,54 @@ public class ERT {
 	public static final EAtom AM_BADARG = EAtom.intern("badarg");
 	public static final EAtom AM_BADMATCH = EAtom.intern("badmatch");
 	public static final EAtom AM_BADARITH = EAtom.intern("badarith");
+	public static final EAtom AM_MODULE = EAtom.intern("module");
 
 	public static ETerm cons(EObject h, EObject t) {
 		return t.cons(h);
 	}
 
-	public static ErlangException badarith(ArithmeticException cause,
-			String module, String function, Object... args) {
-		throw new ErlangException(AM_BADARITH, module, function, args, cause);
-	}
-
-	public static ErlangException badarith(String module, String function, Object... args) {
-		throw new ErlangException(AM_BADARITH, module, function, args);
+	public static ErlangException badarith(Object... args) {
+		throw new ErlangException(AM_BADARITH, args);
 	}
 
 	public static ErlangException badarg() {
 		throw new ErlangException(AM_BADARG);
 	}
 
-
-	public static ErlangException badarg(String module,
-			String function, Object... args) {
-			throw new ErlangException(AM_BADARG, module, function, args);
+	public static ErlangException badarg(Object... args) {
+		throw new ErlangException(AM_BADARG, args);
 	}
 
-	public static ErlangException badarg(Throwable cause, String module,
-			String function, Object... args) {
-			throw new ErlangException(AM_BADARG, module, function, args, cause);
+	public static ErlangException badarg(Object o1, Object o2) {
+		throw new ErlangException(AM_BADARG, new Object[] { o1, o2 });
+	}
+
+	public static ErlangException badarg(Throwable cause, Object... args) {
+		throw new ErlangException(AM_BADARG, cause, args);
 	}
 
 	public static ErlangException badarg(EObject arg1, int arg2) {
-		throw new ErlangException(AM_BADARG);
+		throw new ErlangException(AM_BADARG, arg1, arg2);
 	}
 
 	public static final EAtom ATOM_TRUE = EAtom.intern("true");
 	public static final EAtom ATOM_FALSE = EAtom.intern("false");
-	
-	public static boolean eq(EObject o1, EObject o2) { return o1==null?o2==null:o1.equals(o2); }
-	public static boolean eq(EObject o1, EAtom o2) { return o1==o2; }
-	public static boolean eq(EAtom o1, EObject o2) { return o1==o2; }
-	public static boolean eq(EAtom o1, EAtom o2) { return o1==o2; }
+
+	public static boolean eq(EObject o1, EObject o2) {
+		return o1 == null ? o2 == null : o1.equals(o2);
+	}
+
+	public static boolean eq(EObject o1, EAtom o2) {
+		return o1 == o2;
+	}
+
+	public static boolean eq(EAtom o1, EObject o2) {
+		return o1 == o2;
+	}
+
+	public static boolean eq(EAtom o1, EAtom o2) {
+		return o1 == o2;
+	}
 
 	/**
 	 * @param s
@@ -73,7 +81,6 @@ public class ERT {
 	public static EPID loopkup_pid(EString name) {
 		throw new NotImplemented();
 	}
-
 
 	// "definer" holds a reference to ClassLoader#defineClass
 	static private final Method definer;
@@ -87,6 +94,7 @@ public class ERT {
 			throw new ErlangError(e);
 		}
 	}
+
 	/**
 	 * @param classLoader
 	 * @param name
@@ -96,8 +104,8 @@ public class ERT {
 	 * @return
 	 */
 	@SuppressWarnings("unchecked")
-	public static <T>  Class<? extends T> defineClass(ClassLoader classLoader, String name,
-			byte[] data, int i, int length) {
+	public static <T> Class<? extends T> defineClass(ClassLoader classLoader,
+			String name, byte[] data, int i, int length) {
 
 		/*
 		 * Class<? extends ETuple> res = (Class<? extends ETuple>)
@@ -105,12 +113,12 @@ public class ERT {
 		 */
 		Class<? extends T> res;
 		try {
-			res = (Class<? extends T>) definer.invoke(
-					ETuple.class.getClassLoader(), name, data, 0, data.length);
+			res = (Class<? extends T>) definer.invoke(ETuple.class
+					.getClassLoader(), name, data, 0, data.length);
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
-		
+
 		if (!name.equals(res.getName())) {
 			throw new Error();
 		}
@@ -118,5 +126,15 @@ public class ERT {
 		return res;
 	}
 
-	
+	/**
+	 * @param mod
+	 * @param bin
+	 */
+	public static ETuple2 load_module(EAtom mod, EBinary bin) {
+
+		EModule.load_module(mod, bin);
+
+		return (ETuple2) ETuple.make(AM_MODULE, mod);
+	}
+
 }

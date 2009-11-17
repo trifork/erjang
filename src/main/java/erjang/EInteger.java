@@ -76,4 +76,12 @@ public class EInteger extends ENumber {
 	public EInteger asb() {
 		return new EInteger (Math.abs(value));
 	}
+
+	/**
+	 * @param arity
+	 * @return
+	 */
+	public static EInteger make(int arity) {
+		return new EInteger(arity);
+	}
 }

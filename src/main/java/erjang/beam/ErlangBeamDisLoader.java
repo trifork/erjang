@@ -25,6 +25,7 @@ import java.io.IOException;
 import com.ericsson.otp.erlang.OtpAuthException;
 import com.ericsson.otp.erlang.OtpConnection;
 import com.ericsson.otp.erlang.OtpErlangAtom;
+import com.ericsson.otp.erlang.OtpErlangBinary;
 import com.ericsson.otp.erlang.OtpErlangExit;
 import com.ericsson.otp.erlang.OtpErlangList;
 import com.ericsson.otp.erlang.OtpErlangObject;
@@ -45,7 +46,7 @@ public class ErlangBeamDisLoader extends BeamLoader {
 
 	// {'$gen_call', {To, Tag}, {call, Mod, Fun, Args, User}}
 	
-	ErlangBeamDisLoader() throws OtpAuthException, IOException {
+	public ErlangBeamDisLoader() throws OtpAuthException, IOException {
 		self = new OtpSelf(myid);
 		peer = new OtpPeer("beam_loader@localhost");
 		conn = self.connect(peer);
@@ -60,6 +61,27 @@ public class ErlangBeamDisLoader extends BeamLoader {
 				new OtpErlangObject[] { 
 							new OtpErlangAtom("disasm"), 
 							new OtpErlangString(file.getAbsolutePath()) }));
+
+		try {
+			OtpErlangObject reply = conn.receiveRPC();
+
+			return new BeamFileData((ETuple)OtpConverter.convert(reply));
+
+		} catch (OtpErlangExit e) {
+			throw new RuntimeException("external beam_loader died", e);
+		} catch (OtpAuthException e) {
+			throw new RuntimeException("external beam_loader auth", e);
+		}
+
+	}
+
+	@Override
+	public BeamFileData load(byte[] data) throws IOException {
+
+		sendGEN(conn, "beam_loader", new OtpErlangTuple(
+				new OtpErlangObject[] { 
+							new OtpErlangAtom("disasm"),
+							new OtpErlangBinary(data) }));
 
 		try {
 			OtpErlangObject reply = conn.receiveRPC();

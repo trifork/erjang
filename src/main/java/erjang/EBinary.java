@@ -35,4 +35,12 @@ public class EBinary extends ETerm {
 	public EBinary testBinary() {
 		return this;
 	}
+
+	/**
+	 * @return
+	 */
+	public byte[] getByteArray() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }
