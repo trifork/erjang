@@ -74,13 +74,13 @@ public abstract class ETuple extends ETerm implements Cloneable {
 	private static final String ETUPLE_NAME = ETUPLE_TYPE.getInternalName();
 	private static final Type ETERM_TYPE = Type.getType(EObject.class);
 
-	private static Map<Integer,ETuple> protos = new HashMap<Integer, ETuple>();
+	private static Map<Integer, ETuple> protos = new HashMap<Integer, ETuple>();
 
 	@SuppressWarnings("unchecked")
 	private static ETuple make_big(int size) {
 
 		ETuple proto = protos.get(size);
-		
+
 		if (proto == null) {
 			try {
 				Class<? extends ETuple> c = get_tuple_class(size);
@@ -93,20 +93,18 @@ public abstract class ETuple extends ETerm implements Cloneable {
 		return proto.blank();
 	}
 
-	static class XClassLoader extends ClassLoader {
-		public XClassLoader() {
-			super(ETuple.class.getClassLoader());
-		}
-
-		Class<?> define(String name, byte[] b) {
-			return super.defineClass(name, b, 0, b.length);
-		}
-	}
-
-	static XClassLoader loader2 = new XClassLoader();
+	/*
+	 * static class XClassLoader extends ClassLoader { public XClassLoader() {
+	 * super(ETuple.class.getClassLoader()); }
+	 * 
+	 * Class<?> define(String name, byte[] b) { return super.defineClass(name,
+	 * b, 0, b.length); } }
+	 * 
+	 * static XClassLoader loader2 = new XClassLoader();
+	 */
 
 	@SuppressWarnings("unchecked")
-	static public Class get_tuple_class(int num_cells)  {
+	static public Class get_tuple_class(int num_cells) {
 
 		try {
 			return Class.forName(ETuple.class.getName() + num_cells);
@@ -118,7 +116,8 @@ public abstract class ETuple extends ETerm implements Cloneable {
 
 		String name = (ETUPLE_NAME + num_cells).replace('/', '.');
 
-		return ERT.defineClass(ETuple.class.getClassLoader(), name, data, 0, data.length);
+		return ERT.defineClass(ETuple.class.getClassLoader(), name, data, 0,
+				data.length);
 	}
 
 	private static byte[] make_tuple_class_data(int num_cells) {
@@ -167,8 +166,8 @@ public abstract class ETuple extends ETerm implements Cloneable {
 		MethodVisitor mv;
 		make_blank_bridge(cw, this_class_name, super_class_name);
 
-		mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "blank", "()L" + this_class_name
-				+ ";", null, null);
+		mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "blank", "()L"
+				+ this_class_name + ";", null, null);
 		mv.visitCode();
 		mv.visitTypeInsn(Opcodes.NEW, this_class_name);
 		mv.visitInsn(Opcodes.DUP);
@@ -346,6 +345,38 @@ public abstract class ETuple extends ETerm implements Cloneable {
 		return sb.toString();
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		int arity = arity();
+		int result = arity;
+		for (int i = 0; i < arity; i++) {
+			result *= 3;
+			result += elm(i+1).hashCode();
+		}
+		return result;
+	}
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj) {
+		if (obj instanceof ETuple) {
+			ETuple ot = (ETuple) obj;
+			if (arity() != ot.arity()) return false;
+			for (int i = 0; i < arity(); i++) {
+				if (!elm(i+1).equals(ot.elm(i+1))) return false;
+			}
+			return true;
+		}
+		return false;
+	}
+	
 	@Override
 	public Type emit_const(MethodVisitor fa) {
 
@@ -359,7 +390,7 @@ public abstract class ETuple extends ETerm implements Cloneable {
 		for (int i = 0; i < arity(); i++) {
 			fa.visitInsn(Opcodes.DUP);
 
-			((ETerm)elm(i + 1)).emit_const(fa);
+			((ETerm) elm(i + 1)).emit_const(fa);
 
 			fa.visitFieldInsn(Opcodes.PUTFIELD, type.getInternalName(), "elem"
 					+ (i + 1), ETERM_TYPE.getDescriptor());

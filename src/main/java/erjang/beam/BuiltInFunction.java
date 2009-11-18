@@ -25,11 +25,19 @@ import org.objectweb.asm.commons.Method;
 /**
  * 
  */
-public class BIF {
+public class BuiltInFunction {
 	public final Type owner;
 	public final Method method;
 	
-	public BIF(Type owner, Method method) {
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return method.toString();
+	}
+	
+	public BuiltInFunction(Type owner, Method method) {
 		this.owner = owner;
 		this.method = method;
 	}
@@ -37,7 +45,7 @@ public class BIF {
 	/**
 	 * @param m
 	 */
-	public BIF(java.lang.reflect.Method m) {
+	public BuiltInFunction(java.lang.reflect.Method m) {
 		this.owner = Type.getType(m.getDeclaringClass());
 		this.method = Method.getMethod(m);
 	}

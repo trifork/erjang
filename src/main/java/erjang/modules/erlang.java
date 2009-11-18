@@ -36,6 +36,11 @@ public class erlang {
 	static public EPID self(EProc proc) {
 		return proc.self();
 	}
+	
+	@BIF @ErlFun(export=true)
+	static public EObject link(EObject other) {
+		throw new NotImplemented();
+	}
 
 	@BIF
 	@ErlFun(export = true)
@@ -124,7 +129,7 @@ public class erlang {
 	}
 
 	@BIF
-	static public EObject setelement(int a1, EObject a2, EObject a3) {
+	static public EObject setelement(int a1, ETuple a2, EObject a3) {
 		throw new NotImplemented();
 	}
 
@@ -177,6 +182,15 @@ public class erlang {
 		throw ERT.badarg("erlang", "hd", cell);
 	}
 
+	@BIF(type=Type.GUARD,name="hd")
+	static public EObject hd$p(EObject cell) {
+		ECons cons;
+		if ((cons = cell.testCons()) != null) {
+			return cons.head();
+		}
+		return null;
+	}
+
 	@BIF
 	static public int length(EObject list) {
 		ESeq seq;
@@ -201,6 +215,27 @@ public class erlang {
 	}
 
 	@BIF
+	static public EObject whereis(EObject list) {
+		throw new NotImplemented();
+	}
+
+	@BIF
+	static public EObject port_info(EObject a1, EObject a2) {
+		throw new NotImplemented();
+	}
+	
+	@BIF
+	static public EObject statistics(EObject list) {
+		throw new NotImplemented();
+	}
+
+	@BIF
+	static public EObject put(EProc proc, EObject key, EObject value)
+	{
+		return proc.put(key, value);
+	}
+
+	@BIF
 	@ErlFun(export = true)
 	static public ENode node() {
 		return null;
@@ -209,6 +244,12 @@ public class erlang {
 	@BIF
 	@ErlFun(export = true)
 	static public ENode node(EObject name) {
+		return null;
+	}
+
+	@BIF(type=Type.GUARD,name="node")
+	@ErlFun(export = true)
+	static public ENode node$p(EObject name) {
 		return null;
 	}
 
@@ -599,6 +640,16 @@ public class erlang {
 
 	@BIF
 	public static EObject process_flag(EObject a1, EObject a2) {
+		throw new NotImplemented();
+	}
+
+	@BIF
+	public static EObject process_info(EObject pid, EObject what) {
+		throw new NotImplemented();
+	}
+
+	@BIF
+	public static EObject process_info(EObject pid) {
 		throw new NotImplemented();
 	}
 

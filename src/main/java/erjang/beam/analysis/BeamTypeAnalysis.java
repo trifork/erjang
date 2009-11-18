@@ -50,7 +50,7 @@ import erjang.ETerm;
 import erjang.ETuple;
 import erjang.ETuple2;
 import erjang.beam.Arg;
-import erjang.beam.BIF;
+import erjang.beam.BuiltInFunction;
 import erjang.beam.BIFUtil;
 import erjang.beam.BeamCodeBlock;
 import erjang.beam.BeamFunction;
@@ -275,7 +275,12 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					BlockVisitor vis = super.fv
 							.visitLabeledBlock(block.block_label);
 
-					block.accept(vis);
+					try {
+						block.accept(vis);
+					} catch (Error e) {
+						dump();
+						throw e;
+					}
 				}
 
 				super.fv.visitEnd();
@@ -408,7 +413,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						Arg[] in = decode_args(insn_idx, parms.toArray());
 						Arg out = decode_out_arg(insn_idx, insn.elm(5));
 
-						BIF bif = BIFUtil.getMethod(name.getName(), parmTypes(
+						BuiltInFunction bif = BIFUtil.getMethod(name.getName(), parmTypes(
 								this.map[insn_idx], parms), failLabel != 0);
 
 						vis.visitInsn(opcode, failLabel, in, out, bif);
@@ -423,7 +428,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						Arg[] in = decode_args(insn_idx, parms.toArray());
 						Arg out = decode_out_arg(insn_idx, insn.elm(5));
 
-						BIF bif = BIFUtil.getMethod(name.getName(), parmTypes(
+						BuiltInFunction bif = BIFUtil.getMethod(name.getName(), parmTypes(
 								this.map[insn_idx], parms), failLabel != 0);
 
 						vis.visitInsn(opcode, failLabel, in, out, bif);
@@ -438,7 +443,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						Arg[] in = decode_args(insn_idx, parms.toArray());
 						Arg out = decode_out_arg(insn_idx, insn.elm(6));
 
-						BIF bif = BIFUtil.getMethod(name.getName(), parmTypes(
+						BuiltInFunction bif = BIFUtil.getMethod(name.getName(), parmTypes(
 								this.map[insn_idx], parms), failLabel != 0);
 
 						vis.visitInsn(opcode, failLabel, in, out, bif);
@@ -450,7 +455,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						break;
 
 					case K_return:
-						vis.visitInsn(opcode);
+						vis.visitInsn(opcode, new Arg(Arg.Kind.X, 0, this.map[insn_idx].getx(0)));
 						break;
 
 					case allocate_zero: {
@@ -669,6 +674,24 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 								insn_idx, insn.elm(2)));
 						break;
 
+					case loop_rec: /* loop receive */
+						vis.visitReceive(opcode, decode_labelref(insn.elm(2)), decode_out_arg(insn_idx, insn.elm(3)));
+						break;
+						
+					case remove_message:
+						vis.visitInsn(opcode);
+						break;
+						
+					case timeout:
+					case loop_rec_end:
+						vis.visitInsn(opcode);
+						break;
+						
+					case wait_timeout:
+						vis.visitInsn(opcode, decode_labelref(insn.elm(2)), 
+								decode_value(insn.elm(3)));
+						break;
+						
 					default:
 						throw new Error("unhandled insn: " + insn);
 					}
@@ -1623,9 +1646,9 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 				EObject key = dst.elm(1);
 				EObject value = dst.elm(2);
 				if (key == X_ATOM) {
-					current = current.setx(value.asInt(), type);
+					current = current.setx(value.asInt(), type==Type.DOUBLE_TYPE ? EDOUBLE_TYPE : type);
 				} else if (key == Y_ATOM) {
-					current = current.sety(value.asInt(), type);
+					current = current.sety(value.asInt(), type==Type.DOUBLE_TYPE ? EDOUBLE_TYPE : type);
 				} else if (key == FR_ATOM) {
 					current = current.setf(value.asInt(), type);
 				} else {

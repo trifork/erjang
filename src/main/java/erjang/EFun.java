@@ -61,7 +61,7 @@ public abstract class EFun {
 		Class<?> declaringClass = method.getDeclaringClass();
 		Type type = Type.getType(declaringClass);
 		byte[] data = CompilerVisitor.make_invoker(type, method.getName(), ary,
-				proc);
+				proc, 0);
 
 		String clname = type.getClassName() + "$" + method.getName();
 

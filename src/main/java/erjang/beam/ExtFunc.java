@@ -29,6 +29,14 @@ public class ExtFunc extends erjang.beam.Arg {
 
 	public final EAtom mod;
 	public final EAtom fun;
+	
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return mod.toString() + ':' + fun.toString() + "/" + no;
+	}
 
 	/**
 	 * @param kind

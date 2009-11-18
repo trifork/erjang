@@ -19,6 +19,9 @@
 
 package erjang;
 
+import java.util.HashMap;
+import java.util.Map;
+
 
 /**
  * An erlang process
@@ -33,6 +36,24 @@ public class EProc {
 	 */
 	public EPID self() {
 		throw new NotImplemented();
+	}
+	/**
+	 * @param key
+	 * @param value
+	 * @return
+	 */
+	
+	Map<EObject, EObject> pdict = new HashMap<EObject, EObject>();
+	
+	public EObject put(EObject key, EObject value) {
+		EObject res = pdict.put(key, value);
+		if (res == null) return ENil.NIL;
+		return res;
+	}
+	
+	public EObject get(EObject key) {
+		EObject res = pdict.get(key);
+		return (res==null) ? ENil.NIL : res;
 	}
 	
 }

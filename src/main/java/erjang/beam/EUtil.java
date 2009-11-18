@@ -25,6 +25,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.objectweb.asm.Type;
+
 import erjang.EAtom;
 
 /**
@@ -140,6 +142,18 @@ public class EUtil {
 	 */
 	public static String getJavaName(ExtFunc fun) {
 		return toJavaIdentifier(fun.mod + ":" + fun.fun + "/" + fun.no);
+	}
+
+
+
+	/**
+	 * @param selfType
+	 * @param efun
+	 * @return
+	 */
+	public static String getFunClassName(Type self_type, ExtFunc efun) {
+		return self_type.getInternalName() + "$"
+		+ getJavaName(efun.fun, efun.no);
 	}
 
 }

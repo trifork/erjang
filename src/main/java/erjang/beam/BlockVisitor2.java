@@ -35,7 +35,7 @@ public interface BlockVisitor2 extends BlockVisitor {
 	void visitInsn(BeamOpcode opcode, int failLabel, Arg arg1, Method bif);
 	
 	/** bif, gc_bif, arithfbif */
-	void visitInsn(BeamOpcode opcode, int failLabel, Arg[] in, Arg out, BIF bif);
+	void visitInsn(BeamOpcode opcode, int failLabel, Arg[] in, Arg out, BuiltInFunction bif);
 
 	/**
 	 * 
@@ -138,6 +138,13 @@ public interface BlockVisitor2 extends BlockVisitor {
 	 * @param decodeLabelref
 	 */
 	void visitJump(int decodeLabelref);
+
+	/**
+	 * @param opcode
+	 * @param decodeLabelref
+	 * @param decodeOutArg
+	 */
+	void visitReceive(BeamOpcode opcode, int block_label, Arg out);
 
 	
 

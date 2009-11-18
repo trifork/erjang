@@ -19,13 +19,18 @@
 package erjang.beam;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.objectweb.asm.Type;
 
 import erjang.EAtom;
+import erjang.EDouble;
+import erjang.EInteger;
 import erjang.EObject;
+import erjang.EProc;
 import erjang.modules.BinOps;
 import erjang.modules.erlang;
 
@@ -38,6 +43,7 @@ import erjang.modules.erlang;
  */
 public class BIFUtil {
 
+	public static final Type EPROC_TYPE = Type.getType(EProc.class);
 	static Map<String, BIFHandler> bifs = new HashMap<String, BIFHandler>();
 	static Map<String, BIFHandler> guard_bifs = new HashMap<String, BIFHandler>();
 
@@ -50,6 +56,8 @@ public class BIFUtil {
 		private static final Type EOBJECT_TYPE = null;
 		Class[] args;
 		private Args generic;
+		private int hashCode;
+		private int code;
 
 		Args(Type[] types) {
 			args = new Class[types.length];
@@ -76,7 +84,10 @@ public class BIFUtil {
 
 		@Override
 		public int hashCode() {
-			int code = 0;
+			if (code != 0) return code;
+			for (int i = 0; i < args.length; i++) {
+				code += args[i].getName().hashCode();
+			}
 			for (Class c : args) {
 				code += c.hashCode();
 			}
@@ -128,11 +139,51 @@ public class BIFUtil {
 
 			return generic;
 		}
+
+		/**
+		 * @return
+		 */
+		public List<Args> generalize() {
+			ArrayList<Args> res = new ArrayList<Args>();
+
+			Class[] aa = this.args.clone();
+			
+			for (int i = 0; i < args.length; i++) {
+				// aa = this.args.clone();
+				
+				// vary over arg[i]'s super types
+				for (Class c = args[i]; !c.equals(Object.class); c = super_class(c)) {
+					aa[i] = c;
+					res.add(new Args(aa.clone()));
+					
+					for (int j = i+1; j<args.length; j++) {
+						
+						for (Class cc = args[j]; !cc.equals(Object.class); cc = super_class(cc)) {
+							aa[j] = cc;
+							res.add(new Args(aa.clone()));
+						}
+					}
+				}
+			}
+			
+			return res;
+		}
+
+		private Class super_class(Class c) {
+			if (c.isPrimitive()) {
+				if (c == double.class) return EDouble.class;
+				if (c == int.class) return EInteger.class;
+				if (c == boolean.class) return EAtom.class;
+				return EObject.class;
+			} else {
+				return c.getSuperclass();
+			}
+		}
 	}
 
 	static class BIFHandler {
 
-		Map<Args, BIF> found = new HashMap<Args, BIF>();
+		Map<Args, BuiltInFunction> found = new HashMap<Args, BuiltInFunction>();
 
 		private final String name;
 		private final String javaName;
@@ -148,30 +199,20 @@ public class BIFUtil {
 		}
 
 		public Type getResult(Type[] parmTypes) {
-			Args args = new Args(parmTypes);
-			BIF m = found.get(args);
-			if (m == null) {
-
-				if ((m = found.get(args.generic())) == null) {
-					throw new Error("no bif erlang:" + EAtom.intern(name) + "/"
-							+ parmTypes.length + " " + args);
-				}
-
-				System.err.println("missed opportunity erlang:"
-						+ EAtom.intern(name) + "/" + parmTypes.length + " "
-						+ args + ", \n\tusing " + m);
+			BuiltInFunction method = getMethod(parmTypes);
+			if (method == null) {
+				throw new Error("no bif name "+this.name+" for parms "+new Args(parmTypes));
 			}
-
-			return m.getReturnType();
+			return method.getReturnType();
 		}
 
 		public void registerMethod(Method method) {
 			Args a = new Args(method.getParameterTypes());
 
-			found.put(a, new BIF(method));
+			found.put(a, new BuiltInFunction(method));
 		}
 
-		public void registerMethod(BIF method) {
+		public void registerMethod(BuiltInFunction method) {
 			Args a = new Args(method.getArgumentTypes());
 
 			found.put(a, method);
@@ -181,21 +222,44 @@ public class BIFUtil {
 		 * @param parmTypes
 		 * @return
 		 */
-		public BIF getMethod(Type[] parmTypes) {
+		public BuiltInFunction getMethod(Type[] parmTypes) {
 
-			Args args = new Args(parmTypes);
-			BIF m = found.get(args);
-			if (m == null) {
-
-				if ((m = found.get(args.generic())) == null) {
-					throw new Error("no bif erlang:" + EAtom.intern(name) + "/"
-							+ parmTypes.length + " " + args);
+			BuiltInFunction m = find_bif(parmTypes);
+			if (m != null) return m;
+			
+			// try with EProc as first argument
+			if (parmTypes.length == 0 || !EPROC_TYPE.equals(parmTypes[0])) {
+				Type[] extra = new Type[parmTypes.length+1];
+				extra[0] = EPROC_TYPE;
+				for (int i = 0; i < parmTypes.length; i++) {
+					extra[i+1] = parmTypes[i];
 				}
-
+				
+				m = find_bif(extra);
+				if (m != null) return m;
 			}
 
 			return m;
 
+		}
+
+		private BuiltInFunction find_bif(Type[] parmTypes) {
+			Args args = new Args(parmTypes);
+			BuiltInFunction m = found.get(args);
+			if (m != null) { return m; }
+			
+			for (Args a : args.generalize()) {
+				m = found.get(a);
+				if (m != null) { 
+					
+					System.err.println("missed opportunity erlang:"
+							+ EAtom.intern(name) + "/" + parmTypes.length + " "
+							+ args + ", \n\tusing " + m);
+
+					return m; 
+				}	
+			}
+			return null;
 		}
 
 	}
@@ -245,7 +309,7 @@ public class BIFUtil {
 	 * @param b
 	 * @return
 	 */
-	public static BIF getMethod(String name, Type[] parmTypes,
+	public static BuiltInFunction getMethod(String name, Type[] parmTypes,
 			boolean isGuard) {
 
 		Map<String, BIFHandler> tab = isGuard ? guard_bifs : bifs;
@@ -267,7 +331,7 @@ public class BIFUtil {
 	 * @param isGuard
 	 * @return
 	 */
-	public static BIF getMethod(String name, Arg[] args, boolean isGuard) {
+	public static BuiltInFunction getMethod(String name, Arg[] args, boolean isGuard) {
 		Type[] parms = new Type[args.length];
 		for (int i = 0; i < args.length; i++) { parms[i] = args[i].type; }
 		return getMethod(name, parms, isGuard);

@@ -65,7 +65,7 @@ public class EDouble extends ENumber {
 		fa.visitTypeInsn(Opcodes.NEW, type.getInternalName());
 		fa.visitInsn(Opcodes.DUP);
 		fa.visitLdcInsn(new Double(value));
-		fa.visitMethodInsn(Opcodes.INVOKESPECIAL, type.getInternalName(), "<init>", "(" + type.getDescriptor() + ")V");
+		fa.visitMethodInsn(Opcodes.INVOKESPECIAL, type.getInternalName(), "<init>", "(D)V");
 		
 		return type;		
 	}
