@@ -30,6 +30,7 @@ import java.util.TreeMap;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -148,12 +149,15 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 	static final Type MODULE_ANN_TYPE = Type.getType(Module.class);
 	static final Type ERLFUN_ANN_TYPE = Type.getType(ErlFun.class);
+	private final ClassRepo classRepo;
 
 	/**
+	 * @param classRepo 
 	 * 
 	 */
-	public CompilerVisitor(ClassVisitor cv) {
+	public CompilerVisitor(ClassVisitor cv, ClassRepo classRepo) {
 		this.cv = cv;
+		this.classRepo = classRepo;
 	}
 
 	/*
@@ -184,7 +188,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 		av.visitEnd();
 	}
 
-	private String getInternalClassName() {
+	public String getInternalClassName() {
 
 		String moduleName = getModuleName();
 		return Compiler.moduleClassName(moduleName);
@@ -233,6 +237,19 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				"()V", null, null);
 		mv.visitCode();
 
+		for (Map.Entry<String, String> ent : funs.entrySet()) {
+			
+			String field = ent.getKey();
+			String clazz = ent.getValue();
+			
+			mv.visitTypeInsn(NEW, clazz);
+			mv.visitInsn(DUP);
+			mv.visitMethodInsn(INVOKESPECIAL, clazz, "<init>", "()V");
+			
+			mv.visitFieldInsn(PUTSTATIC, self_type.getInternalName(), field, "L" + clazz + ";");
+			
+		}
+		
 		for (Map.Entry<ETerm, String> ent : constants.entrySet()) {
 
 			ETerm term = ent.getKey();
@@ -291,6 +308,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 	}
 
 	Map<String, Integer> lambdas_xx = new TreeMap<String, Integer>();
+	Map<String,String> funs = new HashMap<String, String>();
 
 	class ASMFunctionAdapter implements FunctionVisitor2 {
 
@@ -366,6 +384,11 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			mv.visitMaxs(20, scratch_reg + 1);
 			mv.visitEnd();
 
+			String mname = EUtil.getJavaName(fun_name, arity);
+			String outer_name = self_type.getInternalName();
+			String inner_name = mname;
+			String full_inner_name = outer_name + "$" + inner_name;
+
 			int freevars = get_lambda(fun_name, arity);
 			if (freevars == -1) {
 				
@@ -373,18 +396,21 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				generate_tail_call_self();
 				
 				freevars = 0;
+				
+				FieldVisitor fv = cv.visitField(ACC_STATIC|ACC_FINAL, inner_name, "L" + full_inner_name + ";", null, null);
+				fv.visitEnd();
+				
+				funs.put(inner_name, full_inner_name);
+
 			}
 			
-			String mname = EUtil.getJavaName(fun_name, arity);
-			String outer_name = self_type.getInternalName();
-			String inner_name = mname;
-			String full_inner_name = outer_name + "$" + inner_name;
-
+			cv.visitInnerClass(full_inner_name, outer_name, inner_name, ACC_STATIC);
+			
 			byte[] data = CompilerVisitor.make_invoker(self_type, mname, arity,
 					true, freevars);
+			
 			try {
-				Compiler.writeTo(new File("out/" + full_inner_name + ".class"),
-						data);
+				classRepo.store(full_inner_name, data);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -1902,6 +1928,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 		cw.visitEnd();
 	}
+
 
 }
 

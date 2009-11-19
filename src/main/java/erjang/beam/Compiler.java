@@ -35,18 +35,21 @@ import erjang.modules.erlang;
 public class Compiler implements Opcodes {
 
 	static ErlangBeamDisLoader loader;
+	private ClassRepo classRepo;
 
 	/**
+	 * @param repo 
 	 * @throws IOException
 	 * @throws OtpAuthException
 	 * 
 	 */
-	public Compiler() throws OtpAuthException, IOException {
+	public Compiler(ClassRepo repo) throws OtpAuthException, IOException {
 		if (loader == null)
 			loader = new ErlangBeamDisLoader();
+		this.classRepo = repo;
 	}
 
-	public static byte[] compile(EBinary data) throws IOException
+	public static void compile(EBinary data, ClassRepo repo) throws IOException
 	{
 		// class writer, phase 4
 		ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
@@ -55,7 +58,7 @@ public class Compiler implements Opcodes {
 		CheckClassAdapter ca = new CheckClassAdapter(cw);
 		
 		// the java bytecode generator, phase 3
-		CompilerVisitor cv = new CompilerVisitor(ca);
+		CompilerVisitor cv = new CompilerVisitor(ca, repo);
 
 		// the type analysis, phase 2
 		BeamTypeAnalysis analysis = new BeamTypeAnalysis(cv);
@@ -69,12 +72,13 @@ public class Compiler implements Opcodes {
 		} catch (Error e) {
 			e.printStackTrace();
 		}
-		// get byte code data
-		return cw.toByteArray();
+		
+		repo.store(cv.getInternalClassName(), cw.toByteArray());
 
 	}
 	
-	byte[] compile(File file) throws IOException {
+	void compile(File file) throws IOException {
+		
 		// class writer, phase 4
 		ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
 
@@ -82,7 +86,7 @@ public class Compiler implements Opcodes {
 		CheckClassAdapter ca = new CheckClassAdapter(cw);
 		
 		// the java bytecode generator, phase 3
-		CompilerVisitor cv = new CompilerVisitor(ca);
+		CompilerVisitor cv = new CompilerVisitor(ca, classRepo);
 
 		// the type analysis, phase 2
 		BeamTypeAnalysis analysis = new BeamTypeAnalysis(cv);
@@ -97,7 +101,7 @@ public class Compiler implements Opcodes {
 			e.printStackTrace();
 		}
 		// get byte code data
-		return cw.toByteArray();
+		classRepo.store(cv.getInternalClassName(), cw.toByteArray());
 	}
 
 	public static String moduleClassName(String moduleName) {
@@ -112,20 +116,15 @@ public class Compiler implements Opcodes {
 	public static void main(String[] args) throws Exception {
 
 		File out_dir = new File("out");
-		Compiler cc = new Compiler();
+		ClassRepo repo = new DirClassRepo(out_dir);
+		Compiler cc = new Compiler(repo);
 
 		for (int i = 0; i < args.length; i++) {
-
 			File infile = new File(args[i]);
-			byte[] data = cc.compile(infile);
-			String beam_name = infile.getName();
-			String jbeam_name = beam_name.substring(0, beam_name
-					.lastIndexOf('.') + 1)
-					+ "class";
-			File outfile = new File(out_dir, jbeam_name);
-			writeTo(outfile, data);
+			cc.compile(infile);
 		}
 
+		repo.close();		
 	}
 
 	static void writeTo(File output, byte[] class_data) throws IOException {

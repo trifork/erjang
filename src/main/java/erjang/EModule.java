@@ -18,14 +18,18 @@
 
 package erjang;
 
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
+import erjang.beam.ClassRepo;
 import erjang.beam.Compiler;
+import erjang.beam.DirClassRepo;
 
 public abstract class EModule {
 
@@ -114,19 +118,30 @@ public abstract class EModule {
 	 * @param mod
 	 * @param classData
 	 */
+	@SuppressWarnings("unchecked")
 	public static void load_module(EAtom mod, EBinary bin) {
 		
-		byte[] class_data;
+		File dir = new File("out");
+		ClassRepo repo = new DirClassRepo(dir);
+		
+		URL url;
 		try {
-			class_data = Compiler.compile(bin);
+			Compiler.compile(bin, repo);
+			repo.close();
+			url = dir.toURI().toURL();
 		} catch (IOException e) {
 			throw new ErlangException(e);
 		}
-
-		String java_name = erjang.beam.Compiler.moduleClassName(mod.getName())
-				.replace('/', '.');
-		EModuleLoader loader = new EModuleLoader();
-		Class<? extends EModule> clazz = loader.define(java_name, class_data);
+		
+		String internalName = erjang.beam.Compiler.moduleClassName(mod.getName());
+		String java_name = internalName.replace('/', '.');
+		EModuleLoader loader = new EModuleLoader(url);
+		Class<? extends EModule> clazz;
+		try {
+			clazz = (Class<? extends EModule>) loader.loadClass(java_name);
+		} catch (ClassNotFoundException e1) {
+			throw new Error(e1);
+		}
 		EModule mi;
 		try {
 			mi = clazz.newInstance();
