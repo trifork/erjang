@@ -28,11 +28,11 @@ import org.objectweb.asm.Type;
 
 import erjang.EAtom;
 import erjang.EDouble;
-import erjang.EInteger;
+import erjang.EInt32;
 import erjang.EObject;
 import erjang.EProc;
-import erjang.modules.BinOps;
-import erjang.modules.erlang;
+import erjang.bifs.BinOps;
+import erjang.bifs.erlang;
 
 /**
  * Used by the compiler to find and mange BIF definitions.
@@ -73,7 +73,16 @@ public class BIFUtil {
 				try {
 					args[i] = Class.forName(types[i].getClassName());
 				} catch (ClassNotFoundException e) {
-					throw new Error(e);
+
+					if (types[i] == Type.BOOLEAN_TYPE) {
+						args[i] = boolean.class;
+					} else if (types[i] == Type.INT_TYPE) {
+						args[i] = int.class;
+					} else if (types[i] == Type.DOUBLE_TYPE) {
+						args[i] = double.class;
+					} else {
+						throw new Error(e);
+					}
 				}
 			}
 		}
@@ -84,7 +93,8 @@ public class BIFUtil {
 
 		@Override
 		public int hashCode() {
-			if (code != 0) return code;
+			if (code != 0)
+				return code;
 			for (int i = 0; i < args.length; i++) {
 				code += args[i].getName().hashCode();
 			}
@@ -147,17 +157,17 @@ public class BIFUtil {
 			ArrayList<Args> res = new ArrayList<Args>();
 
 			Class[] aa = this.args.clone();
-			
+
 			for (int i = 0; i < args.length; i++) {
 				// aa = this.args.clone();
-				
+
 				// vary over arg[i]'s super types
 				for (Class c = args[i]; !c.equals(Object.class); c = super_class(c)) {
 					aa[i] = c;
 					res.add(new Args(aa.clone()));
-					
-					for (int j = i+1; j<args.length; j++) {
-						
+
+					for (int j = i + 1; j < args.length; j++) {
+
 						for (Class cc = args[j]; !cc.equals(Object.class); cc = super_class(cc)) {
 							aa[j] = cc;
 							res.add(new Args(aa.clone()));
@@ -165,15 +175,18 @@ public class BIFUtil {
 					}
 				}
 			}
-			
+
 			return res;
 		}
 
 		private Class super_class(Class c) {
 			if (c.isPrimitive()) {
-				if (c == double.class) return EDouble.class;
-				if (c == int.class) return EInteger.class;
-				if (c == boolean.class) return EAtom.class;
+				if (c == double.class)
+					return EDouble.class;
+				if (c == int.class)
+					return EInt32.class;
+				if (c == boolean.class)
+					return EAtom.class;
 				return EObject.class;
 			} else {
 				return c.getSuperclass();
@@ -201,7 +214,8 @@ public class BIFUtil {
 		public Type getResult(Type[] parmTypes) {
 			BuiltInFunction method = getMethod(parmTypes);
 			if (method == null) {
-				throw new Error("no bif name "+this.name+" for parms "+new Args(parmTypes));
+				throw new Error("no bif name " + this.name + " for parms "
+						+ new Args(parmTypes));
 			}
 			return method.getReturnType();
 		}
@@ -225,18 +239,20 @@ public class BIFUtil {
 		public BuiltInFunction getMethod(Type[] parmTypes) {
 
 			BuiltInFunction m = find_bif(parmTypes);
-			if (m != null) return m;
-			
+			if (m != null)
+				return m;
+
 			// try with EProc as first argument
 			if (parmTypes.length == 0 || !EPROC_TYPE.equals(parmTypes[0])) {
-				Type[] extra = new Type[parmTypes.length+1];
+				Type[] extra = new Type[parmTypes.length + 1];
 				extra[0] = EPROC_TYPE;
 				for (int i = 0; i < parmTypes.length; i++) {
-					extra[i+1] = parmTypes[i];
+					extra[i + 1] = parmTypes[i];
 				}
-				
+
 				m = find_bif(extra);
-				if (m != null) return m;
+				if (m != null)
+					return m;
 			}
 
 			return m;
@@ -246,18 +262,20 @@ public class BIFUtil {
 		private BuiltInFunction find_bif(Type[] parmTypes) {
 			Args args = new Args(parmTypes);
 			BuiltInFunction m = found.get(args);
-			if (m != null) { return m; }
-			
+			if (m != null) {
+				return m;
+			}
+
 			for (Args a : args.generalize()) {
 				m = found.get(a);
-				if (m != null) { 
-					
+				if (m != null) {
+
 					System.err.println("missed opportunity erlang:"
 							+ EAtom.intern(name) + "/" + parmTypes.length + " "
 							+ args + ", \n\tusing " + m);
 
-					return m; 
-				}	
+					return m;
+				}
 			}
 			return null;
 		}
@@ -331,9 +349,12 @@ public class BIFUtil {
 	 * @param isGuard
 	 * @return
 	 */
-	public static BuiltInFunction getMethod(String name, Arg[] args, boolean isGuard) {
+	public static BuiltInFunction getMethod(String name, Arg[] args,
+			boolean isGuard) {
 		Type[] parms = new Type[args.length];
-		for (int i = 0; i < args.length; i++) { parms[i] = args[i].type; }
+		for (int i = 0; i < args.length; i++) {
+			parms[i] = args[i].type;
+		}
 		return getMethod(name, parms, isGuard);
 	}
 

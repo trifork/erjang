@@ -20,14 +20,14 @@ package erjang;
 
 import java.math.BigInteger;
 
-public abstract class ENumber extends ETerm {
+public abstract class ENumber extends EObject {
 
 	public abstract int intValue();
 
 	public static ENumber parseInt(String str) {
         try {     
         	int val = java.lang.Integer.parseInt(str);
-        	return new EInteger(val);
+        	return new EInt32(val);
          } catch (NumberFormatException e) {
         	 BigInteger val = new java.math.BigInteger(str);
         	 return new EBig(val);
@@ -71,7 +71,7 @@ public abstract class ENumber extends ETerm {
 
 	public static ENumber valueFor(long res) {
 		int intres = (int) res;
-		if (res == intres) return new EInteger(intres);
+		if (res == intres) return new EInt32(intres);
 		return new EBig(res);
 	}
 
@@ -104,8 +104,7 @@ public abstract class ENumber extends ETerm {
 	 * @return
 	 */
 	public ENumber divide(EObject v2) {
-		// TODO Auto-generated method stub
-		return null;
+		throw new NotImplemented();
 	}
 
 	/**
@@ -113,6 +112,13 @@ public abstract class ENumber extends ETerm {
 	 * @return
 	 */
 	public ENumber divide(double d2) {
+		throw new NotImplemented();
+	}
+
+	/**
+	 * @return
+	 */
+	public ENumber negate() {
 		throw new NotImplemented();
 	}
 

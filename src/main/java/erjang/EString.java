@@ -59,7 +59,7 @@ public class EString extends ESeq implements CharSequence {
 				
 				EObject head = list.head();
 				
-				EInteger intval;
+				EInt32 intval;
 				if ((intval = head.testInteger()) == null) {
 					throw ERT.badarg();
 				}
@@ -204,8 +204,8 @@ public class EString extends ESeq implements CharSequence {
 	 * @see erjang.ECons#head()
 	 */
 	@Override
-	public EInteger head() {
-		return new EInteger(data[off] & 0xff);
+	public EInt32 head() {
+		return new EInt32(data[off] & 0xff);
 	}
 
 	@Override

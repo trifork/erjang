@@ -1,7 +1,7 @@
-package erjang.modules;
+package erjang.bifs;
 
 import erjang.BIF;
-import erjang.EInteger;
+import erjang.EInt32;
 import erjang.ENumber;
 import erjang.EObject;
 import erjang.ERT;
@@ -27,10 +27,10 @@ public class BinOps {
 	@BIF
 	static public ENumber band(EObject o1, EObject o2)
 	{
-		EInteger i1, i2;
+		EInt32 i1, i2;
 		if ((i1=o1.testInteger()) != null && (i2=o2.testInteger()) != null)
 		{
-			return new EInteger(i1.value & i2.value);
+			return new EInt32(i1.value & i2.value);
 		}
 		
 		ENumber n1;
@@ -56,10 +56,10 @@ public class BinOps {
 	@BIF
 	static public ENumber bor(EObject o1, EObject o2)
 	{
-		EInteger i1, i2;
+		EInt32 i1, i2;
 		if ((i1=o1.testInteger()) != null && (i2=o2.testInteger()) != null)
 		{
-			return new EInteger(i1.value | i2.value);
+			return new EInt32(i1.value | i2.value);
 		}
 		
 		ENumber n1;
@@ -87,10 +87,10 @@ public class BinOps {
 	@BIF
 	static public ENumber bsr(EObject o1, EObject o2)
 	{
-		EInteger i1, i2;
+		EInt32 i1, i2;
 		if ((i1=o1.testInteger()) != null && (i2=o2.testInteger()) != null)
 		{
-			return new EInteger(i1.value >> i2.value);
+			return new EInt32(i1.value >> i2.value);
 		}
 		
 		ENumber n1;
@@ -107,10 +107,10 @@ public class BinOps {
 	@BIF
 	static public ENumber bsl(EObject o1, EObject o2)
 	{
-		EInteger i1, i2;
+		EInt32 i1, i2;
 		if ((i1=o1.testInteger()) != null && (i2=o2.testInteger()) != null)
 		{
-			return new EInteger(i1.value << i2.value);
+			return new EInt32(i1.value << i2.value);
 		}
 		
 		ENumber n1;

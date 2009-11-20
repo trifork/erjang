@@ -55,5 +55,13 @@ public class EProc {
 		EObject res = pdict.get(key);
 		return (res==null) ? ENil.NIL : res;
 	}
+
+	/**
+	 * @return
+	 */
+	public ECons get() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 	
 }

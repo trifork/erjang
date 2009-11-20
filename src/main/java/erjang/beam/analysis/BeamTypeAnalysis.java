@@ -30,7 +30,6 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 import org.objectweb.asm.Type;
-import org.objectweb.asm.commons.Method;
 
 import erjang.EAtom;
 import erjang.EBinMatchState;
@@ -38,7 +37,7 @@ import erjang.EBinary;
 import erjang.ECons;
 import erjang.EDouble;
 import erjang.EFun;
-import erjang.EInteger;
+import erjang.EInt32;
 import erjang.EList;
 import erjang.ENil;
 import erjang.ENumber;
@@ -46,11 +45,9 @@ import erjang.EObject;
 import erjang.EPID;
 import erjang.EPort;
 import erjang.ESeq;
-import erjang.ETerm;
 import erjang.ETuple;
 import erjang.ETuple2;
 import erjang.beam.Arg;
-import erjang.beam.BuiltInFunction;
 import erjang.beam.BIFUtil;
 import erjang.beam.BeamCodeBlock;
 import erjang.beam.BeamFunction;
@@ -58,6 +55,7 @@ import erjang.beam.BeamInstruction;
 import erjang.beam.BeamOpcode;
 import erjang.beam.BlockVisitor;
 import erjang.beam.BlockVisitor2;
+import erjang.beam.BuiltInFunction;
 import erjang.beam.ExtFunc;
 import erjang.beam.FunctionAdapter;
 import erjang.beam.FunctionVisitor;
@@ -67,7 +65,6 @@ import erjang.beam.ModuleVisitor;
 import erjang.beam.Arg.Kind;
 
 public class BeamTypeAnalysis extends ModuleAdapter {
-
 	/**
 	 * 
 	 */
@@ -75,7 +72,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 		super(mv);
 	}
 
-	static final Type EINTEGER_TYPE = Type.getType(EInteger.class);
+	static final Type EINTEGER_TYPE = Type.getType(EInt32.class);
 	static final Type ENUMBER_TYPE = Type.getType(ENumber.class);
 	static final Type EOBJECT_TYPE = Type.getType(EObject.class);
 	static final Type EDOUBLE_TYPE = Type.getType(EDouble.class);
@@ -91,22 +88,22 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 	static final Type EPORT_TYPE = Type.getType(EPort.class);
 	static final Type EMATCHSTATE_TYPE = Type.getType(EBinMatchState.class);
 
-	static final ETerm X_ATOM = EAtom.intern("x");
-	static final ETerm Y_ATOM = EAtom.intern("y");
-	static final ETerm FR_ATOM = EAtom.intern("fr");
-	static final ETerm NIL_ATOM = EAtom.intern("nil");
-	static final ETerm INTEGER_ATOM = EAtom.intern("integer");
-	static final ETerm FLOAT_ATOM = EAtom.intern("float");
-	static final ETerm ATOM_ATOM = EAtom.intern("atom");
-	static final ETerm LITERAL_ATOM = EAtom.intern("literal");
-	static final ETerm NOFAIL_ATOM = EAtom.intern("nofail");
-	static final ETerm F_ATOM = EAtom.intern("f");
-	static final ETerm FIELD_FLAGS_ATOM = EAtom.intern("field_flags");
-	static final ETerm EXTFUNC_ATOM = EAtom.intern("extfunc");
-	static final ETerm APPLY_ATOM = EAtom.intern("apply");
+	static final EObject X_ATOM = EAtom.intern("x");
+	static final EObject Y_ATOM = EAtom.intern("y");
+	static final EObject FR_ATOM = EAtom.intern("fr");
+	static final EObject NIL_ATOM = EAtom.intern("nil");
+	static final EObject INTEGER_ATOM = EAtom.intern("integer");
+	static final EObject FLOAT_ATOM = EAtom.intern("float");
+	static final EObject ATOM_ATOM = EAtom.intern("atom");
+	static final EObject LITERAL_ATOM = EAtom.intern("literal");
+	static final EObject NOFAIL_ATOM = EAtom.intern("nofail");
+	static final EObject F_ATOM = EAtom.intern("f");
+	static final EObject FIELD_FLAGS_ATOM = EAtom.intern("field_flags");
+	static final EObject EXTFUNC_ATOM = EAtom.intern("extfunc");
+	static final EObject APPLY_ATOM = EAtom.intern("apply");
 
-	private static final ETuple X0_REG = ETuple.make(new ETerm[] { X_ATOM,
-			new EInteger(0) });
+	private static final ETuple X0_REG = ETuple.make(new EObject[] { X_ATOM,
+			new EInt32(0) });
 	private EAtom moduleName;
 
 	private List<FV> functions = new ArrayList<FV>();
@@ -218,6 +215,11 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 		@Override
 		public void visitEnd() {
+			
+			if (this.name.getName().equals("load")) {
+				dump();
+			}
+			
 			LabeledBlock lb = lbs.get(startLabel);
 			lb.merge_from(this.make_initial());
 
@@ -322,7 +324,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 				lbs.put(label, res);
 				return res;
 			} else {
-				throw new Error("no such bb: " + label);
+				return null;
 			}
 		}
 
@@ -389,7 +391,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					case move: {
 						// System.err.println(insn);
 						Arg arg1 = decode_arg(insn_idx, insn.elm(2));
-						Arg arg2 = decode_arg(insn_idx, insn.elm(3));
+						Arg arg2 = decode_out_arg(insn_idx, insn.elm(3));
 
 						if (arg2.kind != Kind.F) {
 							if (arg1.kind == Kind.F) {
@@ -458,12 +460,13 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						vis.visitInsn(opcode, new Arg(Arg.Kind.X, 0, this.map[insn_idx].getx(0)));
 						break;
 
+					case allocate_heap_zero:
 					case allocate_zero: {
 						int depth = type_map.stacksize;
 						int count = insn.elm(2).asInt();
 						Arg[] ys = new Arg[count];
 						for (int i = 0; i < count; i++) {
-							ys[i] = new Arg(Arg.Kind.Y, i);
+							ys[i] = new Arg(Arg.Kind.Y, depth+i, null);
 						}
 						vis.visitInsn(opcode, (Arg[]) ys);
 						break;
@@ -521,7 +524,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 					case init:
 						vis
-								.visitInsn(opcode, decode_arg(insn_idx, insn
+								.visitInsn(opcode, decode_out_arg(insn_idx, insn
 										.elm(2)));
 						break;
 
@@ -648,7 +651,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					case badmatch:
 					case case_end:
 						vis
-								.visitInsn(opcode, decode_arg(insn_idx, insn
+								.visitInsn(opcode, decode_out_arg(insn_idx, insn
 										.elm(2)));
 						break;
 
@@ -663,12 +666,14 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						break;
 					}
 
+					case K_try:
 					case K_catch: {
 						vis.visitInsn(opcode, decode_labelref(insn.elm(3)),
 								decode_arg(insn_idx, insn.elm(2)));
 						break;
 					}
 
+					case try_end:
 					case catch_end:
 						vis.visitInsn(opcode, /* ignore */-1, decode_arg(
 								insn_idx, insn.elm(2)));
@@ -686,11 +691,27 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					case loop_rec_end:
 						vis.visitInsn(opcode);
 						break;
+
+					case wait:
+						vis.visitInsn(opcode, decode_labelref(insn.elm(2)), 
+								null);
+						break;
 						
 					case wait_timeout:
 						vis.visitInsn(opcode, decode_labelref(insn.elm(2)), 
-								decode_value(insn.elm(3)));
+								decode_arg(insn_idx, insn.elm(3)));
 						break;
+						
+					case call_fun:
+					{
+						int nargs = insn.elm(2).asInt();
+						Arg[] args = new Arg[nargs+1];
+						for (int i = 0; i < args.length; i++) {
+							args[i] = new Arg(Arg.Kind.X, i, map[insn_idx].getx(i));
+						}
+						vis.visitInsn(opcode, args, new Arg(Arg.Kind.X, 0, null));
+						break;
+					}
 						
 					default:
 						throw new Error("unhandled insn: " + insn);
@@ -761,12 +782,20 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					vis.visitTest(test, failLabel, args[0], ENIL_TYPE);
 					break;
 
+				case is_number:
+					vis.visitTest(test, failLabel, args[0], ENUMBER_TYPE);
+					break;
+
 				case is_pid:
 					vis.visitTest(test, failLabel, args[0], EPID_TYPE);
 					break;
 
 				case is_port:
 					vis.visitTest(test, failLabel, args[0], EPORT_TYPE);
+					break;
+
+				case is_function:
+					vis.visitTest(test, failLabel, args[0], EFUN_TYPE);
 					break;
 
 				case is_lt:
@@ -869,14 +898,14 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						}
 					} else if (tup.elem1 == FLOAT_ATOM) {
 						return new Arg(tup.elem2, Type.DOUBLE_TYPE);
-					}
+					} 
 
 				} else if (src == NIL_ATOM) {
 					return new Arg(ENil.NIL, ENIL_TYPE);
 
 				}
 
-				throw new Error("unknown value");
+				throw new Error("unknown value:" + src);
 
 			}
 
@@ -1283,6 +1312,8 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 						// we loose the type of the result
 
+					case apply_last:
+						is_tail_recursive = true;
 					case apply:
 					case call:
 					case call_ext: {
@@ -1319,6 +1350,15 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						current = current.setx(0, EBINARY_TYPE);
 						continue next_insn;
 					}
+					
+					case call_fun: {
+						int nargs = insn.elm(2).asInt();
+						for (int i = 0; i < nargs; i++) {
+							current.getx(i);
+						}
+						current = current.setx(0, EOBJECT_TYPE);
+						continue next_insn;
+					}
 
 					default:
 						throw new Error("unhandled: " + insn + "::" + current);
@@ -1328,8 +1368,10 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 				update_max_regs(current);
 
 				if (is_term(last_opcode) == false) {
-					LabeledBlock lbv = get_lb(this.block_label + 1, false);
+					LabeledBlock lbv;
+					 lbv = get_lb(this.block_label + 1, false);
 					try {
+						 if (lbv != null)
 						lbv.merge_from(current);
 					} catch (Error e) {
 
@@ -1357,6 +1399,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 				case call_ext_last:
 				case call_ext_only:
 				case func_info:
+				case apply_last:
 
 				case wait:
 				case select_tuple_arity:
@@ -1470,6 +1513,11 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					return setType(current, arg1, EINTEGER_TYPE);
 				}
 
+				case is_number: {
+					checkArgs(current, insn.elm(4), insn);
+					return setType(current, arg1, ENUMBER_TYPE);
+				}
+
 				case is_pid: {
 					checkArgs(current, insn.elm(4), insn);
 					return setType(current, arg1, EPID_TYPE);
@@ -1483,6 +1531,11 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 				case is_float: {
 					checkArgs(current, insn.elm(4), insn);
 					return setType(current, arg1, EDOUBLE_TYPE);
+				}
+
+				case is_function: {
+					checkArgs(current, insn.elm(4), insn);
+					return setType(current, arg1, EFUN_TYPE);
 				}
 
 				case is_ge:
@@ -1673,7 +1726,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					} else if (tup.elem1 == LITERAL_ATOM) {
 						return Type.getType(tup.elem2.getClass());
 					} else if (tup.elem1 == INTEGER_ATOM) {
-						if (tup.elem2.getClass() == EInteger.class) {
+						if (tup.elem2.getClass() == EInt32.class) {
 							return Type.INT_TYPE;
 						} else {
 							return Type.getType(tup.elem2.getClass());
@@ -1687,7 +1740,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 				} else if (src == NIL_ATOM) {
 					return ENIL_TYPE;
 
-				} else if (src instanceof EInteger) {
+				} else if (src instanceof EInt32) {
 					return EINTEGER_TYPE;
 				}
 

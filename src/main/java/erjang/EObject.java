@@ -18,6 +18,9 @@
 
 package erjang;
 
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Type;
+
 public class EObject {
 
 	public ECons cons(EObject h)
@@ -58,7 +61,7 @@ public class EObject {
 		return null;
 	}
 
-	public EInteger testInteger() {
+	public EInt32 testInteger() {
 		return null;
 	}
 
@@ -89,5 +92,12 @@ public class EObject {
 	public EDouble testFloat() {
 		return null;
 	}
+	
+	
+	public Type emit_const(MethodVisitor mv) {
+		throw new NotImplemented();
+	}
+
+
 
 }

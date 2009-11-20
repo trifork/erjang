@@ -25,7 +25,7 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
-public class EAtom extends ETerm implements CharSequence {
+public class EAtom extends EObject implements CharSequence {
 
 	public EAtom testAtom() {
 		return this;

@@ -18,18 +18,34 @@
 
 package erjang;
 
+import java.nio.charset.Charset;
+
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
-public class EBinary extends ETerm {
+import com.sun.org.apache.bcel.internal.generic.INVOKESTATIC;
 
-	public EBinary(byte[] binaryValue) {
-		// TODO Auto-generated constructor stub
+public class EBinary extends EObject {
+
+	private static final Type EBINARY_TYPE = Type.getType(EBinary.class);
+	private static final String EBINARY_NAME = EBINARY_TYPE.getInternalName();
+	private final byte[] data;
+
+	public EBinary(byte[] data) {
+		this.data = data;
 	}
 
 	@Override
 	public Type emit_const(MethodVisitor fa) {
-		throw new NotImplemented();
+		char[] chs = new char[data.length];
+		for (int i = 0; i < data.length; i++) { chs[i] = (char) (0xff & (int)data[i]); }
+		String str = new String(chs);
+		
+		fa.visitLdcInsn(str);
+		fa.visitMethodInsn(Opcodes.INVOKESTATIC, EBINARY_NAME, "fromString", "(Ljava/lang/String;)L" + EBINARY_NAME + ";");
+
+		return EBINARY_TYPE;
 	}
 
 	public EBinary testBinary() {
@@ -40,7 +56,20 @@ public class EBinary extends ETerm {
 	 * @return
 	 */
 	public byte[] getByteArray() {
-		// TODO Auto-generated method stub
-		return null;
+		return data;
+	}
+
+	/**
+	 * @return
+	 */
+	public int byte_size() {
+		return data.length;
+	}
+
+	/**
+	 * @return
+	 */
+	public int bit_size() {
+		return byte_size() * 8;
 	}
 }

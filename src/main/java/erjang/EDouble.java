@@ -41,7 +41,7 @@ public class EDouble extends ENumber {
 		return (int) value;
 	}
 
-	public static ETerm parseDouble(String string) {
+	public static EObject parseDouble(String string) {
 		return new EDouble(Double.parseDouble(string));
 	}
 	

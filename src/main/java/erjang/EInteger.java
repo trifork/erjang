@@ -16,72 +16,13 @@
  * limitations under the License.
  **/
 
+
 package erjang;
 
-import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
 
-public class EInteger extends ENumber {
+/**
+ * 
+ */
+public abstract class EInteger extends ENumber {
 
-	private static final Type EINTEGER_TYPE = Type.getType(EInteger.class);
-	public final int value;
-	
-	public EInteger(int value)
-	{
-		this.value = value;
-	}
-	
-	public EInteger testInteger() {
-		return this;
-	}
-
-	@Override
-	public int hashCode() {
-		return value;
-	}
-
-	@Override
-	public boolean equals(Object obj) {
-		if (obj instanceof EInteger) {
-			EInteger o = (EInteger) obj;
-			return o.value == value;
-		}
-		return false;
-	}
-	
-	public int intValue() {
-		return value;
-	}
-
-	@Override
-	public String toString() {
-		return String.valueOf(value);
-	}
-	
-	@Override
-	public org.objectweb.asm.Type emit_const(MethodVisitor fa) {
-
-		Type type = EINTEGER_TYPE;
-		
-		fa.visitTypeInsn(Opcodes.NEW, type.getInternalName());
-		fa.visitInsn(Opcodes.DUP);
-		fa.visitLdcInsn(new Integer(value));
-		fa.visitMethodInsn(Opcodes.INVOKESPECIAL, type.getInternalName(), "<init>", "(I)V");
-		
-		return type;
-	}
-
-	@Override
-	public EInteger asb() {
-		return new EInteger (Math.abs(value));
-	}
-
-	/**
-	 * @param arity
-	 * @return
-	 */
-	public static EInteger make(int arity) {
-		return new EInteger(arity);
-	}
 }

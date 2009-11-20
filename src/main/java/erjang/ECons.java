@@ -18,9 +18,9 @@
 
 package erjang;
 
-import erjang.modules.erlang;
+import erjang.bifs.erlang;
 
-public abstract class ECons extends ETerm {
+public abstract class ECons extends EObject {
 
 	public static final ENil NIL = new ENil();
 

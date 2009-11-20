@@ -15,7 +15,7 @@ options {
 }
 
 @members {
-      public static List<ETerm>   parse(java.io.Reader reader) throws Exception {
+      public static List<EObject>   parse(java.io.Reader reader) throws Exception {
         ANTLRReaderStream rs = new ANTLRReaderStream(reader);
         beamLexer lex = new beamLexer(rs);
         CommonTokenStream cts = new CommonTokenStream(lex);
@@ -24,7 +24,7 @@ options {
       }
       
       public static void main(String[] args) throws Exception {
-         List<ETerm>  s = parse(new java.io.FileReader("m.dis"));
+         List<EObject>  s = parse(new java.io.FileReader("m.dis"));
          // new BEAMFile().init(s);
          System.out.println(s);
       }
@@ -35,14 +35,14 @@ options {
 
 }
 
-beamFile returns[List<ETerm> l]
-@init { List<ETerm> list = new ArrayList<ETerm>(); }
+beamFile returns[List<EObject> l]
+@init { List<EObject> list = new ArrayList<EObject>(); }
 :
   (stmt=term '.' { list.add(stmt); })+ 
   { l = list; }
 ;
   
-term returns[ETerm t]:
+term returns[EObject t]:
     o=touple { t = o; }
   | l=list { t = l; }
   | atom=Atom { t = EAtom.intern($atom.text); }
@@ -69,13 +69,13 @@ tail returns[ESeq res]
 ;
 
 touple returns[ETuple tup]
-@init{ List<ETerm> elms = new ArrayList<ETerm>(); }
+@init{ List<EObject> elms = new ArrayList<EObject>(); }
 : '{' 
    (   t1=term { elms.add(t1); }
   (',' t2=term { elms.add(t2); } )*  
    )?
   '}'
-  { tup = ETuple.make(elms.toArray(new ETerm[elms.size()])); }
+  { tup = ETuple.make(elms.toArray(new EObject[elms.size()])); }
   ;
 
 Atom: ('a'..'z' ( 'a'..'z' | 'A'..'Z' | Digit | '@' | '_' )*)

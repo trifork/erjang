@@ -31,17 +31,18 @@ import com.ericsson.otp.erlang.OtpErlangString;
 import com.ericsson.otp.erlang.OtpErlangTuple;
 
 import erjang.EAtom;
+import erjang.EBig;
 import erjang.EBinary;
 import erjang.EDouble;
-import erjang.EInteger;
+import erjang.EInt32;
 import erjang.EList;
+import erjang.EObject;
 import erjang.ERT;
 import erjang.EString;
-import erjang.ETerm;
 import erjang.ETuple;
 
 abstract class Converter<T> {
-	abstract ETerm conv(T obj);
+	abstract EObject conv(T obj);
 }
 
 /**
@@ -61,8 +62,8 @@ public class OtpConverter {
 
 	static {
 		add(OtpErlangTuple.class, new Converter<OtpErlangTuple>() {
-			ETerm conv(OtpErlangTuple obj) {
-				ETerm[] vals = new ETerm[obj.arity()];
+			EObject conv(OtpErlangTuple obj) {
+				EObject[] vals = new EObject[obj.arity()];
 				for (int i = 0; i < obj.arity(); i++) {
 					vals[i] = convert(obj.elementAt(i));
 				}
@@ -72,8 +73,8 @@ public class OtpConverter {
 
 		add(OtpErlangList.class, new Converter<OtpErlangList>() {
 			@Override
-			ETerm conv(OtpErlangList obj) {
-				ETerm tail = obj.getLastTail() == null ? EList.NIL
+			EObject conv(OtpErlangList obj) {
+				EObject tail = obj.getLastTail() == null ? EList.NIL
 						: convert(obj.getLastTail());
 				for (int i = obj.arity() - 1; i >= 0; i--) {
 					tail = ERT.cons(convert(obj.elementAt(i)), tail);
@@ -83,37 +84,37 @@ public class OtpConverter {
 		});
 
 		add(OtpErlangAtom.class, new Converter<OtpErlangAtom>() {
-			ETerm conv(OtpErlangAtom obj) {
+			EObject conv(OtpErlangAtom obj) {
 				return EAtom.intern(obj.atomValue());
 			}
 		});
 
 		add(OtpErlangLong.class, new Converter<OtpErlangLong>() {
-			ETerm conv(OtpErlangLong obj) {
-				return EInteger.parseInt(obj.toString());
+			EObject conv(OtpErlangLong obj) {
+				return EBig.valueFor(obj.longValue());
 			}
 		});
 
 		add(OtpErlangString.class, new Converter<OtpErlangString>() {
-			ETerm conv(OtpErlangString obj) {
+			EObject conv(OtpErlangString obj) {
 				return new EString(obj.stringValue());
 			}
 		});
 
 		add(OtpErlangDouble.class, new Converter<OtpErlangDouble>() {
-			ETerm conv(OtpErlangDouble obj) {
+			EObject conv(OtpErlangDouble obj) {
 				return new EDouble(obj.doubleValue());
 			}
 		});
 
 		add(OtpErlangBinary.class, new Converter<OtpErlangBinary>() {
-			ETerm conv(OtpErlangBinary obj) {
+			EObject conv(OtpErlangBinary obj) {
 				return new EBinary(obj.binaryValue());
 			}
 		});
 }
 
-	public static ETerm convert(OtpErlangObject value) {
+	public static EObject convert(OtpErlangObject value) {
 
 		Class<? extends OtpErlangObject> c = value.getClass();
 		Converter cc = conv.get(c);

@@ -18,56 +18,78 @@
 
 package erjang;
 
-import java.math.BigInteger;
-
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
-public class EBig extends EInteger {
+public class EInt32 extends EInteger {
 
-	private final BigInteger value;
-
-	public EBig(BigInteger value) {
+	private static final Type EINTEGER_TYPE = Type.getType(EInt32.class);
+	public final int value;
+	
+	public EInt32(int value)
+	{
 		this.value = value;
 	}
-
-	public EBig(long res) {
-		this.value = BigInteger.valueOf(res);
+	
+	/* (non-Javadoc)
+	 * @see erjang.EObject#asInt()
+	 */
+	@Override
+	public int asInt() {
+		return value;
+	}
+	
+	public EInt32 testInteger() {
+		return this;
 	}
 
 	@Override
+	public int hashCode() {
+		return value;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (obj instanceof EInt32) {
+			EInt32 o = (EInt32) obj;
+			return o.value == value;
+		}
+		return false;
+	}
+	
 	public int intValue() {
-		return value.intValue();
+		return value;
 	}
 
 	@Override
 	public String toString() {
-		return value.toString();
+		return String.valueOf(value);
 	}
-
-	public static EBig fromString(String value) {
-		return new EBig(new BigInteger(value));
-	}
-
-	private static final Type EBIG_TYPE = Type.getType(EBig.class);
-	private static final Type STRING_TYPE = Type.getType(String.class);
-
+	
 	@Override
 	public org.objectweb.asm.Type emit_const(MethodVisitor fa) {
 
-		Type type = EBIG_TYPE;
-
-		fa.visitLdcInsn(value.toString());
-		fa.visitMethodInsn(Opcodes.INVOKESTATIC, type.getInternalName(),
-				"fromString", "(" + STRING_TYPE.getDescriptor() + ")"
-						+ type.getDescriptor());
-
+		Type type = EINTEGER_TYPE;
+		
+		fa.visitTypeInsn(Opcodes.NEW, type.getInternalName());
+		fa.visitInsn(Opcodes.DUP);
+		fa.visitLdcInsn(new Integer(value));
+		fa.visitMethodInsn(Opcodes.INVOKESPECIAL, type.getInternalName(), "<init>", "(I)V");
+		
 		return type;
 	}
 
 	@Override
-	public EBig asb() {
-		return new EBig(value.abs());
+	public EInt32 asb() {
+		return new EInt32 (Math.abs(value));
+	}
+
+	/**
+	 * @param arity
+	 * @return
+	 */
+	public static EInt32 make(int arity) {
+		return new EInt32(arity);
 	}
 }

@@ -44,7 +44,7 @@ public class EPair extends ECons {
 		return head;
 	}
 
-	public ETerm tail() {
+	public EObject tail() {
 		return (ECons)tail;
 	}
 
@@ -70,7 +70,7 @@ public class EPair extends ECons {
 	}
 
 	static Type EPAIR_TYPE = Type.getType(EPair.class);
-	static Type ETERM_TYPE = Type.getType(ETerm.class);
+	static Type ETERM_TYPE = Type.getType(EObject.class);
 	static String CONSTRUCTOR_DESC = "(" + ETERM_TYPE.getDescriptor() + ETERM_TYPE.getDescriptor() + ")V";
 	
 	@Override
@@ -81,8 +81,8 @@ public class EPair extends ECons {
 		fa.visitInsn(Opcodes.DUP);
 
 
-		((ETerm)head).emit_const(fa);
-		((ETerm)tail).emit_const(fa);
+		((EObject)head).emit_const(fa);
+		((EObject)tail).emit_const(fa);
 
 
 		fa.visitMethodInsn(Opcodes.INVOKESPECIAL, type.getInternalName(), "<init>", CONSTRUCTOR_DESC);

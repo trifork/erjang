@@ -30,7 +30,7 @@ import com.ericsson.otp.erlang.OtpAuthException;
 
 import erjang.EBinary;
 import erjang.beam.analysis.BeamTypeAnalysis;
-import erjang.modules.erlang;
+import erjang.bifs.erlang;
 
 public class Compiler implements Opcodes {
 
@@ -97,20 +97,24 @@ public class Compiler implements Opcodes {
 		try {
 			// go!
 			reader.accept(analysis);
-		} catch (Error e) {
-			e.printStackTrace();
+		} finally {
+			classRepo.store(cv.getInternalClassName(), cw.toByteArray());
 		}
 		// get byte code data
-		classRepo.store(cv.getInternalClassName(), cw.toByteArray());
+		// classRepo.store(cv.getInternalClassName(), cw.toByteArray());
 	}
 
 	public static String moduleClassName(String moduleName) {
 		String cn = EUtil.toJavaIdentifier(moduleName);
 	
-		String internalEMname = erlang.class.getName().replace('.', '/');
-		int idx = internalEMname.lastIndexOf('/');
-		String prefix = internalEMname.substring(0, idx + 1);
-		return prefix + cn;
+		String base = "erjang/m/" + cn + "/" + cn;
+		
+		return base;
+		
+//		String internalEMname = erlang.class.getName().replace('.', '/');
+//		int idx = internalEMname.lastIndexOf('/');
+//		String prefix = internalEMname.substring(0, idx + 1);
+//		return prefix + cn;
 	}
 
 	public static void main(String[] args) throws Exception {
@@ -125,20 +129,6 @@ public class Compiler implements Opcodes {
 		}
 
 		repo.close();		
-	}
-
-	static void writeTo(File output, byte[] class_data) throws IOException {
-
-		output.getParentFile().mkdirs();
-		
-		FileOutputStream fo = new FileOutputStream(output);
-		try {
-			fo.write(class_data);
-		} finally {
-			if (fo != null)
-				fo.close();
-		}
-
 	}
 
 

@@ -36,7 +36,7 @@ public class Arg {
 
 	public final Kind kind;
 	int no;
-	public final Type type;
+	public Type type;
 	EObject value;
 	
 	public Arg(Kind kind, int reg) {

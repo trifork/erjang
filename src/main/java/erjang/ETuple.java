@@ -31,12 +31,25 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.util.CheckClassAdapter;
 
-public abstract class ETuple extends ETerm implements Cloneable {
+import clojure.lang.Indexed;
+
+public abstract class ETuple extends EObject implements Cloneable, Indexed {
 
 	public ETuple testTuple() {
 		return this;
 	}
 
+	@Override
+	public int count() {
+		return arity();
+	}
+
+	/** tuple's are 1-based, clojure's Indexed are 0-based */
+	@Override
+	public Object nth(int i) {
+		return elm(i+1);
+	}
+	
 	public abstract int arity();
 
 	public abstract EObject elm(int i);
@@ -276,7 +289,7 @@ public abstract class ETuple extends ETerm implements Cloneable {
 		mv.visitEnd();
 	}
 
-	protected final ETerm bad_nth(int i) {
+	protected final EObject bad_nth(int i) {
 		throw new IllegalArgumentException();
 	}
 
@@ -390,7 +403,7 @@ public abstract class ETuple extends ETerm implements Cloneable {
 		for (int i = 0; i < arity(); i++) {
 			fa.visitInsn(Opcodes.DUP);
 
-			((ETerm) elm(i + 1)).emit_const(fa);
+			((EObject) elm(i + 1)).emit_const(fa);
 
 			fa.visitFieldInsn(Opcodes.PUTFIELD, type.getInternalName(), "elem"
 					+ (i + 1), ETERM_TYPE.getDescriptor());

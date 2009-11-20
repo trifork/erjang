@@ -32,7 +32,7 @@ public class ENil extends ESeq {
 	}
 
 	@Override
-	public ETerm head() {
+	public EObject head() {
 		throw new UnsupportedOperationException();
 	}
 

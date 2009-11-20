@@ -27,7 +27,7 @@ public class ERT {
 	public static final EAtom AM_BADARITH = EAtom.intern("badarith");
 	public static final EAtom AM_MODULE = EAtom.intern("module");
 
-	public static ETerm cons(EObject h, EObject t) {
+	public static EObject cons(EObject h, EObject t) {
 		return t.cons(h);
 	}
 
@@ -39,20 +39,16 @@ public class ERT {
 		throw new ErlangException(AM_BADARG);
 	}
 
+	public static ErlangException badarg(Throwable cause, Object... args) {
+		throw new ErlangException(AM_BADARG, cause, args);
+	}
+
 	public static ErlangException badarg(Object... args) {
 		throw new ErlangException(AM_BADARG, args);
 	}
 
 	public static ErlangException badarg(Object o1, Object o2) {
 		throw new ErlangException(AM_BADARG, new Object[] { o1, o2 });
-	}
-
-	public static ErlangException badarg(Throwable cause, Object... args) {
-		throw new ErlangException(AM_BADARG, cause, args);
-	}
-
-	public static ErlangException badarg(EObject arg1, int arg2) {
-		throw new ErlangException(AM_BADARG, arg1, arg2);
 	}
 
 	public static final EAtom ATOM_TRUE = EAtom.intern("true");
@@ -62,16 +58,24 @@ public class ERT {
 		return o1 == null ? o2 == null : o1.equals(o2);
 	}
 
-	public static boolean eq(EObject o1, EAtom o2) {
-		return o1 == o2;
-	}
-
-	public static boolean eq(EAtom o1, EObject o2) {
-		return o1 == o2;
-	}
-
 	public static boolean eq(EAtom o1, EAtom o2) {
 		return o1 == o2;
+	}
+	
+	public static EAtom is_atom(EObject o) {
+		return o==null?null:o.testAtom();
+	}
+
+	public static ECons is_nonempty_list(EObject o) {
+		return o==null?null:o.testNonEmptyList();
+	}
+
+	public static ENil is_nil(EObject o) {
+		return o==null?ENil.NIL:o.testNil();
+	}
+
+	public static EDouble is_list(EObject o) {
+		return o==null?null:o.testFloat();
 	}
 
 	/**

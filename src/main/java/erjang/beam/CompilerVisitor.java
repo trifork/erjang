@@ -18,7 +18,6 @@
 
 package erjang.beam;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -43,7 +42,7 @@ import erjang.EBinary;
 import erjang.ECons;
 import erjang.EDouble;
 import erjang.EFun;
-import erjang.EInteger;
+import erjang.EInt32;
 import erjang.EList;
 import erjang.EModule;
 import erjang.ENil;
@@ -55,14 +54,12 @@ import erjang.EProc;
 import erjang.ERT;
 import erjang.ESeq;
 import erjang.EString;
-import erjang.ETerm;
 import erjang.ETuple;
 import erjang.ETuple2;
 import erjang.ErlFun;
 import erjang.ErlangException;
 import erjang.Module;
 import erjang.beam.Arg.Kind;
-import erjang.beam.CompilerVisitor.ASMFunctionAdapter.ASMBlockVisitor;
 
 /**
  * 
@@ -79,7 +76,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 	static final Type ERLANG_EXCEPTION_TYPE = Type
 			.getType(ErlangException.class);
 	static final Type ERT_TYPE = Type.getType(ERT.class);
-	static final Type EINTEGER_TYPE = Type.getType(EInteger.class);
+	static final Type EINTEGER_TYPE = Type.getType(EInt32.class);
 	static final Type EMODULE_TYPE = Type.getType(EModule.class);
 	/**
 	 * 
@@ -132,20 +129,20 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 	static final Type EPORT_TYPE = Type.getType(EPort.class);
 	static final Type EMATCHSTATE_TYPE = Type.getType(EBinMatchState.class);
 
-	static final ETerm TRUE_ATOM = EAtom.intern("true");
-	static final ETerm FALSE_ATOM = EAtom.intern("false");
-	static final ETerm X_ATOM = EAtom.intern("x");
-	static final ETerm Y_ATOM = EAtom.intern("y");
-	static final ETerm FR_ATOM = EAtom.intern("fr");
-	static final ETerm NIL_ATOM = EAtom.intern("nil");
-	static final ETerm INTEGER_ATOM = EAtom.intern("integer");
-	static final ETerm FLOAT_ATOM = EAtom.intern("float");
-	static final ETerm ATOM_ATOM = EAtom.intern("atom");
-	static final ETerm LITERAL_ATOM = EAtom.intern("literal");
-	static final ETerm NOFAIL_ATOM = EAtom.intern("nofail");
-	static final ETerm F_ATOM = EAtom.intern("f");
-	static final ETerm FIELD_FLAGS_ATOM = EAtom.intern("field_flags");
-	static final ETerm ERLANG_ATOM = EAtom.intern("erlang");
+	static final EObject TRUE_ATOM = EAtom.intern("true");
+	static final EObject FALSE_ATOM = EAtom.intern("false");
+	static final EObject X_ATOM = EAtom.intern("x");
+	static final EObject Y_ATOM = EAtom.intern("y");
+	static final EObject FR_ATOM = EAtom.intern("fr");
+	static final EObject NIL_ATOM = EAtom.intern("nil");
+	static final EObject INTEGER_ATOM = EAtom.intern("integer");
+	static final EObject FLOAT_ATOM = EAtom.intern("float");
+	static final EObject ATOM_ATOM = EAtom.intern("atom");
+	static final EObject LITERAL_ATOM = EAtom.intern("literal");
+	static final EObject NOFAIL_ATOM = EAtom.intern("nofail");
+	static final EObject F_ATOM = EAtom.intern("f");
+	static final EObject FIELD_FLAGS_ATOM = EAtom.intern("field_flags");
+	static final EObject ERLANG_ATOM = EAtom.intern("erlang");
 
 	static final Type MODULE_ANN_TYPE = Type.getType(Module.class);
 	static final Type ERLFUN_ANN_TYPE = Type.getType(ErlFun.class);
@@ -201,7 +198,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 		return module_name.getName();
 	}
 
-	Map<ETerm, String> constants = new HashMap<ETerm, String>();
+	Map<EObject, String> constants = new HashMap<EObject, String>();
 
 	/*
 	 * (non-Javadoc)
@@ -250,9 +247,9 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			
 		}
 		
-		for (Map.Entry<ETerm, String> ent : constants.entrySet()) {
+		for (Map.Entry<EObject, String> ent : constants.entrySet()) {
 
-			ETerm term = ent.getKey();
+			EObject term = ent.getKey();
 			term.emit_const(mv);
 			mv.visitFieldInsn(Opcodes.PUTSTATIC, self_type.getInternalName(),
 					ent.getValue(), Type.getType(term.getClass())
@@ -603,6 +600,8 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			public void visitInsn(BeamOpcode opcode, int failLabel, Arg[] in,
 					Arg out, BuiltInFunction bif) {
 
+				test_ex_start();
+
 				switch (opcode) {
 				case gc_bif:
 				case bif:
@@ -617,8 +616,6 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 					if (failLabel != 0) {
 						// guard
-						if (bif.getReturnType().getSort() != Type.OBJECT)
-							throw new Error("guards must return object type");
 
 						// dup result for test
 						if (out != null) {
@@ -627,7 +624,13 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 							push(out, bif.getReturnType());
 						}
 
-						mv.visitJumpInsn(IFNULL, getLabel(failLabel));
+						if (bif.getReturnType().getSort() == Type.BOOLEAN) {
+							mv.visitJumpInsn(IFEQ, getLabel(failLabel));
+						} else {
+							if (bif.getReturnType().getSort() != Type.OBJECT)
+								throw new Error("guards must return object type - "+bif);
+							mv.visitJumpInsn(IFNULL, getLabel(failLabel));
+						}
 					} else {
 						pop(out, bif.getReturnType());
 					}
@@ -684,7 +687,9 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				if (out.kind == Kind.X || out.kind == Kind.Y) {
 					if (out.type == Type.INT_TYPE
 							|| out.type == Type.BOOLEAN_TYPE
-							|| (out.type == null && stack_type == Type.INT_TYPE)) {
+							|| (out.type == null && stack_type == Type.INT_TYPE)
+							|| (out.type == null && stack_type == Type.BOOLEAN_TYPE)
+							) {
 						mv.visitVarInsn(ISTORE, var_index(out));
 					} else {
 						mv.visitVarInsn(ASTORE, var_index(out));
@@ -823,7 +828,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				} else if (value.kind == Kind.F) {
 					mv.visitVarInsn(DLOAD, var_index(value));
 				} else if (value.kind == Kind.IMMEDIATE) {
-					t = push_immediate((ETerm) value.value, stack_type);
+					t = push_immediate(value.value, stack_type);
 				} else {
 					throw new Error();
 				}
@@ -838,7 +843,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			 * @param stack_type
 			 *            TODO
 			 */
-			private Type push_immediate(ETerm value, Type stack_type) {
+			private Type push_immediate(EObject value, Type stack_type) {
 
 				if (value == ENil.NIL) {
 					mv.visitFieldInsn(GETSTATIC, ENIL_NAME, "NIL", ENIL_TYPE
@@ -859,7 +864,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				}
 
 				if (stack_type.getSort() != Type.OBJECT) {
-					if (value instanceof EInteger) {
+					if (value instanceof EInt32) {
 						mv.visitLdcInsn(new Integer(value.asInt()));
 						return Type.INT_TYPE;
 					} else if (value instanceof EDouble) {
@@ -906,7 +911,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			 * @param size
 			 * @return
 			 */
-			private String getConstantName(ETerm value, int size) {
+			private String getConstantName(EObject value, int size) {
 				if (value instanceof EAtom)
 					return "atom_" + EUtil.toJavaIdentifier((EAtom) value);
 				if (value instanceof ENumber)
@@ -963,6 +968,24 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 							+ ECONS_TYPE.getDescriptor());
 					pop(out, ECONS_TYPE);
 					return;
+				case call_fun:
+				{ 
+					int nargs = in.length-1;
+					push(in[nargs], EOBJECT_TYPE);
+					
+					String funtype = EFUN_NAME + nargs;
+					
+					mv.visitMethodInsn(INVOKESTATIC, funtype, "cast", "(" + EOBJECT_DESCRIPTOR + ")L" + funtype + ";" );
+					
+					mv.visitVarInsn(ALOAD, 0); // load proc
+					for (int i = 0; i < nargs; i++) {
+						push(in[i], EOBJECT_TYPE);
+					}
+
+					mv.visitMethodInsn(INVOKEVIRTUAL, funtype, "invoke", EUtil.getSignature(nargs, true));
+					pop(out, EOBJECT_TYPE);
+					return;
+				}
 				}
 
 				throw new Error();
@@ -1006,6 +1029,17 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				throw new Error();
 			}
 
+			void test_ex_start()
+			{
+				if (ex_handlers.size() > 0) {
+					EXHandler ex = ex_handlers.peek();
+					if (!ex.is_start_visited) {
+						mv.visitLabel(ex.begin);
+						ex.is_start_visited = true;
+					}
+				}
+			}
+			
 			/*
 			 * (non-Javadoc)
 			 * 
@@ -1024,6 +1058,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 					return;
 
+				case K_try:
 				case K_catch: {
 					EXHandler h = new EXHandler();
 					h.begin = new Label();
@@ -1034,13 +1069,16 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					mv.visitTryCatchBlock(h.begin, h.end, h.target, Type
 							.getType(ErlangException.class).getInternalName());
 
-					mv.visitLabel(h.begin);
 
 					ex_handlers.push(h);
 					return;
 				}
 
+				case try_end:
 				case catch_end: {
+					
+					test_ex_start();
+
 					EXHandler h = ex_handlers.pop();
 
 					Label after = new Label();
@@ -1071,7 +1109,16 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					mv.visitJumpInsn(IFNE, getLabel(val));
 					return;
 				}
+
+				case wait: {
+					mv.visitVarInsn(ALOAD, 0);
+					mv.visitMethodInsn(INVOKESTATIC, ERT_NAME, "wait_forever",
+							"(" + EPROC_TYPE.getDescriptor() + ")V");
+
+					mv.visitJumpInsn(GOTO, getLabel(val));
+					return;
 				}
+}
 				throw new Error();
 			}
 
@@ -1405,6 +1452,8 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					return IS_PID_TEST;
 				case is_port:
 					return IS_PORT_TEST;
+				case is_function:
+					return IS_FUNCTION_TEST;
 				}
 
 				throw new Error("unhandled " + test);
@@ -1427,6 +1476,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					for (int i = 0; i < ys.length; i++) {
 						if (i != (ys.length - 1))
 							mv.visitInsn(DUP);
+						mv.visitInsn(NOP);
 						pop(ys[i], ENIL_TYPE);
 					}
 
@@ -1644,13 +1694,11 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			public void visitCall(ExtFunc fun, Arg[] args, boolean is_tail,
 					boolean isExternal) {
 
+				test_ex_start();
+
 				if (false /* fun.mod == ERLANG_ATOM */) {
 
 					System.err.println(fun);
-
-					if ("erlang:error/1".equals(fun.toString())) {
-						System.err.println("break here!");
-					}
 
 					// functions in module "erlang" compile to direct calls
 
@@ -1698,7 +1746,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 							is_tail ? "invoke_tail" : "invoke", EUtil
 									.getSignature(args.length, true));
 
-					if (is_tail) {
+					if (is_tail || isExitFunc(fun)) {
 						mv.visitInsn(ARETURN);
 					} else {
 						mv.visitVarInsn(ASTORE, xregs[0]);
@@ -1725,6 +1773,20 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 				}
 			}
+
+			/**
+			 * @param fun
+			 * @return
+			 */
+			private boolean isExitFunc(ExtFunc fun) {
+				if (fun.mod == ERLANG_ATOM) {
+					if (fun.fun.getName().equals("exit")) return true;
+					if (fun.fun.getName().equals("error")) return true;
+					if (fun.fun.getName().equals("throw")) return true;
+				}
+
+				return false;
+			}
 		}
 
 	}
@@ -1735,14 +1797,15 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 	static Method IS_TUPLE_TEST = Method.getMethod("erjang.ETuple testTuple()");
 	static Method IS_INTEGER_TEST = Method
 			.getMethod("erjang.ETuple testInteger()");
-	static Method IS_ATOM_TEST = Method.getMethod("erjang.ETuple testAtom()");
+	static Method IS_ATOM_TEST = Method.getMethod("erjang.EAtom testAtom()");
 	static Method IS_FLOAT_TEST = Method
 			.getMethod("erjang.EDouble testFloat()");
 	static Method IS_NIL_TEST = Method.getMethod("boolean isNil()");
 	static Method IS_BOOLEAN_TEST = Method.getMethod("boolean isBoolean()");
-	static Method IS_BINARY_TEST = Method.getMethod("boolean isBinary()");
-	static Method IS_PID_TEST = Method.getMethod("boolean isPid()");
-	static Method IS_PORT_TEST = Method.getMethod("boolean isPort()");
+	static Method IS_BINARY_TEST = Method.getMethod("erjang.EBinary isBinary()");
+	static Method IS_PID_TEST = Method.getMethod("erjang.EPID isPid()");
+	static Method IS_PORT_TEST = Method.getMethod("erjang.EPort isPort()");
+	static Method IS_FUNCTION_TEST = Method.getMethod("erjang.EFun isFunction()");
 
 	Map<String, ExtFunc> imported = new HashMap<String, ExtFunc>();
 
@@ -1933,6 +1996,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 }
 
 class EXHandler {
+	public boolean is_start_visited;
 	Arg reg;
 	Label begin, end, target;
 }

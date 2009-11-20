@@ -22,7 +22,7 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
-import erjang.modules.erlang;
+import erjang.bifs.erlang;
 
 public class EList extends ESeq {
 	
@@ -79,7 +79,7 @@ public class EList extends ESeq {
 	
 
 	static Type ELIST_TYPE = Type.getType(EList.class);
-	static Type ETERM_TYPE = Type.getType(ETerm.class);
+	static Type ETERM_TYPE = Type.getType(EObject.class);
 	static String CONSTRUCTOR_DESC = "(" + ETERM_TYPE.getDescriptor() + ELIST_TYPE.getDescriptor() + ")V";
 	
 	@Override
@@ -89,8 +89,8 @@ public class EList extends ESeq {
 		fa.visitTypeInsn(Opcodes.NEW, type.getInternalName());
 		fa.visitInsn(Opcodes.DUP);
 
-		((ETerm)head).emit_const(fa);
-		((ETerm)tail).emit_const(fa);
+		((EObject)head).emit_const(fa);
+		((EObject)tail).emit_const(fa);
 
 		fa.visitMethodInsn(Opcodes.INVOKESPECIAL, type.getInternalName(), "<init>", CONSTRUCTOR_DESC);
 		
