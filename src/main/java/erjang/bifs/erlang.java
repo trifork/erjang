@@ -8,6 +8,7 @@ import erjang.EBig;
 import erjang.EBinary;
 import erjang.ECons;
 import erjang.EDouble;
+import erjang.EInteger;
 import erjang.ESmall;
 import erjang.EList;
 import erjang.ENil;
@@ -136,7 +137,7 @@ public class erlang {
 
 	@BIF(type=Type.GUARD, name="element")
 	static public EObject element$g(EObject idx, EObject tup) {
-		ESmall i = idx.testInteger();
+		EInteger i = idx.testInteger();
 		ETuple t = tup.testTuple();
 		if (i == null || t == null) {
 			return null;
@@ -148,7 +149,7 @@ public class erlang {
 	
 	@BIF
 	static public EObject element(EObject idx, EObject tup) {
-		ESmall i = idx.testInteger();
+		EInteger i = idx.testInteger();
 		ETuple t = tup.testTuple();
 		if (i == null || t == null || i.intValue() > t.arity()) {
 			throw ERT.badarg();
@@ -230,10 +231,10 @@ public class erlang {
 	}
 
 	@BIF
-	static public int length(EObject list) {
+	static public EInteger length(EObject list) {
 		ESeq seq;
 		if ((seq = list.testSeq()) != null) {
-			return seq.length();
+			return ERT.box(seq.length());
 		}
 		throw ERT.badarg("erlang", "length", list);
 	}
@@ -247,7 +248,7 @@ public class erlang {
 	static public ESmall length$p(EObject list) {
 		ESeq seq;
 		if ((seq = list.testSeq()) != null) {
-			return new ESmall(seq.length());
+			return ERT.box(seq.length());
 		}
 		return null;
 	}
@@ -359,39 +360,23 @@ public class erlang {
 
 	@BIF(name = "div")
 	static public ENumber div(ENumber n1, int v2) {
-		return n1.div(v2);
+		return n1.idiv(v2);
 	}
 
 	@BIF(name = "-")
 	static public ENumber minus(EObject v1, int v2) {
-		ENumber n1;
-		if ((n1 = v1.testNumber()) != null) {
-			return n1.minus(v2);
-		}
-		throw ERT.badarg("erlang", "-", v1, v2);
+		return v1.subtract(v2);
 	}
 
 	@BIF(name = "-")
 	static public ENumber minus(int v1, int v2) {
-		long res = (long) v1 - (long) v2;
-		int intres = (int) res;
-		if (res == intres)
-			return new ESmall(intres);
-		else
-			return new EBig(BigInteger.valueOf(res));
+		return ERT.box((long) v1 - (long) v2);
 	}
 
 	@BIF(name = "-")
 	@ErlFun(name = "-", export = true)
 	static public ENumber minus(EObject v1, EObject v2) {
-		ENumber n1;
-		if ((n1 = v1.testNumber()) != null) {
-			ENumber n2;
-			if ((n2 = v2.testNumber()) != null) {
-				return n1.subtract(n2);
-			}
-		}
-		throw ERT.badarg((Throwable) null, "erlang", "-", v1, v2);
+		return v1.subtract(v2);
 	}
 
 	@BIF(name = "-", type = Type.GUARD)
@@ -443,19 +428,12 @@ public class erlang {
 
 	@BIF(name = "+")
 	static public ENumber plus(int v1, int v2) {
-		return ENumber.valueFor((long) v1 + (long) v2);
+		return ERT.box((long) v1 + (long) v2);
 	}
 
 	@BIF(name = "+")
 	static public ENumber plus(EObject v1, EObject v2) {
-		ENumber n1;
-		if ((n1 = v1.testNumber()) != null) {
-			ENumber n2;
-			if ((n2 = v2.testNumber()) != null) {
-				return n1.add(n2);
-			}
-		}
-		throw ERT.badarg(v1, v2);
+		return v1.add(v2);
 	}
 
 	@BIF(name = "+")
@@ -481,78 +459,64 @@ public class erlang {
 
 	@BIF(name = "*")
 	static public ENumber multiply(int v1, int v2) {
-		return ENumber.valueFor((long) v1 * (long) v2);
+		return ERT.box((long) v1 * (long) v2);
 	}
 
 	@BIF(name = "trunc")
 	@ErlFun(export = true)
-	static public ENumber trunc(EObject v1) {
-		ENumber n1;
-		if ((n1 = v1.testNumber()) != null) {
-			return n1.trunc();
+	static public EDouble trunc(EObject v1) {
+		EDouble n1;
+		if ((n1 = v1.testFloat()) != null) {
+			return trunc(n1.value);
 		}
 		throw ERT.badarg();
 	}
 
 	@BIF(name = "trunc")
-	static public double trunc(double d) {
-		return Math.floor(d);
+	static public EDouble trunc(double d) {
+		return ERT.box( Math.floor(d) );
 	}
 
 	@BIF(name = "trunc")
-	static public double trunc(EDouble d1) {
-		return Math.floor(d1.value);
+	static public EDouble trunc(EDouble d1) {
+		return ERT.box( Math.floor(d1.value) );
 	}
 
 	@BIF(name = "round")
-	static public double round(double d) {
-		return Math.round(d);
+	static public EInteger round(double d) {
+		return ERT.box( Math.round(d) );
 	}
 
 	@BIF(name = "round")
-	static public double round(EDouble d) {
-		return Math.round(d.value);
+	static public EInteger round(EDouble d) {
+		return ERT.box( Math.round(d.value) );
 	}
 
 	@BIF(name = "round")
-	static public double round(EObject o) {
+	static public EInteger round(EObject o) {
 		EDouble d;
 		if ((d=o.testFloat()) == null) throw ERT.badarg();
-		return Math.round(d.value);
+		return ERT.box( Math.round(d.value) );
 	}
 
 	@BIF
 	@ErlFun(export = true)
 	static public ENumber rem(EObject v1, EObject v2) {
-		ENumber n1;
-		if ((n1 = v1.testNumber()) != null) {
-			ENumber n2;
-			if ((n2 = v2.testNumber()) != null) {
-				return n1.rem(n2);
-			}
-		}
-		throw ERT.badarg("erlang", "rem", v1, v2);
+		return v1.irem(v2);
 	}
 
 	@BIF(name = "rem", type = Type.GUARD)
-	static public ENumber rem$p(EObject v1, EObject v2) {
-		ENumber n1;
-		if ((n1 = v1.testNumber()) != null) {
-			ENumber n2;
-			if ((n2 = v2.testNumber()) != null) {
-				return n1.rem(n2);
-			}
+	static public EInteger rem$p(EObject v1, EObject v2) {
+		if (v2.equals(ESmall.ZERO)) {
+			return null;
+		} else {
+			return v1.irem(v2);
 		}
-		return null;
 	}
 
 	@BIF(name = "rem")
-	static public ENumber rem(EObject v1, int v2) {
-		ENumber n1;
-		if ((n1 = v1.testNumber()) != null) {
-			return n1.rem(v2);
-		}
-		throw ERT.badarg("erlang", "rem", v1, v2);
+	static public EInteger rem(EObject v1, int v2) {
+		return v1.irem(v2);
 	}
 
 	@BIF(name = "abs", type = Type.GUARD)

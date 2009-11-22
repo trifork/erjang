@@ -42,11 +42,10 @@ public abstract class ENumber extends EObject {
 	public abstract ENumber abs();
 
 	public abstract EInteger asInteger();
-	/**
-	 * @param i2
-	 * @return
-	 */
-	public abstract ENumber add(int rhs);
+
+	public EDouble divide(double rhs) { 
+		return ERT.box(doubleValue() / rhs);
+	}
 
 
 }

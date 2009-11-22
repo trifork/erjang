@@ -91,7 +91,7 @@ public class OtpConverter {
 
 		add(OtpErlangLong.class, new Converter<OtpErlangLong>() {
 			EObject conv(OtpErlangLong obj) {
-				return EBig.valueFor(obj.longValue());
+				return ERT.box(obj.longValue());
 			}
 		});
 
@@ -103,7 +103,7 @@ public class OtpConverter {
 
 		add(OtpErlangDouble.class, new Converter<OtpErlangDouble>() {
 			EObject conv(OtpErlangDouble obj) {
-				return new EDouble(obj.doubleValue());
+				return ERT.box(obj.doubleValue());
 			}
 		});
 

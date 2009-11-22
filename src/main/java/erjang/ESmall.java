@@ -27,8 +27,13 @@ import org.objectweb.asm.Type;
 public class ESmall extends EInteger {
 
 	private static final Type EINTEGER_TYPE = Type.getType(ESmall.class);
+	public static final ESmall ZERO = new ESmall(0);
 	public final int value;
 
+	public ESmall testSmall() {
+		return this;
+	}
+	
 	public ESmall(int value) {
 		this.value = value;
 	}
@@ -162,6 +167,26 @@ public class ESmall extends EInteger {
 		return ERT.box(lhs.multiply(BigInteger.valueOf(value)));
 	}
 
+
+	// integer division erlang:div/2
+	
+	public EDouble divide(EObject other) {
+		return other.r_divide(value);
+	}
+
+	public EDouble r_divide(int lhs) { 
+		return ERT.box((double)lhs / value);
+	}
+	
+	public EDouble r_divide(double lhs) { 
+		return ERT.box(lhs / value);
+	}
+	
+	public EDouble r_divide(BigInteger lhs) { 
+		return ERT.box(lhs.doubleValue() / value);
+	}
+
+	
 	// integer division erlang:div/2
 	
 	public EInteger idiv(EObject other) {
@@ -177,6 +202,10 @@ public class ESmall extends EInteger {
 	}
 
 	// remainder erlang:rem/2
+
+	public ESmall irem(int rhs) { 
+		return ERT.box( value % rhs );
+	}
 
 	public EInteger irem(EObject other) {
 		return other.r_irem(value);

@@ -63,7 +63,7 @@ public class EObject {
 		return null;
 	}
 
-	public ESmall testInteger() {
+	public EInteger testInteger() {
 		return null;
 	}
 
@@ -81,12 +81,19 @@ public class EObject {
 
 
 	/**
-	 * @return
+	 * @return this if this object is an instance of EPort, otherwise null
 	 */
 	public EPort testPort() {
 		return null;
 	}
 
+	/**
+	 * @return this if this object is an instance of ESmall, otherwise null
+	 */
+	public ESmall testSmall() {
+		return null;
+	}
+	
 
 	/**
 	 * @return
@@ -104,58 +111,77 @@ public class EObject {
 	// 
 	//
 	
-	public ENumber negate(EObject other) { throw ERT.badarg(this, other); }
+	@BIF(name="-")
+	public ENumber negate() { throw ERT.badarg(this); }
 
-	public ENumber add(EObject other) { throw ERT.badarg(this, other); }
+	@BIF(name="+")
+	public ENumber add(EObject rhs) { throw ERT.badarg(this, rhs); }
 	public ENumber add(int lhs) { throw ERT.badarg(lhs, this); }
 	public ENumber add(double lhs) { throw ERT.badarg(lhs, this); }
 	public ENumber add(BigInteger lhs) { throw ERT.badarg(lhs, this); }
 
-	public ENumber subtract(EObject other) { throw ERT.badarg(this, other); }
-	public ENumber r_subtract(int lhs) { throw ERT.badarg(lhs, this); }
-	public ENumber r_subtract(double lhs) { throw ERT.badarg(lhs, this); }
-	public ENumber r_subtract(BigInteger lhs) { throw ERT.badarg(lhs, this); }
+	@BIF(name="-")
+	public ENumber subtract(EObject rhs) { throw ERT.badarg(this, rhs); }
+	public ENumber subtract(int rhs) { throw ERT.badarg(this, rhs); }
+	ENumber r_subtract(int lhs) { throw ERT.badarg(lhs, this); }
+	ENumber r_subtract(double lhs) { throw ERT.badarg(lhs, this); }
+	ENumber r_subtract(BigInteger lhs) { throw ERT.badarg(lhs, this); }
 	
-	public EInteger idiv(EObject other) { throw ERT.badarg(this, other); }
-	public EInteger r_idiv(int lhs) { throw ERT.badarg(lhs, this); }
-	public EInteger r_idiv(BigInteger lhs) { throw ERT.badarg(lhs, this); }
+	@BIF(name="div")
+	public EInteger idiv(EObject rhs) { throw ERT.badarg(this, rhs); }
+	public EInteger idiv(int rhs) { throw ERT.badarg(this, rhs); }
+	EInteger r_idiv(int lhs) { throw ERT.badarg(lhs, this); }
+	EInteger r_idiv(BigInteger lhs) { throw ERT.badarg(lhs, this); }
 
-	public EInteger irem(EObject other) { throw ERT.badarg(this, other); }
-	public EInteger r_irem(int lhs) { throw ERT.badarg(lhs, this); }
-	public EInteger r_irem(BigInteger lhs) { throw ERT.badarg(lhs, this); }
+	@BIF(name="rem")
+	public EInteger irem(EObject rhs) { throw ERT.badarg(this, rhs); }
+	EInteger r_irem(int lhs) { throw ERT.badarg(lhs, this); }
+	EInteger r_irem(BigInteger lhs) { throw ERT.badarg(lhs, this); }
 
-	public EDouble divide(EObject other) { throw ERT.badarg(this, other); }
-	public EDouble r_divide(int lhs) { throw ERT.badarg(lhs, this); }
-	public EDouble r_divide(double lhs) { throw ERT.badarg(lhs, this); }
-	public EDouble r_divide(BigInteger lhs) { throw ERT.badarg(lhs, this); }
+	@BIF(name="/")
+	public EDouble divide(EObject rhs) { throw ERT.badarg(this, rhs); }
+	EDouble r_divide(int lhs) { throw ERT.badarg(lhs, this); }
+	EDouble r_divide(double lhs) { throw ERT.badarg(lhs, this); }
+	EDouble r_divide(BigInteger lhs) { throw ERT.badarg(lhs, this); }
 
-	public ENumber multiply(EObject other) { throw ERT.badarg(this, other); }
+	@BIF(name="*")
+	public ENumber multiply(EObject rhs) { throw ERT.badarg(this, rhs); }
 	public ENumber multiply(int lhs) { throw ERT.badarg(lhs, this); }
 	public ENumber multiply(double lhs) { throw ERT.badarg(lhs, this); }
 	public ENumber multiply(BigInteger lhs) { throw ERT.badarg(lhs, this); }
 
-	public EInteger bsr(EObject other) { throw ERT.badarg(this, other); }
-	public EInteger r_bsr(int lhs) { throw ERT.badarg(lhs, this); }
-	public EInteger r_bsr(BigInteger lhs) { throw ERT.badarg(lhs, this); }
+	@BIF(name="bsr")
+	public EInteger bsr(EObject rhs) { throw ERT.badarg(this, rhs); }
+	EInteger r_bsr(int lhs) { throw ERT.badarg(lhs, this); }
+	EInteger r_bsr(BigInteger lhs) { throw ERT.badarg(lhs, this); }
 
-	public EInteger bsl(EObject other) { throw ERT.badarg(this, other); }
-	public EInteger r_bsl(int lhs) { throw ERT.badarg(lhs, this); }
-	public EInteger r_bsl(BigInteger lhs) { throw ERT.badarg(lhs, this); }
-
+	@BIF(name="bsl")
+	public EInteger bsl(EObject rhs) { throw ERT.badarg(this, rhs); }
+	EInteger r_bsl(int lhs) { throw ERT.badarg(lhs, this); }
+	EInteger r_bsl(BigInteger lhs) { throw ERT.badarg(lhs, this); }
 	
-	public EInteger band(EObject other) { throw ERT.badarg(this, other); }
+	@BIF(name="band")
+	public EInteger band(EObject rhs) { throw ERT.badarg(this, rhs); }
 	public EInteger band(int lhs) { throw ERT.badarg(lhs, this); }
 	public EInteger band(BigInteger lhs) { throw ERT.badarg(lhs, this); }
 
-	public EInteger bor(EObject other) { throw ERT.badarg(this, other); }
+	@BIF(name="bor")
+	public EInteger bor(EObject rhs) { throw ERT.badarg(this, rhs); }
 	public EInteger bor(int lhs) { throw ERT.badarg(lhs, this); }
 	public EInteger bor(BigInteger lhs) { throw ERT.badarg(lhs, this); }
 
-	public EInteger bxor(EObject other) { throw ERT.badarg(this, other); }
+	@BIF(name="bxor")
+	public EInteger bxor(EObject rhs) { throw ERT.badarg(this, rhs); }
 	public EInteger bxor(int lhs) { throw ERT.badarg(lhs, this); }
 	public EInteger bxor(BigInteger lhs) { throw ERT.badarg(lhs, this); }
 
+	@BIF(name="bnor")
 	public EInteger bnot() { throw ERT.badarg(this); }
+
+	// extra convenience
+	
+	public EDouble divide(double rhs) { throw ERT.badarg(this,rhs); }
+	public EInteger irem(int rhs) { throw ERT.badarg(this,rhs); }
 
 
 

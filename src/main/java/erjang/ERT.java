@@ -63,19 +63,19 @@ public class ERT {
 		return o1 == o2;
 	}
 
-	public static EAtom is_atom(EObject o) {
+	public static EAtom as_atom_or_null(EObject o) {
 		return o == null ? null : o.testAtom();
 	}
 
-	public static ECons is_nonempty_list(EObject o) {
+	public static ECons as_nonempty_list_or_null(EObject o) {
 		return o == null ? null : o.testNonEmptyList();
 	}
 
-	public static ENil is_nil(EObject o) {
+	public static ENil as_nil_or_null(EObject o) {
 		return o == null ? ENil.NIL : o.testNil();
 	}
 
-	public static EDouble is_list(EObject o) {
+	public static EDouble as_float_or_null(EObject o) {
 		return o == null ? null : o.testFloat();
 	}
 
@@ -154,6 +154,20 @@ public class ERT {
 	 * @return
 	 */
 	public static EInteger box(long longVal) {
+		
+		// very simple: see if the longValue can be converted
+		// to an int and back again without loosing it's value
+		
+		int intVal = (int) longVal;
+		if (longVal == (long)intVal) {
+			return new ESmall(intVal);
+		} else {
+			return new EBig(longVal);			
+		}
+	}
+	
+	public static EInteger box2(long longVal) {
+			
 
 		// compute l's offset from Integer.MIN_VALUE
 		long offset_from_int_min = longVal - (long) Integer.MIN_VALUE;

@@ -60,15 +60,16 @@ public class EString extends ESeq implements CharSequence {
 				EObject head = list.head();
 				
 				ESmall intval;
-				if ((intval = head.testInteger()) == null) {
+				if ((intval = head.testSmall()) == null) {
 					throw ERT.badarg();
 				}
 				
-				if (intval.value > 255 || intval.value < 0) {
+				int byteValue = intval.value & 0xff;
+				if (intval.value != byteValue) {
 					throw ERT.badarg();
 				}
 				
-				barr.write( intval.value & 0xff );
+				barr.write( byteValue );
 				tail = list.tail();
 			}
 			
