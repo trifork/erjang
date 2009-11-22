@@ -4,6 +4,7 @@ import erjang.BIF;
 import erjang.EInteger;
 import erjang.ENumber;
 import erjang.EObject;
+import erjang.ERT;
 import erjang.BIF.Type;
 
 public class BinOps {
@@ -50,6 +51,9 @@ public class BinOps {
 		return o1.bsl(o2);
 	}
 	
-	
+	@BIF(name=">=")
+	static public boolean ge(EObject o1, EObject o2) {
+		return o1.ge(o2);
+	}
 	
 }

@@ -61,5 +61,12 @@ public class ENil extends ESeq {
 		return this;
 	}
 
-
+	/* (non-Javadoc)
+	 * @see erjang.EObject#compare_same(erjang.EObject)
+	 */
+	@Override
+	int compare_same(EObject rhs) {
+		if (rhs.testNil() != null) return 0;
+		return -1;
+	}
 }

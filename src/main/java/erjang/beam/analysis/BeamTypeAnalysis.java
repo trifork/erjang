@@ -32,11 +32,13 @@ import java.util.TreeSet;
 import org.objectweb.asm.Type;
 
 import erjang.EAtom;
+import erjang.EBig;
 import erjang.EBinMatchState;
 import erjang.EBinary;
 import erjang.ECons;
 import erjang.EDouble;
 import erjang.EFun;
+import erjang.EInteger;
 import erjang.ESmall;
 import erjang.EList;
 import erjang.ENil;
@@ -72,7 +74,9 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 		super(mv);
 	}
 
-	static final Type EINTEGER_TYPE = Type.getType(ESmall.class);
+	static final Type ESMALL_TYPE = Type.getType(ESmall.class);
+	static final Type EBIG_TYPE = Type.getType(EBig.class);
+	static final Type EINTEGER_TYPE = Type.getType(EInteger.class);
 	static final Type ENUMBER_TYPE = Type.getType(ENumber.class);
 	static final Type EOBJECT_TYPE = Type.getType(EObject.class);
 	static final Type EDOUBLE_TYPE = Type.getType(EDouble.class);
@@ -215,11 +219,11 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 		@Override
 		public void visitEnd() {
-			
+
 			if (this.name.getName().equals("load")) {
 				dump();
 			}
-			
+
 			LabeledBlock lb = lbs.get(startLabel);
 			lb.merge_from(this.make_initial());
 
@@ -266,27 +270,26 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 		private void function_visit_end() {
 
-				if (fv instanceof FunctionVisitor2) {
-					((FunctionVisitor2) fv).visitMaxs(this.max_xreg,
-							this.max_stack, this.max_freg,
-							this.is_tail_recursive);
+			if (fv instanceof FunctionVisitor2) {
+				((FunctionVisitor2) fv).visitMaxs(this.max_xreg,
+						this.max_stack, this.max_freg, this.is_tail_recursive);
+			}
+
+			for (LabeledBlock block : this.lbs.values()) {
+
+				BlockVisitor vis = super.fv
+						.visitLabeledBlock(block.block_label);
+
+				try {
+					block.accept(vis);
+				} catch (Error e) {
+					dump();
+					throw e;
 				}
+			}
 
-				for (LabeledBlock block : this.lbs.values()) {
+			super.fv.visitEnd();
 
-					BlockVisitor vis = super.fv
-							.visitLabeledBlock(block.block_label);
-
-					try {
-						block.accept(vis);
-					} catch (Error e) {
-						dump();
-						throw e;
-					}
-				}
-
-				super.fv.visitEnd();
-			
 		}
 
 		private void dump() {
@@ -415,8 +418,9 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						Arg[] in = decode_args(insn_idx, parms.toArray());
 						Arg out = decode_out_arg(insn_idx, insn.elm(5));
 
-						BuiltInFunction bif = BIFUtil.getMethod(name.getName(), parmTypes(
-								this.map[insn_idx], parms), failLabel != 0);
+						BuiltInFunction bif = BIFUtil.getMethod(name.getName(),
+								parmTypes(this.map[insn_idx], parms),
+								failLabel != 0);
 
 						vis.visitInsn(opcode, failLabel, in, out, bif);
 						break;
@@ -430,8 +434,9 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						Arg[] in = decode_args(insn_idx, parms.toArray());
 						Arg out = decode_out_arg(insn_idx, insn.elm(5));
 
-						BuiltInFunction bif = BIFUtil.getMethod(name.getName(), parmTypes(
-								this.map[insn_idx], parms), failLabel != 0);
+						BuiltInFunction bif = BIFUtil.getMethod(name.getName(),
+								parmTypes(this.map[insn_idx], parms),
+								failLabel != 0);
 
 						vis.visitInsn(opcode, failLabel, in, out, bif);
 						break;
@@ -445,8 +450,9 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						Arg[] in = decode_args(insn_idx, parms.toArray());
 						Arg out = decode_out_arg(insn_idx, insn.elm(6));
 
-						BuiltInFunction bif = BIFUtil.getMethod(name.getName(), parmTypes(
-								this.map[insn_idx], parms), failLabel != 0);
+						BuiltInFunction bif = BIFUtil.getMethod(name.getName(),
+								parmTypes(this.map[insn_idx], parms),
+								failLabel != 0);
 
 						vis.visitInsn(opcode, failLabel, in, out, bif);
 						break;
@@ -457,7 +463,8 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						break;
 
 					case K_return:
-						vis.visitInsn(opcode, new Arg(Arg.Kind.X, 0, this.map[insn_idx].getx(0)));
+						vis.visitInsn(opcode, new Arg(Arg.Kind.X, 0,
+								this.map[insn_idx].getx(0)));
 						break;
 
 					case allocate_heap_zero:
@@ -466,7 +473,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						int count = insn.elm(2).asInt();
 						Arg[] ys = new Arg[count];
 						for (int i = 0; i < count; i++) {
-							ys[i] = new Arg(Arg.Kind.Y, depth+i, null);
+							ys[i] = new Arg(Arg.Kind.Y, depth + i, null);
 						}
 						vis.visitInsn(opcode, (Arg[]) ys);
 						break;
@@ -523,9 +530,8 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					}
 
 					case init:
-						vis
-								.visitInsn(opcode, decode_out_arg(insn_idx, insn
-										.elm(2)));
+						vis.visitInsn(opcode, decode_out_arg(insn_idx, insn
+								.elm(2)));
 						break;
 
 					case put_list: {
@@ -650,9 +656,8 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 					case badmatch:
 					case case_end:
-						vis
-								.visitInsn(opcode, decode_out_arg(insn_idx, insn
-										.elm(2)));
+						vis.visitInsn(opcode, decode_out_arg(insn_idx, insn
+								.elm(2)));
 						break;
 
 					case if_end:
@@ -680,39 +685,41 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						break;
 
 					case loop_rec: /* loop receive */
-						vis.visitReceive(opcode, decode_labelref(insn.elm(2)), decode_out_arg(insn_idx, insn.elm(3)));
+						vis.visitReceive(opcode, decode_labelref(insn.elm(2)),
+								decode_out_arg(insn_idx, insn.elm(3)));
 						break;
-						
+
 					case remove_message:
 						vis.visitInsn(opcode);
 						break;
-						
+
 					case timeout:
 					case loop_rec_end:
 						vis.visitInsn(opcode);
 						break;
 
 					case wait:
-						vis.visitInsn(opcode, decode_labelref(insn.elm(2)), 
+						vis.visitInsn(opcode, decode_labelref(insn.elm(2)),
 								null);
 						break;
-						
+
 					case wait_timeout:
-						vis.visitInsn(opcode, decode_labelref(insn.elm(2)), 
+						vis.visitInsn(opcode, decode_labelref(insn.elm(2)),
 								decode_arg(insn_idx, insn.elm(3)));
 						break;
-						
-					case call_fun:
-					{
+
+					case call_fun: {
 						int nargs = insn.elm(2).asInt();
-						Arg[] args = new Arg[nargs+1];
+						Arg[] args = new Arg[nargs + 1];
 						for (int i = 0; i < args.length; i++) {
-							args[i] = new Arg(Arg.Kind.X, i, map[insn_idx].getx(i));
+							args[i] = new Arg(Arg.Kind.X, i, map[insn_idx]
+									.getx(i));
 						}
-						vis.visitInsn(opcode, args, new Arg(Arg.Kind.X, 0, null));
+						vis.visitInsn(opcode, args,
+								new Arg(Arg.Kind.X, 0, null));
 						break;
 					}
-						
+
 					default:
 						throw new Error("unhandled insn: " + insn);
 					}
@@ -859,11 +866,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					} else if (tup.elem1 == LITERAL_ATOM) {
 						return new Arg(tup.elem2);
 					} else if (tup.elem1 == INTEGER_ATOM) {
-						if (tup.elem2.testInteger() != null) {
-							return new Arg(tup.elem2, Type.INT_TYPE);
-						} else {
-							return new Arg(tup.elem2);
-						}
+						return new Arg(tup.elem2);
 					} else if (tup.elem1 == FLOAT_ATOM) {
 						return new Arg(tup.elem2, Type.DOUBLE_TYPE);
 					}
@@ -891,14 +894,10 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					} else if (tup.elem1 == LITERAL_ATOM) {
 						return new Arg(tup.elem2);
 					} else if (tup.elem1 == INTEGER_ATOM) {
-						if (tup.elem2.testInteger() != null) {
-							return new Arg(tup.elem2, Type.INT_TYPE);
-						} else {
-							return new Arg(tup.elem2);
-						}
+						return new Arg(tup.elem2);
 					} else if (tup.elem1 == FLOAT_ATOM) {
-						return new Arg(tup.elem2, Type.DOUBLE_TYPE);
-					} 
+						return new Arg(tup.elem2);
+					}
 
 				} else if (src == NIL_ATOM) {
 					return new Arg(ENil.NIL, ENIL_TYPE);
@@ -1199,7 +1198,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						continue next_insn;
 
 					case catch_end:
-						//throw new Error();
+						// throw new Error();
 						continue next_insn;
 
 					case make_fun2: {
@@ -1350,7 +1349,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						current = current.setx(0, EBINARY_TYPE);
 						continue next_insn;
 					}
-					
+
 					case call_fun: {
 						int nargs = insn.elm(2).asInt();
 						for (int i = 0; i < nargs; i++) {
@@ -1369,10 +1368,10 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 				if (is_term(last_opcode) == false) {
 					LabeledBlock lbv;
-					 lbv = get_lb(this.block_label + 1, false);
+					lbv = get_lb(this.block_label + 1, false);
 					try {
-						 if (lbv != null)
-						lbv.merge_from(current);
+						if (lbv != null)
+							lbv.merge_from(current);
 					} catch (Error e) {
 
 						System.out.println("merge " + current + "\n    | "
@@ -1699,9 +1698,11 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 				EObject key = dst.elm(1);
 				EObject value = dst.elm(2);
 				if (key == X_ATOM) {
-					current = current.setx(value.asInt(), type==Type.DOUBLE_TYPE ? EDOUBLE_TYPE : type);
+					current = current.setx(value.asInt(),
+							type == Type.DOUBLE_TYPE ? EDOUBLE_TYPE : type);
 				} else if (key == Y_ATOM) {
-					current = current.sety(value.asInt(), type==Type.DOUBLE_TYPE ? EDOUBLE_TYPE : type);
+					current = current.sety(value.asInt(),
+							type == Type.DOUBLE_TYPE ? EDOUBLE_TYPE : type);
 				} else if (key == FR_ATOM) {
 					current = current.setf(value.asInt(), type);
 				} else {
@@ -1727,7 +1728,9 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						return Type.getType(tup.elem2.getClass());
 					} else if (tup.elem1 == INTEGER_ATOM) {
 						if (tup.elem2.getClass() == ESmall.class) {
-							return Type.INT_TYPE;
+							return ESMALL_TYPE;
+						} else if (tup.elem2.getClass() == EBig.class) {
+							return EBIG_TYPE;
 						} else {
 							return Type.getType(tup.elem2.getClass());
 						}

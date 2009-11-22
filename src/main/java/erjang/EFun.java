@@ -29,7 +29,12 @@ import org.objectweb.asm.Type;
 import erjang.beam.CompilerVisitor;
 import erjang.beam.EUtil;
 
-public abstract class EFun {
+public abstract class EFun extends EObject {
+	
+	@Override
+	int cmp_order() {
+		return 3;
+	}
 
 	/** used for translation of tail recursive methods */
 	protected abstract EObject go(EProc eproc);

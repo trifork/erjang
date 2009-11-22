@@ -119,7 +119,7 @@ public class Compiler implements Opcodes {
 
 	public static void main(String[] args) throws Exception {
 
-		File out_dir = new File("out.jar");
+		File out_dir = new File("out");
 		ClassRepo repo = new DirClassRepo(out_dir);
 		Compiler cc = new Compiler(repo);
 

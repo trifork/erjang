@@ -28,6 +28,28 @@ import com.sun.org.apache.bcel.internal.generic.INVOKESTATIC;
 
 public class EBinary extends EObject {
 
+	@Override
+	int cmp_order() {
+		return 8;
+	}
+	
+	@Override
+	int compare_same(EObject rhs) {
+		EBinary other = (EBinary) rhs;
+		int min = Math.min(data.length, other.data.length);
+		for (int i = 0; i < min; i++) {
+			int b1 = 0xff & data[i];
+			int b2 = 0xff & other.data[i];
+			if (b1 < b2) return -1;
+			if (b1 > b2) return 1;
+		}
+		
+		if (data.length < other.data.length) return -1;
+		if (data.length > other.data.length) return 1;
+
+		return 0;
+	}
+	
 	private static final Type EBINARY_TYPE = Type.getType(EBinary.class);
 	private static final String EBINARY_NAME = EBINARY_TYPE.getInternalName();
 	private final byte[] data;

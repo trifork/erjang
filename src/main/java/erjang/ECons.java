@@ -22,6 +22,19 @@ import erjang.bifs.erlang;
 
 public abstract class ECons extends EObject {
 
+	@Override
+	int cmp_order() {
+		return 7;
+	}
+	
+	@Override
+	int compare_same(EObject rhs) {
+		ECons other = rhs.testCons();
+		int cmp1 = head().compareTo(other.head());
+		if (cmp1 != 0) return cmp1;
+		return tail().compareTo(other.tail());
+	}
+
 	public static final ENil NIL = new ENil();
 
 	public abstract EObject head();
@@ -46,12 +59,12 @@ public abstract class ECons extends EObject {
 	 * @return
 	 */
 	public ECons prepend(ECons list) {
-		if (erlang.is_nil(list)) { return this; }
+		if (list.testNil() !=null) { return this; }
 		return prepend(list.tail()).cons(list.head());
 	}
 
 	private ECons prepend(EObject o) {
-		if (erlang.is_nil(o)) { return this; }
+		if (o.testNil() !=null) { return this; }
 		ECons list = o.testCons();
 		if (list == null) { throw ERT.badarg(); }
 		return prepend(list.tail()).cons(list.head());

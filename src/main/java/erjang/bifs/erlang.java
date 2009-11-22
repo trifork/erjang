@@ -12,7 +12,6 @@ import erjang.EInteger;
 import erjang.ESmall;
 import erjang.EList;
 import erjang.ENil;
-import erjang.ENode;
 import erjang.ENumber;
 import erjang.EObject;
 import erjang.EPID;
@@ -282,19 +281,19 @@ public class erlang {
 
 	@BIF
 	@ErlFun(export = true)
-	static public ENode node() {
+	static public EAtom node() {
 		return null;
 	}
 
 	@BIF
 	@ErlFun(export = true)
-	static public ENode node(EObject name) {
+	static public EAtom node(EObject name) {
 		return null;
 	}
 
 	@BIF(type=Type.GUARD,name="node")
 	@ErlFun(export = true)
-	static public ENode node$p(EObject name) {
+	static public EAtom node$p(EObject name) {
 		return null;
 	}
 
@@ -348,14 +347,15 @@ public class erlang {
 		throw ERT.badarg();
 	}
 
+	@BIF
+	static public EInteger div(EObject o1, EObject o2)
+	{
+		return o1.idiv(o2);
+	}
 
 	@BIF(name = "div")
 	static public ENumber div(EObject v1, int v2) {
-		ENumber n1;
-		if ((n1 = v1.testNumber()) != null) {
-			return n1.idiv(v2);
-		}
-		throw ERT.badarg();
+		return v1.idiv(v2);
 	}
 
 	@BIF(name = "div")
@@ -445,6 +445,16 @@ public class erlang {
 		throw ERT.badarg(v1, i2);
 	}
 
+	@BIF(name = "+")
+	static public ENumber plus(EObject v1, ESmall i2) {
+		return v1.add(i2.value);
+	}
+
+	@BIF(name = "-")
+	static public ENumber minus(EObject v1, ESmall i2) {
+		return v1.subtract(i2.value);
+	}
+
 	@BIF(name = "*")
 	static public ENumber multiply(EObject v1, EObject v2) {
 		ENumber n1;
@@ -462,7 +472,7 @@ public class erlang {
 		return ERT.box((long) v1 * (long) v2);
 	}
 
-	@BIF(name = "trunc")
+	@BIF
 	@ErlFun(export = true)
 	static public EDouble trunc(EObject v1) {
 		EDouble n1;
@@ -472,12 +482,12 @@ public class erlang {
 		throw ERT.badarg();
 	}
 
-	@BIF(name = "trunc")
+	@BIF
 	static public EDouble trunc(double d) {
 		return ERT.box( Math.floor(d) );
 	}
 
-	@BIF(name = "trunc")
+	@BIF
 	static public EDouble trunc(EDouble d1) {
 		return ERT.box( Math.floor(d1.value) );
 	}
@@ -565,84 +575,143 @@ public class erlang {
 
 	@BIF(name = "is_eq", type = Type.GUARD)
 	public static final EAtom is_eq$p(EObject a1, EObject a2) {
-		return a1.equals(a2) ? ERT.ATOM_TRUE : ERT.ATOM_FALSE;
+		return ERT.box( a1.compareTo(a2) == 0 );
 	}
 
 	@BIF(name = "is_eq_exact", type = Type.GUARD)
-	public static final boolean is_eq_exact$p(EObject a1, EAtom a2) {
-		return a1 == a2;
+	public static final EAtom is_eq_exact$p(EObject a1, EAtom a2) {
+		return ERT.guard(a1 == a2);
 	}
 
 	@BIF(name = "is_eq_exact", type = Type.GUARD)
-	public static final boolean is_eq_exact$p(EObject a1, EObject a2) {
-		return a1.equals(a2);
+	public static final EAtom is_eq_exact$p(EObject a1, EObject a2) {
+		return ERT.guard( a1.compareToExactly(a2) == 0 );
+	}
+
+	@BIF(name = "=/=", type=Type.GUARD)
+	public static final EAtom is_ne_exact$g2(EObject a1, EObject a2) {
+		return ERT.guard(a1.compareToExactly(a2) != 0);
+	}
+
+	@BIF(name = "=/=", type=Type.GUARD)
+	public static final EAtom is_ne_exact$g(EObject a1, EAtom a2) {
+		return ERT.guard(a1 != a2);
 	}
 
 	@BIF(name = "=/=")
-	public static final boolean is_ne_exact(EObject a1, EAtom a2) {
-		return a1 != a2;
+	public static final EAtom is_ne_exact(EObject a1, EAtom a2) {
+		return ERT.box(a1 != a2);
 	}
 
 	@BIF(name = "=/=")
-	public static final boolean is_ne_exact(EObject a1, EObject a2) {
-		return !a1.equals(a2);
+	public static final EAtom is_ne_exact(EObject a1, EObject a2) {
+		return ERT.box(a1.compareToExactly(a2) != 0) ;
+	}
+
+	// what are these supposed to do?  Get the size of a tuple_
+	
+	@BIF
+	public static final EInteger size(EObject o) {
+		ETuple t;
+		if ((t=o.testTuple()) == null) throw ERT.badarg(o);
+		return ERT.box(t.arity());
 	}
 
 	@BIF
-	public static final int size(EObject o) {
-		throw new NotImplemented();
+	public static final EInteger size(ETuple t) {
+		return ERT.box(t.arity());
+	}
+
+	@BIF(type=Type.GUARD, name="size")
+	public static final EInteger size$g(EObject o) {
+		ETuple t;
+		if ((t=o.testTuple()) == null) return null;
+		return ERT.box(t.arity());
+	}
+	
+	@BIF(type=Type.GUARD, name="size")
+	public static final EInteger size$g(ETuple t) {
+		return ERT.box(t.arity());
 	}
 	
 	@BIF(name = "=:=", type = Type.GUARD)
-	public static final boolean is_eq_exact$g(EObject a1, EAtom a2) {
-		return a1 == a2;
+	public static final EAtom is_eq_exact$g(EObject a1, EAtom a2) {
+		return ERT.guard(a1==a2);
 	}
 
 	@BIF(name = "=:=", type = Type.GUARD)
 	public static final EAtom is_eq_exact$g(EObject a1, EObject a2) {
-		return a1.equals(a2) ? ERT.ATOM_TRUE : null;
+		return ERT.guard(a1.compareToExactly(a2) == 0);
 	}
 
 	@BIF(name = "==", type = Type.GUARD)
 	public static final EAtom is_eq_op$g(EObject a1, EObject a2) {
-		return a1.equals(a2) ? ERT.ATOM_TRUE : null;
+		return ERT.guard(a1.compareTo(a2) == 0);
 	}
 
 	@BIF(name = "==")
 	public static final EAtom is_eq_op(EObject a1, EObject a2) {
-		return a1.equals(a2) ? ERT.ATOM_TRUE : ERT.ATOM_FALSE;
+		return a1.equals(a2) ? ERT.TRUE : ERT.FALSE;
 	}
 
 	@BIF(name = "is_ne_exact", type = Type.GUARD)
-	public static final boolean is_ne_exact$g(EObject a1, EObject a2) {
-		return !a1.equals(a2);
+	public static final EAtom is_ne_exact$g(EObject a1, EObject a2) {
+		return !a1.equals(a2) ? ERT.TRUE : null;
+	}
+
+	@BIF(name = ">=", type = Type.GUARD)
+	public static final EAtom is_ge$g2(EObject a1, EObject a2) {
+		return a1.compareTo(a2) >= 0 ? ERT.TRUE : null;
 	}
 
 	@BIF(name = "is_ge", type = Type.GUARD)
-	public static final boolean is_ge(EObject a1, EObject a2) {
-		throw new NotImplemented();
+	public static final EAtom is_ge$g(EObject a1, EObject a2) {
+		return a1.compareTo(a2) >= 0 ? ERT.TRUE : null;
+	}
+
+	@BIF(name = "/=")
+	public static final EAtom is_ne(EObject a1, EObject a2) {
+		return ERT.box(a1.compareTo(a2) != 0) ; 
 	}
 
 	@BIF(name = "is_ne", type = Type.GUARD)
-	public static final EAtom is_ne(EObject a1, EObject a2) {
-		return a1.equals(a2) ? null : ERT.ATOM_TRUE;
+	public static final EAtom is_ne$g(EObject a1, EObject a2) {
+		return ERT.guard(a1.compareTo(a2) != 0) ; 
 	}
 
 	@BIF(name = "is_lt", type = Type.GUARD)
-	public static final boolean is_lt(EObject a1, EObject a2) {
-		// return a1.equals(a2);
+	public static final EAtom is_lt$g(EObject a1, EObject a2) {
+		return ERT.guard(a1.compareTo(a2) < 0) ; 
+	}
 
-		throw new NotImplemented();
+	@BIF(name = "=<")
+	public static final EAtom is_le(EObject a1, EObject a2) {
+		return ERT.box(a1.compareTo(a2) <= 0) ; 
+	}
+	
+	@BIF(name = "=<", type=Type.GUARD)
+	public static final EAtom is_le$g(EObject a1, EObject a2) {
+		return ERT.guard(a1.compareTo(a2) <= 0) ; 
+	}
+
+	@BIF(name = "<")
+	public static final EAtom is_lt(EObject a1, EObject a2) {
+		return ERT.box(a1.compareTo(a2) < 0) ; 
+	}
+
+	@BIF(name = ">=")
+	public static final EAtom is_ge(EObject a1, EObject a2) {
+		return ERT.box(a1.compareTo(a2) >= 0) ; 
 	}
 
 	@BIF
 	public static final EAtom is_eq(EObject a1, EObject a2) {
-		return a1.equals(a2) ? ERT.ATOM_TRUE : ERT.ATOM_FALSE;
+		return ERT.box(a1.compareTo(a2) == 0) ; 
 	}
 
 	@BIF(name = "=:=")
 	public static final EAtom is_eq_exact(EObject a1, EObject a2) {
-		return a1.equals(a2) ? ERT.ATOM_TRUE : ERT.ATOM_FALSE;
+		return ERT.box(a1.compareToExactly(a2) == 0) ; 
 	}
 
 	@BIF(name = "++")
@@ -675,8 +744,8 @@ public class erlang {
 	}
 
 	@BIF
-	public static boolean is_nil(EObject o) {
-		return o==null || o == ENil.NIL;
+	public static EAtom is_nil(EObject o) {
+		return ERT.box(o.testNil() != null);
 	}
 
 	@BIF
@@ -714,8 +783,8 @@ public class erlang {
 	}
 
 	@BIF
-	public static boolean is_atom(EObject obj) {
-		return obj.testAtom() != null;
+	public static EAtom is_atom(EObject obj) {
+		return (obj.testAtom() != null) ? ERT.TRUE : ERT.FALSE;
 	}
 
 	@BIF(name = "is_list", type = Type.GUARD)
@@ -730,19 +799,26 @@ public class erlang {
 	}
 
 	@BIF
-	public static boolean is_tuple(EObject obj) {
-		return obj.testAtom() != null;
+	public static EAtom is_tuple(EObject obj) {
+		return ERT.box(obj.testAtom() != null);
 	}
 
 	@BIF(name = "is_binary", type = Type.GUARD)
-	public static EBinary is_binary$p(EObject obj) {
-		return obj.testBinary();
+	public static EAtom is_binary$p(EObject obj) {
+		return ERT.guard( obj.testBinary() != null );
 	}
 
 	@BIF
-	public static boolean is_binary(EObject obj) {
-		return obj.testBinary() != null;
+	public static EAtom is_binary(EObject obj) {
+		return ERT.box( obj.testBinary() != null );
 	}
+
+	@BIF(name = "is_integer", type = Type.GUARD)
+	public static EAtom is_integer$p(EObject obj) {
+		return ERT.guard(obj.testInteger() != null);
+	}
+
+
 
 	@BIF @ErlFun(export=true)
 	public static ETuple2 load_module(EObject mod, EObject bin) {
@@ -759,71 +835,168 @@ public class erlang {
 	}
 	
 	@BIF 
-	public static boolean is_integer(EObject o) {
-		return (o.testInteger() != null);
+	public static EAtom is_integer(EObject o) {
+		return ERT.box(o.testInteger() != null);
 	}
 	
 	@BIF
-	public static int tuple_size(ETuple tup) {
-		return tup.arity();
+	public static ESmall tuple_size(ETuple tup) {
+		return ERT.box( tup.arity() );
 	}
 	
 	@BIF
-	public static int tuple_size(EObject tup) {
+	public static ESmall tuple_size(EObject tup) {
 		ETuple t;
 		if ((t=tup.testTuple()) == null) throw ERT.badarg();
-		return t.arity();
+		return ERT.box( t.arity() );
+	}
+	
+	@BIF(type=Type.GUARD, name="tuple_size")
+	public static ESmall tuple_size$g(EObject tup) {
+		ETuple t;
+		if ((t=tup.testTuple()) == null) return null;
+		return ERT.box( t.arity() );
 	}
 	
 	@BIF
-	public static int byte_size(EObject tup) {
+	public static ESmall byte_size(EObject tup) {
 		EBinary bin = tup.testBinary();
 		if (bin == null) throw ERT.badarg();
-		return bin.byte_size();
+		return ERT.box( bin.byte_size() );
 	}
 	
 	@BIF
-	public static int bit_size(EObject tup) {
+	public static ESmall bit_size(EObject tup) {
 		EBinary bin = tup.testBinary();
 		if (bin == null) throw ERT.badarg();
-		return bin.bit_size();
+		return ERT.box (bin.bit_size());
 	}
 
 	@BIF
-	public static boolean or(EObject o1, EObject e2) {
-		return (o1==ERT.ATOM_TRUE) || (e2==ERT.ATOM_TRUE);
+	public static EAtom or(EObject o1, EObject e2) {
+		return ERT.box( (o1==ERT.TRUE) || (e2==ERT.TRUE) );
 	}
 	
 	@BIF
-	public static boolean and(EObject o1, EObject e2) {
-		return (o1==ERT.ATOM_TRUE) & (e2==ERT.ATOM_TRUE);
+	public static EAtom and(EObject o1, EObject e2) {
+		return ERT.box( (o1==ERT.TRUE) && (e2==ERT.TRUE) );
 	}
 	
 	@BIF(name="<")
-	public static boolean lt(EObject v1, EObject v2) {
-		throw new NotImplemented();
+	public static EAtom lt(EObject v1, EObject v2) {
+		return ERT.box(v1.compareTo(v2) < 0);
 	}
 	
 	@BIF(name=">")
-	public static boolean gt(EObject v1, EObject v2) {
-		throw new NotImplemented();
+	public static EAtom gt(EObject v1, EObject v2) {
+		return ERT.box( v1.compareTo(v2) > 0 );
 	}
 	
 	@BIF(type=Type.GUARD,name="or")
 	public static EAtom or$g(EObject o1, EObject o2) {
-		if (or(o1,o2)) { return ERT.ATOM_TRUE; }
-		else return null;
+		return ERT.guard(o1==ERT.TRUE || o2==ERT.TRUE);
 	}
 	
 	@BIF(type=Type.GUARD,name="and")
 	public static EAtom and$g(EObject o1, EObject o2) {
-		if (and(o1,o2)) { return ERT.ATOM_TRUE; }
-		else return null;
+		return ERT.guard(o1==ERT.TRUE && o2==ERT.TRUE);
+	}
+
+	@BIF
+	public static EAtom not(EObject o1) {
+		return (o1==ERT.FALSE) ? ERT.TRUE : ERT.FALSE;
 	}
 	
 	@BIF
-	public static EAtom not(EObject o1) {
-		return (o1==ERT.ATOM_FALSE) ? ERT.ATOM_TRUE : ERT.ATOM_FALSE;
+	public static EInteger bnot(EObject o) {
+		return o.bnot();
 	}
+
+	@BIF
+	public static EInteger bor(EObject o1, EObject o2) {
+		return o1.bor(o2);
+	}
+
+	@BIF
+	public static EInteger bxor(EObject o1, EObject o2) {
+		return o1.bxor(o2);
+	}
+
+	@BIF
+	public static EInteger band(EObject o1, EObject o2) {
+		return o1.band(o2);
+	}
+	
+	@BIF
+	public static EInteger bsl(EObject o1, EObject o2) {
+		return o1.bsl(o2);
+	}
+
+	@BIF
+	public static EInteger bsr(EObject o1, EObject o2) {
+		return o1.bsr(o2);
+	}
+
+
+	@BIF(type=Type.GUARD, name="not")
+	public static EAtom not$g(EObject o1) {
+		return (o1==ERT.FALSE) ? ERT.TRUE : ERT.FALSE;
+	}
+	
+	@BIF(type=Type.GUARD, name="bnot")
+	public static EInteger bnot$g(EObject o) {
+		EInteger i;
+		if ((i=o.testInteger()) == null) return null;
+		return i.bnot();
+	}
+
+	@BIF(type=Type.GUARD, name="bor")
+	public static EInteger bor$g(EObject o1, EObject o2) {
+		EInteger i1;
+		EInteger i2;
+		if ((i1=o1.testInteger()) == null || (i2=o2.testInteger()) == null)
+			return null;
+		return i1.bor(i2);
+	}
+
+	@BIF(type=Type.GUARD, name="bxor")
+	public static EInteger bxor$g(EObject o1, EObject o2) {
+		EInteger i1;
+		EInteger i2;
+		if ((i1=o1.testInteger()) == null || (i2=o2.testInteger()) == null)
+			return null;
+		return i1.bxor(i2);
+	}
+
+	@BIF(type=Type.GUARD, name="band")
+	public static EInteger band$g(EObject o1, EObject o2) {
+		EInteger i1;
+		EInteger i2;
+		if ((i1=o1.testInteger()) == null || (i2=o2.testInteger()) == null)
+			return null;
+		return i1.band(i2);
+	}
+	
+	@BIF(type=Type.GUARD, name="bsl")
+	public static EInteger bsl$g(EObject o1, EObject o2) {
+		EInteger i1;
+		EInteger i2;
+		if ((i1=o1.testInteger()) == null || (i2=o2.testInteger()) == null)
+			return null;
+		return i1.bsl(i2);
+	}
+
+	@BIF(type=Type.GUARD, name="bsr")
+	public static EInteger bsr$g(EObject o1, EObject o2) {
+		EInteger i1;
+		EInteger i2;
+		if ((i1=o1.testInteger()) == null || (i2=o2.testInteger()) == null)
+			return null;
+		return i1.bsr(i2);
+	}
+
+
+
+
 	
 }

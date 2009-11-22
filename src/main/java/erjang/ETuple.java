@@ -35,6 +35,25 @@ import clojure.lang.Indexed;
 
 public abstract class ETuple extends EObject implements Cloneable, Indexed {
 
+	@Override
+	int cmp_order() {
+		return 6;
+	}
+	
+	@Override
+	int compare_same(EObject rhs) {
+		ETuple other = (ETuple) rhs;
+		if (count() < other.count()) return -1;
+		if (count() > other.count()) return 1;
+		
+		for (int i = 1; i <= count(); i++) {
+			int cmp = elm(i).compareTo(other.elm(i));
+			if (cmp != 0) return cmp;
+		}
+		
+		return 0;
+	}
+	
 	public ETuple testTuple() {
 		return this;
 	}

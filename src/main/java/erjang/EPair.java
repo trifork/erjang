@@ -80,13 +80,12 @@ public class EPair extends ECons {
 		fa.visitTypeInsn(Opcodes.NEW, type.getInternalName());
 		fa.visitInsn(Opcodes.DUP);
 
-
 		((EObject)head).emit_const(fa);
 		((EObject)tail).emit_const(fa);
-
 
 		fa.visitMethodInsn(Opcodes.INVOKESPECIAL, type.getInternalName(), "<init>", CONSTRUCTOR_DESC);
 		
 		return type;
 	}
+	
 }

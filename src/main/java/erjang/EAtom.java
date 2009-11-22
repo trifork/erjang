@@ -31,14 +31,30 @@ public class EAtom extends EObject implements CharSequence {
 		return this;
 	}
 
+	public EAtom testBoolean() {
+		if ( this==ERT.TRUE || this == ERT.FALSE) return this;
+		return null;
+	}
+
+
 	private final String value;
 
+	@Override
+	int compare_same(EObject rhs) {
+		return compareTo((EAtom) rhs);
+	}
+	
 	private static ConcurrentHashMap<String, EAtom> interns = new ConcurrentHashMap<String, EAtom>();
 
 	private EAtom(String name) {
 		this.value = name;
 	}
 
+	@Override
+	int cmp_order() {
+		return 1;
+	}
+	
 	Pattern ATOM = Pattern.compile("[a-z_]([a-z]|[A-Z]|@|_|[0-9])*");
 
 	@Override

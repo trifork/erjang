@@ -27,6 +27,7 @@ import java.util.Map;
 import org.objectweb.asm.Type;
 
 import erjang.EAtom;
+import erjang.EBig;
 import erjang.EDouble;
 import erjang.ESmall;
 import erjang.EObject;
@@ -185,6 +186,8 @@ public class BIFUtil {
 					return EDouble.class;
 				if (c == int.class)
 					return ESmall.class;
+				if (c == long.class)
+					return EBig.class;
 				if (c == boolean.class)
 					return EAtom.class;
 				return EObject.class;

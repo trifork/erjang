@@ -18,7 +18,6 @@
 
 package erjang;
 
-
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
@@ -30,9 +29,45 @@ public class EDouble extends ENumber {
 
 	private static final Type EDOUBLE_TYPE = Type.getType(EDouble.class);
 	public final double value;
-	
+
 	public EDouble(double value) {
 		this.value = value;
+	}
+
+	@Override
+	int compare_same(EObject rhs) {
+		return rhs.r_compare_same(this);
+	}
+
+	int r_compare_same(ESmall lhs) {
+		return lhs.value < value ? -1 : lhs.value == value ? 0 : 1;
+	}
+
+	int r_compare_same(EBig lhs) {
+		double doubleValue = lhs.doubleValue();
+		return doubleValue < value ? -1 : doubleValue == value ? 0 : 1;
+	}
+
+	int r_compare_same(EDouble lhs) {
+		return lhs.value < value ? -1 : lhs.value == value ? 0 : 1;
+	}
+
+	@Override
+	int compare_same_exactly(EObject rhs) {
+		return rhs.r_compare_same_exactly(this);
+	}
+
+	int r_compare_same_exactly(ESmall lhs) {
+		return lhs.value < value ? -1 : 1;
+	}
+
+	int r_compare_same_exactly(EBig lhs) {
+		double doubleValue = lhs.doubleValue();
+		return doubleValue < value ? -1 : 1;
+	}
+
+	int r_compare_same_exactly(EDouble lhs) {
+		return lhs.value < value ? -1 : lhs.value == value ? 0 : 1;
 	}
 
 	public EDouble testFloat() {
@@ -47,39 +82,37 @@ public class EDouble extends ENumber {
 	public static EObject parseDouble(String string) {
 		return new EDouble(Double.parseDouble(string));
 	}
-	
 
 	@Override
 	public EDouble abs() {
-		return new EDouble (Math.abs(value));
+		return new EDouble(Math.abs(value));
 	}
 
 	@Override
 	public String toString() {
 		return String.valueOf(value);
 	}
-	
+
 	public EInteger asInteger() {
 		if (value >= Integer.MIN_VALUE && value <= Integer.MAX_VALUE) {
-			return new ESmall((int)value);
+			return new ESmall((int) value);
 		} else {
 			return new EBig(BigDecimal.valueOf(value).toBigInteger());
 		}
 	}
 
-
-
 	@Override
 	public org.objectweb.asm.Type emit_const(MethodVisitor fa) {
 
 		Type type = EDOUBLE_TYPE;
-		
+
 		fa.visitTypeInsn(Opcodes.NEW, type.getInternalName());
 		fa.visitInsn(Opcodes.DUP);
 		fa.visitLdcInsn(new Double(value));
-		fa.visitMethodInsn(Opcodes.INVOKESPECIAL, type.getInternalName(), "<init>", "(D)V");
-		
-		return type;		
+		fa.visitMethodInsn(Opcodes.INVOKESPECIAL, type.getInternalName(),
+				"<init>", "(D)V");
+
+		return type;
 	}
 
 	/**
@@ -89,77 +122,78 @@ public class EDouble extends ENumber {
 		return new EString(String.valueOf(value));
 	}
 
-	
-	public ENumber add(EObject other) { return other.add(value); }
-
-	public ENumber r_add(int lhs) { 
-		return ERT.box((long)lhs + value);
+	public ENumber add(EObject other) {
+		return other.add(value);
 	}
 
-	public ENumber add(double lhs) { 
+	public ENumber r_add(int lhs) {
+		return ERT.box((long) lhs + value);
+	}
+
+	public ENumber add(double lhs) {
 		return ERT.box(lhs + value);
 	}
 
-	public ENumber add(BigInteger lhs) { 
+	public ENumber add(BigInteger lhs) {
 		return ERT.box(lhs.doubleValue() + value);
 	}
 
-	
-	public ENumber subtract(EObject other) { return other.r_subtract(value); }
-
-	public ENumber r_subtract(int lhs) { 
-		return ERT.box((long)lhs - value);
+	public ENumber subtract(EObject other) {
+		return other.r_subtract(value);
 	}
 
-	public ENumber r_subtract(double lhs) { 
+	public ENumber r_subtract(int lhs) {
+		return ERT.box((long) lhs - value);
+	}
+
+	public ENumber r_subtract(double lhs) {
 		return ERT.box(lhs - value);
 	}
 
-	public ENumber r_subtract(BigInteger lhs) { 
+	public ENumber r_subtract(BigInteger lhs) {
 		return ERT.box(lhs.doubleValue() - value);
 	}
 
+	public ENumber multiply(EObject other) {
+		return other.multiply(value);
+	}
 
-
-
-	
-	public ENumber multiply(EObject other) { return other.multiply(value); }
-
-	public ENumber multiply(int lhs) { 
+	public ENumber multiply(int lhs) {
 		return ERT.box(lhs * value);
 	}
 
-	public ENumber multiply(double lhs) { 
+	public ENumber multiply(double lhs) {
 		return ERT.box(lhs * value);
 	}
 
-	public ENumber multiply(BigInteger lhs) { 
+	public ENumber multiply(BigInteger lhs) {
 		return ERT.box(lhs.doubleValue() * value);
 	}
 
+	public EDouble divide(EObject other) {
+		return other.r_divide(value);
+	}
 
-	
-
-	public EDouble divide(EObject other) { return other.r_divide(value); }
-	
-	public EDouble r_divide(int lhs) { 
+	public EDouble r_divide(int lhs) {
 		return ERT.box(lhs / value);
 	}
 
-	public EDouble r_divide(double lhs) { 
+	public EDouble r_divide(double lhs) {
 		return ERT.box(lhs / value);
 	}
 
-	public EDouble r_divide(BigInteger lhs) { 
+	public EDouble r_divide(BigInteger lhs) {
 		return ERT.box(lhs.doubleValue() / value);
 	}
-	
+
 	@Override
 	public double doubleValue() {
 		return value;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see erjang.ENumber#add(int)
 	 */
 	@Override

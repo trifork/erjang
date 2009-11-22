@@ -52,8 +52,8 @@ public class ERT {
 		throw new ErlangException(AM_BADARG, new Object[] { o1, o2 });
 	}
 
-	public static final EAtom ATOM_TRUE = EAtom.intern("true");
-	public static final EAtom ATOM_FALSE = EAtom.intern("false");
+	public static final EAtom TRUE = EAtom.intern("true");
+	public static final EAtom FALSE = EAtom.intern("false");
 
 	public static boolean eq(EObject o1, EObject o2) {
 		return o1 == null ? o2 == null : o1.equals(o2);
@@ -207,6 +207,22 @@ public class ERT {
 			return new EBig(res);
 
 		return new ESmall(res.intValue());
+	}
+
+	/**
+	 * @param b
+	 * @return
+	 */
+	public static EAtom box(boolean bool) {
+		return bool ? TRUE : FALSE;
+	}
+
+	/**
+	 * @param b
+	 * @return
+	 */
+	public static EAtom guard(boolean bool) {
+		return bool ? TRUE : null;
 	}
 
 }

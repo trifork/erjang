@@ -23,11 +23,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 
+
 /**
  * An erlang process
  */
 public class EProc {
-	static final EObject TAIL_MARKER = new EObject();
+	static final EObject TAIL_MARKER = new ETailMarker();
 	
 	public EFun fun;
 	public EObject arg0, arg1, arg2, arg3, arg4, arg5, arg6;
@@ -62,6 +63,24 @@ public class EProc {
 	public ECons get() {
 		// TODO Auto-generated method stub
 		return null;
+	}
+	
+}
+
+class ETailMarker extends EObject {
+
+	@Override
+	int cmp_order() {
+		return -1;
+	}
+
+	/* (non-Javadoc)
+	 * @see erjang.EObject#compare_same(erjang.EObject)
+	 */
+	@Override
+	int compare_same(EObject rhs) {
+		if (rhs == EProc.TAIL_MARKER) return 0;
+		return -1;
 	}
 	
 }

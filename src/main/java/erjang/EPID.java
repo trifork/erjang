@@ -20,6 +20,11 @@ package erjang;
 
 public class EPID extends EObject {
 
+	@Override
+	int cmp_order() {
+		return 5;
+	}
+	
 	public EPID testPID() {
 		return this;
 	}
@@ -31,4 +36,12 @@ public class EPID extends EObject {
 		// TODO Auto-generated method stub
 		return null;
 	}
+	
+	@Override
+	int compare_same(EObject rhs) {
+		// TODO: make faster
+		return toString().compareTo(rhs.toString());
+	}
+	
+
 }

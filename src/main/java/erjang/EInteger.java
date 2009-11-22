@@ -33,5 +33,4 @@ public abstract class EInteger extends ENumber {
 		return this;
 	}
 
-
 }

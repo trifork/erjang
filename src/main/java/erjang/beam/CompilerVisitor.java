@@ -821,7 +821,8 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				if (value.kind == Kind.X || value.kind == Kind.Y) {
 					if (value.type == Type.INT_TYPE
 							|| value.type == Type.BOOLEAN_TYPE) {
-						mv.visitVarInsn(ILOAD, var_index(value));
+						throw new Error("should not happen");
+						// mv.visitVarInsn(ILOAD, var_index(value));
 					} else {
 						mv.visitVarInsn(ALOAD, var_index(value));
 					}
@@ -851,13 +852,13 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					return ENIL_TYPE;
 				}
 
-				if (value == ERT.ATOM_TRUE) {
+				if (value == ERT.TRUE) {
 					mv.visitFieldInsn(GETSTATIC, ERT_NAME, "ATOM_TRUE",
 							EATOM_DESC);
 					return EATOM_TYPE;
 				}
 
-				if (value == ERT.ATOM_FALSE) {
+				if (value == ERT.FALSE) {
 					mv.visitFieldInsn(GETSTATIC, ERT_NAME, "ATOM_FALSE",
 							EATOM_DESC);
 					return EATOM_TYPE;
@@ -1267,14 +1268,9 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 				Type returnType = test_bif.getReturnType();
 				if (failLabel != 0) {
-					if (returnType.getSort() == Type.BOOLEAN) {
-						mv.visitJumpInsn(IFEQ, getLabel(failLabel));
-
-					} else {
-
 						// guard
 						if (returnType.getSort() != Type.OBJECT)
-							throw new Error("guards must return object type");
+							throw new Error("guards must return object type: "+test_bif);
 
 						// dup result for test
 						if (arg1 != null) {
@@ -1286,7 +1282,6 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 							mv.visitVarInsn(ALOAD, scratch_reg);
 							pop(arg1, returnType);
 						}
-					}
 				} else {
 					pop(arg1, returnType);
 				}
@@ -1352,11 +1347,6 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				if (failLabel != 0) {
 					// guard
 					switch (bif.getReturnType().getSort()) {
-					case Type.BOOLEAN:
-						if (out == null) {
-							mv.visitJumpInsn(IFEQ, getLabel(failLabel));
-						}
-						break;
 
 					case Type.OBJECT:
 
@@ -1368,7 +1358,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 						mv.visitJumpInsn(IFNULL, getLabel(failLabel));
 						break;
 					default:
-						throw new Error("guards must return object type");
+						throw new Error("guards must return object type: "+bif);
 					}
 
 				} else {
@@ -1436,6 +1426,8 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					return IS_NIL_TEST;
 				case is_boolean:
 					return IS_BOOLEAN_TEST;
+				case is_number:
+					return IS_NUMBER_TEST;
 				case is_float:
 					return IS_FLOAT_TEST;
 				case is_atom:
@@ -1800,12 +1792,13 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 	static Method IS_ATOM_TEST = Method.getMethod("erjang.EAtom testAtom()");
 	static Method IS_FLOAT_TEST = Method
 			.getMethod("erjang.EDouble testFloat()");
-	static Method IS_NIL_TEST = Method.getMethod("boolean isNil()");
-	static Method IS_BOOLEAN_TEST = Method.getMethod("boolean isBoolean()");
+	static Method IS_NIL_TEST = Method.getMethod("erjang.ENil testNil()");
+	static Method IS_BOOLEAN_TEST = Method.getMethod("erjang.EAtom testBoolean()");
+	static Method IS_NUMBER_TEST = Method.getMethod("erjang.ENumber testNumber()");
 	static Method IS_BINARY_TEST = Method.getMethod("erjang.EBinary isBinary()");
-	static Method IS_PID_TEST = Method.getMethod("erjang.EPID isPid()");
-	static Method IS_PORT_TEST = Method.getMethod("erjang.EPort isPort()");
-	static Method IS_FUNCTION_TEST = Method.getMethod("erjang.EFun isFunction()");
+	static Method IS_PID_TEST = Method.getMethod("erjang.EPID itestPid()");
+	static Method IS_PORT_TEST = Method.getMethod("erjang.EPort testPort()");
+	static Method IS_FUNCTION_TEST = Method.getMethod("erjang.EFun testFunction()");
 
 	Map<String, ExtFunc> imported = new HashMap<String, ExtFunc>();
 

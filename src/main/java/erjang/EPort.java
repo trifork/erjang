@@ -20,6 +20,13 @@ package erjang;
 
 public class EPort extends EObject {
 
+	/* (non-Javadoc)
+	 * @see erjang.EObject#cmpOrder()
+	 */
+	@Override
+	int cmp_order() {
+		return 4;
+	}
 	/**
 	 * @return
 	 */
@@ -27,5 +34,13 @@ public class EPort extends EObject {
 		// TODO Auto-generated method stub
 		return null;
 	}
+	
+	@Override
+	int compare_same(EObject rhs) {
+		// TODO: make faster
+		return toString().compareTo(rhs.toString());
+	}
+	
+
 
 }

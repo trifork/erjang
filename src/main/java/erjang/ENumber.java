@@ -22,6 +22,11 @@ import java.math.BigInteger;
 
 public abstract class ENumber extends EObject {
 
+	@Override
+	int cmp_order() {
+		return 0;
+	}
+	
 	public abstract double doubleValue();
 	public abstract int intValue();
 

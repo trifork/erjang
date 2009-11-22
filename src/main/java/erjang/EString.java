@@ -20,6 +20,7 @@ package erjang;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.Charset;
+import java.util.Arrays;
 
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -37,12 +38,18 @@ public class EString extends ESeq implements CharSequence {
 		this.hash = value.hashCode();
 		this.data = value.getBytes(ISO_LATIN_1);
 	}
-
+	
+	public EString testString()
+	{
+		return this;
+	}
+	
 	private EString(byte[] data, int off)
 	{
 		this.data = data;
 		this.off = off;
 	}
+	
 	
 	/**
 	 * @param list
@@ -217,15 +224,42 @@ public class EString extends ESeq implements CharSequence {
 	public ECons testNonEmptyList() {
 		return length() == 0 ? null : this;
 	}
+
+	public ECons testCons() {
+		return length() == 0 ? null : this;
+	}
+	
+	/* (non-Javadoc)
+	 * @see erjang.ECons#compare_same(erjang.EObject)
+	 */
+	@Override
+	int compare_same(EObject rhs) {
+		if (rhs instanceof EString) {
+			EString other = (EString) rhs;
+			int min = Math.min(data.length, other.data.length);
+			for (int i = 0; i < min; i++) {
+				int b1 = 0xff & data[i];
+				int b2 = 0xff & other.data[i];
+				if (b1 < b2) return -1;
+				if (b1 > b2) return 1;
+			}
+			
+			if (data.length < other.data.length) return -1;
+			if (data.length > other.data.length) return 1;
+
+			return 0;
+		} else {
+			return super.compare_same(rhs);
+		}
+	}
 	
 	/* (non-Javadoc)
 	 * @see erjang.ECons#prepend(erjang.ECons)
 	 */
 	@Override
 	public ECons prepend(ECons list) {
-		if (list instanceof EString) {
-			// TODO: implement segmented strings
-			EString other = (EString) list;
+		EString other = list.testString();
+		if (other != null) {
 			byte[] out = new byte[length() + other.length()];
 			System.arraycopy(other.data, other.off, out, 0, other.length());
 			System.arraycopy(this.data, this.off, out, other.length(), this.length());

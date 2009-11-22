@@ -23,11 +23,16 @@ import java.math.BigInteger;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
-public class EObject {
+public abstract class EObject implements Comparable<EObject> {
 
 	public ECons cons(EObject h)
 	{
 		return new EPair(h, this);
+	}
+	
+
+	public EString testString()	{
+		return null;
 	}
 	
 
@@ -71,6 +76,9 @@ public class EObject {
 		return null;
 	}
 
+	public EAtom testBoolean() {
+		return null;
+	}
 
 	/**
 	 * @return
@@ -183,7 +191,77 @@ public class EObject {
 	public EDouble divide(double rhs) { throw ERT.badarg(this,rhs); }
 	public EInteger irem(int rhs) { throw ERT.badarg(this,rhs); }
 
+	public boolean equals(Object other) {
+		if (other == this) return true;
+		if (other instanceof EObject) {
+			return compareTo((EObject) other) == 0;
+		} else {
+			return false;
+		}
+	}
+	
+	public boolean equals(EObject other) {
+		if (other == this) return true;
+		return compareTo(other) == 0;
+	}
+	
+	public int compareTo(EObject rhs) {
+		if (rhs == this) return 0;
+		int cmp1 = cmp_order();
+		int cmp2 = rhs.cmp_order();
+		if ( cmp1 == cmp2 ) {
+			return compare_same(rhs);
+		} else if (cmp1 < cmp2) {
+			return -1;
+		} else {
+			return 1;
+		}
+	}
 
+	abstract int compare_same(EObject rhs); 
+	
+	int r_compare_same(ESmall lhs) { throw new NotImplemented(); }
+	int r_compare_same(EBig lhs) { throw new NotImplemented(); }
+	int r_compare_same(EDouble lhs) { throw new NotImplemented(); }
+	
+	public int compareToExactly(EObject rhs) {
+		if (rhs == this) return 0;
+		int cmp1 = cmp_order();
+		int cmp2 = rhs.cmp_order();
+		if ( cmp1 == cmp2 ) {
+			return compare_same_exactly(rhs);
+		} else if (cmp1 < cmp2) {
+			return -1;
+		} else {
+			return 1;
+		}
+	}
+
+	/** this is only overridden in ENumber subclasses */
+	int compare_same_exactly(EObject rhs) {
+		return compare_same(rhs);
+	}
+
+	
+	int r_compare_same_exactly(ESmall lhs) { throw new NotImplemented(); }
+	int r_compare_same_exactly(EBig lhs) { throw new NotImplemented(); }
+	int r_compare_same_exactly(EDouble lhs) { throw new NotImplemented(); }
+	
+	
+	/** 
+	 * 	number[0] < atom[1] < reference[2] < fun[3] < port[4] < pid[5] < tuple[6] < list[7] < bit string[8]
+	 * @return
+	 */
+	abstract int cmp_order();
+
+
+	/**
+	 * @param o2
+	 * @return
+	 */
+	public boolean ge(EObject o2) {
+		return this.compareTo(o2) >= 0;
+	}
 
 
 }
