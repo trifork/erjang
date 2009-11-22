@@ -19,6 +19,9 @@
 package erjang;
 
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -47,7 +50,7 @@ public class EDouble extends ENumber {
 	
 
 	@Override
-	public EDouble asb() {
+	public EDouble abs() {
 		return new EDouble (Math.abs(value));
 	}
 
@@ -56,6 +59,15 @@ public class EDouble extends ENumber {
 		return String.valueOf(value);
 	}
 	
+	public EInteger asInteger() {
+		if (value >= Integer.MIN_VALUE && value <= Integer.MAX_VALUE) {
+			return new ESmall((int)value);
+		} else {
+			return new EBig(BigDecimal.valueOf(value).toBigInteger());
+		}
+	}
+
+
 
 	@Override
 	public org.objectweb.asm.Type emit_const(MethodVisitor fa) {
@@ -77,5 +89,82 @@ public class EDouble extends ENumber {
 		return new EString(String.valueOf(value));
 	}
 
+	
+	public ENumber add(EObject other) { return other.add(value); }
+
+	public ENumber r_add(int lhs) { 
+		return ERT.box((long)lhs + value);
+	}
+
+	public ENumber add(double lhs) { 
+		return ERT.box(lhs + value);
+	}
+
+	public ENumber add(BigInteger lhs) { 
+		return ERT.box(lhs.doubleValue() + value);
+	}
+
+	
+	public ENumber subtract(EObject other) { return other.r_subtract(value); }
+
+	public ENumber r_subtract(int lhs) { 
+		return ERT.box((long)lhs - value);
+	}
+
+	public ENumber r_subtract(double lhs) { 
+		return ERT.box(lhs - value);
+	}
+
+	public ENumber r_subtract(BigInteger lhs) { 
+		return ERT.box(lhs.doubleValue() - value);
+	}
+
+
+
+
+	
+	public ENumber multiply(EObject other) { return other.multiply(value); }
+
+	public ENumber multiply(int lhs) { 
+		return ERT.box(lhs * value);
+	}
+
+	public ENumber multiply(double lhs) { 
+		return ERT.box(lhs * value);
+	}
+
+	public ENumber multiply(BigInteger lhs) { 
+		return ERT.box(lhs.doubleValue() * value);
+	}
+
+
+	
+
+	public EDouble divide(EObject other) { return other.r_divide(value); }
+	
+	public EDouble r_divide(int lhs) { 
+		return ERT.box(lhs / value);
+	}
+
+	public EDouble r_divide(double lhs) { 
+		return ERT.box(lhs / value);
+	}
+
+	public EDouble r_divide(BigInteger lhs) { 
+		return ERT.box(lhs.doubleValue() / value);
+	}
+	
+	@Override
+	public double doubleValue() {
+		return value;
+	}
+
+	/* (non-Javadoc)
+	 * @see erjang.ENumber#add(int)
+	 */
+	@Override
+	public ENumber add(int rhs) {
+		return ERT.box(value + rhs);
+	}
 
 }

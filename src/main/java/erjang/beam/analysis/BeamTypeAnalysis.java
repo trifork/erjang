@@ -37,7 +37,7 @@ import erjang.EBinary;
 import erjang.ECons;
 import erjang.EDouble;
 import erjang.EFun;
-import erjang.EInt32;
+import erjang.ESmall;
 import erjang.EList;
 import erjang.ENil;
 import erjang.ENumber;
@@ -72,7 +72,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 		super(mv);
 	}
 
-	static final Type EINTEGER_TYPE = Type.getType(EInt32.class);
+	static final Type EINTEGER_TYPE = Type.getType(ESmall.class);
 	static final Type ENUMBER_TYPE = Type.getType(ENumber.class);
 	static final Type EOBJECT_TYPE = Type.getType(EObject.class);
 	static final Type EDOUBLE_TYPE = Type.getType(EDouble.class);
@@ -103,7 +103,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 	static final EObject APPLY_ATOM = EAtom.intern("apply");
 
 	private static final ETuple X0_REG = ETuple.make(new EObject[] { X_ATOM,
-			new EInt32(0) });
+			new ESmall(0) });
 	private EAtom moduleName;
 
 	private List<FV> functions = new ArrayList<FV>();
@@ -1726,7 +1726,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					} else if (tup.elem1 == LITERAL_ATOM) {
 						return Type.getType(tup.elem2.getClass());
 					} else if (tup.elem1 == INTEGER_ATOM) {
-						if (tup.elem2.getClass() == EInt32.class) {
+						if (tup.elem2.getClass() == ESmall.class) {
 							return Type.INT_TYPE;
 						} else {
 							return Type.getType(tup.elem2.getClass());
@@ -1740,7 +1740,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 				} else if (src == NIL_ATOM) {
 					return ENIL_TYPE;
 
-				} else if (src instanceof EInt32) {
+				} else if (src instanceof ESmall) {
 					return EINTEGER_TYPE;
 				}
 

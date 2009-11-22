@@ -19,7 +19,7 @@
 package erjang.beam;
 
 import erjang.EAtom;
-import erjang.EInt32;
+import erjang.ESmall;
 import erjang.EList;
 import erjang.EObject;
 import erjang.ESeq;
@@ -100,7 +100,7 @@ public class BeamFileData {
 				BeamOpcode opcode = BeamOpcode.get((EAtom) et.elm(1));
 
 				if (opcode == BeamOpcode.label) {
-					EInt32 label = (EInt32) et.elm(2);
+					ESmall label = (ESmall) et.elm(2);
 
 					if (bbv != null) {
 						bbv.visitEnd();

@@ -34,7 +34,7 @@ import erjang.EAtom;
 import erjang.EBig;
 import erjang.EBinary;
 import erjang.EDouble;
-import erjang.EInt32;
+import erjang.ESmall;
 import erjang.EList;
 import erjang.EObject;
 import erjang.ERT;

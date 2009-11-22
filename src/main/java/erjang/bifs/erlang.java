@@ -8,7 +8,7 @@ import erjang.EBig;
 import erjang.EBinary;
 import erjang.ECons;
 import erjang.EDouble;
-import erjang.EInt32;
+import erjang.ESmall;
 import erjang.EList;
 import erjang.ENil;
 import erjang.ENode;
@@ -136,7 +136,7 @@ public class erlang {
 
 	@BIF(type=Type.GUARD, name="element")
 	static public EObject element$g(EObject idx, EObject tup) {
-		EInt32 i = idx.testInteger();
+		ESmall i = idx.testInteger();
 		ETuple t = tup.testTuple();
 		if (i == null || t == null) {
 			return null;
@@ -148,7 +148,7 @@ public class erlang {
 	
 	@BIF
 	static public EObject element(EObject idx, EObject tup) {
-		EInt32 i = idx.testInteger();
+		ESmall i = idx.testInteger();
 		ETuple t = tup.testTuple();
 		if (i == null || t == null || i.intValue() > t.arity()) {
 			throw ERT.badarg();
@@ -159,7 +159,7 @@ public class erlang {
 	
 	@BIF
 	@ErlFun(export = true)
-	static public EObject element(EInt32 idx, EObject obj) {
+	static public EObject element(ESmall idx, EObject obj) {
 		ETuple tup;
 		if ((tup = obj.testTuple()) != null && tup.arity() >= idx.value) {
 			return tup.elm(idx.value);
@@ -168,7 +168,7 @@ public class erlang {
 	}
 
 	@BIF
-	static public EObject element(EInt32 idx, ETuple tup) {
+	static public EObject element(ESmall idx, ETuple tup) {
 		if (tup.arity() >= idx.value) {
 			return tup.elm(idx.value);
 		}
@@ -244,10 +244,10 @@ public class erlang {
 	}
 
 	@BIF(name = "length", type = Type.GUARD)
-	static public EInt32 length$p(EObject list) {
+	static public ESmall length$p(EObject list) {
 		ESeq seq;
 		if ((seq = list.testSeq()) != null) {
-			return new EInt32(seq.length());
+			return new ESmall(seq.length());
 		}
 		return null;
 	}
@@ -352,7 +352,7 @@ public class erlang {
 	static public ENumber div(EObject v1, int v2) {
 		ENumber n1;
 		if ((n1 = v1.testNumber()) != null) {
-			return n1.div(v2);
+			return n1.idiv(v2);
 		}
 		throw ERT.badarg();
 	}
@@ -376,7 +376,7 @@ public class erlang {
 		long res = (long) v1 - (long) v2;
 		int intres = (int) res;
 		if (res == intres)
-			return new EInt32(intres);
+			return new ESmall(intres);
 		else
 			return new EBig(BigInteger.valueOf(res));
 	}
@@ -388,7 +388,7 @@ public class erlang {
 		if ((n1 = v1.testNumber()) != null) {
 			ENumber n2;
 			if ((n2 = v2.testNumber()) != null) {
-				return n1.minus(n2);
+				return n1.subtract(n2);
 			}
 		}
 		throw ERT.badarg((Throwable) null, "erlang", "-", v1, v2);
@@ -400,7 +400,7 @@ public class erlang {
 		if ((n1 = v1.testNumber()) != null) {
 			ENumber n2;
 			if ((n2 = v2.testNumber()) != null) {
-				return n1.minus(n2);
+				return n1.subtract(n2);
 			}
 		}
 		return null;
@@ -576,7 +576,7 @@ public class erlang {
 
 	@BIF(name = "abs")
 	static public ENumber abs(ENumber v1) {
-		return v1.asb();
+		return v1.abs();
 	}
 
 	@BIF(name = "now")
@@ -590,9 +590,9 @@ public class erlang {
 
 		ETuple3 res = new ETuple3();
 
-		res.elem1 = new EInt32((int) megas);
-		res.elem2 = new EInt32((int) secs);
-		res.elem2 = new EInt32((int) micros);
+		res.elem1 = new ESmall((int) megas);
+		res.elem2 = new ESmall((int) secs);
+		res.elem2 = new ESmall((int) micros);
 
 		return res;
 	}

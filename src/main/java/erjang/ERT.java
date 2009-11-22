@@ -19,6 +19,7 @@
 package erjang;
 
 import java.lang.reflect.Method;
+import java.math.BigInteger;
 
 public class ERT {
 
@@ -61,21 +62,21 @@ public class ERT {
 	public static boolean eq(EAtom o1, EAtom o2) {
 		return o1 == o2;
 	}
-	
+
 	public static EAtom is_atom(EObject o) {
-		return o==null?null:o.testAtom();
+		return o == null ? null : o.testAtom();
 	}
 
 	public static ECons is_nonempty_list(EObject o) {
-		return o==null?null:o.testNonEmptyList();
+		return o == null ? null : o.testNonEmptyList();
 	}
 
 	public static ENil is_nil(EObject o) {
-		return o==null?ENil.NIL:o.testNil();
+		return o == null ? ENil.NIL : o.testNil();
 	}
 
 	public static EDouble is_list(EObject o) {
-		return o==null?null:o.testFloat();
+		return o == null ? null : o.testFloat();
 	}
 
 	/**
@@ -139,6 +140,59 @@ public class ERT {
 		EModule.load_module(mod, bin);
 
 		return (ETuple2) ETuple.make(AM_MODULE, mod);
+	}
+
+	
+	public static ESmall box(int i) {
+		return new ESmall(i);
+	}
+	
+	/**
+	 * Boxes a <code>long</code> value to an EInteger (EBig or ESmall)
+	 * 
+	 * @param longValue
+	 * @return
+	 */
+	public static EInteger box(long longVal) {
+
+		// compute l's offset from Integer.MIN_VALUE
+		long offset_from_int_min = longVal - (long) Integer.MIN_VALUE;
+		
+		// strip sign bit
+		long unsigned_offset = offset_from_int_min & Long.MAX_VALUE;
+
+		if (unsigned_offset >= 0x100000000L) {
+			return new EBig(longVal);
+		} else {
+			return new ESmall((int) longVal);
+		}
+
+	}
+
+	/**
+	 * @param doubleVal
+	 * @return
+	 */
+	public static EDouble box(double doubleVal) {
+		return new EDouble(doubleVal);
+	}
+
+	static BigInteger INT_MIN_AS_BIG = BigInteger.valueOf(Integer.MIN_VALUE);
+	static BigInteger INT_MAX_AS_BIG = BigInteger.valueOf(Integer.MAX_VALUE);
+
+	/**
+	 * @param add
+	 * @return
+	 */
+	public static EInteger box(BigInteger res) {
+		
+		if (res.compareTo(INT_MIN_AS_BIG) < 0) 
+			return new EBig(res);
+		
+		if (res.compareTo(INT_MAX_AS_BIG) > 0)
+			return new EBig(res);
+
+		return new ESmall(res.intValue());
 	}
 
 }

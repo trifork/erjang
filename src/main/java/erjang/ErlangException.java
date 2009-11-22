@@ -96,7 +96,7 @@ public class ErlangException extends RuntimeException {
 		if (val instanceof String)
 			return EString.fromString((String) val);
 		if (val instanceof Integer)
-			return EInt32.make(((Integer) val).intValue());
+			return ESmall.make(((Integer) val).intValue());
 		throw new Error();
 	}
 
@@ -186,7 +186,7 @@ public class ErlangException extends RuntimeException {
 				arity -= 1;
 		}
 
-		return ETuple.make(EAtom.intern(module), EAtom.intern(fun), EInt32
+		return ETuple.make(EAtom.intern(module), EAtom.intern(fun), ESmall
 				.make(arity));
 	}
 

@@ -28,7 +28,7 @@ import org.objectweb.asm.Type;
 
 import erjang.EAtom;
 import erjang.EDouble;
-import erjang.EInt32;
+import erjang.ESmall;
 import erjang.EObject;
 import erjang.EProc;
 import erjang.bifs.BinOps;
@@ -184,7 +184,7 @@ public class BIFUtil {
 				if (c == double.class)
 					return EDouble.class;
 				if (c == int.class)
-					return EInt32.class;
+					return ESmall.class;
 				if (c == boolean.class)
 					return EAtom.class;
 				return EObject.class;

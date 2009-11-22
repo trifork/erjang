@@ -42,7 +42,7 @@ import erjang.EBinary;
 import erjang.ECons;
 import erjang.EDouble;
 import erjang.EFun;
-import erjang.EInt32;
+import erjang.ESmall;
 import erjang.EList;
 import erjang.EModule;
 import erjang.ENil;
@@ -76,7 +76,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 	static final Type ERLANG_EXCEPTION_TYPE = Type
 			.getType(ErlangException.class);
 	static final Type ERT_TYPE = Type.getType(ERT.class);
-	static final Type EINTEGER_TYPE = Type.getType(EInt32.class);
+	static final Type EINTEGER_TYPE = Type.getType(ESmall.class);
 	static final Type EMODULE_TYPE = Type.getType(EModule.class);
 	/**
 	 * 
@@ -864,7 +864,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				}
 
 				if (stack_type.getSort() != Type.OBJECT) {
-					if (value instanceof EInt32) {
+					if (value instanceof ESmall) {
 						mv.visitLdcInsn(new Integer(value.asInt()));
 						return Type.INT_TYPE;
 					} else if (value instanceof EDouble) {

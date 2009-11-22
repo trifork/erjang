@@ -1,0 +1,73 @@
+/**
+ * This file is part of Erjang - A JVM-based Erlang VM
+ *
+ * Copyright (c) 2009 by Trifork
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *  
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ **/
+
+
+package erjang;
+
+import java.io.File;
+
+import erjang.beam.Compiler;
+
+import junit.framework.Test;
+import junit.framework.TestResult;
+
+/**
+ * 
+ */
+public class TestCompileFile implements Test {
+
+	private final File file;
+
+	/**
+	 * @param file
+	 */
+	public TestCompileFile(File file) {
+		this.file = file;
+	}
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "compiling " + file.getName();
+	}
+	
+	/* (non-Javadoc)
+	 * @see junit.framework.Test#countTestCases()
+	 */
+	@Override
+	public int countTestCases() {
+		return 1;
+	}
+
+	/* (non-Javadoc)
+	 * @see junit.framework.Test#run(junit.framework.TestResult)
+	 */
+	@Override
+	public void run(TestResult result) {
+		result.startTest(this);
+		try {
+			Compiler.main(new String[] { file.getAbsolutePath() });
+		} catch (Throwable e) {
+			result.addError(this, e);
+		}
+		result.endTest(this);
+	}
+
+}

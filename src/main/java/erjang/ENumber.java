@@ -22,12 +22,13 @@ import java.math.BigInteger;
 
 public abstract class ENumber extends EObject {
 
+	public abstract double doubleValue();
 	public abstract int intValue();
 
 	public static ENumber parseInt(String str) {
         try {     
         	int val = java.lang.Integer.parseInt(str);
-        	return new EInt32(val);
+        	return new ESmall(val);
          } catch (NumberFormatException e) {
         	 BigInteger val = new java.math.BigInteger(str);
         	 return new EBig(val);
@@ -38,88 +39,14 @@ public abstract class ENumber extends EObject {
 		return this;
 	}
 
+	public abstract ENumber abs();
 
-	public abstract ENumber asb();
-
-	public ENumber minus(ENumber n2) {
-		throw new NotImplemented();
-	}
-
-	public ENumber trunc() {
-		throw new NotImplemented();
-	}
-
-	public ENumber rem(ENumber n2) {
-		throw new NotImplemented();
-	}
-
-	public ENumber rem(int v2) {
-		throw new NotImplemented();
-	}
-
-	public ENumber minus(int v2) {
-		throw new NotImplemented();
-	}
-
-	public ENumber add(ENumber n2) {
-		throw new NotImplemented();
-	}
-
-	public ENumber multiply(ENumber n2) {
-		throw new NotImplemented();
-	}
-
-	public static ENumber valueFor(long res) {
-		int intres = (int) res;
-		if (res == intres) return new EInt32(intres);
-		return new EBig(res);
-	}
-
-	public ENumber bitAnd(ENumber n2) {
-		throw new NotImplemented();
-	}
-
-	public ENumber bitShiftRight(ENumber n2) {
-		throw new NotImplemented();
-	}
-
-	public ENumber bitShiftLeft(ENumber n2) {
-		throw new NotImplemented();
-	}
-
-	public ENumber bitOr(ENumber n2) {
-		throw new NotImplemented();
-	}
-
-	public ENumber div(int v2) {
-		throw new NotImplemented();
-	}
-
-	public ENumber add(int i2) {
-		throw new NotImplemented();
-	}
-
+	public abstract EInteger asInteger();
 	/**
-	 * @param v2
+	 * @param i2
 	 * @return
 	 */
-	public ENumber divide(EObject v2) {
-		throw new NotImplemented();
-	}
+	public abstract ENumber add(int rhs);
 
-	/**
-	 * @param d2
-	 * @return
-	 */
-	public ENumber divide(double d2) {
-		throw new NotImplemented();
-	}
-
-	/**
-	 * @return
-	 */
-	public ENumber negate() {
-		throw new NotImplemented();
-	}
 
 }
