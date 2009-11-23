@@ -31,6 +31,10 @@ import erjang.beam.EUtil;
 
 public abstract class EFun extends EObject {
 	
+	public EFun testFunction2(int nargs) {
+		return null;
+	}
+	
 	@Override
 	int cmp_order() {
 		return 3;
@@ -101,6 +105,7 @@ public abstract class EFun extends EObject {
 		cw.visit(Opcodes.V1_5, Opcodes.ACC_PUBLIC | Opcodes.ACC_ABSTRACT,
 				self_type, null, EFUN_TYPE.getInternalName(), null);
 
+		
 		MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PUBLIC
 				| Opcodes.ACC_ABSTRACT, "invoke", EUtil.getSignature(arity,
 				true), null, null);
@@ -110,6 +115,13 @@ public abstract class EFun extends EObject {
 				"invoke_tail", EUtil.getSignature(arity, true), null, null);
 		mv.visitEnd();
 
+		
+		mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "arity", "()I", null, null);
+		mv.visitCode();
+		mv.visitLdcInsn(new Integer(arity));
+		mv.visitInsn(Opcodes.IRETURN);
+		mv.visitEnd();
+		
 		mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "invoke", "("
 				+ EPROC_TYPE.getDescriptor() + EOBJECT_ARR_TYPE.getDescriptor()
 				+ ")" + EOBJECT_TYPE.getDescriptor(), null, null);

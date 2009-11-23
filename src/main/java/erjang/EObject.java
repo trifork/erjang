@@ -35,7 +35,10 @@ public abstract class EObject implements Comparable<EObject> {
 		return null;
 	}
 	
-
+	public EFun testFunction2(int nargs) {
+		return null;
+	}
+	
 	public EAtom testAtom() {
 		return null;
 	}
