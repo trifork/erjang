@@ -704,6 +704,15 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 							+ EINTEGER_TYPE.getDescriptor() + "II)V");
 					return;
 
+				case bs_put_float:
+					mv.visitVarInsn(ALOAD, bit_string_builder);
+					push(arg, Type.DOUBLE_TYPE);
+					push(size, Type.INT_TYPE);
+					push(flags, Type.INT_TYPE);
+					mv.visitMethodInsn(INVOKEVIRTUAL, EBITSTRINGBUILDER_TYPE
+							.getInternalName(), "put_integer", "(DII)V");
+					return;
+
 				case bs_put_binary:
 					mv.visitVarInsn(ALOAD, bit_string_builder);
 					push(arg, EBITSTRING_TYPE);
@@ -767,10 +776,10 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				case bs_match_string:
 					push(args[0], EBINMATCHSTATE_TYPE);
 					push(args[1], Type.INT_TYPE);
-					push(args[2], EBINARY_TYPE);
+					push(args[2], EBITSTRING_TYPE);
 					mv.visitMethodInsn(INVOKEVIRTUAL, ERT_NAME, test.name(),
-							"(I" + EBINARY_TYPE.getDescriptor() + ")"
-									+ EOBJECT_DESC);
+							"(I" + EBITSTRING_TYPE.getDescriptor() + ")"
+									+ EBITSTRING_TYPE);
 					mv.visitJumpInsn(IFNULL, getLabel(failLabel));
 					return;
 
@@ -813,8 +822,9 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 					push(args[0], EBINMATCHSTATE_TYPE);
 					push(args[2], Type.INT_TYPE);
+					push(args[4], Type.INT_TYPE);
 					mv.visitMethodInsn(INVOKEVIRTUAL, ERT_NAME, test.name(),
-							"(I)" + EOBJECT_DESC);
+							"(II)" + EOBJECT_DESC);
 					mv.visitInsn(DUP);
 					mv.visitVarInsn(ASTORE, scratch_reg);
 

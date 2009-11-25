@@ -20,9 +20,15 @@ package erjang;
 
 public class EBinMatchState {
 
+	public static final EAtom ATOM_ALL = EAtom.intern("all");
+	
 	public final EBitString bin;
 	int bit_pos;
 
+	public int bitsLeft() {
+		return bin.bitCount() - bit_pos;
+	}
+	
 	public EBitString binary() {
 		return bin;
 	}
@@ -31,8 +37,28 @@ public class EBinMatchState {
 		this.bin = binary;
 		this.bit_pos = 0;
 	}
+	
+	public EBitString bs_get_binary2(EObject spec, int flags) {
+		
+		if (spec == ATOM_ALL) {
+			
+			EBitString result = bin.substring(bit_pos, bitsLeft());
+			bit_pos += result.bitCount();
+			return result;
 
-	public EInteger bs_get_integer2(int size) {
+		} 
+		
+		throw new Error("unknown spec: "+spec);
+		
+//		return null;
+	}
+
+	public EInteger bs_get_integer2(int size, int flags) {
+		
+		if (flags != 0) {
+			throw new Error("unhandled flags: "+flags);
+		}
+		
 		if (size == 0) {
 			return ESmall.ZERO;
 		}
@@ -56,15 +82,15 @@ public class EBinMatchState {
 		throw new NotImplemented();
 	}
 
-	public EBinary bs_match_string(int bits, EBinary ebs) {
+	public EBitString bs_match_string(int bits, EBitString ebs) {
 		int size = ebs.bitCount();
 
 		// do we have bits enough in the input
-		if (size > (bin.bitCount() - bit_pos)) {
+		if (size > bitsLeft()) {
 			return null;
 		}
 
-		int limit = ebs.bitCount();
+		int limit = size;
 
 		for (int pos = 0; pos < limit; pos += 8) {
 
@@ -82,11 +108,19 @@ public class EBinMatchState {
 	}
 	
 	EAtom bs_skip_bits2(EInteger count, int bits, int flags) {
-		bit_pos += (bits * count.intValue());
+		int bitsWanted = bits*count.intValue();
+		
+		if (bitsLeft() < bitsWanted) { return null; }
+		
+		bit_pos += bitsWanted;
 
-		if (bit_pos <= bin.bitCount())
+		return ERT.TRUE;
+	}
+	
+	/** tell if there are bytes left */
+	EObject bs_test_tail2() {
+		if (bit_pos < bin.bitCount())
 			return ERT.TRUE;
-		else
-			return null;
+		return null;
 	}
 }
