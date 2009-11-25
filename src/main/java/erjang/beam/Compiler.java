@@ -111,10 +111,6 @@ public class Compiler implements Opcodes {
 		
 		return base;
 		
-//		String internalEMname = erlang.class.getName().replace('.', '/');
-//		int idx = internalEMname.lastIndexOf('/');
-//		String prefix = internalEMname.substring(0, idx + 1);
-//		return prefix + cn;
 	}
 
 	public static void main(String[] args) throws Exception {

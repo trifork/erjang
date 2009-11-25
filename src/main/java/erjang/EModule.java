@@ -155,6 +155,30 @@ public abstract class EModule {
 		
 	}
 
+	public static load_module(EAtom mod)
+	{
+		String internalName = erjang.beam.Compiler.moduleClassName(mod.getName());
+		String java_name = internalName.replace('/', '.');
+		EModuleLoader loader = new EModuleLoader(url);
+		Class<? extends EModule> clazz;
+		try {
+			clazz = (Class<? extends EModule>) loader.loadClass(java_name);
+		} catch (ClassNotFoundException e1) {
+			throw new Error(e1);
+		}
+		EModule mi;
+		try {
+			mi = clazz.newInstance();
+		} catch (Exception e) {
+			throw new ErlangException(AM_BADARG, "erlang", "load_module",
+					new Object[] { mod, bin }, e);
+		}
+		
+		mi.setLoader(loader);
+		mi.read_annotations(clazz);
+
+	}
+	
 	/**
 	 * @param loader
 	 */

@@ -1168,6 +1168,13 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 						mv.visitInsn(ICONST_0);
 						return Type.BOOLEAN_TYPE;
 					}
+					if (value instanceof ETuple2) {
+						ETuple2 t2 = (ETuple2) value;
+						if (t2.elm(1) == ATOM_field_flags) {
+							push_int(t2.elem2.asInt());
+							return Type.INT_TYPE;
+						}
+					}
 					throw new Error("cannot convert " + value + " as "
 							+ stack_type);
 				}

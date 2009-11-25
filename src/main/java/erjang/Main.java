@@ -28,6 +28,8 @@ public class Main {
 	public static void main(String[] args) {
 		
 
+		EModule.load_module(;, bin)
+		
 		EAtom modName = EAtom.intern("erlang");
 		
 		erlang$bifs.load_module(modName, bin)
