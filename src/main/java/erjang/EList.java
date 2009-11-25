@@ -22,7 +22,7 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
-import erjang.bifs.erlang;
+import erjang.m.erlang.erlang$bifs;
 
 public class EList extends ESeq {
 	

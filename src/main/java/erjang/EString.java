@@ -94,27 +94,63 @@ public class EString extends ESeq implements CharSequence {
 		return new String(data, off, data.length-off, ISO_LATIN_1);
 	}
 	
-	@Override
-	public boolean equals(Object obj) {
-		if (obj instanceof EString) {
-			EString es = (EString) obj;
+	public boolean equalsExactly(EObject rhs) {
+		ENil nil;
+		int length = length();
+		
+		if ((nil=rhs.testNil()) != null) {
+			return length==0;
+		}
+		
+		EString str;
+		if ((str=rhs.testString()) != null) {
+			EString es = str;
 			
-			int len1 = data.length-off;
-			int len2 = es.data.length-es.off;
+			if (length != es.length()) return false;
 			
-			if (len1 != len2) return false;
-			
-			for (int i = 0; i < len1; i++) {
-				if (data[off+i] != es.data[es.off+i]) return false;
+			for (int i = 0; i < length; i++) {
+				if (charAt(i) != es.charAt(i)) return false;
 			}
 			
 			return true;
 
-		} else if (obj instanceof String) {			
-			return stringValue().equals(obj);
+		}
+		
+		ESeq seq;
+		if ((seq = rhs.testWellformedList()) == null) {
+			
+			int i = 0;
+			
+			while (i < length) {
+				
+				if (seq.testNil() != null) return false;
+				
+				if (!seq.head().equalsExactly(new ESmall(charAt(i)))) {
+					return false;
+				}
+				
+				seq = seq.tail();
+				
+			}
+			
+			
 		}
 		
 		return false;
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if (obj instanceof String) {
+			return ((String)obj).equals(stringValue());
+		}
+		
+		if (!(obj instanceof EObject)) {
+			return false;
+		}
+		
+		return compare_same((EObject)obj) == 0;
+
 	}
 
 	@Override
@@ -221,6 +257,14 @@ public class EString extends ESeq implements CharSequence {
 		return length() == 0 ? ENil.NIL : null;
 	}
 
+	/* (non-Javadoc)
+	 * @see erjang.ESeq#testWellformedList()
+	 */
+	@Override
+	public ESeq testWellformedList() {
+		return this;
+	}
+	
 	public ECons testNonEmptyList() {
 		return length() == 0 ? null : this;
 	}
@@ -234,23 +278,58 @@ public class EString extends ESeq implements CharSequence {
 	 */
 	@Override
 	int compare_same(EObject rhs) {
-		if (rhs instanceof EString) {
-			EString other = (EString) rhs;
-			int min = Math.min(data.length, other.data.length);
-			for (int i = 0; i < min; i++) {
-				int b1 = 0xff & data[i];
-				int b2 = 0xff & other.data[i];
-				if (b1 < b2) return -1;
-				if (b1 > b2) return 1;
+		
+		int length = length();
+		
+		if ((rhs.testNil()) != null) {
+			return length==0 ? 0 : 1;
+		}
+		
+		EString str;
+		if ((str=rhs.testString()) != null) {
+			EString es = str;
+			int length2 = str.length();
+			int limit = Math.min(length, length2);
+			for (int i = 0; i < limit; i++) {
+				char ch1 = charAt(i);
+				char ch2 = es.charAt(i);
+				if (ch1 < ch2) return -1;
+				if (ch1 > ch2) return 1;
 			}
 			
-			if (data.length < other.data.length) return -1;
-			if (data.length > other.data.length) return 1;
-
+			if (length > length2) return 1;
+			if (length < length2) return -1;
 			return 0;
-		} else {
-			return super.compare_same(rhs);
+
 		}
+		
+		ECons seq;
+		if ((seq = rhs.testCons()) != null) {
+			
+			int i = 0;
+			
+			while (i < length) {
+				
+				if ((seq.testNil()) != null) {
+					return -1; // I AM SHORTER
+				}
+				
+				int cmp = (new ESmall(charAt(i++))).compareTo( seq.head() );
+				if (cmp != 0) return cmp;
+				
+				EObject res = seq.tail();
+				
+				if ((seq = res.testCons()) != null) {
+					continue;
+				}
+
+				return - res.compareTo( new EString(data, i)  );
+			}
+			
+			
+		}
+		
+		return - rhs.compareTo(this);		
 	}
 	
 	/* (non-Javadoc)

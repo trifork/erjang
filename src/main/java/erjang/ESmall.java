@@ -56,20 +56,21 @@ public class ESmall extends EInteger {
 	}
 
 	@Override
-	int compare_same_exactly(EObject rhs) {
+	public
+	boolean equalsExactly(EObject rhs) {
 		return rhs.r_compare_same_exactly(this);
 	}
 
-	int r_compare_same_exactly(ESmall lhs) {
-		return lhs.value < value ? -1 : lhs.value == value ? 0 : 1;
+	boolean r_compare_same_exactly(ESmall lhs) {
+		return lhs.value == value;
 	}
 
-	int r_compare_same_exactly(EBig lhs) {
-		return lhs.value.compareTo(BigInteger.valueOf(value));
+	boolean r_compare_same_exactly(EBig lhs) {
+		return lhs.value.equals(BigInteger.valueOf(value));
 	}
 
-	int r_compare_same_exactly(EDouble lhs) {
-		return lhs.value < value ? -1 : 1;
+	boolean r_compare_same_exactly(EDouble lhs) {
+		return lhs.value == value;
 	}
 
 	/*
@@ -88,7 +89,7 @@ public class ESmall extends EInteger {
 
 	@Override
 	public int hashCode() {
-		return value;
+		return (int)((long)value ^ (((long)value) >>> 32));
 	}
 
 	@Override
@@ -148,25 +149,25 @@ public class ESmall extends EInteger {
 		return BigInteger.valueOf(value);
 	}
 
-	public ENumber add(EObject other) {
-		return other.add(value);
+	public ENumber add(EObject other, boolean guard) {
+		return other.add(value, guard);
 	}
 
-	public ENumber add(int rhs) {
+	public ENumber add(int rhs, boolean guard) {
 		return ERT.box((long) value + (long) rhs);
 	}
 
-	public ENumber add(double lhs) {
+	public ENumber add(double lhs, boolean guard) {
 		return ERT.box(lhs + value);
 	}
 
-	public ENumber add(BigInteger lhs) {
+	public ENumber add(BigInteger lhs, boolean guard) {
 		return ERT.box(lhs.add(BigInteger.valueOf(value)));
 	}
 
 	/* subtract */
 
-	public ENumber subtract(EObject other) {
+	public ENumber subtract(EObject other, boolean guard) {
 		return other.r_subtract(value);
 	}
 

@@ -23,6 +23,7 @@ import java.util.Map;
 
 import com.ericsson.otp.erlang.OtpErlangAtom;
 import com.ericsson.otp.erlang.OtpErlangBinary;
+import com.ericsson.otp.erlang.OtpErlangBitstr;
 import com.ericsson.otp.erlang.OtpErlangDouble;
 import com.ericsson.otp.erlang.OtpErlangList;
 import com.ericsson.otp.erlang.OtpErlangLong;
@@ -33,6 +34,7 @@ import com.ericsson.otp.erlang.OtpErlangTuple;
 import erjang.EAtom;
 import erjang.EBig;
 import erjang.EBinary;
+import erjang.EBitString;
 import erjang.EDouble;
 import erjang.ESmall;
 import erjang.EList;
@@ -112,7 +114,15 @@ public class OtpConverter {
 				return new EBinary(obj.binaryValue());
 			}
 		});
-}
+
+		add(OtpErlangBitstr.class, new Converter<OtpErlangBitstr>() {
+			EObject conv(OtpErlangBitstr obj) {
+				return new EBitString(obj.binaryValue(), 0, obj.size()*8 + obj.pad_bits() );
+			}
+		});
+
+	
+	}
 
 	public static EObject convert(OtpErlangObject value) {
 

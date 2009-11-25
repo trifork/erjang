@@ -26,14 +26,16 @@ import org.objectweb.asm.Type;
 
 public class EBig extends EInteger {
 
-	private static final BigInteger EBIG32 = BigInteger.valueOf(32);
-	private static final BigInteger EBIG_MAXINT = BigInteger
-			.valueOf(Integer.MAX_VALUE);
+	private static final BigInteger BIG_32 = BigInteger.valueOf(32);
+	private static final BigInteger BIG_MAX_INT = BigInteger.valueOf(Integer.MAX_VALUE);
+	private static final BigInteger BIG_MIN_INT = BigInteger.valueOf(Integer.MIN_VALUE);
 
 	final BigInteger value;
 
 	public EBig(BigInteger value) {
 		this.value = value;
+		
+		assert (value.compareTo(BIG_MAX_INT) > 0 || value.compareTo(BIG_MIN_INT) < 0);
 	}
 
 	@Override
@@ -55,21 +57,20 @@ public class EBig extends EInteger {
 	}
 
 	@Override
-	int compare_same_exactly(EObject rhs) {
-		return rhs.r_compare_same(this);
+	public boolean equalsExactly(EObject rhs) {
+		return rhs.r_compare_same(this) ==0;
 	}
 	
-	int r_compare_same_exactly(ESmall lhs) {
-		return lhs.bigintValue().compareTo(value);
+	boolean r_compare_same_exactly(ESmall lhs) {
+		return lhs.bigintValue().equals(value);
 	}
 
-	int r_compare_same_exactly(EBig lhs) {
-		return lhs.value.compareTo(value);
+	boolean r_compare_same_exactly(EBig lhs) {
+		return lhs.value.equals(value);
 	}
 
-	int r_compare_same_exactly(EDouble lhs) {
-		double doubleValue = value.doubleValue();
-		return lhs.value < doubleValue ? -1 : 1;
+	boolean r_compare_same_exactly(EDouble lhs) {
+		return lhs.value == value.doubleValue();
 	}
 
 
@@ -81,10 +82,7 @@ public class EBig extends EInteger {
 	 */
 	@Override
 	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + ((value == null) ? 0 : value.hashCode());
-		return result;
+		return value.hashCode();
 	}
 
 	public EBig(long res) {
@@ -126,23 +124,23 @@ public class EBig extends EInteger {
 		return new EBig(value.abs());
 	}
 
-	public ENumber add(EObject other) {
-		return other.add(value);
+	public ENumber add(EObject other, boolean guard) {
+		return other.add(value, guard);
 	}
 
-	public ENumber add(int lhs) {
+	public ENumber add(int lhs, boolean guard) {
 		return ERT.box(BigInteger.valueOf(lhs).add(value));
 	}
 
-	public ENumber add(double lhs) {
+	public ENumber add(double lhs, boolean guard) {
 		return ERT.box(lhs + value.doubleValue());
 	}
 
-	public ENumber add(BigInteger lhs) {
+	public ENumber add(BigInteger lhs, boolean guard) {
 		return ERT.box(lhs.add(value));
 	}
 
-	public ENumber subtract(EObject other) {
+	public ENumber subtract(EObject other, boolean guard) {
 		return other.r_subtract(value);
 	}
 
@@ -224,7 +222,7 @@ public class EBig extends EInteger {
 	}
 
 	EInteger r_bsr(int lhs) {
-		if (EBIG32.compareTo(value) <= 0) {
+		if (BIG_32.compareTo(value) <= 0) {
 			return new ESmall(0);
 		} else {
 			return ERT.box(lhs >> value.intValue());
@@ -232,7 +230,7 @@ public class EBig extends EInteger {
 	}
 
 	EInteger r_bsr(BigInteger lhs) {
-		if (EBIG_MAXINT.compareTo(value) < 0) {
+		if (BIG_MAX_INT.compareTo(value) < 0) {
 			return new ESmall(0);
 		} else {
 			return ERT.box(lhs.shiftRight(value.intValue()));
@@ -244,7 +242,7 @@ public class EBig extends EInteger {
 	}
 
 	EInteger r_bsl(int lhs) {
-		if (EBIG32.compareTo(value) <= 0) {
+		if (BIG_32.compareTo(value) <= 0) {
 			return new ESmall(0);
 		} else {
 			return ERT.box(lhs << value.intValue());
@@ -252,7 +250,7 @@ public class EBig extends EInteger {
 	}
 
 	EInteger r_bsl(BigInteger lhs) {
-		if (EBIG_MAXINT.compareTo(value) < 0) {
+		if (BIG_MAX_INT.compareTo(value) < 0) {
 			return new ESmall(0);
 		} else {
 			return ERT.box(lhs.shiftLeft(value.intValue()));

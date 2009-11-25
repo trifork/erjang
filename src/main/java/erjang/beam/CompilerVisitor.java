@@ -39,6 +39,8 @@ import org.objectweb.asm.commons.Method;
 import erjang.EAtom;
 import erjang.EBinMatchState;
 import erjang.EBinary;
+import erjang.EBitString;
+import erjang.EBitStringBuilder;
 import erjang.ECons;
 import erjang.EDouble;
 import erjang.EFun;
@@ -73,10 +75,16 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 	private EAtom module_name;
 	private Type self_type;
 
+	private static final EObject ATOM_field_flags = EAtom.intern("field_flags");
+
+	static final Type EBINMATCHSTATE_TYPE = Type.getType(EBinMatchState.class);
+	static final Type EBINSTRINGBUILDER_TYPE = Type
+			.getType(EBitStringBuilder.class);
 	static final Type ERLANG_EXCEPTION_TYPE = Type
 			.getType(ErlangException.class);
 	static final Type ERT_TYPE = Type.getType(ERT.class);
 	static final Type EINTEGER_TYPE = Type.getType(ESmall.class);
+	static final Type ESTRING_TYPE = Type.getType(EString.class);
 	static final Type EMODULE_TYPE = Type.getType(EModule.class);
 	/**
 	 * 
@@ -84,25 +92,25 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 	static final String EMODULE_NAME = EMODULE_TYPE.getInternalName();
 	static final Type ENUMBER_TYPE = Type.getType(ENumber.class);
 	static final Type EOBJECT_TYPE = Type.getType(EObject.class);
-	/**
-	 * 
-	 */
-	static final String EOBJECT_DESCRIPTOR = EOBJECT_TYPE.getDescriptor();
+	static final String EOBJECT_DESC = EOBJECT_TYPE.getDescriptor();
 	static final Type EPROC_TYPE = Type.getType(EProc.class);
-	/**
-	 * 
-	 */
 	static final String EPROC_NAME = EPROC_TYPE.getInternalName();
-	/**
-	 * 
-	 */
+
+	static final Type EEXCEPTION_TYPE = Type.getType(ErlangException.class);
+	static final String EEXCEPTION_DESC = EEXCEPTION_TYPE.getDescriptor();
+
+	/**/
+
 	static final String GO_DESC = "(" + EPROC_TYPE.getDescriptor() + ")"
-			+ EOBJECT_DESCRIPTOR;
+			+ EOBJECT_DESC;
 	static final Type EDOUBLE_TYPE = Type.getType(EDouble.class);
 	static final Type ENIL_TYPE = Type.getType(ENil.class);
 	static final Type EATOM_TYPE = Type.getType(EAtom.class);
 	static final Type ETUPLE_TYPE = Type.getType(ETuple.class);
 	static final Type EBINARY_TYPE = Type.getType(EBinary.class);
+	static final Type EBITSTRING_TYPE = Type.getType(EBitString.class);
+	static final Type EBITSTRINGBUILDER_TYPE = Type
+			.getType(EBitStringBuilder.class);
 	static final Type ECONS_TYPE = Type.getType(ECons.class);
 	static final Type ESEQ_TYPE = Type.getType(ESeq.class);
 	static final Type ELIST_TYPE = Type.getType(EList.class);
@@ -149,7 +157,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 	private final ClassRepo classRepo;
 
 	/**
-	 * @param classRepo 
+	 * @param classRepo
 	 * 
 	 */
 	public CompilerVisitor(ClassVisitor cv, ClassRepo classRepo) {
@@ -235,18 +243,19 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 		mv.visitCode();
 
 		for (Map.Entry<String, String> ent : funs.entrySet()) {
-			
+
 			String field = ent.getKey();
 			String clazz = ent.getValue();
-			
+
 			mv.visitTypeInsn(NEW, clazz);
 			mv.visitInsn(DUP);
 			mv.visitMethodInsn(INVOKESPECIAL, clazz, "<init>", "()V");
-			
-			mv.visitFieldInsn(PUTSTATIC, self_type.getInternalName(), field, "L" + clazz + ";");
-			
+
+			mv.visitFieldInsn(PUTSTATIC, self_type.getInternalName(), field,
+					"L" + clazz + ";");
+
 		}
-		
+
 		for (Map.Entry<EObject, String> ent : constants.entrySet()) {
 
 			EObject term = ent.getKey();
@@ -305,7 +314,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 	}
 
 	Map<String, Integer> lambdas_xx = new TreeMap<String, Integer>();
-	Map<String,String> funs = new HashMap<String, String>();
+	Map<String, String> funs = new HashMap<String, String>();
 
 	class ASMFunctionAdapter implements FunctionVisitor2 {
 
@@ -324,6 +333,8 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 		private Label start;
 		private Label end;
 		private int scratch_reg;
+
+		private int bit_string_builder;
 
 		Label getLabel(int i) {
 			if (i <= 0)
@@ -378,7 +389,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 		@Override
 		public void visitEnd() {
 			mv.visitLabel(end);
-			mv.visitMaxs(20, scratch_reg + 1);
+			mv.visitMaxs(20, scratch_reg + 3);
 			mv.visitEnd();
 
 			String mname = EUtil.getJavaName(fun_name, arity);
@@ -388,24 +399,26 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 			int freevars = get_lambda(fun_name, arity);
 			if (freevars == -1) {
-				
+
 				generate_invoke_call_self();
 				generate_tail_call_self();
-				
+
 				freevars = 0;
-				
-				FieldVisitor fv = cv.visitField(ACC_STATIC|ACC_FINAL, inner_name, "L" + full_inner_name + ";", null, null);
+
+				FieldVisitor fv = cv.visitField(ACC_STATIC | ACC_FINAL,
+						inner_name, "L" + full_inner_name + ";", null, null);
 				fv.visitEnd();
-				
+
 				funs.put(inner_name, full_inner_name);
 
 			}
-			
-			cv.visitInnerClass(full_inner_name, outer_name, inner_name, ACC_STATIC);
-			
+
+			cv.visitInnerClass(full_inner_name, outer_name, inner_name,
+					ACC_STATIC);
+
 			byte[] data = CompilerVisitor.make_invoker(self_type, mname, arity,
 					true, freevars);
-			
+
 			try {
 				classRepo.store(full_inner_name, data);
 			} catch (IOException e) {
@@ -439,7 +452,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				mv.visitLabel(loop);
 				mv.visitVarInsn(ALOAD, arity + 1);
 				mv.visitFieldInsn(GETSTATIC, EPROC_NAME, "TAIL_MARKER",
-						EOBJECT_DESCRIPTOR);
+						EOBJECT_DESC);
 				mv.visitJumpInsn(IF_ACMPNE, done);
 
 				// load proc
@@ -465,7 +478,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				}
 				mv.visitMethodInsn(INVOKESTATIC, self_type.getInternalName(),
 						javaName, EUtil.getSignature(arity, true));
-				
+
 			}
 
 			mv.visitInsn(ARETURN);
@@ -491,7 +504,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					mv.visitVarInsn(ALOAD, 0);
 					mv.visitVarInsn(ALOAD, i + 1);
 					mv.visitFieldInsn(PUTFIELD, EPROC_NAME, "arg" + i,
-							EOBJECT_DESCRIPTOR);
+							EOBJECT_DESC);
 				}
 
 				mv.visitVarInsn(ALOAD, 0);
@@ -501,7 +514,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 						.visitFieldInsn(PUTFIELD, EPROC_NAME, "tail",
 								EFUN_DESCRIPTOR);
 				mv.visitFieldInsn(GETSTATIC, EPROC_NAME, "TAIL_MARKER",
-						EOBJECT_DESCRIPTOR);
+						EOBJECT_DESC);
 
 			} else {
 				for (int i = 0; i < arity + 1; i++) {
@@ -556,6 +569,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				local += 2;
 			}
 
+			this.bit_string_builder = local++;
 			this.scratch_reg = local;
 
 		}
@@ -585,6 +599,271 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 		}
 
 		class ASMBlockVisitor implements BlockVisitor2 {
+
+			/* (non-Javadoc)
+			 * @see erjang.beam.BlockVisitor2#visitBSAdd(erjang.beam.Arg[], erjang.beam.Arg)
+			 */
+			@Override
+			public void visitBSAdd(Arg[] in, Arg out) {
+				push(in[0], Type.INT_TYPE);
+				push(in[1], Type.INT_TYPE);
+				mv.visitInsn(IADD);
+				pop(out, Type.INT_TYPE);				
+			}
+			
+			/*
+			 * (non-Javadoc)
+			 * 
+			 * @see erjang.beam.BlockVisitor2#visitBS(erjang.beam.BeamOpcode,
+			 * erjang.beam.Arg)
+			 */
+			@Override
+			public void visitBS(BeamOpcode opcode, Arg arg) {
+				switch (opcode) {
+				case bs_save2:
+					push(arg, EBINMATCHSTATE_TYPE);
+					mv.visitVarInsn(ASTORE, bit_string_builder + 1);
+					return;
+
+				case bs_restore2:
+					mv.visitVarInsn(ALOAD, bit_string_builder + 1);
+					pop(arg, EBINMATCHSTATE_TYPE);
+					return;
+
+				case bs_context_to_binary:
+					push(arg, EBINMATCHSTATE_TYPE);
+					mv.visitMethodInsn(INVOKEVIRTUAL, EBINMATCHSTATE_TYPE
+							.getInternalName(), "binary", "()"
+							+ EBITSTRING_TYPE.getDescriptor());
+					pop(arg, EBITSTRING_TYPE);
+					return;
+				}
+
+				throw new Error("unhandled: " + opcode);
+			}
+
+			/*
+			 * (non-Javadoc)
+			 * 
+			 * @see erjang.beam.BlockVisitor2#visitInitBitString(erjang.EObject,
+			 * erjang.beam.Arg, erjang.beam.Arg)
+			 */
+			@Override
+			public void visitInitBitString(Arg size, Arg flags, Arg out) {
+
+				ETuple tflags = flags.value.testTuple();
+				if (tflags.elm(1) != ATOM_field_flags)
+					throw new Error("unhandled flags: " + flags.value);
+				int iflags = tflags.elm(2).asInt();
+
+				push(size, Type.INT_TYPE);
+				mv.visitLdcInsn(new Integer(iflags));
+				mv.visitMethodInsn(INVOKESTATIC, ERT_NAME, "bs_init", "(II)"
+						+ EBITSTRINGBUILDER_TYPE.getDescriptor());
+
+				mv.visitInsn(DUP);
+				mv.visitVarInsn(ASTORE, bit_string_builder);
+
+				mv.visitMethodInsn(INVOKEVIRTUAL, EBITSTRINGBUILDER_TYPE
+						.getInternalName(), "bitstring", "()"
+						+ EBITSTRING_TYPE.getDescriptor());
+
+				pop(out, EBITSTRING_TYPE);
+
+				return;
+
+			}
+
+			/*
+			 * (non-Javadoc)
+			 * 
+			 * @see
+			 * erjang.beam.BlockVisitor2#visitBitStringPut(erjang.beam.BeamOpcode
+			 * , erjang.EObject)
+			 */
+			@Override
+			public void visitBitStringPut(BeamOpcode opcode, Arg arg, Arg size,
+					Arg flags) {
+
+				switch (opcode) {
+				case bs_put_string:
+					mv.visitVarInsn(ALOAD, bit_string_builder);
+					push(arg, ESTRING_TYPE);
+					mv.visitMethodInsn(INVOKEVIRTUAL, EBITSTRINGBUILDER_TYPE
+							.getInternalName(), "put_string", "("
+							+ ESTRING_TYPE.getDescriptor() + ")V");
+					return;
+
+				case bs_put_integer:
+					mv.visitVarInsn(ALOAD, bit_string_builder);
+					push(arg, EINTEGER_TYPE);
+					push(size, Type.INT_TYPE);
+					push(flags, Type.INT_TYPE);
+					mv.visitMethodInsn(INVOKEVIRTUAL, EBITSTRINGBUILDER_TYPE
+							.getInternalName(), "put_integer", "("
+							+ EINTEGER_TYPE.getDescriptor() + "II)V");
+					return;
+
+				case bs_put_binary:
+					mv.visitVarInsn(ALOAD, bit_string_builder);
+					push(arg, EBITSTRING_TYPE);
+					push(size, EATOM_TYPE);
+					push(flags, Type.INT_TYPE);
+					mv.visitMethodInsn(INVOKEVIRTUAL, EBITSTRINGBUILDER_TYPE
+							.getInternalName(), "put_bitstring", "("
+							+ EBITSTRING_TYPE.getDescriptor() 
+							+ EATOM_TYPE.getDescriptor() 
+							+ "I)V");
+					return;
+
+
+				}
+
+
+				throw new Error("unhandled: " + opcode);
+			}
+
+			/*
+			 * (non-Javadoc)
+			 * 
+			 * @see
+			 * erjang.beam.BlockVisitor2#visitBitStringTest(erjang.beam.BeamOpcode
+			 * , int, erjang.beam.Arg[])
+			 */
+			@Override
+			public void visitBitStringTest(BeamOpcode test, int failLabel,
+					Arg[] args) {
+
+				switch (test) {
+				case bs_start_match2: {
+					Arg in = args[0];
+					Arg out = args[3];
+
+					push(in, EOBJECT_TYPE);
+					mv.visitMethodInsn(INVOKESTATIC, ERT_NAME, test.name(), "("
+							+ EOBJECT_DESC + ")"
+							+ EMATCHSTATE_TYPE.getDescriptor());
+
+					mv.visitInsn(DUP);
+					mv.visitVarInsn(ASTORE, scratch_reg);
+
+					mv.visitJumpInsn(IFNULL, getLabel(failLabel));
+
+					mv.visitVarInsn(ALOAD, scratch_reg);
+
+					pop(out, EBINMATCHSTATE_TYPE);
+					return;
+				}
+
+					// {test,bs_test_unit,{f,41},[{x,2},8]}
+				case bs_test_unit:
+					push(args[0], EBINMATCHSTATE_TYPE);
+					push(args[1], Type.INT_TYPE);
+					mv.visitMethodInsn(INVOKEVIRTUAL, ERT_NAME, test.name(),
+							"(I)" + EOBJECT_DESC);
+					mv.visitJumpInsn(IFNULL, getLabel(failLabel));
+					return;
+
+				case bs_match_string:
+					push(args[0], EBINMATCHSTATE_TYPE);
+					push(args[1], Type.INT_TYPE);
+					push(args[2], EBINARY_TYPE);
+					mv.visitMethodInsn(INVOKEVIRTUAL, ERT_NAME, test.name(),
+							"(I" + EBINARY_TYPE.getDescriptor() + ")"
+									+ EOBJECT_DESC);
+					mv.visitJumpInsn(IFNULL, getLabel(failLabel));
+					return;
+
+					// {test,bs_skip_bits2, {f,39},
+					// [{x,1},{x,0},8,{field_flags,0}]}
+				case bs_skip_bits2:
+					push(args[0], EBINMATCHSTATE_TYPE);
+					push(args[1], EINTEGER_TYPE);
+					push(args[2], Type.INT_TYPE);
+					push_immediate(args[3].value.testTuple().elm(2),
+							Type.INT_TYPE);
+					mv.visitMethodInsn(INVOKEVIRTUAL, ERT_NAME, test.name(),
+							"(" + EINTEGER_TYPE.getDescriptor() + "II)"
+									+ EOBJECT_DESC);
+					mv.visitJumpInsn(IFNULL, getLabel(failLabel));
+					return;
+
+					// {test,bs_get_binary2,{f,348},[{x,3},5,{atom,all},8,{field_flags,0},{x,3}]}
+				case bs_get_binary2:
+
+					push(args[0], EBINMATCHSTATE_TYPE);
+					push(args[2], EOBJECT_TYPE);
+					push_immediate(args[4].value.testTuple().elm(2),
+							Type.INT_TYPE);
+					mv.visitMethodInsn(INVOKEVIRTUAL, ERT_NAME, test.name(),
+							"(" + EOBJECT_DESC + "I)" + EBITSTRING_TYPE);
+
+					mv.visitInsn(DUP);
+					mv.visitVarInsn(ASTORE, scratch_reg);
+
+					mv.visitJumpInsn(IFNULL, getLabel(failLabel));
+
+					mv.visitVarInsn(ALOAD, scratch_reg);
+
+					pop(args[5], EBITSTRING_TYPE);
+					return;
+
+					// {test,bs_get_integer2,{f,348},[{x,3},4,{integer,32},1,{field_flags,0},{x,4}]}
+				case bs_get_integer2:
+
+					push(args[0], EBINMATCHSTATE_TYPE);
+					push(args[2], Type.INT_TYPE);
+					mv.visitMethodInsn(INVOKEVIRTUAL, ERT_NAME, test.name(),
+							"(I)" + EOBJECT_DESC);
+					mv.visitInsn(DUP);
+					mv.visitVarInsn(ASTORE, scratch_reg);
+
+					mv.visitJumpInsn(IFNULL, getLabel(failLabel));
+
+					mv.visitVarInsn(ALOAD, scratch_reg);
+
+					pop(args[5], EOBJECT_TYPE);
+					return;
+
+				case bs_test_tail2:
+					push(args[0], EBINMATCHSTATE_TYPE);
+					mv.visitMethodInsn(INVOKEVIRTUAL, ERT_NAME, test.name(),
+							"()" + EOBJECT_DESC);
+					mv.visitJumpInsn(IFNULL, getLabel(failLabel));
+					return;
+
+				}
+
+				throw new Error("unhandled bit string test: " + test);
+			}
+
+			/*
+			 * (non-Javadoc)
+			 * 
+			 * @see erjang.beam.BlockVisitor2#visitInsn(erjang.beam.BeamOpcode,
+			 * int, erjang.beam.Arg[], erjang.beam.Arg)
+			 */
+			@Override
+			public void visitInsn(BeamOpcode opcode, int failLabel, Arg[] in,
+					Arg ex) {
+				if (opcode == BeamOpcode.raise) {
+
+					push(ex, EATOM_TYPE);
+					push(in[1], EATOM_TYPE);
+					push(in[0], EOBJECT_TYPE);
+
+					// raise will actually throw
+					mv.visitMethodInsn(INVOKESTATIC, ERT_NAME, "raise", "("
+							+ EATOM_DESC + EATOM_DESC + EOBJECT_DESC + ")"
+							+ EEXCEPTION_DESC);
+					mv.visitInsn(ATHROW);
+
+					return;
+				}
+
+				throw new Error("unhandled: " + opcode);
+
+			}
 
 			/**
 			 * 
@@ -628,7 +907,9 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 							mv.visitJumpInsn(IFEQ, getLabel(failLabel));
 						} else {
 							if (bif.getReturnType().getSort() != Type.OBJECT)
-								throw new Error("guards must return object type - "+bif);
+								throw new Error(
+										"guards must return object type - "
+												+ bif);
 							mv.visitJumpInsn(IFNULL, getLabel(failLabel));
 						}
 					} else {
@@ -688,8 +969,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					if (out.type == Type.INT_TYPE
 							|| out.type == Type.BOOLEAN_TYPE
 							|| (out.type == null && stack_type == Type.INT_TYPE)
-							|| (out.type == null && stack_type == Type.BOOLEAN_TYPE)
-							) {
+							|| (out.type == null && stack_type == Type.BOOLEAN_TYPE)) {
 						mv.visitVarInsn(ISTORE, var_index(out));
 					} else {
 						mv.visitVarInsn(ASTORE, var_index(out));
@@ -821,8 +1101,8 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				if (value.kind == Kind.X || value.kind == Kind.Y) {
 					if (value.type == Type.INT_TYPE
 							|| value.type == Type.BOOLEAN_TYPE) {
-						throw new Error("should not happen");
-						// mv.visitVarInsn(ILOAD, var_index(value));
+						//throw new Error("should not happen");
+						mv.visitVarInsn(ILOAD, var_index(value));
 					} else {
 						mv.visitVarInsn(ALOAD, var_index(value));
 					}
@@ -878,7 +1158,8 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 						mv.visitInsn(ICONST_0);
 						return Type.BOOLEAN_TYPE;
 					}
-					throw new Error();
+					throw new Error("cannot convert " + value + " as "
+							+ stack_type);
 				}
 
 				String known = constants.get(value);
@@ -939,7 +1220,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					mv.visitVarInsn(ALOAD, 0);
 					mv.visitMethodInsn(INVOKESTATIC, ERT_NAME, "receive_peek",
 							"(" + EPROC_TYPE.getDescriptor() + ")"
-									+ EOBJECT_DESCRIPTOR);
+									+ EOBJECT_DESC);
 					mv.visitInsn(DUP);
 					pop(out, EOBJECT_TYPE);
 
@@ -965,25 +1246,26 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					push(in[0], EOBJECT_TYPE);
 					push(in[1], EOBJECT_TYPE);
 					mv.visitMethodInsn(INVOKESTATIC, ERT_NAME, "cons", "("
-							+ EOBJECT_DESCRIPTOR + EOBJECT_DESCRIPTOR + ")"
+							+ EOBJECT_DESC + EOBJECT_DESC + ")"
 							+ ECONS_TYPE.getDescriptor());
 					pop(out, ECONS_TYPE);
 					return;
-				case call_fun:
-				{ 
-					int nargs = in.length-1;
+				case call_fun: {
+					int nargs = in.length - 1;
 					push(in[nargs], EOBJECT_TYPE);
-					
+
 					String funtype = EFUN_NAME + nargs;
-					
-					mv.visitMethodInsn(INVOKESTATIC, funtype, "cast", "(" + EOBJECT_DESCRIPTOR + ")L" + funtype + ";" );
-					
+
+					mv.visitMethodInsn(INVOKESTATIC, funtype, "cast", "("
+							+ EOBJECT_DESC + ")L" + funtype + ";");
+
 					mv.visitVarInsn(ALOAD, 0); // load proc
 					for (int i = 0; i < nargs; i++) {
 						push(in[i], EOBJECT_TYPE);
 					}
 
-					mv.visitMethodInsn(INVOKEVIRTUAL, funtype, "invoke", EUtil.getSignature(nargs, true));
+					mv.visitMethodInsn(INVOKEVIRTUAL, funtype, "invoke", EUtil
+							.getSignature(nargs, true));
 					pop(out, EOBJECT_TYPE);
 					return;
 				}
@@ -1030,8 +1312,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				throw new Error();
 			}
 
-			void test_ex_start()
-			{
+			void test_ex_start() {
 				if (ex_handlers.size() > 0) {
 					EXHandler ex = ex_handlers.peek();
 					if (!ex.is_start_visited) {
@@ -1040,7 +1321,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					}
 				}
 			}
-			
+
 			/*
 			 * (non-Javadoc)
 			 * 
@@ -1070,14 +1351,48 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					mv.visitTryCatchBlock(h.begin, h.end, h.target, Type
 							.getType(ErlangException.class).getInternalName());
 
-
 					ex_handlers.push(h);
 					return;
 				}
 
 				case try_end:
+					test_ex_start();
+					EXHandler ex = ex_handlers.peek();
+					mv.visitLabel(ex.end);
+					return;
+
+				case try_case: {
+
+					test_ex_start();
+
+					EXHandler h = ex_handlers.pop();
+
+					mv.visitLabel(h.target);
+
+					mv.visitMethodInsn(INVOKESTATIC, ERT_NAME,
+							"decode_exception", "("
+									+ ERLANG_EXCEPTION_TYPE.getDescriptor()
+									+ ")" + getTubleType(3).getDescriptor());
+
+					mv.visitInsn(DUP);
+					mv.visitFieldInsn(GETFIELD, ETUPLE_NAME + 3, "elm0",
+							EOBJECT_DESC);
+					mv.visitVarInsn(ASTORE, xregs[0]);
+
+					mv.visitInsn(DUP);
+					mv.visitFieldInsn(GETFIELD, ETUPLE_NAME + 3, "elm1",
+							EOBJECT_DESC);
+					mv.visitVarInsn(ASTORE, xregs[1]);
+
+					mv.visitFieldInsn(GETFIELD, ETUPLE_NAME + 3, "elm2",
+							EOBJECT_DESC);
+					mv.visitVarInsn(ASTORE, xregs[2]);
+
+					return;
+				}
+
 				case catch_end: {
-					
+
 					test_ex_start();
 
 					EXHandler h = ex_handlers.pop();
@@ -1119,8 +1434,8 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					mv.visitJumpInsn(GOTO, getLabel(val));
 					return;
 				}
-}
-				throw new Error();
+				}
+				throw new Error("unhandled: " + opcode);
 			}
 
 			/*
@@ -1135,20 +1450,20 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					push(out, out.type);
 					push(val, EOBJECT_TYPE);
 					mv.visitFieldInsn(PUTFIELD, out.type.getInternalName(),
-							"elm" + pos, EOBJECT_DESCRIPTOR);
+							"elm" + pos, EOBJECT_DESC);
 					return;
 
 				} else if (opcode == BeamOpcode.get_tuple_element) {
 					push(val, val.type);
 					mv.visitFieldInsn(GETFIELD, val.type.getInternalName(),
-							"elm" + pos, EOBJECT_DESCRIPTOR);
+							"elm" + pos, EOBJECT_DESC);
 					pop(out, EOBJECT_TYPE);
 					return;
 				} else if (opcode == BeamOpcode.set_tuple_element) {
 					push(out, out.type);
 					push(val, val.type);
 					mv.visitFieldInsn(PUTFIELD, val.type.getInternalName(),
-							"elm" + pos, EOBJECT_DESCRIPTOR);
+							"elm" + pos, EOBJECT_DESC);
 					return;
 				}
 
@@ -1219,14 +1534,20 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					push_immediate(f.fun, EATOM_TYPE);
 					mv.visitLdcInsn(new Integer(arg.no));
 					mv.visitMethodInsn(INVOKESTATIC, ERT_NAME, "func_info", "("
-							+ ETUPLE_DESC + ETUPLE_DESC + "I)"
-							+ EOBJECT_DESCRIPTOR);
+							+ ETUPLE_DESC + ETUPLE_DESC + "I)" + EOBJECT_DESC);
 					mv.visitInsn(ARETURN);
 					return;
 
 				case init:
 					push_immediate(ENil.NIL, ENIL_TYPE);
 					pop(arg, ENIL_TYPE);
+					return;
+
+				case try_case_end:
+					push(arg, EOBJECT_TYPE);
+					mv.visitMethodInsn(INVOKESTATIC, ERT_NAME, "try_case_end",
+							EUtil.getSignature(1, false));
+					mv.visitInsn(ARETURN);
 					return;
 
 				case case_end:
@@ -1268,20 +1589,21 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 				Type returnType = test_bif.getReturnType();
 				if (failLabel != 0) {
-						// guard
-						if (returnType.getSort() != Type.OBJECT)
-							throw new Error("guards must return object type: "+test_bif);
+					// guard
+					if (returnType.getSort() != Type.OBJECT)
+						throw new Error("guards must return object type: "
+								+ test_bif);
 
-						// dup result for test
-						if (arg1 != null) {
-							mv.visitInsn(DUP);
-							mv.visitVarInsn(ASTORE, scratch_reg);
-						}
-						mv.visitJumpInsn(IFNULL, getLabel(failLabel));
-						if (arg1 != null) {
-							mv.visitVarInsn(ALOAD, scratch_reg);
-							pop(arg1, returnType);
-						}
+					// dup result for test
+					if (arg1 != null) {
+						mv.visitInsn(DUP);
+						mv.visitVarInsn(ASTORE, scratch_reg);
+					}
+					mv.visitJumpInsn(IFNULL, getLabel(failLabel));
+					if (arg1 != null) {
+						mv.visitVarInsn(ALOAD, scratch_reg);
+						pop(arg1, returnType);
+					}
 				} else {
 					pop(arg1, returnType);
 				}
@@ -1298,16 +1620,38 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			public void visitTest(BeamOpcode test, int failLabel, Arg arg,
 					int arity, Type tupleType) {
 
-				if (test != BeamOpcode.test_arity)
-					throw new Error();
+				switch (test) {
+				case test_arity:
 
-				push(arg, ETUPLE_TYPE);
-				mv.visitMethodInsn(INVOKEVIRTUAL, ETUPLE_NAME, "count", "()I");
-				push_int(arity);
-				mv.visitJumpInsn(IF_ICMPNE, getLabel(failLabel));
-				push(arg, ETUPLE_TYPE);
-				mv.visitTypeInsn(CHECKCAST, tupleType.getInternalName());
-				pop(arg, tupleType);
+					push(arg, ETUPLE_TYPE);
+					mv.visitMethodInsn(INVOKEVIRTUAL, ETUPLE_NAME, "count",
+							"()I");
+					push_int(arity);
+					mv.visitJumpInsn(IF_ICMPNE, getLabel(failLabel));
+					push(arg, ETUPLE_TYPE);
+					mv.visitTypeInsn(CHECKCAST, tupleType.getInternalName());
+					pop(arg, tupleType);
+					return;
+
+				case is_function2:
+
+					// push object to test
+					push(arg, EOBJECT_TYPE);
+					// push arity
+					push_int(arity);
+					// call object.testFunction2(nargs)
+					mv.visitMethodInsn(INVOKEVIRTUAL, EOBJECT_NAME,
+							"testFunction2", "(I)" + EFUN_DESCRIPTOR);
+
+					mv.visitInsn(DUP);
+
+					mv.visitVarInsn(ASTORE, scratch_reg);
+					mv.visitJumpInsn(IFNULL, getLabel(failLabel));
+
+					mv.visitVarInsn(ALOAD, scratch_reg);
+					pop(arg, EFUN_TYPE);
+					return;
+				}
 			}
 
 			/*
@@ -1329,8 +1673,8 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					return;
 				}
 
-				BuiltInFunction bif = BIFUtil
-						.getMethod(test.name(), args, true);
+				BuiltInFunction bif = BIFUtil.getMethod(test2name(test), args,
+						true);
 
 				if (bif.getArgumentTypes().length > 0
 						&& EPROC_TYPE.equals(bif.getArgumentTypes()[0])) {
@@ -1358,7 +1702,8 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 						mv.visitJumpInsn(IFNULL, getLabel(failLabel));
 						break;
 					default:
-						throw new Error("guards must return object type: "+bif);
+						throw new Error("guards must return object type: "
+								+ bif);
 					}
 
 				} else {
@@ -1367,6 +1712,28 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 				return;
 
+			}
+
+			/**
+			 * @param test
+			 * @return
+			 */
+			private String test2name(BeamOpcode test) {
+				switch (test) {
+				case is_eq:
+					return "==";
+				case is_eq_exact:
+					return "=:=";
+				case is_ne:
+					return "/=";
+				case is_ne_exact:
+					return "=/=";
+				case is_ge:
+					return ">=";
+				case is_lt:
+					return "<";
+				}
+				return test.name();
 			}
 
 			/*
@@ -1444,8 +1811,12 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					return IS_PID_TEST;
 				case is_port:
 					return IS_PORT_TEST;
+				case is_reference:
+					return IS_REFERENCE_TEST;
 				case is_function:
 					return IS_FUNCTION_TEST;
+				case is_function2:
+					return IS_FUNCTION2_TEST;
 				}
 
 				throw new Error("unhandled " + test);
@@ -1478,12 +1849,10 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					push(ys[0], ECONS_TYPE);
 					mv.visitInsn(DUP);
 					mv.visitMethodInsn(INVOKEVIRTUAL, ECONS_TYPE
-							.getInternalName(), "head", "()"
-							+ EOBJECT_DESCRIPTOR);
+							.getInternalName(), "head", "()" + EOBJECT_DESC);
 					pop(ys[1], EOBJECT_TYPE);
 					mv.visitMethodInsn(INVOKEVIRTUAL, ECONS_TYPE
-							.getInternalName(), "tail", "()"
-							+ EOBJECT_DESCRIPTOR);
+							.getInternalName(), "tail", "()" + EOBJECT_DESC);
 					pop(ys[2], EOBJECT_TYPE);
 					return;
 
@@ -1537,8 +1906,9 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					Arg[] freevars) {
 				if (opcode == BeamOpcode.make_fun2) {
 
-					CompilerVisitor.this.register_lambda(efun.fun, efun.no, freevars.length);
-					
+					CompilerVisitor.this.register_lambda(efun.fun, efun.no,
+							freevars.length);
+
 					String inner = EUtil.getFunClassName(self_type, efun);
 
 					mv.visitTypeInsn(NEW, inner);
@@ -1551,7 +1921,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 					StringBuilder sb = new StringBuilder("(");
 					for (int i = 0; i < freevars.length; i++) {
-						sb.append(EOBJECT_DESCRIPTOR);
+						sb.append(EOBJECT_DESC);
 					}
 					sb.append(")V");
 					// sb.append("L").append(funtype).append(";");
@@ -1772,9 +2142,12 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			 */
 			private boolean isExitFunc(ExtFunc fun) {
 				if (fun.mod == ERLANG_ATOM) {
-					if (fun.fun.getName().equals("exit")) return true;
-					if (fun.fun.getName().equals("error")) return true;
-					if (fun.fun.getName().equals("throw")) return true;
+					if (fun.fun.getName().equals("exit"))
+						return true;
+					if (fun.fun.getName().equals("error"))
+						return true;
+					if (fun.fun.getName().equals("throw"))
+						return true;
 				}
 
 				return false;
@@ -1788,17 +2161,25 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 	static Method IS_LIST_TEST = Method.getMethod("erjang.ECons testCons()");
 	static Method IS_TUPLE_TEST = Method.getMethod("erjang.ETuple testTuple()");
 	static Method IS_INTEGER_TEST = Method
-			.getMethod("erjang.ETuple testInteger()");
+			.getMethod("erjang.EInteger testInteger()");
 	static Method IS_ATOM_TEST = Method.getMethod("erjang.EAtom testAtom()");
 	static Method IS_FLOAT_TEST = Method
 			.getMethod("erjang.EDouble testFloat()");
 	static Method IS_NIL_TEST = Method.getMethod("erjang.ENil testNil()");
-	static Method IS_BOOLEAN_TEST = Method.getMethod("erjang.EAtom testBoolean()");
-	static Method IS_NUMBER_TEST = Method.getMethod("erjang.ENumber testNumber()");
-	static Method IS_BINARY_TEST = Method.getMethod("erjang.EBinary isBinary()");
-	static Method IS_PID_TEST = Method.getMethod("erjang.EPID itestPid()");
+	static Method IS_BOOLEAN_TEST = Method
+			.getMethod("erjang.EAtom testBoolean()");
+	static Method IS_NUMBER_TEST = Method
+			.getMethod("erjang.ENumber testNumber()");
+	static Method IS_BINARY_TEST = Method
+			.getMethod("erjang.EBinary testBinary()");
+	static Method IS_PID_TEST = Method.getMethod("erjang.EPID testPID()");
 	static Method IS_PORT_TEST = Method.getMethod("erjang.EPort testPort()");
-	static Method IS_FUNCTION_TEST = Method.getMethod("erjang.EFun testFunction()");
+	static Method IS_REFERENCE_TEST = Method
+			.getMethod("erjang.EReference testReference()");
+	static Method IS_FUNCTION_TEST = Method
+			.getMethod("erjang.EFun testFunction()");
+	static Method IS_FUNCTION2_TEST = Method
+			.getMethod("erjang.EFun testFunction(int nargs)");
 
 	Map<String, ExtFunc> imported = new HashMap<String, ExtFunc>();
 
@@ -1824,10 +2205,11 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 	public void register_lambda(EAtom fun, int arity, int length) {
 		lambdas_xx.put(EUtil.getJavaName(fun, arity), length);
 	}
-	
+
 	public int get_lambda(EAtom fun, int arity) {
 		Integer val = lambdas_xx.get(EUtil.getJavaName(fun, arity));
-		if (val == null) return -1;
+		if (val == null)
+			return -1;
 		return val;
 	}
 
@@ -1847,10 +2229,9 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 		StringBuilder sb = new StringBuilder("(");
 		// create the free vars
 		for (int i = 0; i < freevars; i++) {
-			cw
-					.visitField(ACC_PRIVATE|ACC_FINAL, "fv" + i, EOBJECT_DESCRIPTOR,
-							null, null);
-			sb.append(EOBJECT_DESCRIPTOR);
+			cw.visitField(ACC_PRIVATE | ACC_FINAL, "fv" + i, EOBJECT_DESC,
+					null, null);
+			sb.append(EOBJECT_DESC);
 		}
 		sb.append(")V");
 
@@ -1864,8 +2245,9 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 		for (int i = 0; i < freevars; i++) {
 			mv.visitVarInsn(ALOAD, 0);
 			mv.visitVarInsn(ALOAD, i + 1);
-			mv.visitFieldInsn(PUTFIELD, full_inner_name, "fv" + i,
-					EOBJECT_DESCRIPTOR);
+			mv
+					.visitFieldInsn(PUTFIELD, full_inner_name, "fv" + i,
+							EOBJECT_DESC);
 		}
 
 		mv.visitInsn(RETURN);
@@ -1894,7 +2276,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 		for (int i = 0; i < freevars; i++) {
 			mv.visitVarInsn(ALOAD, 0);
 			mv.visitFieldInsn(GETFIELD, outer_name + "$" + mname, "fv" + i,
-					EOBJECT_DESCRIPTOR);
+					EOBJECT_DESC);
 		}
 		mv.visitMethodInsn(INVOKESTATIC, outer_name, mname, EUtil.getSignature(
 				arity, proc));
@@ -1904,8 +2286,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 		Label loop = new Label();
 		mv.visitLabel(loop);
 		mv.visitVarInsn(ALOAD, arity + 2);
-		mv.visitFieldInsn(GETSTATIC, EPROC_NAME, "TAIL_MARKER",
-				EOBJECT_DESCRIPTOR);
+		mv.visitFieldInsn(GETSTATIC, EPROC_NAME, "TAIL_MARKER", EOBJECT_DESC);
 		mv.visitJumpInsn(IF_ACMPNE, done);
 
 		// load proc
@@ -1933,15 +2314,13 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 		for (int i = 0; i < arity - freevars; i++) {
 			mv.visitVarInsn(ALOAD, 1);
 			mv.visitVarInsn(ALOAD, i + 2);
-			mv.visitFieldInsn(PUTFIELD, EPROC_NAME, "arg" + i,
-					EOBJECT_DESCRIPTOR);
+			mv.visitFieldInsn(PUTFIELD, EPROC_NAME, "arg" + i, EOBJECT_DESC);
 		}
 
 		mv.visitVarInsn(ALOAD, 1);
 		mv.visitVarInsn(ALOAD, 0);
 		mv.visitFieldInsn(PUTFIELD, EPROC_NAME, "tail", EFUN_DESCRIPTOR);
-		mv.visitFieldInsn(GETSTATIC, EPROC_NAME, "TAIL_MARKER",
-				EOBJECT_DESCRIPTOR);
+		mv.visitFieldInsn(GETSTATIC, EPROC_NAME, "TAIL_MARKER", EOBJECT_DESC);
 		mv.visitInsn(ARETURN);
 		mv.visitEnd();
 	}
@@ -1954,15 +2333,13 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 		mv.visitCode();
 		for (int i = 0; i < arity - freevars; i++) {
 			mv.visitVarInsn(ALOAD, 1);
-			mv.visitFieldInsn(GETFIELD, EPROC_NAME, "arg" + i,
-					EOBJECT_DESCRIPTOR);
+			mv.visitFieldInsn(GETFIELD, EPROC_NAME, "arg" + i, EOBJECT_DESC);
 			mv.visitVarInsn(ASTORE, i + 2);
 		}
 		for (int i = 0; i < arity - freevars; i++) {
 			mv.visitVarInsn(ALOAD, 1);
 			mv.visitInsn(ACONST_NULL);
-			mv.visitFieldInsn(PUTFIELD, EPROC_NAME, "arg" + i,
-					EOBJECT_DESCRIPTOR);
+			mv.visitFieldInsn(PUTFIELD, EPROC_NAME, "arg" + i, EOBJECT_DESC);
 		}
 		if (proc)
 			mv.visitVarInsn(ALOAD, 1);
@@ -1973,8 +2350,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 		for (int i = 0; i < freevars; i++) {
 			mv.visitVarInsn(ALOAD, 0);
-			mv.visitFieldInsn(GETFIELD, full_inner, "fv" + i,
-					EOBJECT_DESCRIPTOR);
+			mv.visitFieldInsn(GETFIELD, full_inner, "fv" + i, EOBJECT_DESC);
 		}
 
 		mv.visitMethodInsn(INVOKESTATIC, outer_name, mname, EUtil.getSignature(
@@ -1984,7 +2360,6 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 		cw.visitEnd();
 	}
-
 
 }
 

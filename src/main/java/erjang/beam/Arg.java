@@ -39,6 +39,14 @@ public class Arg {
 	public Type type;
 	EObject value;
 	
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return kind.name() + "{#" + no +", val="+String.valueOf(value)+", type="+String.valueOf(type)+"}"; 
+	}
+	
 	public Arg(Kind kind, int reg) {
 		this(kind, reg, kind==Kind.F ? Type.DOUBLE_TYPE : null);
 	}

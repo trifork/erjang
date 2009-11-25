@@ -22,6 +22,12 @@ import java.lang.reflect.Method;
 import java.math.BigInteger;
 
 public class ERT {
+	
+	public static EObject raise(EAtom kind, EAtom reason, EObject trace) {
+
+		// TODO: fix exception
+		throw new ErlangException(reason);
+	}
 
 	public static final EAtom AM_BADARG = EAtom.intern("badarg");
 	public static final EAtom AM_BADMATCH = EAtom.intern("badmatch");
@@ -225,4 +231,8 @@ public class ERT {
 		return bool ? TRUE : null;
 	}
 
+	public EBitStringBuilder bs_init(int size, int flags) {
+		return new EBitStringBuilder(size, flags);
+	}
+	
 }

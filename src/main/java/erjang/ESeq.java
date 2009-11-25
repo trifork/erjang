@@ -24,6 +24,10 @@ import java.util.List;
 
 public abstract class ESeq extends ECons {
 
+	public ESeq testWellformedList() {
+		return this;
+	}	
+
 	public ESeq testSeq() {
 		return this;
 	}

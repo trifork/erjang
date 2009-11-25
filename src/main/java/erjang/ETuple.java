@@ -31,9 +31,7 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.util.CheckClassAdapter;
 
-import clojure.lang.Indexed;
-
-public abstract class ETuple extends EObject implements Cloneable, Indexed {
+public abstract class ETuple extends EObject implements Cloneable /*, Indexed*/ {
 
 	@Override
 	int cmp_order() {
@@ -43,10 +41,10 @@ public abstract class ETuple extends EObject implements Cloneable, Indexed {
 	@Override
 	int compare_same(EObject rhs) {
 		ETuple other = (ETuple) rhs;
-		if (count() < other.count()) return -1;
-		if (count() > other.count()) return 1;
+		if (arity() < other.arity()) return -1;
+		if (arity() > other.arity()) return 1;
 		
-		for (int i = 1; i <= count(); i++) {
+		for (int i = 1; i <= arity(); i++) {
 			int cmp = elm(i).compareTo(other.elm(i));
 			if (cmp != 0) return cmp;
 		}
@@ -58,16 +56,17 @@ public abstract class ETuple extends EObject implements Cloneable, Indexed {
 		return this;
 	}
 
+	/*
 	@Override
 	public int count() {
 		return arity();
 	}
 
-	/** tuple's are 1-based, clojure's Indexed are 0-based */
 	@Override
 	public Object nth(int i) {
 		return elm(i+1);
 	}
+	*/
 	
 	public abstract int arity();
 
@@ -188,7 +187,7 @@ public abstract class ETuple extends EObject implements Cloneable, Indexed {
 		cw.visitEnd();
 		byte[] data = cww.toByteArray();
 
-		dump(this_class_name, data);
+		// dump(this_class_name, data);
 
 		return data;
 	}

@@ -32,8 +32,8 @@ import erjang.EDouble;
 import erjang.ESmall;
 import erjang.EObject;
 import erjang.EProc;
-import erjang.bifs.BinOps;
-import erjang.bifs.erlang;
+import erjang.m.erlang.BinOps;
+import erjang.m.erlang.erlang$bifs;
 
 /**
  * Used by the compiler to find and mange BIF definitions.
@@ -49,7 +49,7 @@ public class BIFUtil {
 	static Map<String, BIFHandler> guard_bifs = new HashMap<String, BIFHandler>();
 
 	static {
-		registerBifs(erlang.class);
+		registerBifs(erlang$bifs.class);
 		registerBifs(BinOps.class);
 	}
 
@@ -295,7 +295,7 @@ public class BIFUtil {
 			bif = tab.get(name);
 		} else {
 			throw new Error("no " + (isGuard ? "guard" : "normal")
-					+ " bif named '" + name + "'");
+					+ " bif named '" + name + "'/" + parmTypes.length );
 		}
 
 		return bif.getResult(parmTypes);

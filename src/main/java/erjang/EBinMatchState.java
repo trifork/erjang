@@ -20,4 +20,73 @@ package erjang;
 
 public class EBinMatchState {
 
+	public final EBitString bin;
+	int bit_pos;
+
+	public EBitString binary() {
+		return bin;
+	}
+	
+	public EBinMatchState(EBitString binary) {
+		this.bin = binary;
+		this.bit_pos = 0;
+	}
+
+	public EInteger bs_get_integer2(int size) {
+		if (size == 0) {
+			return ESmall.ZERO;
+		}
+
+		if (size < 0 || bin.bitCount() >= (bit_pos + size)) {
+			return null;
+		}
+
+		if (size <= 32) {
+			ESmall res = new ESmall(bin.intBitsAt(bit_pos, size));
+			bit_pos += size;
+			return res;
+		}
+
+		if (size <= 64) {
+			EInteger res = ERT.box(bin.longBitsAt(bit_pos, size));
+			bit_pos += size;
+			return res;
+		}
+
+		throw new NotImplemented();
+	}
+
+	public EBinary bs_match_string(int bits, EBinary ebs) {
+		int size = ebs.bitCount();
+
+		// do we have bits enough in the input
+		if (size > (bin.bitCount() - bit_pos)) {
+			return null;
+		}
+
+		int limit = ebs.bitCount();
+
+		for (int pos = 0; pos < limit; pos += 8) {
+
+			int rest = Math.min(8, limit - pos);
+
+			int oc1 = 0xff & bin.intBitsAt(pos, rest);
+			int oc2 = 0xff & ebs.intBitsAt(pos, rest);
+
+			if (oc1 != oc2)
+				return null;
+		}
+
+		return ebs;
+
+	}
+	
+	EAtom bs_skip_bits2(EInteger count, int bits, int flags) {
+		bit_pos += (bits * count.intValue());
+
+		if (bit_pos <= bin.bitCount())
+			return ERT.TRUE;
+		else
+			return null;
+	}
 }

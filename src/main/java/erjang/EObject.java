@@ -47,6 +47,10 @@ public abstract class EObject implements Comparable<EObject> {
 		return null;
 	}
 	
+	public ESeq testWellformedList() {
+		return null;
+	}
+	
 	public ETuple testTuple() {
 		return null;
 	}
@@ -78,6 +82,9 @@ public abstract class EObject implements Comparable<EObject> {
 	public ENil testNil() {
 		return null;
 	}
+	
+	public boolean isNil() { return testNil() != null; }
+	public boolean isBoolean() { return this==ERT.TRUE || this==ERT.FALSE; }
 
 	public EAtom testBoolean() {
 		return null;
@@ -126,13 +133,13 @@ public abstract class EObject implements Comparable<EObject> {
 	public ENumber negate() { throw ERT.badarg(this); }
 
 	@BIF(name="+")
-	public ENumber add(EObject rhs) { throw ERT.badarg(this, rhs); }
-	public ENumber add(int lhs) { throw ERT.badarg(lhs, this); }
-	public ENumber add(double lhs) { throw ERT.badarg(lhs, this); }
-	public ENumber add(BigInteger lhs) { throw ERT.badarg(lhs, this); }
+	public ENumber add(EObject rhs, boolean guard) { if (guard) return null; throw ERT.badarg(this, rhs); }
+	public ENumber add(int lhs, boolean guard) { if (guard) return null; throw ERT.badarg(lhs, this); }
+	public ENumber add(double lhs, boolean guard) { if (guard) return null; throw ERT.badarg(lhs, this); }
+	public ENumber add(BigInteger lhs, boolean guard) { if (guard) return null; throw ERT.badarg(lhs, this); }
 
 	@BIF(name="-")
-	public ENumber subtract(EObject rhs) { throw ERT.badarg(this, rhs); }
+	public ENumber subtract(EObject rhs, boolean guard) { if (guard) return null; throw ERT.badarg(this, rhs); }
 	public ENumber subtract(int rhs) { throw ERT.badarg(this, rhs); }
 	ENumber r_subtract(int lhs) { throw ERT.badarg(lhs, this); }
 	ENumber r_subtract(double lhs) { throw ERT.badarg(lhs, this); }
@@ -227,29 +234,24 @@ public abstract class EObject implements Comparable<EObject> {
 	int r_compare_same(EBig lhs) { throw new NotImplemented(); }
 	int r_compare_same(EDouble lhs) { throw new NotImplemented(); }
 	
-	public int compareToExactly(EObject rhs) {
-		if (rhs == this) return 0;
-		int cmp1 = cmp_order();
-		int cmp2 = rhs.cmp_order();
-		if ( cmp1 == cmp2 ) {
-			return compare_same_exactly(rhs);
-		} else if (cmp1 < cmp2) {
-			return -1;
-		} else {
-			return 1;
-		}
+	public boolean equalsExactly(EObject rhs) {
+		return compare_same(rhs) == 0;
 	}
 
-	/** this is only overridden in ENumber subclasses */
-	int compare_same_exactly(EObject rhs) {
-		return compare_same(rhs);
-	}
-
+	boolean r_compare_same_exactly(ESmall lhs) { return false; }
+	boolean r_compare_same_exactly(EBig lhs) { return false; }
+	boolean r_compare_same_exactly(EDouble lhs) { return false; }
 	
-	int r_compare_same_exactly(ESmall lhs) { throw new NotImplemented(); }
-	int r_compare_same_exactly(EBig lhs) { throw new NotImplemented(); }
-	int r_compare_same_exactly(EDouble lhs) { throw new NotImplemented(); }
 	
+	public static final int CMP_ORDER_NUMBER = 0;
+	public static final int CMP_ORDER_ATOM = 1;
+	public static final int CMP_ORDER_REFERENCE = 2;
+	public static final int CMP_ORDER_FUN = 3;
+	public static final int CMP_ORDER_PORT = 4;
+	public static final int CMP_ORDER_PID = 5;
+	public static final int CMP_ORDER_TUPLE = 6;
+	public static final int CMP_ORDER_LIST = 7;
+	public static final int CMP_ORDER_BITSTRING = 8;
 	
 	/** 
 	 * 	number[0] < atom[1] < reference[2] < fun[3] < port[4] < pid[5] < tuple[6] < list[7] < bit string[8]

@@ -18,7 +18,7 @@
 
 package erjang;
 
-import erjang.bifs.erlang;
+import erjang.m.erlang.erlang$bifs;
 
 public abstract class ECons extends EObject {
 

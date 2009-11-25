@@ -35,10 +35,13 @@ import erjang.EAtom;
 import erjang.EBig;
 import erjang.EBinMatchState;
 import erjang.EBinary;
+import erjang.EBitString;
 import erjang.ECons;
 import erjang.EDouble;
 import erjang.EFun;
 import erjang.EInteger;
+import erjang.ERT;
+import erjang.EReference;
 import erjang.ESmall;
 import erjang.EList;
 import erjang.ENil;
@@ -84,12 +87,14 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 	static final Type EATOM_TYPE = Type.getType(EAtom.class);
 	static final Type ETUPLE_TYPE = Type.getType(ETuple.class);
 	static final Type EBINARY_TYPE = Type.getType(EBinary.class);
+	static final Type EBITSTRING_TYPE = Type.getType(EBitString.class);
 	static final Type ECONS_TYPE = Type.getType(ECons.class);
 	static final Type ESEQ_TYPE = Type.getType(ESeq.class);
 	static final Type ELIST_TYPE = Type.getType(EList.class);
 	static final Type EFUN_TYPE = Type.getType(EFun.class);
 	static final Type EPID_TYPE = Type.getType(EPID.class);
 	static final Type EPORT_TYPE = Type.getType(EPort.class);
+	static final Type EREFERENCE_TYPE = Type.getType(EReference.class);
 	static final Type EMATCHSTATE_TYPE = Type.getType(EBinMatchState.class);
 
 	static final EObject X_ATOM = EAtom.intern("x");
@@ -654,6 +659,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 								decode_out_arg(insn_idx, insn.elm(4)) });
 						break;
 
+					case try_case_end:
 					case badmatch:
 					case case_end:
 						vis.visitInsn(opcode, decode_out_arg(insn_idx, insn
@@ -678,7 +684,19 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						break;
 					}
 
+					case raise: {
+						EObject[] argExprs = insn.elm(3).testSeq().toArray();
+						Arg[] in = decode_args(insn_idx, argExprs);
+						Arg ex = decode_arg(insn_idx, insn.elm(4));
+						int failLabel = decode_labelref(insn.elm(2));
+						
+						vis.visitInsn(opcode, failLabel, in, ex);
+						break;
+					}
+					
+					
 					case try_end:
+					case try_case:
 					case catch_end:
 						vis.visitInsn(opcode, /* ignore */-1, decode_arg(
 								insn_idx, insn.elm(2)));
@@ -719,7 +737,56 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 								new Arg(Arg.Kind.X, 0, null));
 						break;
 					}
+					
+					// {bs_add,{f,0},[{x,3},{x,4},1],{x,3}}
+					case bs_add: {
+						EObject[] args = insn.elm(3).testSeq().toArray();
+						Arg[] in = decode_args(insn_idx, args);
+						Arg out = decode_out_arg(insn_idx, insn.elm(4));
+						vis.visitBSAdd(in, out);
+						break;
+					}
+						
 
+					
+					case bs_context_to_binary:
+					case bs_restore2:
+					case bs_save2: {
+						vis.visitBS(opcode, decode_arg(insn_idx, insn.elm(2)));
+						// do nothing for now
+						break;
+					}
+					
+
+					case bs_init2: {
+						Arg size = decode_arg(insn_idx, insn.elm(3));
+						Arg flags = decode_arg(insn_idx, insn.elm(6));
+						Arg out = decode_out_arg(insn_idx, insn.elm(7));
+						
+						vis.visitInitBitString(size, flags, out);
+						
+						break;
+					}
+					
+					case bs_put_string: {
+						Arg str = decode_arg(insn_idx, insn.elm(3));
+						vis.visitBitStringPut(opcode, str, null, null);
+						
+						break;
+					}
+						
+					case bs_put_binary:
+					case bs_put_integer: {
+						Arg size = decode_arg(insn_idx, insn.elm(3));
+						Arg flags = decode_arg(insn_idx, insn.elm(4));
+						Arg value = decode_arg(insn_idx, insn.elm(6));
+						vis.visitBitStringPut(opcode, value, size, flags);
+						
+						break;
+					}
+						
+
+					
 					default:
 						throw new Error("unhandled insn: " + insn);
 					}
@@ -801,8 +868,17 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					vis.visitTest(test, failLabel, args[0], EPORT_TYPE);
 					break;
 
+				case is_reference:
+					vis.visitTest(test, failLabel, args[0], EREFERENCE_TYPE);
+					break;
+
 				case is_function:
 					vis.visitTest(test, failLabel, args[0], EFUN_TYPE);
+					break;
+
+				case is_function2:
+					vis.visitTest(test, failLabel, args[0], argExprs[1]
+							.testTuple().elm(2).asInt(), EFUN_TYPE);
 					break;
 
 				case is_lt:
@@ -819,6 +895,16 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					int arity = argExprs[1].asInt();
 					vis.visitTest(test, failLabel, args[0], arity,
 							getTupleType(arity));
+					break;
+
+				case bs_start_match2:
+				case bs_match_string:
+				case bs_get_integer2:
+				case bs_test_tail2:
+				case bs_get_binary2:
+				case bs_skip_bits2:
+				case bs_test_unit:
+					vis.visitBitStringTest(test, failLabel, args);
 					break;
 
 				default:
@@ -876,7 +962,9 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 				}
 
-				return null;
+				return new Arg(src);
+
+				// return null;
 
 			}
 
@@ -1344,9 +1432,45 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					case case_end:
 						continue next_insn;
 
+					case bs_add: {
+						EObject[] args = insn.elm(3).testSeq().toArray();
+						Type in1 = getType(current, args[0]);
+						Type in2 = getType(current, args[1]);
+						current = setType(current, insn.elm(4), Type.INT_TYPE);
+						continue next_insn;
+					}
+						
 					case bs_context_to_binary: {
 						Type ctx = getType(current, insn.elm(2));
 						current = current.setx(0, EBINARY_TYPE);
+						continue next_insn;
+					}
+
+					case bs_save2: {
+						continue next_insn;
+					}
+					
+					case bs_restore2: {
+						current = setType(current, insn.elm(2), EMATCHSTATE_TYPE);
+						continue next_insn;
+					}					
+
+
+					case bs_init2: {
+						// int size = insn.elm(3).asInt();
+						current = setType(current, insn.elm(7), EBINARY_TYPE);
+						continue next_insn;
+					}
+
+					case bs_put_string: {
+						continue next_insn;
+					}
+
+					case bs_put_binary: {
+						continue next_insn;
+					}
+
+					case bs_put_integer: {
 						continue next_insn;
 					}
 
@@ -1527,11 +1651,17 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					return setType(current, arg1, EPORT_TYPE);
 				}
 
+				case is_reference: {
+					checkArgs(current, insn.elm(4), insn);
+					return setType(current, arg1, EREFERENCE_TYPE);
+				}
+
 				case is_float: {
 					checkArgs(current, insn.elm(4), insn);
 					return setType(current, arg1, EDOUBLE_TYPE);
 				}
 
+				case is_function2:
 				case is_function: {
 					checkArgs(current, insn.elm(4), insn);
 					return setType(current, arg1, EFUN_TYPE);
@@ -1610,6 +1740,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 				case bs_test_tail2:
 				case bs_test_unit:
 				case bs_skip_bits2:
+				case bs_match_string:
 
 					if (!EMATCHSTATE_TYPE.equals(getType(current, args[0]))) {
 						throw new Error("matching without a state");

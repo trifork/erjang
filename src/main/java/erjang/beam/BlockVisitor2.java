@@ -146,6 +146,46 @@ public interface BlockVisitor2 extends BlockVisitor {
 	 */
 	void visitReceive(BeamOpcode opcode, int block_label, Arg out);
 
+	/**
+	 * @param opcode
+	 * @param failLabel
+	 * @param in
+	 * @param ex
+	 */
+	void visitInsn(BeamOpcode opcode, int failLabel, Arg[] in, Arg ex);
+
+	/**
+	 * @param test
+	 * @param failLabel
+	 * @param args
+	 */
+	void visitBitStringTest(BeamOpcode test, int failLabel, Arg[] args);
+
+	/**
+	 * @param size
+	 * @param flags
+	 * @param out
+	 */
+	void visitInitBitString(Arg size, Arg flags, Arg out);
+
+	/**
+	 * @param opcode
+	 * @param elm
+	 */
+	void visitBitStringPut(BeamOpcode opcode, Arg value, Arg size, Arg flags);
+
+	/**
+	 * @param opcode
+	 * @param decodeArg
+	 */
+	void visitBS(BeamOpcode opcode, Arg decodeArg);
+
+	/**
+	 * @param in
+	 * @param out
+	 */
+	void visitBSAdd(Arg[] in, Arg out);
+
 	
 
 }

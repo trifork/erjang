@@ -18,80 +18,112 @@
 
 package erjang;
 
-import java.nio.charset.Charset;
+import java.io.File;
+import java.math.BigInteger;
+import java.util.zip.Adler32;
 
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
-import com.sun.org.apache.bcel.internal.generic.INVOKESTATIC;
+public class EBinary extends EBitString {
 
-public class EBinary extends EObject {
-
-	@Override
-	int cmp_order() {
-		return 8;
+	EBinary(byte[] data, int byteOff, int byteLength) {
+		super(data, byteOff * 8, byteLength * 8);
 	}
-	
-	@Override
-	int compare_same(EObject rhs) {
-		EBinary other = (EBinary) rhs;
-		int min = Math.min(data.length, other.data.length);
-		for (int i = 0; i < min; i++) {
-			int b1 = 0xff & data[i];
-			int b2 = 0xff & other.data[i];
-			if (b1 < b2) return -1;
-			if (b1 > b2) return 1;
-		}
-		
-		if (data.length < other.data.length) return -1;
-		if (data.length > other.data.length) return 1;
 
-		return 0;
+	/**
+	 * @param binaryValue
+	 */
+	public EBinary(byte[] bytes) {
+		this(bytes, 0, bytes.length);
 	}
-	
+
 	private static final Type EBINARY_TYPE = Type.getType(EBinary.class);
 	private static final String EBINARY_NAME = EBINARY_TYPE.getInternalName();
-	private final byte[] data;
-
-	public EBinary(byte[] data) {
-		this.data = data;
-	}
 
 	@Override
 	public Type emit_const(MethodVisitor fa) {
-		char[] chs = new char[data.length];
-		for (int i = 0; i < data.length; i++) { chs[i] = (char) (0xff & (int)data[i]); }
+		char[] chs = new char[bits / 8];
+		for (int i = 0; i < bits / 8; i++) {
+			chs[i] = (char) (0xff & octetAt(i));
+		}
 		String str = new String(chs);
-		
+
 		fa.visitLdcInsn(str);
-		fa.visitMethodInsn(Opcodes.INVOKESTATIC, EBINARY_NAME, "fromString", "(Ljava/lang/String;)L" + EBINARY_NAME + ";");
+		fa.visitMethodInsn(Opcodes.INVOKESTATIC, EBINARY_NAME, "fromString",
+				"(Ljava/lang/String;)L" + EBINARY_NAME + ";");
 
 		return EBINARY_TYPE;
 	}
 
+	public static EBinary fromString(String str) {
+		int size = str.length()*8;
+		byte[] data = new byte[size/8];
+		for (int i = 0; i < str.length(); i++) {
+			data[i] = (byte) str.charAt(i);
+		}
+		return new EBinary(data, 0, size);
+	}
+	
+
+	
 	public EBinary testBinary() {
 		return this;
+	}
+
+	public void updateAdler32(Adler32 a) {
+		a.update(data, bitOff / 8, bits / 8);
+	}
+
+	static final int MOD_ADLER = 65521;
+
+	long adler32() {
+		return adler32(1);
+	}
+
+	long adler32(long adler) {
+		long a = (adler & 0xffff), b = (adler >> 16);
+
+		/* Loop over each byte of data, in order */
+		for (int index = bitOff / 8; index < bits / 8; ++index) {
+			a = (a + (0xff & data[index])) % MOD_ADLER;
+			b = (b + a) % MOD_ADLER;
+		}
+
+		return (b << 16) | a;
+	}
+
+	static long adler32(long adler, int byte_value) {
+		long a = (adler & 0xffff), b = (adler >> 16);
+
+		a = (a + (byte_value & 0xff)) % MOD_ADLER;
+		b = (b + a) % MOD_ADLER;
+
+		return (b << 16) | a;
 	}
 
 	/**
 	 * @return
 	 */
 	public byte[] getByteArray() {
-		return data;
+		int octets = bitCount() / 8;
+		byte[] res = new byte[octets];
+		if ((bitOff % 8) == 0) {
+			System.arraycopy(data, bitOff / 8, res, 0, octets);
+		} else {
+			for (int i = 0; i < octets; i++) {
+				res[i] = (byte) octetAt(i);
+			}
+		}
+		return res;
 	}
 
 	/**
 	 * @return
 	 */
-	public int byte_size() {
-		return data.length;
+	public int byteSize() {
+		return bitCount() / 8;
 	}
 
-	/**
-	 * @return
-	 */
-	public int bit_size() {
-		return byte_size() * 8;
-	}
 }

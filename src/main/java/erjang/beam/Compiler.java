@@ -30,7 +30,7 @@ import com.ericsson.otp.erlang.OtpAuthException;
 
 import erjang.EBinary;
 import erjang.beam.analysis.BeamTypeAnalysis;
-import erjang.bifs.erlang;
+import erjang.m.erlang.erlang$bifs;
 
 public class Compiler implements Opcodes {
 
@@ -77,7 +77,7 @@ public class Compiler implements Opcodes {
 
 	}
 	
-	void compile(File file) throws IOException {
+	public void compile(File file) throws IOException {
 		
 		// class writer, phase 4
 		ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);

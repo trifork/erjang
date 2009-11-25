@@ -1,10 +1,9 @@
-package erjang.bifs;
+package erjang.m.erlang;
 
 import erjang.BIF;
 import erjang.EInteger;
 import erjang.ENumber;
 import erjang.EObject;
-import erjang.ERT;
 import erjang.BIF.Type;
 
 public class BinOps {
