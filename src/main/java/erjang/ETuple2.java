@@ -22,6 +22,11 @@ public class ETuple2 extends ETuple {
 	public EObject elem1;
 	public EObject elem2;
 
+	static public ETuple2 cast(ETuple value) {
+		if (value.arity() == 2) return (ETuple2) value;
+		return null;
+	}	
+
 	@Override
 	public ETuple2 blank() {
 		ETuple2 res = new ETuple2();

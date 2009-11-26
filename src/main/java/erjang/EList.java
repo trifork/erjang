@@ -22,7 +22,7 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
-import erjang.m.erlang.erlang$bifs;
+import erjang.m.erlang.ErlBif;
 
 public class EList extends ESeq {
 	
@@ -30,7 +30,7 @@ public class EList extends ESeq {
 	private final ESeq tail;
 	
 	public EList(EObject h, ESeq tail) {
-		if (tail == null) tail = NIL;
+		if (tail == null) tail = ERT.NIL;
 		
 		this.head = h;
 		this.tail = tail;
@@ -67,7 +67,7 @@ public class EList extends ESeq {
 		StringBuffer sb = new StringBuffer("[");
 		
 		ESeq val = this;
-		while (val != ECons.NIL) {
+		while (val != ERT.NIL) {
 			if (val != this) { sb.append(","); }
 			sb.append(val.head());
 			val = val.tail();
@@ -79,8 +79,9 @@ public class EList extends ESeq {
 	
 
 	static Type ELIST_TYPE = Type.getType(EList.class);
+	static Type ESEQ_TYPE = Type.getType(ESeq.class);
 	static Type ETERM_TYPE = Type.getType(EObject.class);
-	static String CONSTRUCTOR_DESC = "(" + ETERM_TYPE.getDescriptor() + ELIST_TYPE.getDescriptor() + ")V";
+	static String CONSTRUCTOR_DESC = "(" + ETERM_TYPE.getDescriptor() + ESEQ_TYPE.getDescriptor() + ")V";
 	
 	@Override
 	public Type emit_const(MethodVisitor fa) {
@@ -92,7 +93,8 @@ public class EList extends ESeq {
 		((EObject)head).emit_const(fa);
 		((EObject)tail).emit_const(fa);
 
-		fa.visitMethodInsn(Opcodes.INVOKESPECIAL, type.getInternalName(), "<init>", CONSTRUCTOR_DESC);
+		fa.visitMethodInsn(Opcodes.INVOKESPECIAL,
+				type.getInternalName(), "<init>", CONSTRUCTOR_DESC);
 		
 		return type;
 	}

@@ -73,6 +73,6 @@ class EModuleLoader extends URLClassLoader {
 			return EFun.get_fun_class(arity);
 		}
 
-		throw new ClassNotFoundException(name);
+		return super.findClass(name);
 	}
 }

@@ -23,10 +23,10 @@ import java.math.BigInteger;
 
 public class ERT {
 	
-	public static EObject raise(EAtom kind, EAtom reason, EObject trace) {
+	public static EObject raise(EObject kind, EObject value, EObject trace) {
 
 		// TODO: fix exception
-		throw new ErlangException(reason);
+		throw new ErlangException(kind.testAtom());
 	}
 
 	public static final EAtom AM_BADARG = EAtom.intern("badarg");
@@ -78,7 +78,7 @@ public class ERT {
 	}
 
 	public static ENil as_nil_or_null(EObject o) {
-		return o == null ? ENil.NIL : o.testNil();
+		return o == null ? ERT.NIL : o.testNil();
 	}
 
 	public static EDouble as_float_or_null(EObject o) {
@@ -125,7 +125,7 @@ public class ERT {
 		Class<? extends T> res;
 		try {
 			res = (Class<? extends T>) definer.invoke(ETuple.class
-					.getClassLoader(), name, data, 0, data.length);
+					.getClassLoader(), name.replace('/', '.'), data, 0, data.length);
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
@@ -230,6 +230,8 @@ public class ERT {
 	public static EAtom guard(boolean bool) {
 		return bool ? TRUE : null;
 	}
+
+	public static final ENil NIL = new ENil();
 
 	public EBitStringBuilder bs_init(int size, int flags) {
 		return new EBitStringBuilder(size, flags);

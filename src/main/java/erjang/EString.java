@@ -240,7 +240,7 @@ public class EString extends ESeq implements CharSequence {
 	 */
 	@Override
 	public ESeq tail() {
-		if (off == data.length) return ENil.NIL;
+		if (off == data.length) return ERT.NIL;
 		return new EString(data, off+1);
 	}
 
@@ -254,7 +254,7 @@ public class EString extends ESeq implements CharSequence {
 
 	@Override
 	public ENil testNil() {
-		return length() == 0 ? ENil.NIL : null;
+		return length() == 0 ? ERT.NIL : null;
 	}
 
 	/* (non-Javadoc)
@@ -346,5 +346,12 @@ public class EString extends ESeq implements CharSequence {
 		} else {
 			return super.prepend(list);
 		}
+	}
+
+	/**
+	 * @return
+	 */
+	public EBitString asBitString() {
+		return new EBinary(data, off, length());
 	}
 }

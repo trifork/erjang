@@ -24,7 +24,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /** 
- * In a module, imports are declared using this annotation on static fields of type EFun
+ * In a module, exports are declared using this annotation on static fields of type EFun
  * 
  */
 

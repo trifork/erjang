@@ -30,7 +30,7 @@ import com.ericsson.otp.erlang.OtpAuthException;
 
 import erjang.EBinary;
 import erjang.beam.analysis.BeamTypeAnalysis;
-import erjang.m.erlang.erlang$bifs;
+import erjang.m.erlang.ErlBif;
 
 public class Compiler implements Opcodes {
 

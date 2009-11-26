@@ -53,14 +53,14 @@ public class EPair extends ECons {
 		StringBuffer sb = new StringBuffer("[");
 		
 		EObject val = this;
-		while (val instanceof ECons && val != NIL) {
+		while (val instanceof ECons && val != ERT.NIL) {
 			ECons ep = (ECons) val;
 			if (val != this) { sb.append(","); }
 			sb.append(ep.head());
 			val = ep.tail();
 		}
 		
-		if (val != NIL) {
+		if (val != ERT.NIL) {
 			sb.append('|');
 			sb.append(val);
 		}

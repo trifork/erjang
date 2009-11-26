@@ -21,44 +21,51 @@ package erjang;
 public class EBinMatchState {
 
 	public static final EAtom ATOM_ALL = EAtom.intern("all");
-	
+
 	public final EBitString bin;
 	int bit_pos;
 
 	public int bitsLeft() {
 		return bin.bitCount() - bit_pos;
 	}
-	
+
 	public EBitString binary() {
 		return bin;
 	}
-	
+
+	public static EBinMatchState bs_start_match2(EObject obj) {
+		EBitString bs;
+		if ((bs = obj.testBinString()) == null)
+			return null;
+		return new EBinMatchState(bs);
+	}
+
 	public EBinMatchState(EBitString binary) {
 		this.bin = binary;
 		this.bit_pos = 0;
 	}
-	
+
 	public EBitString bs_get_binary2(EObject spec, int flags) {
-		
+
 		if (spec == ATOM_ALL) {
-			
+
 			EBitString result = bin.substring(bit_pos, bitsLeft());
 			bit_pos += result.bitCount();
 			return result;
 
-		} 
-		
-		throw new Error("unknown spec: "+spec);
-		
-//		return null;
+		}
+
+		throw new Error("unknown spec: " + spec);
+
+		// return null;
 	}
 
 	public EInteger bs_get_integer2(int size, int flags) {
-		
+
 		if (flags != 0) {
-			throw new Error("unhandled flags: "+flags);
+			throw new Error("unhandled flags: " + flags);
 		}
-		
+
 		if (size == 0) {
 			return ESmall.ZERO;
 		}
@@ -106,20 +113,28 @@ public class EBinMatchState {
 		return ebs;
 
 	}
-	
-	EAtom bs_skip_bits2(EInteger count, int bits, int flags) {
-		int bitsWanted = bits*count.intValue();
+
+	EAtom bs_skip_bits2(EObject count_o, int bits, int flags) {
+		EInteger count;
+		if ((count = count_o.testInteger()) == null) {
+			// throw badarg?
+			return null;
+		}
 		
-		if (bitsLeft() < bitsWanted) { return null; }
-		
+		int bitsWanted = bits * count.intValue();
+
+		if (bitsLeft() < bitsWanted) {
+			return null;
+		}
+
 		bit_pos += bitsWanted;
 
 		return ERT.TRUE;
 	}
-	
-	/** tell if there are bytes left */
+
+	/** yields TRUE if we are at the end */
 	EObject bs_test_tail2() {
-		if (bit_pos < bin.bitCount())
+		if (bit_pos == bin.bitCount())
 			return ERT.TRUE;
 		return null;
 	}

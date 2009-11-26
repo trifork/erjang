@@ -37,6 +37,10 @@ public class EBitString extends EObject {
 	public EBitString(byte[] data) {
 		this(data.clone(), 0, data.length * 8);
 	}
+	
+	public EBitString testBinString() {
+		return this;
+	}
 
 	@Override
 	int cmp_order() {

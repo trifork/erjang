@@ -18,6 +18,7 @@
 
 package erjang;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
@@ -30,6 +31,10 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.util.CheckClassAdapter;
+
+import com.sun.org.apache.bcel.internal.generic.ALOAD;
+import com.sun.org.apache.bcel.internal.generic.CHECKCAST;
+import com.sun.org.apache.bcel.internal.generic.IF_ICMPNE;
 
 public abstract class ETuple extends EObject implements Cloneable /*, Indexed*/ {
 
@@ -145,13 +150,15 @@ public abstract class ETuple extends EObject implements Cloneable /*, Indexed*/ 
 
 		byte[] data = make_tuple_class_data(num_cells);
 
+		dump(ETUPLE_NAME + num_cells, data);
+		
 		String name = (ETUPLE_NAME + num_cells).replace('/', '.');
 
 		return ERT.defineClass(ETuple.class.getClassLoader(), name, data, 0,
 				data.length);
 	}
 
-	private static byte[] make_tuple_class_data(int num_cells) {
+	static byte[] make_tuple_class_data(int num_cells) {
 		ClassWriter cww = new ClassWriter(ClassWriter.COMPUTE_FRAMES
 				| ClassWriter.COMPUTE_MAXS);
 
@@ -171,6 +178,9 @@ public abstract class ETuple extends EObject implements Cloneable /*, Indexed*/ 
 
 		// create count method
 		create_count(cw, num_cells);
+		
+		// create cast method
+		create_cast(cw, num_cells);
 
 		// create constructor
 		create_constructor(cw, super_class_name);
@@ -326,6 +336,37 @@ public abstract class ETuple extends EObject implements Cloneable /*, Indexed*/ 
 		mv.visitEnd();
 	}
 
+
+	private static void create_cast(ClassAdapter cw, int n) {
+		MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PUBLIC|Opcodes.ACC_STATIC, "cast", 
+				"(L" + ETUPLE_NAME + ";)L" + ETUPLE_NAME + ";",
+				null, null);
+		mv.visitCode();
+
+		mv.visitVarInsn(Opcodes.ALOAD, 0);
+		mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, ETUPLE_NAME, "arity", "()I");
+		
+		if (n <= 5) {
+			mv.visitInsn(Opcodes.ICONST_0 + n);
+		} else {
+			mv.visitLdcInsn(new Integer(n));
+		}
+		
+		Label fail = new Label();
+		
+		mv.visitJumpInsn(Opcodes.IF_ICMPNE, fail);
+		mv.visitVarInsn(Opcodes.ALOAD, 0);
+		mv.visitTypeInsn(Opcodes.CHECKCAST, ETUPLE_NAME+n);
+		mv.visitInsn(Opcodes.ARETURN);
+		
+		mv.visitLabel(fail);
+		mv.visitInsn(Opcodes.ACONST_NULL);
+		mv.visitInsn(Opcodes.ARETURN);
+		
+		mv.visitMaxs(2, 2);
+		mv.visitEnd();
+	}
+
 	private static void create_constructor(ClassAdapter cw,
 			String super_class_name) {
 		MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "()V",
@@ -339,12 +380,21 @@ public abstract class ETuple extends EObject implements Cloneable /*, Indexed*/ 
 		mv.visitEnd();
 	}
 
-	private static void dump(String name, byte[] data) {
+	public static void dump(String name, byte[] data) {
+		
+		String pkg = name.substring(0, name.lastIndexOf('/'));
+		
+		File out_dir = new File( new File("target/gen"), pkg);
+
+		out_dir.mkdirs();
+		
 		FileOutputStream fo;
 		try {
-			fo = new FileOutputStream(name.replace('/', '.') + ".class");
+			String fname = "target/gen/" + name + ".class";
+			fo = new FileOutputStream(fname);
 			fo.write(data);
 			fo.close();
+			System.out.println("wrote "+fname);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

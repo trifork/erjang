@@ -28,10 +28,11 @@ import java.util.Map;
  * An erlang process
  */
 public class EProc {
-	static final EObject TAIL_MARKER = new ETailMarker();
+	public static final EObject TAIL_MARKER = new ETailMarker();
 	
-	public EFun fun;
+	public EFun tail;
 	public EObject arg0, arg1, arg2, arg3, arg4, arg5, arg6;
+	
 	/**
 	 * @return
 	 */
@@ -48,13 +49,13 @@ public class EProc {
 	
 	public EObject put(EObject key, EObject value) {
 		EObject res = pdict.put(key, value);
-		if (res == null) return ENil.NIL;
+		if (res == null) return ERT.NIL;
 		return res;
 	}
 	
 	public EObject get(EObject key) {
 		EObject res = pdict.get(key);
-		return (res==null) ? ENil.NIL : res;
+		return (res==null) ? ERT.NIL : res;
 	}
 
 	/**
@@ -63,6 +64,16 @@ public class EProc {
 	public ECons get() {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	/**
+	 * @param key
+	 * @return
+	 */
+	public EObject erase(EObject key) {
+		EObject res = pdict.remove(key);
+		if (res == null) res = ERT.NIL;
+		return res;
 	}
 	
 }

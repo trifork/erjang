@@ -18,22 +18,55 @@
 
 package erjang;
 
-import erjang.m.erlang.erlang$bifs;
+import java.io.File;
+import java.net.MalformedURLException;
+
+import erjang.beam.Compiler;
+import erjang.beam.EUtil;
 
 /**
  * 
  */
 public class Main {
 
-	public static void main(String[] args) {
-		
+	public static String PRELOADED = "src/main/erl/preloaded/ebin";
+	public static String[] MODULES = new String[] { "erl_prim_loader",
+			"erlang", "init", "otp_ring0", "prim_file", "prim_inet",
+			"prim_zip", "zlib" };
 
-		EModule.load_module(;, bin)
+	@SuppressWarnings("unchecked")
+	public static void main(String[] args) throws ClassNotFoundException, MalformedURLException, InstantiationException, IllegalAccessException {
+
+		/*
+		for (int i = 1; i < 20; i++) {
+			byte[] data = ETuple.make_tuple_class_data(i);
+			ETuple.dump("erjang/ETuple"+i, data);
+
+			data = EFun.gen_fun_class_data(i);
+			ETuple.dump("erjang/EFun"+i, data);
+
+		}
+		*/
 		
-		EAtom modName = EAtom.intern("erlang");
+		EModule[] modules = new EModule[MODULES.length];
+		File preloaded_dir = new File(PRELOADED);
 		
-		erlang$bifs.load_module(modName, bin)
+		for (int i = 0; i < modules.length; i++) {
+			
+			String mod = MODULES[i];
+			
+			File path = new File(preloaded_dir, mod + ".classes");
+			
+			if (!path.exists() || !path.isDirectory()) {
+				throw new Error("no path to: "+path);
+			}
+			
+			modules[i] = EModule.load_module(EAtom.intern(mod), path.toURI().toURL());
+		}
+
+		for (int i = 0; i < modules.length; i++) {
+			modules[i].resolve();
+		}
 		
 	}
-
 }

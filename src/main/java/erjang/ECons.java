@@ -18,7 +18,7 @@
 
 package erjang;
 
-import erjang.m.erlang.erlang$bifs;
+import erjang.m.erlang.ErlBif;
 
 public abstract class ECons extends EObject {
 
@@ -35,8 +35,6 @@ public abstract class ECons extends EObject {
 		return tail().compareTo(other.tail());
 	}
 
-	public static final ENil NIL = new ENil();
-
 	public abstract EObject head();
 	public abstract EObject tail();
 	
@@ -48,7 +46,7 @@ public abstract class ECons extends EObject {
 	public int count() {
 		EObject cell = tail();
 		int count = 1;
-		while (cell != NIL && (cell instanceof ECons)) {
+		while (cell != ERT.NIL && (cell instanceof ECons)) {
 			cell = ((ECons)cell).tail();
 			count += 1;
 		}

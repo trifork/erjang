@@ -16,30 +16,23 @@
  * limitations under the License.
  **/
 
-package erjang;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+package erjang.m.erlang;
 
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
-public @interface BIF {
+import erjang.BIF;
+import erjang.EObject;
+import erjang.EProc;
+import erjang.NotImplemented;
 
-	/** name */
-	String name() default "__SELFNAME__";
+/**
+ * 
+ */
+public class ErlList {
 
-	/** */
-	Type type() default Type.DEFAULT;
-		
-	public enum Type {
-		DEFAULT { public boolean export() { return true; } }, 
-		GUARD { public boolean export() { return false; } }, 
-		ARITHBIF { public boolean export() { return false; } };
-		
-		abstract public boolean export(); 
+	@BIF(name="--")
+	public static EObject register(EProc proc, EObject a1, EObject a2) {
+		throw new NotImplemented();
 	}
 	
-
+	
 }

@@ -16,30 +16,12 @@
  * limitations under the License.
  **/
 
+
 package erjang;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
-public @interface BIF {
-
-	/** name */
-	String name() default "__SELFNAME__";
-
-	/** */
-	Type type() default Type.DEFAULT;
-		
-	public enum Type {
-		DEFAULT { public boolean export() { return true; } }, 
-		GUARD { public boolean export() { return false; } }, 
-		ARITHBIF { public boolean export() { return false; } };
-		
-		abstract public boolean export(); 
-	}
-	
-
+/**
+ * 
+ */
+public abstract class ENative {
+	protected abstract Class<?>[] getNativeClasses();
 }

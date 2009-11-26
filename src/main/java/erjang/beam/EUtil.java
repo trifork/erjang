@@ -71,7 +71,7 @@ public class EUtil {
 
 
 	static String toJavaIdentifier(EAtom name) {
-		return toJavaIdentifier(plen(name.getName()));
+		return toJavaIdentifier(name.getName());
 	}
 	
 	/** encode any char sequence into a valid java identifier */
@@ -133,15 +133,18 @@ public class EUtil {
 	
 	public static String plen(Object o) {
 		String s = String.valueOf(o);
-		return "_"+Integer.toHexString(s.length())+"_"+s;
+		StringBuilder sb = new StringBuilder("_");
+		writeHexByte(sb, s.length());
+		sb.append(s);
+		return s.toString();
 	}
 
-	static String getJavaName(EAtom fun, int arity) {
+	public static String getJavaName(EAtom fun, int arity) {
 		String fname = fun.getName();
-		if(fname.indexOf('_') == -1) {
-			return toJavaIdentifier(fun.getName() + "_" + arity);
+		if(fname.indexOf("__") == -1) {
+			return toJavaIdentifier(fun.getName() + "__" + arity);
 		} else {
-			return toJavaIdentifier(plen(fun.getName()) + "_" + arity);
+			return toJavaIdentifier(plen(fun.getName()) + "__" + arity);
 		}
 	}
 
@@ -150,7 +153,7 @@ public class EUtil {
 	 * @return
 	 */
 	public static String getJavaName(ExtFunc fun) {
-		return toJavaIdentifier(fun.mod) + "_" + getJavaName(fun.fun, fun.no);
+		return toJavaIdentifier(fun.mod) + "__" + getJavaName(fun.fun, fun.no);
 	}
 
 

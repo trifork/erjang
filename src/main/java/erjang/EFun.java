@@ -31,8 +31,15 @@ import erjang.beam.EUtil;
 
 public abstract class EFun extends EObject {
 	
+	public abstract int arity();
+	
 	public EFun testFunction2(int nargs) {
+		if (this.arity() == nargs) return this;
 		return null;
+	}
+	
+	public EFun testFunction() {
+		return this;
 	}
 	
 	@Override
@@ -41,7 +48,7 @@ public abstract class EFun extends EObject {
 	}
 
 	/** used for translation of tail recursive methods */
-	protected abstract EObject go(EProc eproc);
+	public abstract EObject go(EProc eproc);
 
 	/** generic invoke, used only for apply */
 	public abstract EObject invoke(EProc proc, EObject[] args);
@@ -66,20 +73,22 @@ public abstract class EFun extends EObject {
 		Class<?>[] parameterTypes = method.getParameterTypes();
 		int ary = parameterTypes.length;
 		boolean proc = (ary > 0 && parameterTypes[0].equals(EProc.class));
-
+		if (proc) ary -= 1;
+		String mname = EUtil.getJavaName(EAtom.intern(method.getName()), ary);
+		
 		Class<?> declaringClass = method.getDeclaringClass();
 		Type type = Type.getType(declaringClass);
-		byte[] data = CompilerVisitor.make_invoker(type, method.getName(), ary,
+		byte[] data = CompilerVisitor.make_invoker(type, mname, method.getName(), ary,
 				proc, 0);
 
-		String clname = type.getClassName() + "$" + method.getName();
+		String clname = type.getClassName() + "$FN_" + mname;
 
 		ClassLoader cl = declaringClass.getClassLoader();
 
 		// make sure we have it's superclass loaded
 		get_fun_class(ary);
 		
-		Class<? extends EFun> res_class = ERT.defineClass(cl, clname, data, 0,
+		Class<? extends EFun> res_class = ERT.defineClass(cl, clname.replace('/', '.'), data, 0,
 				data.length);
 
 		try {
@@ -101,6 +110,18 @@ public abstract class EFun extends EObject {
 			// that's what we'll do here...
 		}
 
+		byte[] data = gen_fun_class_data(arity);
+		
+		ETuple.dump(self_type, data);
+		
+		return ERT.defineClass(EFun.class.getClassLoader(), self_type.replace('/', '.'), data, 0,
+				data.length);
+	}
+
+	static byte[] gen_fun_class_data(int arity) {
+		
+		String self_type = EFUN_TYPE.getInternalName() + arity;
+
 		ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
 		cw.visit(Opcodes.V1_5, Opcodes.ACC_PUBLIC | Opcodes.ACC_ABSTRACT,
 				self_type, null, EFUN_TYPE.getInternalName(), null);
@@ -120,6 +141,7 @@ public abstract class EFun extends EObject {
 		mv.visitCode();
 		mv.visitLdcInsn(new Integer(arity));
 		mv.visitInsn(Opcodes.IRETURN);
+		mv.visitMaxs(2, 2);
 		mv.visitEnd();
 		
 		mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "invoke", "("
@@ -141,11 +163,18 @@ public abstract class EFun extends EObject {
 		mv.visitMaxs(arity + 2, arity + 2);
 		mv.visitEnd();
 
+		mv = cw.visitMethod(Opcodes.ACC_PROTECTED, "<init>", "()V", null, null);
+		mv.visitVarInsn(Opcodes.ALOAD, 0);
+		mv.visitMethodInsn(Opcodes.INVOKESPECIAL, EFUN_TYPE.getInternalName(), "<init>", "()V");
+		mv.visitInsn(Opcodes.RETURN);
+		mv.visitMaxs(arity + 2, arity + 2);
+		mv.visitEnd();
+		
+		
 		cw.visitEnd();
 
 		byte[] data = cw.toByteArray();
-		return ERT.defineClass(EFun.class.getClassLoader(), self_type, data, 0,
-				data.length);
+		return data;
 	}
 
 	/**

@@ -37,7 +37,6 @@ import erjang.EBinary;
 import erjang.EBitString;
 import erjang.EDouble;
 import erjang.ESmall;
-import erjang.EList;
 import erjang.EObject;
 import erjang.ERT;
 import erjang.EString;
@@ -76,7 +75,7 @@ public class OtpConverter {
 		add(OtpErlangList.class, new Converter<OtpErlangList>() {
 			@Override
 			EObject conv(OtpErlangList obj) {
-				EObject tail = obj.getLastTail() == null ? EList.NIL
+				EObject tail = obj.getLastTail() == null ? ERT.NIL
 						: convert(obj.getLastTail());
 				for (int i = obj.arity() - 1; i >= 0; i--) {
 					tail = ERT.cons(convert(obj.elementAt(i)), tail);

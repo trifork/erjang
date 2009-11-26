@@ -19,6 +19,7 @@
 package erjang.beam;
 
 import erjang.EAtom;
+import erjang.ERT;
 import erjang.ESmall;
 import erjang.EList;
 import erjang.EObject;
@@ -59,7 +60,7 @@ public class BeamFileData {
 		visit_attributes(v);
 
 		try {
-			for (ESeq exp = (ESeq) code; exp != ESeq.NIL; exp = exp.tail()) {
+			for (ESeq exp = (ESeq) code; exp != ERT.NIL; exp = exp.tail()) {
 				ETuple fun = (ETuple) exp.head();
 
 				visit_function(v, fun);
@@ -87,7 +88,7 @@ public class BeamFileData {
 
 		BlockVisitor bbv = null;
 
-		for (ESeq insn = (ESeq) insns; insn != ESeq.NIL; insn = insn.tail()) {
+		for (ESeq insn = (ESeq) insns; insn != ERT.NIL; insn = insn.tail()) {
 
 			EObject i = insn.head();
 
@@ -121,14 +122,14 @@ public class BeamFileData {
 	}
 
 	private void visit_attributes(ModuleVisitor v) {
-		for (ESeq exp = (ESeq) attributes; exp != ESeq.NIL; exp = exp.tail()) {
+		for (ESeq exp = (ESeq) attributes; exp != ERT.NIL; exp = exp.tail()) {
 			ETuple one = (ETuple) exp.head();
 			v.visitAttribute((EAtom) one.elm(1), one.elm(2));
 		}
 	}
 
 	private void visit_exports(ModuleVisitor v) {
-		for (ESeq exp = (ESeq) exports; exp != ESeq.NIL; exp = exp.tail()) {
+		for (ESeq exp = (ESeq) exports; exp != ERT.NIL; exp = exp.tail()) {
 			ETuple one = (ETuple) exp.head();
 			v.visitExport((EAtom) one.elm(1), one.elm(2).asInt(), one.elm(3)
 					.asInt());

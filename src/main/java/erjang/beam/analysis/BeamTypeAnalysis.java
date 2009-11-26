@@ -50,6 +50,7 @@ import erjang.EObject;
 import erjang.EPID;
 import erjang.EPort;
 import erjang.ESeq;
+import erjang.EString;
 import erjang.ETuple;
 import erjang.ETuple2;
 import erjang.beam.Arg;
@@ -102,6 +103,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 	static final EObject FR_ATOM = EAtom.intern("fr");
 	static final EObject NIL_ATOM = EAtom.intern("nil");
 	static final EObject INTEGER_ATOM = EAtom.intern("integer");
+	static final EObject STRING_ATOM = EAtom.intern("string");
 	static final EObject FLOAT_ATOM = EAtom.intern("float");
 	static final EObject ATOM_ATOM = EAtom.intern("atom");
 	static final EObject LITERAL_ATOM = EAtom.intern("literal");
@@ -595,7 +597,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 						int idx = 0;
 
-						while (cases != ESeq.NIL) {
+						while (cases != ERT.NIL) {
 							arities[idx] = cases.head().asInt();
 							EObject target = cases.tail().head();
 							targets[idx] = decode_labelref(target);
@@ -620,7 +622,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 						int idx = 0;
 
-						while (cases != ESeq.NIL) {
+						while (cases != ERT.NIL) {
 							values[idx] = decode_value(cases.head());
 							EObject target = cases.tail().head();
 							targets[idx] = decode_labelref(target);
@@ -951,6 +953,8 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						return new Arg(tup.elem2, EATOM_TYPE);
 					} else if (tup.elem1 == LITERAL_ATOM) {
 						return new Arg(tup.elem2);
+					} else if (tup.elem1 == STRING_ATOM) {
+						return new Arg(tup.elem2);
 					} else if (tup.elem1 == INTEGER_ATOM) {
 						return new Arg(tup.elem2);
 					} else if (tup.elem1 == FLOAT_ATOM) {
@@ -958,7 +962,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					}
 
 				} else if (src == NIL_ATOM) {
-					return new Arg(ENil.NIL, ENIL_TYPE);
+					return new Arg(ERT.NIL, ENIL_TYPE);
 
 				}
 
@@ -988,7 +992,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					}
 
 				} else if (src == NIL_ATOM) {
-					return new Arg(ENil.NIL, ENIL_TYPE);
+					return new Arg(ERT.NIL, ENIL_TYPE);
 
 				}
 
@@ -1363,7 +1367,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						getType(current, insn.elm(2));
 
 						ESeq cases = insn.elm(4).testTuple().elm(2).testSeq();
-						while (cases != ESeq.NIL) {
+						while (cases != ERT.NIL) {
 							EObject value = cases.head();
 							EObject target = cases.tail().head();
 
@@ -1385,7 +1389,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						getType(current, insn.elm(2));
 
 						ESeq cases = insn.elm(4).testTuple().elm(2).testSeq();
-						while (cases != ESeq.NIL) {
+						while (cases != ERT.NIL) {
 							EObject value = cases.head();
 							EObject target = cases.tail().head();
 
@@ -1565,7 +1569,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 			private Type[] parmTypes(TypeMap current, ESeq args) {
 				ArrayList<Type> res = new ArrayList<Type>();
 
-				while (args != ESeq.NIL) {
+				while (args != ERT.NIL) {
 					EObject arg = args.head();
 					res.add(getType(current, arg));
 					args = args.tail();
@@ -1577,7 +1581,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 			private void checkArgs(TypeMap current, EObject eTerm, ETuple insn) {
 				ESeq args = eTerm.testSeq();
 
-				while (args != ESeq.NIL) {
+				while (args != ERT.NIL) {
 					EObject arg = args.head();
 
 					if (getType(current, arg) == null) {

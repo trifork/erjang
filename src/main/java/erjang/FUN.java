@@ -22,9 +22,9 @@ package erjang;
  * This is an object we can use as key in hashtables, etc..
  */
 class FUN implements Comparable<FUN> {
-	EAtom module;
-	EAtom function;
-	int arity;
+	final EAtom module;
+	final EAtom function;
+	final int arity;
 
 	FUN(String module, String function, int arity) {
 		this(EAtom.intern(module), EAtom.intern(function), arity);

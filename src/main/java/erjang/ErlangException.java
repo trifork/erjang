@@ -62,7 +62,7 @@ public class ErlangException extends RuntimeException {
 	}
 
 	private ESeq fix_args(ESeq trace, Object... args) {
-		if (trace == ENil.NIL) {
+		if (trace == ERT.NIL) {
 			trace = trace.cons(ETuple.make(UNKNOWN, UNKNOWN, listify(args)));
 		} else {
 			ETuple t = trace.head().testTuple();
@@ -82,7 +82,7 @@ public class ErlangException extends RuntimeException {
 	}
 
 	private ESeq listify(Object[] args) {
-		ESeq res = ESeq.NIL;
+		ESeq res = ERT.NIL;
 		for (int i = args.length - 1; i >= 0; i--) {
 			EObject h = erl_value(args[i]);
 			res = res.cons(h);
@@ -110,7 +110,7 @@ public class ErlangException extends RuntimeException {
 	private static XSM xsm = new XSM();
 
 	ESeq init_trace() {
-		ESeq list = ENil.NIL;
+		ESeq list = ERT.NIL;
 		Class<?>[] class_trace = null;
 		StackTraceElement[] stack_trace = this.getStackTrace();
 

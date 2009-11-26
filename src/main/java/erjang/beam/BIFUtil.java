@@ -33,7 +33,7 @@ import erjang.ESmall;
 import erjang.EObject;
 import erjang.EProc;
 import erjang.m.erlang.BinOps;
-import erjang.m.erlang.erlang$bifs;
+import erjang.m.erlang.ErlBif;
 
 /**
  * Used by the compiler to find and mange BIF definitions.
@@ -49,7 +49,7 @@ public class BIFUtil {
 	static Map<String, BIFHandler> guard_bifs = new HashMap<String, BIFHandler>();
 
 	static {
-		registerBifs(erlang$bifs.class);
+		registerBifs(ErlBif.class);
 		registerBifs(BinOps.class);
 	}
 

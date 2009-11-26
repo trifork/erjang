@@ -25,7 +25,6 @@ import erjang.ECons;
 import erjang.EDouble;
 import erjang.EInteger;
 import erjang.EList;
-import erjang.ENil;
 import erjang.ENumber;
 import erjang.EObject;
 import erjang.EPID;
@@ -45,7 +44,7 @@ import erjang.BIF.Type;
 
 /** bifs for the module erlang */
 @Module("erlang")
-public class erlang$bifs {
+public class ErlBif {
 
 	@BIF
 	@ErlFun(export = true)
@@ -659,12 +658,12 @@ public class erlang$bifs {
 	}
 
 	@BIF(name = "=:=", type = Type.GUARD)
-	public static final EAtom is_eq_exact$g(EObject a1, EAtom a2) {
+	public static final EAtom eqxp(EObject a1, EAtom a2) {
 		return ERT.guard(a1 == a2);
 	}
 
 	@BIF(name = "=:=", type = Type.GUARD)
-	public static final EAtom is_eq_exact$g(EObject a1, ESmall s2) {
+	public static final EAtom eqxp(EObject a1, ESmall s2) {
 		ESmall s1;
 		if ((s1 = a1.testSmall()) != null) {
 			return ERT.guard(s1.value == s2.value);
@@ -674,7 +673,7 @@ public class erlang$bifs {
 	}
 
 	@BIF(name = "=:=", type = Type.GUARD)
-	public static final EAtom is_eq_exact$g(EObject a1, EObject a2) {
+	public static final EAtom eqxp(EObject a1, EObject a2) {
 		return ERT.guard(a1.equalsExactly(a2));
 	}
 
@@ -784,7 +783,7 @@ public class erlang$bifs {
 
 	@BIF
 	public static ECons is_list(EObject o) {
-		return o == null ? ENil.NIL : o.testCons();
+		return o == null ? ERT.NIL : o.testCons();
 	}
 
 	@BIF

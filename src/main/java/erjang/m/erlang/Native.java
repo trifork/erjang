@@ -16,30 +16,20 @@
  * limitations under the License.
  **/
 
-package erjang;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+package erjang.m.erlang;
 
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
-public @interface BIF {
+import erjang.ENative;
 
-	/** name */
-	String name() default "__SELFNAME__";
+/**
+ * Hook to identify classes that contain native code for this module
+ */
+public class Native extends ENative {
 
-	/** */
-	Type type() default Type.DEFAULT;
-		
-	public enum Type {
-		DEFAULT { public boolean export() { return true; } }, 
-		GUARD { public boolean export() { return false; } }, 
-		ARITHBIF { public boolean export() { return false; } };
-		
-		abstract public boolean export(); 
+	@Override
+	protected
+	Class<?>[] getNativeClasses() {
+		return new Class[] { BinOps.class, ErlBif.class, ErlProc.class, ErlList.class, ErlConvert.class };
 	}
-	
 
 }

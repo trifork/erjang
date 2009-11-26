@@ -241,11 +241,15 @@ public class EBig extends EInteger {
 		return other.r_bsl(value);
 	}
 
+	public EInteger bsl(int rhs) {
+		return ERT.box(value.shiftLeft(rhs));
+	}
+
 	EInteger r_bsl(int lhs) {
 		if (BIG_32.compareTo(value) <= 0) {
 			return new ESmall(0);
 		} else {
-			return ERT.box(lhs << value.intValue());
+			return ERT.box(BigInteger.valueOf(lhs).shiftLeft(value.intValue()));
 		}
 	}
 

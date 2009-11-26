@@ -35,6 +35,10 @@ public abstract class EObject implements Comparable<EObject> {
 		return null;
 	}
 	
+	public EFun testFunction() {
+		return null;
+	}
+	
 	public EFun testFunction2(int nargs) {
 		return null;
 	}
@@ -175,6 +179,7 @@ public abstract class EObject implements Comparable<EObject> {
 
 	@BIF(name="bsl")
 	public EInteger bsl(EObject rhs) { throw ERT.badarg(this, rhs); }
+	public EInteger bsl(int rhs) { throw ERT.badarg(this, rhs); }
 	EInteger r_bsl(int lhs) { throw ERT.badarg(lhs, this); }
 	EInteger r_bsl(BigInteger lhs) { throw ERT.badarg(lhs, this); }
 	
@@ -264,8 +269,16 @@ public abstract class EObject implements Comparable<EObject> {
 	 * @param o2
 	 * @return
 	 */
-	public boolean ge(EObject o2) {
-		return this.compareTo(o2) >= 0;
+	public EAtom ge(EObject o2) {
+		return ERT.box ( this.compareTo(o2) >= 0 );
+	}
+
+
+	/**
+	 * @return
+	 */
+	public EBitString testBinString() {
+		return null;
 	}
 
 

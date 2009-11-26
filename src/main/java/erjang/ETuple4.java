@@ -25,6 +25,11 @@ public class ETuple4 extends ETuple {
 	public EObject elem3;
 	public EObject elem4;
 
+	static public ETuple4 cast(ETuple value) {
+		if (value.arity() == 4) return (ETuple4) value;
+		return null;
+	}
+	
 	@Override
 	public ETuple4 blank() {
 		ETuple4 res = new ETuple4();

@@ -1,9 +1,11 @@
 package erjang.m.erlang;
 
 import erjang.BIF;
+import erjang.EAtom;
 import erjang.EInteger;
 import erjang.ENumber;
 import erjang.EObject;
+import erjang.ESmall;
 import erjang.BIF.Type;
 
 public class BinOps {
@@ -24,7 +26,7 @@ public class BinOps {
 
 	
 	@BIF
-	static public ENumber band(EObject o1, EObject o2)
+	static public EInteger band(EObject o1, EObject o2)
 	{
 		return o1.band(o2);
 	}
@@ -32,26 +34,32 @@ public class BinOps {
 	
 	
 	@BIF
-	static public ENumber bor(EObject o1, EObject o2)
+	static public EInteger bor(EObject o1, EObject o2)
 	{
 		return o1.bor(o2);
 	}
 	
 
 	@BIF
-	static public ENumber bsr(EObject o1, EObject o2)
+	static public EInteger bsr(EObject o1, EObject o2)
 	{
 		return o1.bsr(o2);
 	}
 	
 	@BIF
-	static public ENumber bsl(EObject o1, EObject o2)
+	static public EInteger bsl(EObject o1, EObject o2)
 	{
 		return o1.bsl(o2);
 	}
 	
+	@BIF
+	static public EInteger bsl(EInteger o1, ESmall o2)
+	{	
+		return o1.bsl(o2);
+	}
+	
 	@BIF(name=">=")
-	static public boolean ge(EObject o1, EObject o2) {
+	static public EAtom ge(EObject o1, EObject o2) {
 		return o1.ge(o2);
 	}
 	

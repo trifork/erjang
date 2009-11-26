@@ -56,8 +56,7 @@ public class ESmall extends EInteger {
 	}
 
 	@Override
-	public
-	boolean equalsExactly(EObject rhs) {
+	public boolean equalsExactly(EObject rhs) {
 		return rhs.r_compare_same_exactly(this);
 	}
 
@@ -89,7 +88,7 @@ public class ESmall extends EInteger {
 
 	@Override
 	public int hashCode() {
-		return (int)((long)value ^ (((long)value) >>> 32));
+		return (int) ((long) value ^ (((long) value) >>> 32));
 	}
 
 	@Override
@@ -225,7 +224,7 @@ public class ESmall extends EInteger {
 		return other.r_idiv(value);
 	}
 
-	public EInteger idiv(int rhs) { 
+	public EInteger idiv(int rhs) {
 		return ERT.box(value / rhs);
 	}
 
@@ -275,8 +274,20 @@ public class ESmall extends EInteger {
 		return other.r_bsl(value);
 	}
 
+	public EInteger bsl(int rhs) {
+		if (rhs < 32) {
+			return ERT.box(((long) value) << rhs);
+		} else {
+			return ERT.box(BigInteger.valueOf(value).shiftLeft(rhs));
+		}
+	}
+
 	public EInteger r_bsl(int lhs) {
-		return ERT.box((lhs << value));
+		if (value < 32) {
+			return ERT.box(((long) lhs) << value);
+		} else {
+			return ERT.box(BigInteger.valueOf(lhs).shiftLeft(value));
+		}
 	}
 
 	public EInteger r_bsl(BigInteger lhs) {

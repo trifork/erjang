@@ -37,4 +37,9 @@ public class EBitStringBuilder {
 		return null;
 	}
 	
+	public void put_integer(EObject value, int flags) {
+		
+
+	}
+	
 }

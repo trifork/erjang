@@ -21,6 +21,11 @@ package erjang;
 public class ETuple1 extends ETuple {
 	public EObject elem1;
 	
+	static public ETuple1 cast(ETuple value) {
+		if (value.arity() == 1) return (ETuple1) value;
+		return null;
+	}
+	
 	@Override
 	public ETuple1 blank() {
 		ETuple1 res = new ETuple1();
