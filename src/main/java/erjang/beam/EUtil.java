@@ -164,7 +164,7 @@ public class EUtil {
 	 * @return
 	 */
 	public static String getFunClassName(Type self_type, ExtFunc efun) {
-		return self_type.getInternalName() + "$"
+		return self_type.getInternalName() + "$FN_"
 		+ getJavaName(efun.fun, efun.no);
 	}
 

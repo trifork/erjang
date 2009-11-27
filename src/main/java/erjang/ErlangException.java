@@ -42,10 +42,24 @@ public class ErlangException extends RuntimeException {
 	}
 
 	public ErlangException(EAtom reason, Object... args) {
-		super(reason.getName());
+		super(reason.getName() + show(args));
 		this.reason = reason;
 		this.trace = init_trace();
 		this.trace = fix_args(trace, args);
+	}
+	
+		/**
+	 * @param args
+	 * @return
+	 */
+	private static String show(Object[] args) {
+		StringBuilder sb = new StringBuilder("[");
+		for (int i = 0; i < args.length; i++) {
+			if (i!=0) sb.append(',');
+			sb.append(args[i]);
+		}
+		sb.append(']');
+		return sb.toString();
 	}
 
 	public ErlangException(EAtom reason, Throwable cause, Object... args) {
@@ -114,7 +128,7 @@ public class ErlangException extends RuntimeException {
 		Class<?>[] class_trace = null;
 		StackTraceElement[] stack_trace = this.getStackTrace();
 
-		for (int i = stack_trace.length - 1; i <= 0; i++) {
+		for (int i = stack_trace.length - 1; i >= 0; i--) {
 			StackTraceElement elm = stack_trace[i];
 
 			ETuple t = cache.get(elm);
@@ -140,9 +154,11 @@ public class ErlangException extends RuntimeException {
 
 			ETuple spec = resolve(c, m, m.getAnnotation(BIF.class), m
 					.getAnnotation(ErlFun.class));
-			cache.put(elm, spec);
-
-			list = list.cons(spec);
+			
+			if (spec != null) {
+				cache.put(elm, spec);
+				list = list.cons(spec);
+			}
 		}
 
 		return list;
@@ -156,6 +172,8 @@ public class ErlangException extends RuntimeException {
 	 */
 	private ETuple resolve(Class<?> c, Method m, BIF ann1, ErlFun ann2) {
 
+		if (ann1 == null && ann2 == null) return null;
+		
 		String module;
 		if (ann2 == null) {
 			module = get_class_module(c);

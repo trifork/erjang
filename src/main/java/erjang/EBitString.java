@@ -185,7 +185,7 @@ public class EBitString extends EObject {
 
 	public int intBitsAt(int bitPos, int bitLength) {
 
-		if (bitPos + bitLength > this.bits) {
+		if (bitOff + bitPos + bitLength > this.bits) {
 			throw new IllegalArgumentException(
 					"reading beyond end of BitString");
 		}
@@ -367,6 +367,19 @@ public class EBitString extends EObject {
 		}
 		sb.append(">>");
 		return sb.toString();
+	}
+
+	/**
+	 * @return
+	 */
+	public byte[] toByteArray() {
+		if (!isBinary()) throw ERT.badarg();
+		
+		byte[] result = new byte[bits/8];
+		for (int i = 0; i < result.length; i++) {
+			result[i] = this.byteAt(i*8);
+		}
+		return result;
 	}
 
 }

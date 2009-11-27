@@ -55,6 +55,7 @@ import erjang.EPID;
 import erjang.EPort;
 import erjang.EProc;
 import erjang.ERT;
+import erjang.ERef;
 import erjang.ESeq;
 import erjang.ESmall;
 import erjang.EString;
@@ -271,7 +272,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			mv.visitMethodInsn(INVOKESPECIAL, clazz, "<init>", "()V");
 
 			mv.visitFieldInsn(PUTSTATIC, self_type.getInternalName(), field,
-					"L" + clazz + ";");
+					"L" + funt.get(field) + ";");
 
 		}
 
@@ -334,6 +335,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 	Map<String, Integer> lambdas_xx = new TreeMap<String, Integer>();
 	Map<String, String> funs = new HashMap<String, String>();
+	Map<String, String> funt = new HashMap<String, String>();
 
 	class ASMFunctionAdapter implements FunctionVisitor2 {
 
@@ -429,7 +431,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				freevars = 0;
 
 				FieldVisitor fv = cv.visitField(ACC_STATIC | ACC_FINAL, mname,
-						"L" + full_inner_name + ";", null, null);
+						"L" + EFUN_NAME+arity + ";", null, null);
 				
 				if (isExported(fun_name, arity)) {
 					System.err.println("export "+module_name+":"+fun_name+"/"+arity);
@@ -443,6 +445,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				fv.visitEnd();
 
 				funs.put(mname, full_inner_name);
+				funt.put(mname, EFUN_NAME+arity);
 
 			}
 
@@ -1178,19 +1181,19 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			private Type push_immediate(EObject value, Type stack_type) {
 
 				if (value == ERT.NIL) {
-					mv.visitFieldInsn(GETSTATIC, ENIL_NAME, "NIL", ENIL_TYPE
+					mv.visitFieldInsn(GETSTATIC, ERT_NAME, "NIL", ENIL_TYPE
 							.getDescriptor());
 					return ENIL_TYPE;
 				}
 
 				if (value == ERT.TRUE) {
-					mv.visitFieldInsn(GETSTATIC, ERT_NAME, "ATOM_TRUE",
+					mv.visitFieldInsn(GETSTATIC, ERT_NAME, "TRUE",
 							EATOM_DESC);
 					return EATOM_TYPE;
 				}
 
 				if (value == ERT.FALSE) {
-					mv.visitFieldInsn(GETSTATIC, ERT_NAME, "ATOM_FALSE",
+					mv.visitFieldInsn(GETSTATIC, ERT_NAME, "FALSE",
 							EATOM_DESC);
 					return EATOM_TYPE;
 				}
@@ -1433,16 +1436,16 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 									+ ")" + getTubleType(3).getDescriptor());
 
 					mv.visitInsn(DUP);
-					mv.visitFieldInsn(GETFIELD, ETUPLE_NAME + 3, "elm0",
+					mv.visitFieldInsn(GETFIELD, ETUPLE_NAME + 3, "elem1",
 							EOBJECT_DESC);
 					mv.visitVarInsn(ASTORE, xregs[0]);
 
 					mv.visitInsn(DUP);
-					mv.visitFieldInsn(GETFIELD, ETUPLE_NAME + 3, "elm1",
+					mv.visitFieldInsn(GETFIELD, ETUPLE_NAME + 3, "elem2",
 							EOBJECT_DESC);
 					mv.visitVarInsn(ASTORE, xregs[1]);
 
-					mv.visitFieldInsn(GETFIELD, ETUPLE_NAME + 3, "elm2",
+					mv.visitFieldInsn(GETFIELD, ETUPLE_NAME + 3, "elem3",
 							EOBJECT_DESC);
 					mv.visitVarInsn(ASTORE, xregs[2]);
 
@@ -1510,13 +1513,13 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					push(out, out.type);
 					push(val, EOBJECT_TYPE);
 					mv.visitFieldInsn(PUTFIELD, out.type.getInternalName(),
-							"elm" + pos, EOBJECT_DESC);
+							"elem" + pos, EOBJECT_DESC);
 					return;
 
 				} else if (opcode == BeamOpcode.get_tuple_element) {
 					push(val, val.type);
 					mv.visitFieldInsn(GETFIELD, val.type.getInternalName(),
-							"elm" + pos, EOBJECT_DESC);
+							"elem" + (pos+1), EOBJECT_DESC);
 					pop(out, EOBJECT_TYPE);
 					return;
 				} else if (opcode == BeamOpcode.set_tuple_element) {
@@ -1900,7 +1903,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				if (opcode == BeamOpcode.allocate_zero
 						|| opcode == BeamOpcode.allocate_heap_zero) {
 
-					mv.visitFieldInsn(GETSTATIC, ENIL_NAME, "NIL", ENIL_TYPE
+					mv.visitFieldInsn(GETSTATIC, ERT_NAME, "NIL", ENIL_TYPE
 							.getDescriptor());
 					for (int i = 0; i < ys.length; i++) {
 						if (i != (ys.length - 1))
@@ -2259,7 +2262,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					mv.visitMethodInsn(INVOKESTATIC, self_type
 							.getInternalName(), EUtil.getJavaName(fun.fun,
 							fun.no)
-							+ (is_tail ? "$tail" : ""), EUtil.getSignature(
+							+ (is_tail ? "$tail" : "$call"), EUtil.getSignature(
 							args.length, true));
 
 					if (is_tail) {
@@ -2310,7 +2313,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 	static Method IS_PID_TEST = Method.getMethod("erjang.EPID testPID()");
 	static Method IS_PORT_TEST = Method.getMethod("erjang.EPort testPort()");
 	static Method IS_REFERENCE_TEST = Method
-			.getMethod("erjang.EReference testReference()");
+			.getMethod(ERef.class.getName() + " testReference()");
 	static Method IS_FUNCTION_TEST = Method
 			.getMethod("erjang.EFun testFunction()");
 	static Method IS_FUNCTION2_TEST = Method
@@ -2411,7 +2414,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 		}
 		for (int i = 0; i < freevars; i++) {
 			mv.visitVarInsn(ALOAD, 0);
-			mv.visitFieldInsn(GETFIELD, outer_name + "$" + mname, "fv" + i,
+			mv.visitFieldInsn(GETFIELD, outer_name + "$FN_" + mname, "fv" + i,
 					EOBJECT_DESC);
 		}
 		mv.visitMethodInsn(INVOKESTATIC, outer_name, mname, EUtil.getSignature(
@@ -2442,7 +2445,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 		mv.visitEnd();
 	}
 
-	private static void make_invoketail_method(ClassWriter cw,
+	public static void make_invoketail_method(ClassWriter cw,
 			String full_inner, int arity, int freevars) {
 		MethodVisitor mv;
 		mv = cw.visitMethod(ACC_PUBLIC, "invoke_tail", EUtil.getSignature(arity

@@ -41,7 +41,7 @@ import erjang.EDouble;
 import erjang.EFun;
 import erjang.EInteger;
 import erjang.ERT;
-import erjang.EReference;
+import erjang.ERef;
 import erjang.ESmall;
 import erjang.EList;
 import erjang.ENil;
@@ -95,7 +95,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 	static final Type EFUN_TYPE = Type.getType(EFun.class);
 	static final Type EPID_TYPE = Type.getType(EPID.class);
 	static final Type EPORT_TYPE = Type.getType(EPort.class);
-	static final Type EREFERENCE_TYPE = Type.getType(EReference.class);
+	static final Type EREFERENCE_TYPE = Type.getType(ERef.class);
 	static final Type EMATCHSTATE_TYPE = Type.getType(EBinMatchState.class);
 
 	static final EObject X_ATOM = EAtom.intern("x");

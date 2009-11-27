@@ -16,19 +16,12 @@
  * limitations under the License.
  **/
 
-package erjang.m.erlang;
 
-import erjang.ENative;
+package erjang;
 
 /**
- * Hook to identify classes that contain native code for this module
+ * 
  */
-public class Native extends ENative {
-
-	@Override
-	protected Class<?>[] getNativeClasses() {
-		return new Class[] { BinOps.class, ErlBif.class, ErlProc.class,
-				ErlList.class, ErlConvert.class, ErlPort.class };
-	}
-
+public interface EFunHandler {
+	EObject invoke(EProc proc, EObject[] args);
 }

@@ -19,20 +19,10 @@
 
 package erjang;
 
+
 /**
  * 
  */
-public class EReference extends EObject {
-
-	@Override
-	int compare_same(EObject rhs) {
-		// TODO: make faster
-		return toString().compareTo(rhs.toString());
-	}
-	
-	@Override
-	int cmp_order() {
-		return 2;
-	}
+public class EPeer extends EAbstractNode {
 
 }

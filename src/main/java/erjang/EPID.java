@@ -42,6 +42,13 @@ public class EPID extends EObject {
 		// TODO: make faster
 		return toString().compareTo(rhs.toString());
 	}
+
+	/**
+	 * @param msg
+	 */
+	public void send(EObject msg) {
+		throw new NotImplemented();
+	}
 	
 
 }

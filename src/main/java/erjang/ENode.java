@@ -16,19 +16,20 @@
  * limitations under the License.
  **/
 
-package erjang.m.erlang;
 
-import erjang.ENative;
+package erjang;
 
 /**
- * Hook to identify classes that contain native code for this module
+ * 
  */
-public class Native extends ENative {
+public class ENode extends ELocalNode {
 
-	@Override
-	protected Class<?>[] getNativeClasses() {
-		return new Class[] { BinOps.class, ErlBif.class, ErlProc.class,
-				ErlList.class, ErlConvert.class, ErlPort.class };
+	/**
+	 * @param amNode
+	 */
+	public boolean connect(EAtom node) {
+		// TODO: implement
+		return false;
 	}
 
 }

@@ -18,8 +18,12 @@
 
 package erjang;
 
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.math.BigInteger;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 
 public class ERT {
 	
@@ -34,7 +38,7 @@ public class ERT {
 	public static final EAtom AM_BADARITH = EAtom.intern("badarith");
 	public static final EAtom AM_MODULE = EAtom.intern("module");
 
-	public static EObject cons(EObject h, EObject t) {
+	public static ECons cons(EObject h, EObject t) {
 		return t.cons(h);
 	}
 
@@ -199,6 +203,7 @@ public class ERT {
 
 	static BigInteger INT_MIN_AS_BIG = BigInteger.valueOf(Integer.MIN_VALUE);
 	static BigInteger INT_MAX_AS_BIG = BigInteger.valueOf(Integer.MAX_VALUE);
+	private static ENode localNode;
 
 	/**
 	 * @param add
@@ -232,9 +237,76 @@ public class ERT {
 	}
 
 	public static final ENil NIL = new ENil();
+	public static final EAtom EXIT = EAtom.intern("EXIT");
+	public static final EAtom IGNORED = EAtom.intern("ignored");
+	private static final EAtom am_badmatch = EAtom.intern("badmatch");
 
 	public EBitStringBuilder bs_init(int size, int flags) {
 		return new EBitStringBuilder(size, flags);
+	}
+
+	/**
+	 * @param e
+	 * @return
+	 */
+	public static ESmall get_posix_code(IOException e) {
+		
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	/**
+	 * @param owner
+	 * @param make
+	 */
+	public static void send(EObject pid, EObject msg) {
+		EPID p;
+		if ((p=pid.testPID()) == null) {
+			throw badarg(pid, msg);
+		}
+		
+		p.send(msg);
+	}
+
+	/**
+	 * @return
+	 */
+	public static ENode getLocalNode() {
+		return localNode;
+	}
+
+	static EAtom am_undef = EAtom.intern("undef");
+	
+	/**
+	 * @param fun
+	 * @return
+	 */
+	public static ErlangException undef(FUN fun, EObject... args) {
+		throw new ErlangException(am_undef, args);
+	}
+
+	public static EObject apply$last(EProc proc, EObject arg1, EObject mod, EObject fun)
+	{
+		EAtom m = mod.testAtom();
+		EAtom f = fun.testAtom();
+		
+		if (m==null||f==null) throw ERT.badarg(mod, fun, arg1);
+		
+		return EModule.resolve(new FUN(m,f,1)).invoke(proc, NIL.cons(arg1).toArray());
+	}
+
+	static Map<EAtom,EObject> register = new ConcurrentHashMap<EAtom, EObject>();
+	
+	/**
+	 * @param aname
+	 * @param eObject
+	 */
+	public static void register(EAtom aname, EObject eObject) {
+		register.put(aname, eObject);
+	}
+	
+	public static EObject badmatch(EObject val) {
+		throw new ErlangException(am_badmatch, val);
 	}
 	
 }

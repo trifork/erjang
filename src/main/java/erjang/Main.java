@@ -23,6 +23,8 @@ import java.net.MalformedURLException;
 
 import erjang.beam.Compiler;
 import erjang.beam.EUtil;
+import erjang.m.lists.bootstrap_lists;
+import erjang.m.net_kernel.boot_net_kernel;
 
 /**
  * 
@@ -48,6 +50,9 @@ public class Main {
 		}
 		*/
 		
+		//new bootstrap_lists();
+		//new boot_net_kernel();
+		
 		EModule[] modules = new EModule[MODULES.length];
 		File preloaded_dir = new File(PRELOADED);
 		
@@ -64,9 +69,11 @@ public class Main {
 			modules[i] = EModule.load_module(EAtom.intern(mod), path.toURI().toURL());
 		}
 
-		for (int i = 0; i < modules.length; i++) {
-			modules[i].resolve();
-		}
+		FUN start = new FUN(EAtom.intern("otp_ring0"), EAtom.intern("start"), 2);
+		EProc proc = new EProc();
+		EFun boot = EModule.resolve(start);
+		
+		boot.invoke(proc, new EObject[] { ERT.NIL, ERT.NIL } );
 		
 	}
 }

@@ -801,8 +801,8 @@ public class ErlBif {
 	}
 
 	@BIF
-	public static EObject process_flag(EObject a1, EObject a2) {
-		throw new NotImplemented();
+	public static EObject process_flag(EProc proc, EObject a1, EObject a2) {
+		return proc.process_flag(a1.testAtom(), a2);
 	}
 
 	@BIF

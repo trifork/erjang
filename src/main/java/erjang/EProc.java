@@ -24,20 +24,25 @@ import java.util.Map;
 
 
 
+
 /**
  * An erlang process
  */
 public class EProc {
 	public static final EObject TAIL_MARKER = new ETailMarker();
+
+	private static final EAtom am_trap_exit = EAtom.intern("trap_exit");
 	
 	public EFun tail;
 	public EObject arg0, arg1, arg2, arg3, arg4, arg5, arg6;
+	
+	private EPID self = new EPID();
 	
 	/**
 	 * @return
 	 */
 	public EPID self() {
-		throw new NotImplemented();
+		return self;
 	}
 	/**
 	 * @param key
@@ -46,6 +51,8 @@ public class EProc {
 	 */
 	
 	Map<EObject, EObject> pdict = new HashMap<EObject, EObject>();
+
+	private EAtom trap_exit;
 	
 	public EObject put(EObject key, EObject value) {
 		EObject res = pdict.put(key, value);
@@ -74,6 +81,36 @@ public class EProc {
 		EObject res = pdict.remove(key);
 		if (res == null) res = ERT.NIL;
 		return res;
+	}
+
+	/**
+	 * @return
+	 */
+	public EPID group_leader() {
+		throw new NotImplemented();
+	}
+
+	/**
+	 * @return
+	 */
+	public ELocalNode getLocalNode() {
+		return ERT.getLocalNode();
+	}
+
+	/**
+	 * @param testAtom
+	 * @param a2
+	 * @return
+	 */
+	public EObject process_flag(EAtom flag, EObject value) {
+		
+		if (flag == am_trap_exit) {
+			EAtom old = this.trap_exit;
+			trap_exit = value.testBoolean();
+			return old;
+		}
+
+		throw new NotImplemented();
 	}
 	
 }

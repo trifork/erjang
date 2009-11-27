@@ -30,13 +30,14 @@ public class EString extends ESeq implements CharSequence {
 
 	private static final Charset ISO_LATIN_1 = Charset.forName("ISO-8859-1");
 	
-	private byte[] data;
-	private int off;
+	final byte[] data;
+	final int off;
 	private int hash = -1;
 	
 	public EString(String value) {
 		this.hash = value.hashCode();
 		this.data = value.getBytes(ISO_LATIN_1);
+		this.off = 0;
 	}
 	
 	public EString testString()
@@ -270,7 +271,7 @@ public class EString extends ESeq implements CharSequence {
 	}
 
 	public ECons testCons() {
-		return length() == 0 ? null : this;
+		return this;
 	}
 	
 	/* (non-Javadoc)
@@ -353,5 +354,15 @@ public class EString extends ESeq implements CharSequence {
 	 */
 	public EBitString asBitString() {
 		return new EBinary(data, off, length());
+	}
+
+	/**
+	 * @param eObject
+	 * @return
+	 */
+	public static EString make(EObject eObject) {
+		ESeq str;
+		if ((str=eObject.testSeq()) == null) throw ERT.badarg();
+		return make(str);
 	}
 }
