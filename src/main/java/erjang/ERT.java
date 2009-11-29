@@ -23,14 +23,22 @@ import java.lang.reflect.Method;
 import java.math.BigInteger;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 
+@Module(value="erlang")
 public class ERT {
 	
-	public static EObject raise(EObject kind, EObject value, EObject trace) {
-
-		// TODO: fix exception
-		throw new ErlangException(kind.testAtom());
+	@BIF
+	public static EObject raise(EObject kind, EObject value, EObject trace) throws ErlangException {
+		
+		EAtom clazz = kind.testAtom();
+		ESeq traz = trace.testSeq();
+		
+		if (clazz == null || traz == null) throw badarg(kind,value,trace);
+		
+		throw new ErlangRaise(clazz, value, traz);
 	}
 
 	public static final EAtom AM_BADARG = EAtom.intern("badarg");
@@ -42,24 +50,36 @@ public class ERT {
 		return t.cons(h);
 	}
 
-	public static ErlangException badarith(Object... args) {
-		throw new ErlangException(AM_BADARITH, args);
+	public static ErlangError badarg() {
+		throw new ErlangError(AM_BADARG);
 	}
 
-	public static ErlangException badarg() {
-		throw new ErlangException(AM_BADARG);
+	public static ErlangError badarg(EObject... args) {
+		throw new ErlangError(AM_BADARG, args);
 	}
 
-	public static ErlangException badarg(Throwable cause, Object... args) {
-		throw new ErlangException(AM_BADARG, cause, args);
+	public static ErlangError badarg(EObject o1, EObject o2) {
+		throw new ErlangError(AM_BADARG, NIL.cons(o2).cons(o1));
 	}
 
-	public static ErlangException badarg(Object... args) {
-		throw new ErlangException(AM_BADARG, args);
+	public static ErlangError badarg(int o1, EObject o2) {
+		throw new ErlangError(AM_BADARG, NIL.cons(o2).cons(o1));
 	}
 
-	public static ErlangException badarg(Object o1, Object o2) {
-		throw new ErlangException(AM_BADARG, new Object[] { o1, o2 });
+	public static ErlangError badarg(EObject o1, int o2) {
+		throw new ErlangError(AM_BADARG, NIL.cons(o2).cons(o1));
+	}
+
+	public static ErlangError badarg(double o1, EObject o2) {
+		throw new ErlangError(AM_BADARG, NIL.cons(o2).cons(o1));
+	}
+
+	public static ErlangError badarg(EObject o1, double o2) {
+		throw new ErlangError(AM_BADARG, NIL.cons(o2).cons(o1));
+	}
+
+	public static ErlangError badarg(BigInteger o1, EObject o2) {
+		throw new ErlangError(AM_BADARG, NIL.cons(o2).cons(o1));
 	}
 
 	public static final EAtom TRUE = EAtom.intern("true");
@@ -240,6 +260,10 @@ public class ERT {
 	public static final EAtom EXIT = EAtom.intern("EXIT");
 	public static final EAtom IGNORED = EAtom.intern("ignored");
 	private static final EAtom am_badmatch = EAtom.intern("badmatch");
+	private static final EAtom am_case_clause = EAtom.intern("case_clause");
+	static final EObject am_undefined = EAtom.intern("undefined");
+	private static final EObject am_receive_clause = EAtom.intern("receive_clause");
+	public static final EObject AM_NOT_IMPLEMENTED = EAtom.intern("not_implemented");
 
 	public EBitStringBuilder bs_init(int size, int flags) {
 		return new EBitStringBuilder(size, flags);
@@ -259,13 +283,24 @@ public class ERT {
 	 * @param owner
 	 * @param make
 	 */
-	public static void send(EObject pid, EObject msg) {
+	@BIF(name="!")
+	public static EObject send(EProc proc, EObject pid, EObject msg) {
+		
+		proc.check_exit();
+		
 		EPID p;
-		if ((p=pid.testPID()) == null) {
-			throw badarg(pid, msg);
+		if ((p=pid.testPID()) != null) {
+			p.send(msg);
+			return msg;
 		}
 		
-		p.send(msg);
+		EObject val = whereis(pid);
+		if ((p=pid.testPID()) != null) {
+			p.send(msg);
+			return msg;
+		}
+		
+		throw badarg(pid,msg);
 	}
 
 	/**
@@ -282,7 +317,7 @@ public class ERT {
 	 * @return
 	 */
 	public static ErlangException undef(FUN fun, EObject... args) {
-		throw new ErlangException(am_undef, args);
+		throw new ErlangError(am_undef, args);
 	}
 
 	public static EObject apply$last(EProc proc, EObject arg1, EObject mod, EObject fun)
@@ -292,7 +327,11 @@ public class ERT {
 		
 		if (m==null||f==null) throw ERT.badarg(mod, fun, arg1);
 		
-		return EModule.resolve(new FUN(m,f,1)).invoke(proc, NIL.cons(arg1).toArray());
+		proc.arg0 = arg1;
+		proc.tail = EModule.resolve(new FUN(m,f,1));
+		return EProc.TAIL_MARKER;
+		
+//		.invoke(proc, NIL.cons(arg1).toArray());
 	}
 
 	static Map<EAtom,EObject> register = new ConcurrentHashMap<EAtom, EObject>();
@@ -304,9 +343,60 @@ public class ERT {
 	public static void register(EAtom aname, EObject eObject) {
 		register.put(aname, eObject);
 	}
-	
-	public static EObject badmatch(EObject val) {
-		throw new ErlangException(am_badmatch, val);
+
+	/**
+	 * @param regname
+	 * @return
+	 */
+	public static EObject whereis(EObject regname) {
+		EObject result = register.get(regname);
+		if (result == null) return am_undefined;
+		return result;
 	}
+
+	public static EObject badmatch(EObject val) {
+		throw new ErlangError(am_badmatch, val);
+	}
+	
+	public static EObject decode_exception2(final ErlangException e) {
+		return e.getCatchValue();
+	}
+	
+	public static ETuple3 decode_exception3(final ErlangException e) {
+		return e.getTryValue();
+	}
+	
+	public static EObject case_end(EObject val) {
+		throw new ErlangError(ETuple.make(am_case_clause, val, box(val.hashCode())));
+	}
+	
+	static Executor executor = new ScheduledThreadPoolExecutor(8);
+	
+	public static void run(EProc proc) {
+		executor.execute(proc);
+	}
+	
+	/** peek mbox */
+	public static EObject receive_peek(EProc proc) {
+		return proc.mbox_peek();
+	}
+	
+	public static void remove_message(EProc proc) {
+		proc.mbox_remove_one();
+	}
+	
+	public static void wait_forever(EProc proc) {
+		proc.mbox_wait();
+	}
+	
+	public static EObject loop_rec_end(EProc proc) {
+		EObject msg = proc.mbox_peek();
+		throw new ErlangError(am_receive_clause, msg);
+	}
+	
+	public static int unboxToInt(EInteger i) {
+		return i.intValue();
+	}
+
 	
 }

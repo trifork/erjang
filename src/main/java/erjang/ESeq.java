@@ -18,6 +18,8 @@
 
 package erjang;
 
+import java.io.ByteArrayOutputStream;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -55,6 +57,69 @@ public abstract class ESeq extends ECons {
 			curr = curr.tail();
 		}
 		return count;
+	}
+
+	/**
+	 * @param args
+	 * @return
+	 */
+	public static ESeq fromArray(EObject[] args) {
+		ESeq res = ERT.NIL;
+		for (int i = args.length-1; i >= 0; i--) {
+			res = res.cons(args[i]);
+		}
+		return res;
+	}
+
+
+	/**
+	 * @param o1
+	 * @return
+	 */
+	public ESeq cons(int o1) {
+		return cons(ERT.box(o1));
+	}
+
+	/**
+	 * @param o1
+	 * @return
+	 */
+	public ESeq cons(double o1) {
+		return cons(ERT.box(o1));
+	}
+
+	/**
+	 * @param o1
+	 * @return
+	 */
+	public ESeq cons(BigInteger o1) {
+		return cons(ERT.box(o1));
+	}
+	
+	public EString testString() {
+		
+		ByteArrayOutputStream barr = new ByteArrayOutputStream();
+		
+		ESeq list = this;
+		while (!list.isNil()) {
+			
+			EObject head = list.head();
+			
+			ESmall intval;
+			if ((intval = head.testSmall()) == null) {
+				return null;
+			}
+			
+			int byteValue = intval.value & 0xff;
+			if (intval.value != byteValue) {
+				return null;
+			}
+			
+			barr.write( byteValue );
+			list = list.tail();
+		}
+		
+		return new EString(barr.toByteArray(), 0);
 	}
 
 }

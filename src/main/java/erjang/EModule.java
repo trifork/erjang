@@ -27,10 +27,12 @@ import java.math.BigInteger;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeSet;
 
 import sun.tools.java.Imports;
 
@@ -54,7 +56,16 @@ public abstract class EModule {
 
 		EModule defining_module;
 		EFun resolved_value;
-		Collection<Field> resolve_points = new ArrayList<Field>();
+		Collection<Field> resolve_points = new TreeSet<Field>(new Comparator<Field>() {
+
+			@Override
+			public int compare(Field o1, Field o2) {
+				if (o1==o2) return 0;
+				int c1 = o1.getDeclaringClass().getName().compareTo(o2.getDeclaringClass().getName());
+				if (c1 != 0) return c1;
+				int c2 = o1.getName().compareTo(o2.getName());
+				return c2;
+			}});
 
 		/**
 		 * @param ref
@@ -64,13 +75,15 @@ public abstract class EModule {
 		synchronized boolean add_import(Field ref) throws Exception {
 			resolve_points.add(ref);
 			if (resolved_value != null) {
+				//System.out.println("binding "+fun+" "+resolved_value+" -> "+ref);
 				ref.set(null, resolved_value);
 				return true;
 			} else {
 				Object h = EFun.get_fun_with_handler(fun.arity,
 						new EFunHandler() {
 							public EObject invoke(EProc proc, EObject[] args) {
-								throw new Error("{undef, [{"+fun.module+","+fun.function+","+fun.arity+"}]}");
+								System.out.println("undefined "+fun);
+								throw new ErlangUndefined(fun.module, fun.function, ESmall.make(fun.arity));
 							}
 						});
 				ref.set(null, h);
@@ -88,6 +101,7 @@ public abstract class EModule {
 			this.defining_module = definer;
 
 			for (Field f : resolve_points) {
+				//System.out.println("binding "+fun2+" "+value+" -> "+f);
 				f.set(null, value);
 			}
 		}
@@ -372,7 +386,7 @@ public abstract class EModule {
 			repo.close();
 			url = dir.toURI().toURL();
 		} catch (IOException e) {
-			throw new ErlangException(e);
+			throw new ErlangError(e);
 		}
 
 		String internalName = erjang.beam.Compiler.moduleClassName(mod
@@ -389,8 +403,7 @@ public abstract class EModule {
 		try {
 			mi = clazz.newInstance();
 		} catch (Exception e) {
-			throw new ErlangException(AM_BADARG, "erlang", "load_module",
-					new Object[] { mod, bin }, e);
+			throw new ErlangError(AM_BADARG, mod, bin);
 		}
 
 		// mi.read_annotations();
@@ -406,14 +419,13 @@ public abstract class EModule {
 		try {
 			clazz = (Class<? extends EModule>) loader.loadClass(java_name);
 		} catch (ClassNotFoundException e1) {
-			throw new Error(e1);
+			throw new ErlangError(e1);
 		}
 		EModule mi;
 		try {
 			mi = clazz.newInstance();
 		} catch (Exception e) {
-			throw new ErlangException(AM_BADARG, "erlang", "load_module",
-					new Object[] { mod }, e);
+			throw new ErlangError(e);
 		}
 
 		// mi.read_annotations();

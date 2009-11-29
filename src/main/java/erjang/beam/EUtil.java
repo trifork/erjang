@@ -37,16 +37,19 @@ public class EUtil {
 	static final Pattern SIMPLE_ID = Pattern
 			.compile("^([a-z]|[A-Z])\\p{Alnum}*$");
 
-	private static final String EOBJECT_DESC = CompilerVisitor.EOBJECT_TYPE.getDescriptor();
-	private static final String EPROC_DESC = CompilerVisitor.EPROC_TYPE.getDescriptor();
+	private static final String EOBJECT_DESC = CompilerVisitor.EOBJECT_TYPE
+			.getDescriptor();
+	private static final String EPROC_DESC = CompilerVisitor.EPROC_TYPE
+			.getDescriptor();
 
 	static Map<Integer, String> signatures = new HashMap<Integer, String>();
 	static Map<Integer, String> noproc_signatures = new HashMap<Integer, String>();
 
 	public static String getSignature(int arity, boolean withProc) {
-		
-		Map<Integer,String> signatures = withProc ? noproc_signatures : EUtil.signatures;
-		
+
+		Map<Integer, String> signatures = withProc ? noproc_signatures
+				: EUtil.signatures;
+
 		String res = signatures.get(arity);
 		if (res == null) {
 			StringBuffer sb = new StringBuffer("(");
@@ -54,7 +57,7 @@ public class EUtil {
 			if (withProc) {
 				sb.append(EPROC_DESC);
 			}
-			
+
 			for (int i = 0; i < arity; i++) {
 				sb.append(EOBJECT_DESC);
 			}
@@ -68,12 +71,10 @@ public class EUtil {
 		return res;
 	}
 
-
-
 	static String toJavaIdentifier(EAtom name) {
 		return toJavaIdentifier(name.getName());
 	}
-	
+
 	/** encode any char sequence into a valid java identifier */
 	static String toJavaIdentifier(String name) {
 		if (SIMPLE_ID.matcher(name).matches())
@@ -130,7 +131,6 @@ public class EUtil {
 		sb.append(Integer.toHexString(b).toUpperCase());
 	}
 
-	
 	public static String plen(Object o) {
 		String s = String.valueOf(o);
 		StringBuilder sb = new StringBuilder("_");
@@ -141,7 +141,7 @@ public class EUtil {
 
 	public static String getJavaName(EAtom fun, int arity) {
 		String fname = fun.getName();
-		if(fname.indexOf("__") == -1) {
+		if (fname.indexOf("__") == -1) {
 			return toJavaIdentifier(fun.getName() + "__" + arity);
 		} else {
 			return toJavaIdentifier(plen(fun.getName()) + "__" + arity);
@@ -156,8 +156,6 @@ public class EUtil {
 		return toJavaIdentifier(fun.mod) + "__" + getJavaName(fun.fun, fun.no);
 	}
 
-
-
 	/**
 	 * @param selfType
 	 * @param efun
@@ -165,7 +163,64 @@ public class EUtil {
 	 */
 	public static String getFunClassName(Type self_type, ExtFunc efun) {
 		return self_type.getInternalName() + "$FN_"
-		+ getJavaName(efun.fun, efun.no);
+				+ getJavaName(efun.fun, efun.no);
+	}
+
+	/**
+	 * @param arity
+	 * @param proc
+	 * @param returnType
+	 * @return
+	 */
+	public static String getSignature(int arity, boolean withProc,
+			Type returnType) {
+
+		StringBuffer sb = new StringBuffer("(");
+
+		if (withProc) {
+			sb.append(EPROC_DESC);
+		}
+
+		for (int i = 0; i < arity; i++) {
+			sb.append(EOBJECT_DESC);
+		}
+
+		sb.append(")");
+		sb.append(returnType.getDescriptor());
+
+		return sb.toString();
+	}
+
+	/**
+	 * @param methodName
+	 * @return
+	 */
+	public static String decodeJavaName(String methodName) {
+
+		int idx;
+		if ((idx = methodName.indexOf('$')) == -1)
+			return methodName;
+
+		StringBuilder sb = new StringBuilder();
+
+		int start = 0;
+		while (idx != -1) {
+			sb.append(methodName.substring(start, idx));
+			String hex = methodName.substring(idx + 1, idx + 3);
+			char chval;
+			try {
+				chval = (char) Integer.parseInt(hex, 16);
+			} catch (NumberFormatException e) {
+				chval = '?';
+			}
+			sb.append(chval);
+			start = idx + 3;
+			idx = methodName.indexOf('$', start);
+		}
+
+		sb.append(methodName.substring(start));
+
+		return sb.toString();
 	}
 
 }

@@ -16,41 +16,22 @@
  * limitations under the License.
  **/
 
+
 package erjang;
 
-public abstract class EPID extends EObject {
+/**
+ * 
+ */
+public class ErlangExit extends ErlangException {
 
-	@Override
-	int cmp_order() {
-		return 5;
+	/**
+	 * @param reason
+	 */
+	public ErlangExit(EObject reason) {
+		super(reason);
 	}
+
+	public EAtom getExClass() { return am_exit; }
+
 	
-	public EPID testPID() {
-		return this;
-	}
-
-	/**
-	 * @return
-	 */
-	public EString getName() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-	
-	@Override
-	int compare_same(EObject rhs) {
-		return toString().compareTo(rhs.toString());
-	}
-
-	/**
-	 * @param msg
-	 */
-	public abstract void send(EObject msg);
-
-	/**
-	 * @param self
-	 * @param result
-	 */
-	public abstract void send_exit(EPID from, EObject reason);
-
 }

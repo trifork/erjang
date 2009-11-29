@@ -16,41 +16,45 @@
  * limitations under the License.
  **/
 
+
 package erjang;
 
-public abstract class EPID extends EObject {
+/**
+ * 
+ */
+public class ErlangRaise extends ErlangException {
 
+	private final EAtom exClass;
+	private final ESeq trace;
+
+	/**
+	 * @param reason
+	 */
+	public ErlangRaise(EAtom ex_class, EObject reason, ESeq trace) {
+		super(reason);
+		this.exClass = ex_class;
+		this.trace = trace;
+	}
+
+	/* (non-Javadoc)
+	 * @see erjang.ErlangException#reason()
+	 */
 	@Override
-	int cmp_order() {
-		return 5;
+	public EObject reason() {
+		if (exClass == am_error) {
+			return ETuple.make(super.reason(), getTrace());
+		} else {
+			return super.reason();
+		}
 	}
 	
-	public EPID testPID() {
-		return this;
-	}
-
-	/**
-	 * @return
-	 */
-	public EString getName() {
-		// TODO Auto-generated method stub
-		return null;
+	@Override
+	public EAtom getExClass() {
+		return exClass;
 	}
 	
 	@Override
-	int compare_same(EObject rhs) {
-		return toString().compareTo(rhs.toString());
+	ESeq getTrace() {
+		return trace;
 	}
-
-	/**
-	 * @param msg
-	 */
-	public abstract void send(EObject msg);
-
-	/**
-	 * @param self
-	 * @param result
-	 */
-	public abstract void send_exit(EPID from, EObject reason);
-
 }

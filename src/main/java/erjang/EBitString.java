@@ -42,6 +42,15 @@ public class EBitString extends EObject {
 		return this;
 	}
 
+	public EBinary testBinary() { 
+		if (isBinary()) {
+			return new EBinary(toByteArray());
+		}
+		return null;
+	}
+	
+	
+	
 	@Override
 	int cmp_order() {
 		return CMP_ORDER_BITSTRING;
@@ -143,6 +152,10 @@ public class EBitString extends EObject {
 		this.data = data;
 		this.bitOff = offset;
 		this.bits = bits;
+		
+		if (data.length*8 < bitOff+bits) {
+			throw new IllegalArgumentException();
+		}
 	}
 
 	public boolean isBinary() {
@@ -340,13 +353,12 @@ public class EBitString extends EObject {
 		foo: if (bits % 8 == 0) {
 			StringBuilder sb = new StringBuilder("<<\"");
 
-			int i = 0;
-			for (; i < bits / 8; i += 8) {
-				char ch = (char) (0xff & octetAt(i));
+			for (int i = 0; i < bits; i += 8) {
+				char ch = (char) (0xff & intBitsAt(i, 8));
 				if (ch < ' ' || ch > '~')
 					break foo;
 				
-				sb.append((char)i);
+				sb.append((char)ch);
 			}
 
 			sb.append("\">>");

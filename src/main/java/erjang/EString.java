@@ -29,6 +29,8 @@ import org.objectweb.asm.Type;
 public class EString extends ESeq implements CharSequence {
 
 	private static final Charset ISO_LATIN_1 = Charset.forName("ISO-8859-1");
+
+	private static final EString EMPTY = new EString("");
 	
 	final byte[] data;
 	final int off;
@@ -45,7 +47,7 @@ public class EString extends ESeq implements CharSequence {
 		return this;
 	}
 	
-	private EString(byte[] data, int off)
+	EString(byte[] data, int off)
 	{
 		this.data = data;
 		this.off = off;
@@ -56,8 +58,12 @@ public class EString extends ESeq implements CharSequence {
 	 * @param list
 	 */
 	public static EString make(ECons list) {
-		if (list instanceof EString) { 
-			return (EString)list;
+		EString s;
+		if ((s=list.testString()) != null) { 
+			return s;
+
+		} else if (list.isNil()) {
+			return EString.EMPTY;
 			
 		} else {
 			ByteArrayOutputStream barr = new ByteArrayOutputStream();
@@ -118,7 +124,7 @@ public class EString extends ESeq implements CharSequence {
 		}
 		
 		ESeq seq;
-		if ((seq = rhs.testWellformedList()) == null) {
+		if ((seq = rhs.testWellformedList()) != null) {
 			
 			int i = 0;
 			
@@ -364,5 +370,17 @@ public class EString extends ESeq implements CharSequence {
 		ESeq str;
 		if ((str=eObject.testSeq()) == null) throw ERT.badarg();
 		return make(str);
+	}
+
+	/**
+	 * @param bin
+	 * @return
+	 */
+	public static EString fromBinary(EBinary bin) {
+		if ((bin.bitOff%8) == 0) {
+			return new EString(bin.data, bin.bitOff/8);
+		}
+
+		throw new NotImplemented();
 	}
 }

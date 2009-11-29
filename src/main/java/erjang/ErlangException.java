@@ -19,149 +19,182 @@
 package erjang;
 
 import java.lang.reflect.Method;
-import java.security.PrivilegedAction;
 import java.util.Collections;
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import erjang.beam.EUtil;
 
-public class ErlangException extends RuntimeException {
+public abstract class ErlangException extends RuntimeException {
+
+	private static final EAtom am_java_exception = EAtom
+			.intern("java_exception");
+	static final EAtom am_error = EAtom.intern("error");
+	static final EAtom am_throw = EAtom.intern("throw");
+	static final EAtom am_exit = EAtom.intern("exit");
+	private EObject reason;
+
+	public abstract EAtom getExClass();
+	
+	public ErlangException(EObject reason) {
+		this.reason = reason;
+	}
+
+	public ErlangException(Throwable cause) {
+		super(cause);
+		this.reason = am_java_exception;
+	}
+
+	public EObject reason() {
+		return reason;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Throwable#toString()
+	 */
+	@Override
+	public String getMessage() {
+		return String.valueOf(reason());
+	}
+
+	/**
+	 * @return
+	 */
+	public EObject getCatchValue() {
+		return new ExceptionTuple(this);
+	}
 
 	/**
 	 * 
 	 */
-	private static final String ERJANG_MODULES_DOT = "erjang.modules.";
-	private static final EAtom UNKNOWN = EAtom.intern("unknown");
-	public final EAtom reason;
-	ESeq trace;
-
-	public ErlangException(EAtom reason, Throwable cause) {
-		super(reason.getName(), cause);
-		this.reason = reason;
-		this.trace = init_trace();
-	}
-
-	public ErlangException(EAtom reason, Object... args) {
-		super(reason.getName() + show(args));
-		this.reason = reason;
-		this.trace = init_trace();
-		this.trace = fix_args(trace, args);
-	}
-	
+	private static final class ExceptionTuple extends EObject {
 		/**
-	 * @param args
-	 * @return
-	 */
-	private static String show(Object[] args) {
-		StringBuilder sb = new StringBuilder("[");
-		for (int i = 0; i < args.length; i++) {
-			if (i!=0) sb.append(',');
-			sb.append(args[i]);
+		 * 
+		 */
+		private final ErlangException e;
+
+		/**
+		 * @param e
+		 */
+		private ExceptionTuple(ErlangException e) {
+			this.e = e;
 		}
-		sb.append(']');
-		return sb.toString();
-	}
 
-	public ErlangException(EAtom reason, Throwable cause, Object... args) {
-		super(reason.getName(), cause);
-		this.reason = reason;
-		this.trace = init_trace();
-		this.trace = fix_args(trace, args);
-	}
-
-	public ErlangException(EAtom reason) {
-		super(reason.getName());
-		this.reason = reason;
-		this.trace = init_trace();
-	}
-
-	private ESeq fix_args(ESeq trace, Object... args) {
-		if (trace == ERT.NIL) {
-			trace = trace.cons(ETuple.make(UNKNOWN, UNKNOWN, listify(args)));
-		} else {
-			ETuple t = trace.head().testTuple();
-			trace = trace.tail().cons(
-					ETuple.make(t.elm(1), t.elm(2), listify(args)));
+		@Override
+		public String toString() {
+			return testTuple().toString();
 		}
-		return trace;
-	}
 
-	/**
-	 * @param e
-	 */
-	public ErlangException(Throwable e) {
-		super(e);
-
-		reason = EAtom.intern("error");
-	}
-
-	private ESeq listify(Object[] args) {
-		ESeq res = ERT.NIL;
-		for (int i = args.length - 1; i >= 0; i--) {
-			EObject h = erl_value(args[i]);
-			res = res.cons(h);
+		@Override
+		int cmp_order() {
+			return testTuple().cmp_order();
 		}
-		return res;
-	}
 
-	private EObject erl_value(Object val) {
-		if (val instanceof EObject)
-			return (EObject) val;
-		if (val instanceof String)
-			return EString.fromString((String) val);
-		if (val instanceof Integer)
-			return ESmall.make(((Integer) val).intValue());
-		throw new Error();
+		@Override
+		int compare_same(EObject rhs) {
+			return testTuple().compare_same(rhs);
+		}
+
+		@Override
+		public ETuple testTuple() {
+			ETuple2 t = new ETuple2();
+			t.elem1 = ERT.EXIT;
+			t.elem2 = e.reason();
+			return t;
+		}
 	}
 
 	//
 	// the rest of this file is a big hack to reconstruct erlang traces...
 	//
 
-	Map<StackTraceElement, ETuple> cache = Collections
-			.synchronizedMap(new WeakHashMap<StackTraceElement, ETuple>());
+	static Map<StackTraceElement, ETuple3> cache = Collections
+			.synchronizedMap(new WeakHashMap<StackTraceElement, ETuple3>());
 
-	private static XSM xsm = new XSM();
+	ESeq getTrace() {
+		return decodeTrace(getStackTrace());
+	}
 
-	ESeq init_trace() {
-		ESeq list = ERT.NIL;
-		Class<?>[] class_trace = null;
-		StackTraceElement[] stack_trace = this.getStackTrace();
+	public static ESeq decodeTrace(StackTraceElement[] st) {
 
-		for (int i = stack_trace.length - 1; i >= 0; i--) {
-			StackTraceElement elm = stack_trace[i];
+		ESeq trace = ERT.NIL;
 
-			ETuple t = cache.get(elm);
-			if (t != null) {
-				list = list.cons(t);
+		for (int i = st.length - 1; i >= 0; i--) {
+
+			StackTraceElement st2 = st[i];
+
+			ETuple3 elem;
+
+			if ((elem = cache.get(st2)) != null) {
+				trace = trace.cons(elem);
 				continue;
 			}
 
-			if (class_trace == null) {
-				class_trace = xsm.context();
+			if ((elem = decodeTraceElem(st2)) != null) {
+				trace = trace.cons(elem);
 			}
 
-			String cname = elm.getClassName();
-			String mname = elm.getMethodName();
-
-			Class<?> c = find_class(class_trace, cname);
-			if (c == null)
-				continue;
-
-			Method m = find_method(c, mname);
-			if (m == null)
-				continue;
-
-			ETuple spec = resolve(c, m, m.getAnnotation(BIF.class), m
-					.getAnnotation(ErlFun.class));
-			
-			if (spec != null) {
-				cache.put(elm, spec);
-				list = list.cons(spec);
-			}
 		}
 
-		return list;
+		return trace;
+	}
+
+	private static final String ERJANG_MODULES_DOT = "erjang.m.";
+	private static final Pattern ENDS_WITH_NUM = Pattern
+			.compile(".*(__[0-9]+)$");
+
+	/**
+	 * @param st
+	 * @return
+	 */
+	private static ETuple3 decodeTraceElem(StackTraceElement st) {
+
+		String cname = st.getClassName();
+		String mname = st.getMethodName();
+
+		EAtom module = null;
+		if (cname.startsWith(ERJANG_MODULES_DOT)) {
+
+			int last = cname.lastIndexOf('.');
+			module = EAtom.intern(cname.substring(ERJANG_MODULES_DOT.length(),
+					last));
+		}
+
+		EAtom function = null;
+		int arity = -1;
+		Matcher matcher = ENDS_WITH_NUM.matcher(mname);
+		if (matcher.matches()) {
+			String method_name = mname.substring(0, matcher.start(1));
+
+			function = EAtom.intern(EUtil.decodeJavaName(method_name));
+			arity = Integer.parseInt(mname.substring(matcher.start(1) + 2));
+		}
+
+		if (module != null && function != null && arity != -1) {
+			ETuple3 res = new ETuple3();
+			res.elem1 = module;
+			res.elem2 = function;
+			res.elem3 = new ESmall(arity);
+			return res;
+		}
+
+		Class clazz = null;
+		try {
+			clazz = Class.forName(cname);
+		} catch (ClassNotFoundException e) {
+			return null;
+		}
+
+		Method m = find_method(clazz, mname);
+		BIF bif = m.getAnnotation(BIF.class);
+		if (bif == null)
+			return null;
+
+		return resolve(clazz, m, bif);
 	}
 
 	/**
@@ -170,27 +203,16 @@ public class ErlangException extends RuntimeException {
 	 * @param ann
 	 * @return
 	 */
-	private ETuple resolve(Class<?> c, Method m, BIF ann1, ErlFun ann2) {
+	private static ETuple3 resolve(Class<?> c, Method m, BIF ann1) {
 
-		if (ann1 == null && ann2 == null) return null;
-		
-		String module;
-		if (ann2 == null) {
-			module = get_class_module(c);
-		} else if (ann2 != null && "__SELFNAME__".equals(ann2.module())) {
-			module = get_class_module(c);
-		} else {
-			module = ann2.module();
-		}
+		if (ann1 == null)
+			return null;
+
+		String module = get_class_module(c);
 
 		String fun = null;
 		if (ann1 != null && !("__SELFNAME__".equals(ann1.name()))) {
 			fun = ann1.name();
-		}
-
-		if (fun == null && ann2 != null
-				&& !("__SELFNAME__".equals(ann2.name()))) {
-			fun = ann2.name();
 		}
 
 		if (fun == null) {
@@ -204,26 +226,35 @@ public class ErlangException extends RuntimeException {
 				arity -= 1;
 		}
 
-		return ETuple.make(EAtom.intern(module), EAtom.intern(fun), ESmall
-				.make(arity));
+		if (module != null && fun != null) {
+			ETuple3 res = new ETuple3();
+			res.elem1 = EAtom.intern(module);
+			res.elem2 = EAtom.intern(fun);
+			res.elem3 = ESmall.make(arity);
+			return res;
+		} else {
+			return null;
+		}
+
 	}
 
 	/**
 	 * @param c
 	 * @return
 	 */
-	private String get_class_module(Class<?> c) {
+	private static String get_class_module(Class<?> c) {
 		Module m = c.getAnnotation(Module.class);
 		if (m != null) {
 			return m.value();
 		} else {
 			String cname = c.getName();
 			if (cname.startsWith(ERJANG_MODULES_DOT)) {
-				return cname.substring(ERJANG_MODULES_DOT.length());
-			} else {
-				return cname; // what else?
+
+				int last = cname.lastIndexOf('.');
+				return cname.substring(ERJANG_MODULES_DOT.length(), last);
 			}
 		}
+		return null;
 	}
 
 	/**
@@ -231,7 +262,7 @@ public class ErlangException extends RuntimeException {
 	 * @param mname
 	 * @return
 	 */
-	private Method find_method(Class<?> c, String mname) {
+	private static Method find_method(Class<?> c, String mname) {
 
 		Method[] methods = c.getDeclaredMethods();
 		for (int i = 0; i < methods.length; i++) {
@@ -242,28 +273,30 @@ public class ErlangException extends RuntimeException {
 	}
 
 	/**
-	 * @param classTrace
-	 * @param cname
+	 * 
+	 */
+	private static final EAtom UNKNOWN = EAtom.intern("unknown");
+
+	private EObject erl_value(Object val) {
+		if (val instanceof EObject)
+			return (EObject) val;
+		if (val instanceof String)
+			return EString.fromString((String) val);
+		if (val instanceof Integer)
+			return ESmall.make(((Integer) val).intValue());
+		throw new Error();
+	}
+
+	/**
 	 * @return
 	 */
-	private Class<?> find_class(Class<?>[] trace, String cname) {
-		for (int i = 0; i < trace.length; i++) {
-			if (cname.equals(trace[i].getName()))
-				return trace[i];
-		}
-
-		return null;
+	public ETuple3 getTryValue() {
+		ETuple3 result = new ETuple3();
+		result.elem1 = getExClass();
+		result.elem2 = reason();
+		result.elem3 = getTrace();
+		return result;
 	}
 
-	static class XSM extends SecurityManager {
-		Class<?>[] context() {
-			return java.security.AccessController
-					.doPrivileged(new PrivilegedAction<Class<?>[]>() {
-						public Class<?>[] run() {
-							return XSM.this.getClassContext();
-						}
-					});
-		}
-	}
 
 }

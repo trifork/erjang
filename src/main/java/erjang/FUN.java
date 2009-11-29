@@ -21,7 +21,7 @@ package erjang;
 /**
  * This is an object we can use as key in hashtables, etc..
  */
-class FUN implements Comparable<FUN> {
+public class FUN implements Comparable<FUN> {
 	final EAtom module;
 	final EAtom function;
 	final int arity;
@@ -30,7 +30,7 @@ class FUN implements Comparable<FUN> {
 		this(EAtom.intern(module), EAtom.intern(function), arity);
 	}
 
-	FUN(EAtom module, EAtom function, int arity) {
+	public FUN(EAtom module, EAtom function, int arity) {
 		this.module = module;
 		this.function = function;
 		this.arity = arity;

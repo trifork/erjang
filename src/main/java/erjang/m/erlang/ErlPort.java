@@ -28,12 +28,14 @@ import erjang.EAtom;
 import erjang.ECons;
 import erjang.EExecPort;
 import erjang.EObject;
+import erjang.EPort;
 import erjang.EProc;
 import erjang.ERT;
 import erjang.ESeq;
 import erjang.EString;
 import erjang.ETuple;
 import erjang.ETuple2;
+import erjang.ErlangError;
 import erjang.ErlangException;
 import erjang.NotImplemented;
 
@@ -47,19 +49,19 @@ public class ErlPort {
 	static EAtom am_spawn_executable = EAtom.intern("spawn_executable");
 	
 	@BIF
-	static EObject open_port(EProc proc, EObject portName, EObject portSetting) {
+	static EPort open_port(EProc proc, EObject portName, EObject portSetting) {
 		
 		
 		ETuple t;
 		if ((t = portName.testTuple()) == null)
-			throw ERT.badarg();
+			throw ERT.badarg(portName, portSetting);
 
 		ETuple2 name;
 		if ((name = ETuple2.cast(t)) == null)
-			throw ERT.badarg();
+			throw ERT.badarg(portName, portSetting);
 
 		if (name.elem1 == am_spawn) {
-			throw new NotImplemented();
+			throw new ErlangError(ERT.AM_NOT_IMPLEMENTED, portName, portSetting);
 			
 		} else if (name.elem1 == am_spawn_driver) {
 			throw new NotImplemented();

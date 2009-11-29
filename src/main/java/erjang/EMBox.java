@@ -18,39 +18,51 @@
 
 package erjang;
 
-public abstract class EPID extends EObject {
+import java.util.concurrent.ConcurrentLinkedQueue;
 
-	@Override
-	int cmp_order() {
-		return 5;
-	}
-	
-	public EPID testPID() {
-		return this;
-	}
+/**
+ * 
+ */
+public class EMBox {
+
+	private static final EAtom am_interrupted = EAtom.intern("interrupted");
+	ConcurrentLinkedQueue<EObject> queue = new ConcurrentLinkedQueue<EObject>();
 
 	/**
 	 * @return
 	 */
-	public EString getName() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-	
-	@Override
-	int compare_same(EObject rhs) {
-		return toString().compareTo(rhs.toString());
+	public EObject peek() {
+		return queue.peek();
 	}
 
 	/**
-	 * @param msg
+	 * @param proc 
+	 * 
 	 */
-	public abstract void send(EObject msg);
+	public void wait_forever(EProc proc) {
+		while (queue.isEmpty()) {
+			synchronized (this) {
+				try {
+					wait();
+				} catch (InterruptedException e) {
+					proc.check_exit();
+				}
+			}
+		}
+	}
+
+	public void send(EObject msg) {
+		queue.add(msg);
+		synchronized (this) {
+			notify();
+		}
+	}
 
 	/**
-	 * @param self
-	 * @param result
+	 * 
 	 */
-	public abstract void send_exit(EPID from, EObject reason);
+	public void remove_one() {
+		queue.remove();
+	}
 
 }

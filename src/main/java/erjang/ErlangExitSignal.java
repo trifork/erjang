@@ -16,41 +16,29 @@
  * limitations under the License.
  **/
 
+
 package erjang;
 
-public abstract class EPID extends EObject {
+/**
+ * Used in erlang when an thread receives an untrapped exit signal
+ */
+public class ErlangExitSignal extends ThreadDeath {
 
-	@Override
-	int cmp_order() {
-		return 5;
-	}
-	
-	public EPID testPID() {
-		return this;
+	private final EObject exitReason;
+
+	/**
+	 * @param exitReason
+	 */
+	public ErlangExitSignal(EObject exitReason) {
+		this.exitReason = exitReason;
 	}
 
 	/**
 	 * @return
 	 */
-	public EString getName() {
-		// TODO Auto-generated method stub
-		return null;
+	public EObject reason() {
+		return exitReason;
 	}
+
 	
-	@Override
-	int compare_same(EObject rhs) {
-		return toString().compareTo(rhs.toString());
-	}
-
-	/**
-	 * @param msg
-	 */
-	public abstract void send(EObject msg);
-
-	/**
-	 * @param self
-	 * @param result
-	 */
-	public abstract void send_exit(EPID from, EObject reason);
-
 }

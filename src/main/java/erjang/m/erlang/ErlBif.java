@@ -23,8 +23,10 @@ import erjang.EAtom;
 import erjang.EBinary;
 import erjang.ECons;
 import erjang.EDouble;
+import erjang.EFun;
 import erjang.EInteger;
 import erjang.EList;
+import erjang.EModule;
 import erjang.ENumber;
 import erjang.EObject;
 import erjang.EPID;
@@ -38,6 +40,8 @@ import erjang.ETuple;
 import erjang.ETuple2;
 import erjang.ETuple3;
 import erjang.ErlFun;
+import erjang.ErlangError;
+import erjang.FUN;
 import erjang.Module;
 import erjang.NotImplemented;
 import erjang.BIF.Type;
@@ -46,6 +50,52 @@ import erjang.BIF.Type;
 @Module("erlang")
 public class ErlBif {
 
+	@BIF
+	static EObject apply(EProc proc, EObject fun, EObject args) {
+		ESeq a = args.testWellformedList();
+		if (a==null) throw ERT.badarg(fun,args);
+		
+		EFun f = fun.testFunction();
+		if (f != null) {
+			return f.apply(proc, a);
+		}
+
+		ETuple t = fun.testTuple();
+		if (t == null) {
+			throw ERT.badarg(fun,args);
+		}
+
+		ETuple2 t2 = ETuple2.cast(t);
+		if (t2 == null) {
+			throw ERT.badarg(fun,args);
+		}
+		
+		EAtom mn = t2.elem1.testAtom();
+		EAtom fn = t2.elem2.testAtom();
+		
+		FUN funspec;
+		f = EModule.resolve(funspec=new FUN(mn,fn,a.length()));
+		
+		if (f == null) {
+			throw ERT.undef(funspec, a.toArray());
+		}
+		
+		return f.apply(proc, a);
+	}
+	
+	@BIF
+	static ESeq binary_to_list(EObject val) {
+		EBinary bin;
+		if ((bin=val.testBinary()) == null) throw ERT.badarg(val);
+		return EString.fromBinary(bin);
+	}
+	
+	
+	@BIF
+	static EObject apply(EProc proc, EObject one, EObject two, EObject three) {
+		throw new NotImplemented();		
+	}
+	
 	@BIF
 	@ErlFun(export = true)
 	static public EPID self(EProc proc) {
@@ -72,12 +122,12 @@ public class ErlBif {
 
 	@BIF
 	@ErlFun(export = true)
-	static public EString list_to_atom(EObject obj) {
-		ECons list;
-		if ((list = obj.testCons()) != null) {
-			return EString.make(list);
+	static public EAtom list_to_atom(EObject obj) {
+		EString es;
+		if ((es = obj.testString()) != null) {
+			return EAtom.intern(es.stringValue());
 		}
-		throw ERT.badarg();
+		throw ERT.badarg(obj);
 	}
 
 	@BIF
@@ -180,7 +230,7 @@ public class ErlBif {
 		if ((tup = obj.testTuple()) != null && tup.arity() >= idx.value) {
 			return tup.elm(idx.value);
 		}
-		throw ERT.badarg("erlang", "element", idx, obj);
+		throw ERT.badarg(idx, obj);
 	}
 
 	@BIF
@@ -188,7 +238,7 @@ public class ErlBif {
 		if (tup.arity() >= idx.value) {
 			return tup.elm(idx.value);
 		}
-		throw ERT.badarg("erlang", "element", idx, tup);
+		throw ERT.badarg(idx, tup);
 	}
 
 	@BIF
@@ -196,7 +246,7 @@ public class ErlBif {
 		if (tup.arity() >= idx) {
 			return tup.elm(idx);
 		}
-		throw ERT.badarg("erlang", "element", idx, tup);
+		throw ERT.badarg(new ESmall(idx), tup);
 	}
 
 	@BIF
@@ -205,7 +255,7 @@ public class ErlBif {
 		if ((tup = obj.testTuple()) != null && tup.arity() >= idx) {
 			return tup.elm(idx);
 		}
-		throw ERT.badarg("erlang", "element", idx, obj);
+		throw ERT.badarg(new ESmall(idx), obj);
 	}
 
 	@BIF
@@ -260,7 +310,7 @@ public class ErlBif {
 		if ((seq = list.testSeq()) != null) {
 			return ERT.box(seq.length());
 		}
-		throw ERT.badarg("erlang", "length", list);
+		throw ERT.badarg(list);
 	}
 
 	@BIF
@@ -278,8 +328,8 @@ public class ErlBif {
 	}
 
 	@BIF
-	static public EObject whereis(EObject list) {
-		throw new NotImplemented();
+	static public EObject whereis(EProc proc, EObject regname) {
+		return ERT.whereis(regname);
 	}
 
 	@BIF
@@ -338,10 +388,13 @@ public class ErlBif {
 
 	@BIF(type = Type.ARITHBIF)
 	static public double fdiv(double v1, double v2) {
-		if (v2 == 0.0)
-			throw ERT.badarith("erlang", "/", v1, v2);
-
+		test_zero(v1, v2);
 		return v1 / v2;
+	}
+
+	private static void test_zero(double v1, double v2) {
+		if (v2 == 0.0)
+			throw new ErlangError(ERT.AM_BADARITH, ERT.NIL.cons(v2).cons(v1));
 	}
 
 	@BIF(type = Type.ARITHBIF)
@@ -576,7 +629,7 @@ public class ErlBif {
 		if ((num = v1.testNumber()) != null) {
 			return abs(num);
 		}
-		throw ERT.badarg("erlang", "abs", v1);
+		throw ERT.badarg(v1);
 	}
 
 	@BIF(name = "abs")

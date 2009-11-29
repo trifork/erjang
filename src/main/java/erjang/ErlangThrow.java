@@ -16,41 +16,25 @@
  * limitations under the License.
  **/
 
+
 package erjang;
 
-public abstract class EPID extends EObject {
+/**
+ * The exception caused by erlang:throw
+ */
+public class ErlangThrow extends ErlangException {
+
+	public EAtom getExClass() { return am_throw; }
+
+	/**
+	 * @param reason
+	 */
+	public ErlangThrow(EObject reason) {
+		super(reason);
+	}
 
 	@Override
-	int cmp_order() {
-		return 5;
+	public EObject getCatchValue() {
+		return super.reason();
 	}
-	
-	public EPID testPID() {
-		return this;
-	}
-
-	/**
-	 * @return
-	 */
-	public EString getName() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-	
-	@Override
-	int compare_same(EObject rhs) {
-		return toString().compareTo(rhs.toString());
-	}
-
-	/**
-	 * @param msg
-	 */
-	public abstract void send(EObject msg);
-
-	/**
-	 * @param self
-	 * @param result
-	 */
-	public abstract void send_exit(EPID from, EObject reason);
-
 }

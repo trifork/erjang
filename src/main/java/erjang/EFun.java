@@ -92,7 +92,7 @@ public abstract class EFun extends EObject implements Opcodes {
 		Class<?> declaringClass = method.getDeclaringClass();
 		Type type = Type.getType(declaringClass);
 		byte[] data = CompilerVisitor.make_invoker(type, mname, method
-				.getName(), ary, proc, 0);
+				.getName(), ary, proc, 0, Type.getType(method.getReturnType()));
 
 		String clname = type.getClassName() + "$FN_" + mname;
 
@@ -353,6 +353,15 @@ public abstract class EFun extends EObject implements Opcodes {
 		} else {
 			mv.visitLdcInsn(new Integer(i));
 		}
+	}
+
+	/**
+	 * @param a
+	 * @return
+	 */
+	public EObject apply(EProc proc, ESeq a) {
+		// TODO: this should be implemented for all EFunX
+		return invoke(proc, a.toArray());
 	}
 
 }

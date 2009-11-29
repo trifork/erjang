@@ -37,9 +37,12 @@ import erjang.EPort;
 import erjang.EProc;
 import erjang.ERT;
 import erjang.ERef;
+import erjang.ESeq;
 import erjang.ESmall;
 import erjang.EString;
 import erjang.ETuple;
+import erjang.ErlangException;
+import erjang.ErlangExit;
 import erjang.NotImplemented;
 
 /**
@@ -62,6 +65,7 @@ public class ErlProc {
 	private static final EAtom am_jvm = EAtom.intern("jvm");
 	private static final EAtom am_allocated_areas = EAtom.intern("allocated_areas");
 	private static final EObject am_otp_version = EAtom.intern("am_otp_version");
+	private static final EObject am_machine = EAtom.intern("am_machine");
 
 	@BIF
 	public static EObject display(EProc proc, EObject obj) {
@@ -88,6 +92,51 @@ public class ErlProc {
 	}
 
 	@BIF
+	public static EObject spawn_link(EProc proc, EObject mod, EObject fun, EObject args) {
+		
+		EAtom m = mod.testAtom();
+		EAtom f = fun.testAtom();
+		ESeq  a = args.testWellformedList();
+		
+		if (m==null||f==null||a==null) 
+			throw ERT.badarg(mod, fun, args);
+		
+		EProc p2 = new EProc(m, f, a.toArray());
+		
+		p2.link_to(proc);
+		
+		ERT.run(p2);
+		
+		return p2.self();
+	}
+	
+	@BIF
+	public static EObject halt(EProc proc) {
+		System.exit(0);
+		return null;
+	}
+	
+	@BIF
+	public static EObject halt(EProc proc, EObject value) {
+		ESmall val = value.testSmall();
+		if (val != null) {
+			System.exit(val.value);
+			return null;
+		}
+		
+		EString str = value.testString();
+		if (str != null) {		
+			// TODO: create crash file
+			System.err.println(str.stringValue());
+			System.exit(1);
+		}
+		
+		throw ERT.badarg(value);
+		
+
+	}
+	
+	@BIF
 	public static EObject unlink(EProc proc, EObject pid) {
 		throw new NotImplemented();
 	}
@@ -99,7 +148,7 @@ public class ErlProc {
 
 	@BIF
 	public static EObject exit(EProc proc, EObject a1) {
-		throw new NotImplemented();
+		throw new ErlangExit(a1);
 	}
 
 	@BIF
@@ -120,6 +169,9 @@ public class ErlProc {
 	@BIF
 	static EObject system_info(EProc proc, EObject type) {
 
+		if (type == am_machine) {
+			return EString.fromString("JAR");
+		}
 		if (type == am_allocated_areas) {
 
 			ECons res = ERT.NIL;

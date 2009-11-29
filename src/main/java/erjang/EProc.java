@@ -16,53 +16,80 @@
  * limitations under the License.
  **/
 
-
 package erjang;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-
-
-
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * An erlang process
  */
-public class EProc {
+public class EProc implements Runnable {
 	public static final EObject TAIL_MARKER = new ETailMarker();
 
 	private static final EAtom am_trap_exit = EAtom.intern("trap_exit");
-	
+
+	private static final EObject am_normal = EAtom.intern("normal");
+
+	private static final EObject am_java_exception = EAtom.intern("java_exception");
+
 	public EFun tail;
 	public EObject arg0, arg1, arg2, arg3, arg4, arg5, arg6;
-	
-	private EPID self = new EPID();
-	
+
+	private EPID self = new ELocalPID(this);
+
+	private EAtom run_mod;
+
+	private EAtom run_fun;
+
+	private EObject[] run_args;
+
+	/**
+	 * @param m
+	 * @param f
+	 * @param array
+	 */
+	public EProc(EAtom m, EAtom f, EObject[] args) {
+		this.run_mod = m;
+		this.run_fun = f;
+		this.run_args = args;
+	}
+
 	/**
 	 * @return
 	 */
 	public EPID self() {
 		return self;
 	}
+
 	/**
 	 * @param key
 	 * @param value
 	 * @return
 	 */
-	
+
 	Map<EObject, EObject> pdict = new HashMap<EObject, EObject>();
 
-	private EAtom trap_exit;
-	
+	private EAtom trap_exit = ERT.FALSE;
+
+	private Thread runner;
+
 	public EObject put(EObject key, EObject value) {
 		EObject res = pdict.put(key, value);
-		if (res == null) return ERT.NIL;
+		if (res == null)
+			return ERT.NIL;
 		return res;
 	}
-	
+
 	public EObject get(EObject key) {
 		EObject res = pdict.get(key);
-		return (res==null) ? ERT.NIL : res;
+		return (res == null) ? ERT.NIL : res;
 	}
 
 	/**
@@ -79,7 +106,8 @@ public class EProc {
 	 */
 	public EObject erase(EObject key) {
 		EObject res = pdict.remove(key);
-		if (res == null) res = ERT.NIL;
+		if (res == null)
+			res = ERT.NIL;
 		return res;
 	}
 
@@ -103,7 +131,7 @@ public class EProc {
 	 * @return
 	 */
 	public EObject process_flag(EAtom flag, EObject value) {
-		
+
 		if (flag == am_trap_exit) {
 			EAtom old = this.trap_exit;
 			trap_exit = value.testBoolean();
@@ -112,7 +140,183 @@ public class EProc {
 
 		throw new NotImplemented();
 	}
-	
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Runnable#run()
+	 */
+	@Override
+	public void run() {
+		try {
+			run0();
+		} catch (Throwable e) {
+			e.printStackTrace();
+		}
+
+	}
+
+	public void run0() {
+
+		EFun boot = EModule.resolve(new FUN(run_mod, run_fun, run_args.length));
+
+		EObject result = null;
+		try {
+			this.runner = Thread.currentThread();
+			this.pstate = State.RUNNING;
+			boot.invoke(this, run_args);
+			result = am_normal;
+
+		} catch (ErlangException e) {
+			result = e.reason();
+
+		} catch (ErlangExitSignal e) {
+			result = e.reason();
+
+		} catch (Throwable e) {
+
+			ESeq erl_trace = ErlangError.decodeTrace(e.getStackTrace());
+			ETuple java_ex = ETuple.make(
+					am_java_exception,
+					EString.fromString(describe_exception(e)));
+			
+			result = ETuple.make(java_ex, erl_trace);
+
+		} finally {
+			this.runner = null;
+			this.pstate = State.DONE;
+		}
+
+		for (EPID pid : links) {
+			pid.send_exit(self(), result);
+		}
+
+		// System.out.println("done: " + result);
+	}
+
+	/**
+	 * @param e
+	 * @return
+	 */
+	private static String describe_exception(Throwable e) {
+		StringWriter sw = new StringWriter();
+		PrintWriter pw = new PrintWriter(sw);
+		e.printStackTrace(pw);
+		pw.close();
+		return sw.toString();
+	}
+
+	Set<EPID> links = new TreeSet<EPID>();
+
+	/**
+	 * @param proc
+	 */
+	public void link_to(EProc proc) {
+		links.add(proc.self);
+		proc.links.add(self);
+	}
+
+	EMBox mbox = new EMBox();
+
+	static enum State {
+		INIT, RUNNING, EXIT_SIG, DONE
+	};
+
+	private State pstate = State.INIT;
+	private EObject exit_reason;
+
+	/**
+	 * @return
+	 */
+	public EObject mbox_peek() {
+		check_exit();
+		return mbox.peek();
+	}
+
+	/**
+	 * 
+	 */
+	public void mbox_wait() {
+		mbox.wait_forever(this);
+	}
+
+	/**
+	 * @param msg
+	 */
+	public void mbox_send(EObject msg) {
+		mbox.send(msg);
+	}
+
+	/**
+	 * @return
+	 */
+	public void mbox_remove_one() {
+		mbox.remove_one();
+	}
+
+	/**
+	 * @param from
+	 * @param reason
+	 */
+	public void send_exit(EPID from, EObject reason) {
+
+		// ignore exit signals from myself
+		if (from.equals(self())) {
+			return;
+		}
+
+		synchronized (this) {
+			switch (pstate) {
+
+			// process is already "done", just ignore exit signal
+			case DONE:
+				return;
+
+				// we have already received one exit signal, ignore
+				// subsequent ones...
+			case EXIT_SIG:
+				// TODO: warn that this process is not yet dead. why?
+				return;
+
+				// the process is not running yet, this should not happen
+			case INIT:
+				throw new Error(
+						"cannot receive exit signal before we're running");
+
+			case RUNNING:
+
+				if (trap_exit != ERT.TRUE) {
+					// try to kill this thread
+					this.exit_reason = reason;
+					this.pstate = State.EXIT_SIG;
+					Thread t = this.runner;
+					if (t != null) {
+						t.interrupt();
+					}
+					return;
+				}
+			}
+		}
+		
+		// we're trapping exits, so we in stead send an {'EXIT', from,
+		// reason} to self
+		mbox_send(ETuple.make(ERT.EXIT, from, reason));
+
+	}
+
+	/**
+	 * will check if this process have received an exit signal (and we're not
+	 * trapping)
+	 */
+	void check_exit() {
+		if (this.pstate == State.EXIT_SIG) {
+			if (Thread.currentThread() != runner) {
+				throw new Error("check_exit() should only be called on self");
+			}
+			throw new ErlangExitSignal(exit_reason);
+		}
+	}
+
 }
 
 class ETailMarker extends EObject {
@@ -122,13 +326,16 @@ class ETailMarker extends EObject {
 		return -1;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see erjang.EObject#compare_same(erjang.EObject)
 	 */
 	@Override
 	int compare_same(EObject rhs) {
-		if (rhs == EProc.TAIL_MARKER) return 0;
+		if (rhs == EProc.TAIL_MARKER)
+			return 0;
 		return -1;
 	}
-	
+
 }

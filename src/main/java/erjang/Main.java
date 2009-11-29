@@ -69,11 +69,22 @@ public class Main {
 			modules[i] = EModule.load_module(EAtom.intern(mod), path.toURI().toURL());
 		}
 
-		FUN start = new FUN(EAtom.intern("otp_ring0"), EAtom.intern("start"), 2);
-		EProc proc = new EProc();
-		EFun boot = EModule.resolve(start);
+		args=new String[] {"-boot", "/foo/bar", "-root", "/xx/yy"};
 		
-		boot.invoke(proc, new EObject[] { ERT.NIL, ERT.NIL } );
 		
+		EAtom ring = EAtom.intern("otp_ring0");
+		EAtom am_start = EAtom.intern("start");
+		ESeq env = ERT.NIL;
+		ESeq argv = ERT.NIL;
+		
+		for (int i = args.length-1; i >= 0; i--) {
+			argv = argv.cons(EBinary.fromString(args[i]));
+		}
+		
+		String s = argv.toString();
+		
+		EProc proc = new EProc(ring, am_start, new EObject[]{ env, argv });
+
+		proc.run();
 	}
 }

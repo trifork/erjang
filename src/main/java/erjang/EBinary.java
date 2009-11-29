@@ -18,8 +18,6 @@
 
 package erjang;
 
-import java.io.File;
-import java.math.BigInteger;
 import java.util.zip.Adler32;
 
 import org.objectweb.asm.MethodVisitor;
@@ -58,8 +56,8 @@ public class EBinary extends EBitString {
 	}
 
 	public static EBinary fromString(String str) {
-		int size = str.length()*8;
-		byte[] data = new byte[size/8];
+		int size = str.length();
+		byte[] data = new byte[size];
 		for (int i = 0; i < str.length(); i++) {
 			data[i] = (byte) str.charAt(i);
 		}

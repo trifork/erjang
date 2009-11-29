@@ -339,7 +339,7 @@ public abstract class ETuple extends EObject implements Cloneable /*, Indexed*/ 
 
 	private static void create_cast(ClassAdapter cw, int n) {
 		MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PUBLIC|Opcodes.ACC_STATIC, "cast", 
-				"(L" + ETUPLE_NAME + ";)L" + ETUPLE_NAME + ";",
+				"(L" + ETUPLE_NAME + ";)L" + ETUPLE_NAME + n + ";",
 				null, null);
 		mv.visitCode();
 

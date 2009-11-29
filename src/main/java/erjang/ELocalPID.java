@@ -16,41 +16,30 @@
  * limitations under the License.
  **/
 
+
 package erjang;
 
-public abstract class EPID extends EObject {
+/**
+ * 
+ */
+public class ELocalPID extends EPID {
 
-	@Override
-	int cmp_order() {
-		return 5;
-	}
-	
-	public EPID testPID() {
-		return this;
-	}
+	private final EProc proc;
 
-	/**
-	 * @return
-	 */
-	public EString getName() {
-		// TODO Auto-generated method stub
-		return null;
+	public ELocalPID(EProc proc) {
+		this.proc = proc;
 	}
 	
 	@Override
-	int compare_same(EObject rhs) {
-		return toString().compareTo(rhs.toString());
+	public void send(EObject msg) {
+		proc.mbox_send(msg);
 	}
-
-	/**
-	 * @param msg
+	
+	/* (non-Javadoc)
+	 * @see erjang.EPID#send_exit(erjang.EPID, erjang.EObject)
 	 */
-	public abstract void send(EObject msg);
-
-	/**
-	 * @param self
-	 * @param result
-	 */
-	public abstract void send_exit(EPID from, EObject reason);
-
+	@Override
+	public void send_exit(EPID from, EObject reason) {
+		proc.send_exit(from, reason);
+	}
 }

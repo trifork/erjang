@@ -16,41 +16,35 @@
  * limitations under the License.
  **/
 
+
 package erjang;
 
-public abstract class EPID extends EObject {
+/**
+ * Error throws when a function is undefined
+ */
+public class ErlangUndefined extends ErlangError {
 
+	private final EAtom module;
+	private final EAtom function;
+	private final ESmall arity;
+
+	/**
+	 * @param module
+	 * @param function
+	 * @param make
+	 */
+	public ErlangUndefined(EAtom module, EAtom function, ESmall arity) {
+		super(ERT.am_undef);
+		this.module = module;
+		this.function = function;
+		this.arity = arity;
+	}
+
+	/* (non-Javadoc)
+	 * @see erjang.ErlangError#getTrace()
+	 */
 	@Override
-	int cmp_order() {
-		return 5;
+	ESeq getTrace() {
+		return super.getTrace().cons(ETuple.make(module, function, arity));
 	}
-	
-	public EPID testPID() {
-		return this;
-	}
-
-	/**
-	 * @return
-	 */
-	public EString getName() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-	
-	@Override
-	int compare_same(EObject rhs) {
-		return toString().compareTo(rhs.toString());
-	}
-
-	/**
-	 * @param msg
-	 */
-	public abstract void send(EObject msg);
-
-	/**
-	 * @param self
-	 * @param result
-	 */
-	public abstract void send_exit(EPID from, EObject reason);
-
 }

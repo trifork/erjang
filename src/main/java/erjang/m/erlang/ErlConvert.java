@@ -20,9 +20,14 @@
 package erjang.m.erlang;
 
 import erjang.BIF;
+import erjang.EBinary;
 import erjang.EBitString;
 import erjang.EObject;
 import erjang.EProc;
+import erjang.ERT;
+import erjang.ESeq;
+import erjang.EString;
+import erjang.ETuple;
 import erjang.NotImplemented;
 
 /**
@@ -40,5 +45,18 @@ public class ErlConvert {
 		throw new NotImplemented();
 	}
 	
+	@BIF
+	public static ETuple list_to_tuple(EObject obj) {
+		ESeq seq;
+		if ((seq=obj.testSeq())==null) throw ERT.badarg(obj);
+		return ETuple.make(seq.toArray());
+	}
+	
+	@BIF
+	public static EString binary_to_list(EObject obj) {
+		EBinary bin = obj.testBinary();
+		if (bin == null) throw ERT.badarg(obj);
+		return EString.fromBinary(bin);
+	}
 
 }
