@@ -21,11 +21,6 @@ package erjang;
 import java.io.File;
 import java.net.MalformedURLException;
 
-import erjang.beam.Compiler;
-import erjang.beam.EUtil;
-import erjang.m.lists.bootstrap_lists;
-import erjang.m.net_kernel.boot_net_kernel;
-
 /**
  * 
  */

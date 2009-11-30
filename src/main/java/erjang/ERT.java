@@ -316,7 +316,7 @@ public class ERT {
 	 * @param fun
 	 * @return
 	 */
-	public static ErlangException undef(FUN fun, EObject... args) {
+	public static ErlangException undef(FunID fun, EObject... args) {
 		throw new ErlangError(am_undef, args);
 	}
 
@@ -328,7 +328,7 @@ public class ERT {
 		if (m==null||f==null) throw ERT.badarg(mod, fun, arg1);
 		
 		proc.arg0 = arg1;
-		proc.tail = EModule.resolve(new FUN(m,f,1));
+		proc.tail = EModule.resolve(new FunID(m,f,1));
 		return EProc.TAIL_MARKER;
 		
 //		.invoke(proc, NIL.cons(arg1).toArray());

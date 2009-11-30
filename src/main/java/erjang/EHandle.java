@@ -20,22 +20,30 @@
 package erjang;
 
 /**
- * Abstract class for drivers
+ * An EHandle is either an EPort or an EPID.  EHandles can be sent messages
  */
-public interface EDriver {
+public abstract class EHandle extends EObject {
 
-	/* called when open_port/2 is invoked.
-	   return value null means failure. */
-	EDriverInstance start(String command); 
-	
-	/* called before unloading the driver -
-	   DYNAMIC DRIVERS ONLY */
-	void finish();
-	
-	/* name supplied as command 
-	   in open_port XXX ? */
-	String driverName();
-	
-	
+	abstract ETask<?> self();
+
+	/**
+	 * @param msg
+	 */
+	public void send(EObject msg) {
+		self().mbox_send(msg);
+	}
+
+	/**
+	 * @param self
+	 * @param result
+	 */
+	public void send_exit(EHandle from, EObject reason) {
+		self().send_exit(from, reason);
+	}
+
+	/**
+	 * @param self
+	 */
+	public abstract void link_oneway(EHandle other);
 	
 }

@@ -18,25 +18,17 @@
 
 package erjang.m.erlang;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-
 import erjang.BIF;
 import erjang.EAtom;
-import erjang.ECons;
-import erjang.EExecPort;
+import erjang.EExecDriverTask;
 import erjang.EObject;
 import erjang.EPort;
 import erjang.EProc;
 import erjang.ERT;
-import erjang.ESeq;
-import erjang.EString;
+import erjang.ETask;
 import erjang.ETuple;
 import erjang.ETuple2;
 import erjang.ErlangError;
-import erjang.ErlangException;
 import erjang.NotImplemented;
 
 /**
@@ -67,7 +59,9 @@ public class ErlPort {
 			throw new NotImplemented();
 			
 		} else if (name.elem1 == am_spawn_executable) {
-			return new EExecPort(proc, name, portSetting);
+			ETask<? extends EPort> task = new EExecDriverTask(proc, name, portSetting);
+			
+			return task.self();
 		}
 			
 		throw ERT.badarg(portName, portSetting);

@@ -19,18 +19,18 @@
 package erjang;
 
 /**
- * This is an object we can use as key in hashtables, etc..
+ * This is just a function identifier
  */
-public class FUN implements Comparable<FUN> {
+public class FunID implements Comparable<FunID> {
 	final EAtom module;
 	final EAtom function;
 	final int arity;
 
-	FUN(String module, String function, int arity) {
+	FunID(String module, String function, int arity) {
 		this(EAtom.intern(module), EAtom.intern(function), arity);
 	}
 
-	public FUN(EAtom module, EAtom function, int arity) {
+	public FunID(EAtom module, EAtom function, int arity) {
 		this.module = module;
 		this.function = function;
 		this.arity = arity;
@@ -39,14 +39,14 @@ public class FUN implements Comparable<FUN> {
 	/**
 	 * @param annotation
 	 */
-	public FUN(Import imp) {
+	public FunID(Import imp) {
 		this(imp.module(), imp.fun(), imp.arity());
 	}
 
 	/**
 	 * @param exp
 	 */
-	public FUN(Export exp) {
+	public FunID(Export exp) {
 		this(exp.module(), exp.fun(), exp.arity());
 	}
 
@@ -57,8 +57,8 @@ public class FUN implements Comparable<FUN> {
 
 	@Override
 	public boolean equals(Object obj) {
-		if (obj instanceof FUN) {
-			FUN spec = (FUN) obj;
+		if (obj instanceof FunID) {
+			FunID spec = (FunID) obj;
 			return module.equals(spec.module) && function.equals(spec.function)
 					&& arity == spec.arity;
 		}
@@ -76,7 +76,7 @@ public class FUN implements Comparable<FUN> {
 	 * @see java.lang.Comparable#compareTo(java.lang.Object)
 	 */
 	@Override
-	public int compareTo(FUN o) {
+	public int compareTo(FunID o) {
 		if (module != o.module) {
 			int c1 = module.compareTo(o.module);
 			if (c1 != 0)

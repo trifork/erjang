@@ -41,7 +41,7 @@ import erjang.ETuple2;
 import erjang.ETuple3;
 import erjang.ErlFun;
 import erjang.ErlangError;
-import erjang.FUN;
+import erjang.FunID;
 import erjang.Module;
 import erjang.NotImplemented;
 import erjang.BIF.Type;
@@ -73,8 +73,8 @@ public class ErlBif {
 		EAtom mn = t2.elem1.testAtom();
 		EAtom fn = t2.elem2.testAtom();
 		
-		FUN funspec;
-		f = EModule.resolve(funspec=new FUN(mn,fn,a.length()));
+		FunID funspec;
+		f = EModule.resolve(funspec=new FunID(mn,fn,a.length()));
 		
 		if (f == null) {
 			throw ERT.undef(funspec, a.toArray());

@@ -19,43 +19,41 @@
 
 package erjang;
 
+import java.util.Set;
+import java.util.TreeSet;
+
 /**
- * This is a PID on this node
+ * An ETask is what is common for processes and open ports
  */
-public class ELocalPID extends EPID {
+public abstract class ETask<H extends EHandle> {
+	
+	public abstract void mbox_send(EObject msg);
 
-	private final EProc proc;
+	/**
+	 * @param from
+	 * @param reason
+	 */
+	public abstract void send_exit(EHandle from, EObject reason);
 
-	public ELocalPID(EProc self) {
-		this.proc = self;
-	}
-	
-	/* (non-Javadoc)
-	 * @see erjang.EHandle#self()
+	/**
+	 * @return
 	 */
-	@Override
-	ETask<?> self() {
-		return proc;
-	}
+	public abstract H self();
+
 	
-	@Override
-	public void send(EObject msg) {
-		proc.mbox_send(msg);
-	}
-	
-	/* (non-Javadoc)
-	 * @see erjang.EPID#send_exit(erjang.EPID, erjang.EObject)
+
+	Set<EHandle> links = new TreeSet<EHandle>();
+
+	/**
+	 * @param task
 	 */
-	@Override
-	public void send_exit(EHandle from, EObject reason) {
-		proc.send_exit(from, reason);
+	public void link_to(ETask<?> task) {
+		link_oneway(task.self());
+		task.self().link_oneway((EHandle)self());
 	}
 
-	/* (non-Javadoc)
-	 * @see erjang.EHandle#link_oneway(erjang.EHandle)
-	 */
-	@Override
-	public void link_oneway(EHandle other) {
-		proc.link_oneway(other);
+	public void link_oneway(EHandle h) {
+		links.add(h);
 	}
+	
 }

@@ -18,6 +18,22 @@
 
 package erjang;
 
+import static erjang.EPort.am_arg0;
+import static erjang.EPort.am_args;
+import static erjang.EPort.am_binary;
+import static erjang.EPort.am_cd;
+import static erjang.EPort.am_env;
+import static erjang.EPort.am_eof;
+import static erjang.EPort.am_exit_status;
+import static erjang.EPort.am_hide;
+import static erjang.EPort.am_in;
+import static erjang.EPort.am_line;
+import static erjang.EPort.am_nouse_stdio;
+import static erjang.EPort.am_out;
+import static erjang.EPort.am_packet;
+import static erjang.EPort.am_stream;
+import static erjang.EPort.am_use_stdio;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -25,10 +41,11 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+
 /**
- * 
+ * A n EPort instance that corresponds to an external executable
  */
-public class EExecPort extends EPort {
+public class EExecDriverTask extends EDriverTask {
 
 	static enum Mode {
 		STREAM, PACKET, LINE
@@ -56,8 +73,8 @@ public class EExecPort extends EPort {
 	 * @param name
 	 * @param portSetting
 	 */
-	public EExecPort(EProc proc, ETuple2 name, EObject portSetting) {
-
+	public EExecDriverTask(EProc proc, ETuple2 name, EObject portSetting) {
+		
 		this.owner = proc;
 
 		// argument can be any list, ... turn it into a string
@@ -191,17 +208,17 @@ public class EExecPort extends EPort {
 
 		File file = new File(cmd[0]);
 		if (!file.exists()) {
-			throw new ErlangException(EAtom.intern("enoent"));
+			throw new ErlangError(EAtom.intern("enoent"));
 		}
 
 		if (!file.canExecute()) {
-			throw new ErlangException(EAtom.intern("eaccess"));
+			throw new ErlangError(EAtom.intern("eaccess"));
 		}
 
 		try {
 			this.process = Runtime.getRuntime().exec(cmd, envp, new File(cwd));
 		} catch (IOException e1) {
-			throw new ErlangException(e1);
+			throw new ErlangError(e1);
 		}
 
 		this.out = new DataOutputStream(this.process.getOutputStream());
@@ -243,7 +260,7 @@ public class EExecPort extends EPort {
 		try {
 			internal_send(data, data_off, data_len);
 		} catch (IOException e) {
-			owner.self().send( ETuple.make(ERT.EXIT, this, ERT.get_posix_code(e)) );
+			owner.self().send( ETuple.make(ERT.EXIT, self(), ERT.get_posix_code(e)) );
 		}
 		
 	}

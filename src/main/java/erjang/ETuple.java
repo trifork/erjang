@@ -32,10 +32,6 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.util.CheckClassAdapter;
 
-import com.sun.org.apache.bcel.internal.generic.ALOAD;
-import com.sun.org.apache.bcel.internal.generic.CHECKCAST;
-import com.sun.org.apache.bcel.internal.generic.IF_ICMPNE;
-
 public abstract class ETuple extends EObject implements Cloneable /*, Indexed*/ {
 
 	@Override
@@ -61,18 +57,6 @@ public abstract class ETuple extends EObject implements Cloneable /*, Indexed*/ 
 		return this;
 	}
 
-	/*
-	@Override
-	public int count() {
-		return arity();
-	}
-
-	@Override
-	public Object nth(int i) {
-		return elm(i+1);
-	}
-	*/
-	
 	public abstract int arity();
 
 	public abstract EObject elm(int i);
@@ -102,7 +86,7 @@ public abstract class ETuple extends EObject implements Cloneable /*, Indexed*/ 
 		return res;
 	}
 
-	public abstract void set(int index, EObject term);
+	abstract void set(int index, EObject term);
 
 	public abstract ETuple blank();
 
@@ -380,7 +364,7 @@ public abstract class ETuple extends EObject implements Cloneable /*, Indexed*/ 
 		mv.visitEnd();
 	}
 
-	public static void dump(String name, byte[] data) {
+	static void dump(String name, byte[] data) {
 		
 		String pkg = name.substring(0, name.lastIndexOf('/'));
 		
@@ -401,18 +385,6 @@ public abstract class ETuple extends EObject implements Cloneable /*, Indexed*/ 
 		}
 	}
 
-	public static void main(String[] args) throws IOException {
-		byte[] data = make_tuple_class_data(6);
-		FileOutputStream fo = new FileOutputStream("ETuple6.class");
-		fo.write(data);
-		fo.close();
-
-		ETuple val = make_big(7);
-
-		val.set(6, new EString("hello"));
-
-		System.out.println(val);
-	}
 
 	@Override
 	public String toString() {

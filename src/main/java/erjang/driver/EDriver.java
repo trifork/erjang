@@ -16,30 +16,27 @@
  * limitations under the License.
  **/
 
-package erjang;
 
-public abstract class EPID extends EHandle {
+package erjang.driver;
 
-	@Override
-	int cmp_order() {
-		return 5;
-	}
+/**
+ * Abstract class for drivers.
+ * 
+ */
+public interface EDriver {
+
+	/* called when open_port/2 is invoked.
+	   return value null means failure. */
+	EDriverInstance start(String command); 
 	
-	public EPID testPID() {
-		return this;
-	}
-
-	/**
-	 * @return
-	 */
-	public EString getName() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+	/* called before unloading the driver -
+	   DYNAMIC DRIVERS ONLY */
+	void finish();
 	
-	@Override
-	int compare_same(EObject rhs) {
-		return toString().compareTo(rhs.toString());
-	}
-
+	/* name supplied as command 
+	   in open_port XXX ? */
+	String driverName();
+	
+	
+	
 }

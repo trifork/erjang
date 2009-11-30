@@ -20,42 +20,32 @@
 package erjang;
 
 /**
- * This is a PID on this node
+ * 
  */
-public class ELocalPID extends EPID {
+public class EDriverTask extends ETask<ELocalPort> {
 
-	private final EProc proc;
+	private final ELocalPort port;
 
-	public ELocalPID(EProc self) {
-		this.proc = self;
-	}
-	
-	/* (non-Javadoc)
-	 * @see erjang.EHandle#self()
-	 */
-	@Override
-	ETask<?> self() {
-		return proc;
+	EDriverTask() {
+		this.port = new ELocalPort(this);
 	}
 	
 	@Override
-	public void send(EObject msg) {
-		proc.mbox_send(msg);
+	public ELocalPort self() {
+		return port;
 	}
-	
-	/* (non-Javadoc)
-	 * @see erjang.EPID#send_exit(erjang.EPID, erjang.EObject)
-	 */
+
 	@Override
 	public void send_exit(EHandle from, EObject reason) {
-		proc.send_exit(from, reason);
+		// TODO Auto-generated method stub
+
 	}
 
-	/* (non-Javadoc)
-	 * @see erjang.EHandle#link_oneway(erjang.EHandle)
-	 */
 	@Override
-	public void link_oneway(EHandle other) {
-		proc.link_oneway(other);
+	public void mbox_send(EObject msg) {
+		// TODO Auto-generated method stub
+
 	}
+
+
 }

@@ -30,7 +30,7 @@ import java.util.TreeSet;
 /**
  * An erlang process
  */
-public class EProc implements Runnable {
+public class EProc extends ETask<ELocalPID> implements Runnable {
 	public static final EObject TAIL_MARKER = new ETailMarker();
 
 	private static final EAtom am_trap_exit = EAtom.intern("trap_exit");
@@ -42,7 +42,7 @@ public class EProc implements Runnable {
 	public EFun tail;
 	public EObject arg0, arg1, arg2, arg3, arg4, arg5, arg6;
 
-	private EPID self = new ELocalPID(this);
+	private ELocalPID self = new ELocalPID(this);
 
 	private EAtom run_mod;
 
@@ -64,7 +64,7 @@ public class EProc implements Runnable {
 	/**
 	 * @return
 	 */
-	public EPID self() {
+	public ELocalPID self() {
 		return self;
 	}
 
@@ -158,7 +158,7 @@ public class EProc implements Runnable {
 
 	public void run0() {
 
-		EFun boot = EModule.resolve(new FUN(run_mod, run_fun, run_args.length));
+		EFun boot = EModule.resolve(new FunID(run_mod, run_fun, run_args.length));
 
 		EObject result = null;
 		try {
@@ -187,7 +187,7 @@ public class EProc implements Runnable {
 			this.pstate = State.DONE;
 		}
 
-		for (EPID pid : links) {
+		for (EHandle pid : links) {
 			pid.send_exit(self(), result);
 		}
 
@@ -204,16 +204,6 @@ public class EProc implements Runnable {
 		e.printStackTrace(pw);
 		pw.close();
 		return sw.toString();
-	}
-
-	Set<EPID> links = new TreeSet<EPID>();
-
-	/**
-	 * @param proc
-	 */
-	public void link_to(EProc proc) {
-		links.add(proc.self);
-		proc.links.add(self);
 	}
 
 	EMBox mbox = new EMBox();
@@ -258,7 +248,7 @@ public class EProc implements Runnable {
 	 * @param from
 	 * @param reason
 	 */
-	public void send_exit(EPID from, EObject reason) {
+	public void send_exit(EHandle from, EObject reason) {
 
 		// ignore exit signals from myself
 		if (from.equals(self())) {

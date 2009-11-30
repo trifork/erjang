@@ -16,30 +16,12 @@
  * limitations under the License.
  **/
 
-package erjang;
 
-public abstract class EPID extends EHandle {
+package erjang.driver;
 
-	@Override
-	int cmp_order() {
-		return 5;
-	}
-	
-	public EPID testPID() {
-		return this;
-	}
-
-	/**
-	 * @return
-	 */
-	public EString getName() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-	
-	@Override
-	int compare_same(EObject rhs) {
-		return toString().compareTo(rhs.toString());
-	}
+/**
+ * 
+ */
+public class EDriverEvent {
 
 }

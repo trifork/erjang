@@ -18,7 +18,7 @@
 
 package erjang;
 
-public class EPort extends EObject {
+public abstract class EPort extends EHandle {
 
 	/* (non-Javadoc)
 	 * @see erjang.EObject#cmpOrder()
@@ -44,23 +44,23 @@ public class EPort extends EObject {
 	
 
 
-	static EAtom am_fd = EAtom.intern("fd");
-	static EAtom am_packet = EAtom.intern("packet");
-	static EAtom am_stream = EAtom.intern("stream");
-	static EAtom am_line = EAtom.intern("line");
-	static EAtom am_hide = EAtom.intern("hide");
-	static EAtom am_cd = EAtom.intern("cd");
-	static EAtom am_env = EAtom.intern("env");
-	static EAtom am_args = EAtom.intern("args");
-	static EAtom am_arg0 = EAtom.intern("arg0");
-	static EAtom am_exit_status = EAtom.intern("exit_status");
-	static EAtom am_use_stdio = EAtom.intern("use_stdio");
-	static EAtom am_nouse_stdio = EAtom.intern("nouse_stdio");
-	static EAtom am_stderr_to_stdout = EAtom.intern("stderr_to_stdout");
-	static EAtom am_in = EAtom.intern("in");
-	static EAtom am_out = EAtom.intern("out");
-	static EAtom am_binary = EAtom.intern("binary");
-	static EAtom am_eof = EAtom.intern("eof");
-
+	public static EAtom am_fd = EAtom.intern("fd");
+	public static EAtom am_packet = EAtom.intern("packet");
+	public static EAtom am_stream = EAtom.intern("stream");
+	public static EAtom am_line = EAtom.intern("line");
+	public static EAtom am_hide = EAtom.intern("hide");
+	public static EAtom am_cd = EAtom.intern("cd");
+	public static EAtom am_env = EAtom.intern("env");
+	public static EAtom am_args = EAtom.intern("args");
+	public static EAtom am_arg0 = EAtom.intern("arg0");
+	public static EAtom am_exit_status = EAtom.intern("exit_status");
+	public static EAtom am_use_stdio = EAtom.intern("use_stdio");
+	public static EAtom am_nouse_stdio = EAtom.intern("nouse_stdio");
+	public static EAtom am_stderr_to_stdout = EAtom.intern("stderr_to_stdout");
+	public static EAtom am_in = EAtom.intern("in");
+	public static EAtom am_out = EAtom.intern("out");
+	public static EAtom am_binary = EAtom.intern("binary");
+	public static EAtom am_eof = EAtom.intern("eof");
+	
 
 }

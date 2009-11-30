@@ -45,12 +45,12 @@ public abstract class EModule {
 	static private Map<EAtom, ModuleInfo> infos = new HashMap<EAtom, ModuleInfo>();
 
 	static class FunctionInfo {
-		private final FUN fun;
+		private final FunID fun;
 
 		/**
 		 * @param fun
 		 */
-		public FunctionInfo(FUN fun) {
+		public FunctionInfo(FunID fun) {
 			this.fun = fun;
 		}
 
@@ -95,7 +95,7 @@ public abstract class EModule {
 		 * @param fun2
 		 * @param value
 		 */
-		synchronized void add_export(EModule definer, FUN fun2, EFun value)
+		synchronized void add_export(EModule definer, FunID fun2, EFun value)
 				throws Exception {
 			this.resolved_value = value;
 			this.defining_module = definer;
@@ -134,7 +134,7 @@ public abstract class EModule {
 			this.name = module;
 		}
 
-		Map<FUN, FunctionInfo> binding_points = new HashMap<FUN, FunctionInfo>();
+		Map<FunID, FunctionInfo> binding_points = new HashMap<FunID, FunctionInfo>();
 
 		/**
 		 * @param fun
@@ -142,12 +142,12 @@ public abstract class EModule {
 		 * @return
 		 * @throws Exception
 		 */
-		public boolean add_import(FUN fun, Field ref) throws Exception {
+		public boolean add_import(FunID fun, Field ref) throws Exception {
 			FunctionInfo info = get_function_info(fun);
 			return info.add_import(ref);
 		}
 
-		private synchronized FunctionInfo get_function_info(FUN fun) {
+		private synchronized FunctionInfo get_function_info(FunID fun) {
 			FunctionInfo info = binding_points.get(fun);
 			if (info == null) {
 				binding_points.put(fun, info = new FunctionInfo(fun));
@@ -160,7 +160,7 @@ public abstract class EModule {
 		 * @param value
 		 * @throws Exception
 		 */
-		public void add_export(EModule definer, FUN fun, EFun value)
+		public void add_export(EModule definer, FunID fun, EFun value)
 				throws Exception {
 			get_function_info(fun).add_export(definer, fun, value);
 		}
@@ -176,7 +176,7 @@ public abstract class EModule {
 		 * @param start
 		 * @return
 		 */
-		public EFun resolve(FUN fun) {
+		public EFun resolve(FunID fun) {
 			return get_function_info(fun).resolve();
 		}
 
@@ -184,13 +184,13 @@ public abstract class EModule {
 		 * @param fun
 		 * @return
 		 */
-		public boolean exports(FUN fun) {
+		public boolean exports(FunID fun) {
 			return get_function_info(fun).exported();
 		}
 
 	}
 
-	boolean add_import(FUN fun, Field ref) throws Exception {
+	boolean add_import(FunID fun, Field ref) throws Exception {
 		return get_module_info(fun.module).add_import(fun, ref);
 	}
 
@@ -205,7 +205,7 @@ public abstract class EModule {
 		return mi;
 	}
 
-	void add_export(FUN fun, EFun value) throws Exception {
+	void add_export(FunID fun, EFun value) throws Exception {
 		get_module_info(fun.module).add_export(this, fun, value);
 	}
 
@@ -246,9 +246,9 @@ public abstract class EModule {
 			Import imp = field.getAnnotation(Import.class);
 			if (imp != null) {
 				field.setAccessible(true);
-				FUN f;
+				FunID f;
 
-				boolean resolved = add_import(f = new FUN(imp), field);
+				boolean resolved = add_import(f = new FunID(imp), field);
 
 		//		System.out.println("  import " + f
 		//				+ (resolved ? "resolved" : ""));
@@ -269,8 +269,8 @@ public abstract class EModule {
 				if (value == null)
 					throw new Error("field " + field + " not initialized");
 
-				FUN f;
-				add_export(f = new FUN(exp), value);
+				FunID f;
+				add_export(f = new FunID(exp), value);
 
 	//			System.out.println("  export " + f);
 
@@ -315,8 +315,8 @@ public abstract class EModule {
 			Import imp = field.getAnnotation(Import.class);
 			if (imp != null) {
 				field.setAccessible(true);
-				FUN f;
-				add_import(f = new FUN(imp), field);
+				FunID f;
+				add_import(f = new FunID(imp), field);
 
 	//			System.out.println("N import " + f);
 
@@ -355,7 +355,7 @@ public abstract class EModule {
 					continue next_method;
 				}
 
-				FUN f = new FUN(mod, name, arity);
+				FunID f = new FunID(mod, name, arity);
 
 		//		System.out.println("N export " + f);
 
@@ -437,7 +437,7 @@ public abstract class EModule {
 	 * @param start
 	 * @return
 	 */
-	public static EFun resolve(FUN start) {
+	public static EFun resolve(FunID start) {
 		return get_module_info(start.module).resolve(start);
 	}
 
@@ -448,7 +448,7 @@ public abstract class EModule {
 	 * @return
 	 */
 	public static boolean function_exported(EAtom m, EAtom f, int a) {
-		FUN fun = new FUN(m,f,a);
+		FunID fun = new FunID(m,f,a);
 		return get_module_info(m).exports(fun);
 	}
 
