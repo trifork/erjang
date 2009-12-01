@@ -18,6 +18,8 @@
 
 package erjang;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.net.URLClassLoader;
 
@@ -71,6 +73,18 @@ class EModuleLoader extends URLClassLoader {
 		if (name.startsWith(EFUN_NAME)) {
 			int arity = Integer.parseInt(name.substring(EFUN_NAME.length()));
 			return EFun.get_fun_class(arity);
+		}
+		
+		if (name.startsWith("kilim.S_")) {
+			InputStream resource = super.getResourceAsStream(name.replace('.', '/')  + ".class");
+			
+			try {
+				byte[] bb = new byte[resource.available()];
+				resource.read(bb);
+				return ERT.defineClass(EModuleLoader.class.getClassLoader(), name, bb, 0, bb.length);
+			} catch (IOException ex) {
+				throw new Error(ex);
+			}
 		}
 
 		return super.findClass(name);

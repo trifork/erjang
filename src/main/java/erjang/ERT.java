@@ -26,12 +26,14 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
+import kilim.Pausable;
+
 
 @Module(value="erlang")
 public class ERT {
 	
 	@BIF
-	public static EObject raise(EObject kind, EObject value, EObject trace) throws ErlangException {
+	public static ErlangException raise(EObject kind, EObject value, EObject trace) throws ErlangException {
 		
 		EAtom clazz = kind.testAtom();
 		ESeq traz = trace.testSeq();
@@ -264,6 +266,9 @@ public class ERT {
 	static final EObject am_undefined = EAtom.intern("undefined");
 	private static final EObject am_receive_clause = EAtom.intern("receive_clause");
 	public static final EObject AM_NOT_IMPLEMENTED = EAtom.intern("not_implemented");
+	private static final EAtom AM_TIMEOUT = EAtom.intern("timeout");
+	private static final EAtom am_try_case_clause = EAtom.intern("try_case_clause");
+	private static final EAtom am_if_clause = EAtom.intern("if_clause");
 
 	public EBitStringBuilder bs_init(int size, int flags) {
 		return new EBitStringBuilder(size, flags);
@@ -320,6 +325,30 @@ public class ERT {
 		throw new ErlangError(am_undef, args);
 	}
 
+
+	public static EObject apply(EProc proc, EObject arg1, EObject mod, EObject fun) throws Pausable
+	{
+		EAtom m = mod.testAtom();
+		EAtom f = fun.testAtom();
+		
+		if (m==null||f==null) throw ERT.badarg(mod, fun, arg1);
+		
+		EFun efun = EModule.resolve(new FunID(m,f,1));
+		return efun.invoke(proc, new EObject[] { arg1 });
+	}
+
+
+	public static EObject apply(EProc proc, EObject mod, EObject fun) throws Pausable
+	{
+		EAtom m = mod.testAtom();
+		EAtom f = fun.testAtom();
+		
+		if (m==null||f==null) throw ERT.badarg(mod, fun);
+		
+		EFun efun = EModule.resolve(new FunID(m,f,0));
+		return efun.invoke(proc, new EObject[] { });
+	}
+
 	public static EObject apply$last(EProc proc, EObject arg1, EObject mod, EObject fun)
 	{
 		EAtom m = mod.testAtom();
@@ -367,7 +396,15 @@ public class ERT {
 	}
 	
 	public static EObject case_end(EObject val) {
-		throw new ErlangError(ETuple.make(am_case_clause, val, box(val.hashCode())));
+		throw new ErlangError(ETuple.make(am_case_clause, val));
+	}
+	
+	public static EObject if_end() {
+		throw new ErlangError(am_if_clause);
+	}
+	
+	public static EObject try_case_end(EObject val) {
+		throw new ErlangError(ETuple.make(am_try_case_clause, val));
 	}
 	
 	static Executor executor = new ScheduledThreadPoolExecutor(8);
@@ -398,5 +435,35 @@ public class ERT {
 		return i.intValue();
 	}
 
+	public static double unboxToDouble(ENumber i) {
+		return i.doubleValue();
+	}
+
+	public static double unboxToDouble(EObject i) {
+		ENumber num;
+		if ((num=i.testNumber()) == null) throw ERT.badarg(i);
+		return num.doubleValue();
+	}
+
+	public static double unboxToDouble(int i) {
+		return i;
+	}
+
+	public static void check_exit(EProc p) {
+		p.check_exit();
+	}
+	
+	public static EObject func_info(EAtom mod, EAtom fun, int arity) {
+		throw new ErlangError(AM_BADMATCH);
+	}
+	
+	public static boolean wait_timeout(EProc proc, EObject howlong) {
+		throw new NotImplemented();
+	}
+	
+	public static void timeout() {
+		// skip //
+	}
+	
 	
 }

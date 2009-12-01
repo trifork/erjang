@@ -34,12 +34,22 @@ public class EBitStringBuilder {
 
 	/** return bitstring under construction */
 	public EBitString bitstring() {
-		return null;
+		throw new NotImplemented();
 	}
 	
 	public void put_integer(EObject value, int flags) {
-		
-
+		throw new NotImplemented();
 	}
-	
+
+	public void put_integer(EObject value, int size, int flags) {
+		throw new NotImplemented();
+	}
+
+	public void put_string(EString str) {
+		throw new NotImplemented();
+	}
+
+	public void put_bitstring(EBitString str, EAtom how, int flags) {
+		throw new NotImplemented();
+	}
 }

@@ -18,6 +18,7 @@
 
 package erjang.m.erlang;
 
+import kilim.Pausable;
 import erjang.BIF;
 import erjang.EAtom;
 import erjang.EBinary;
@@ -51,7 +52,7 @@ import erjang.BIF.Type;
 public class ErlBif {
 
 	@BIF
-	static EObject apply(EProc proc, EObject fun, EObject args) {
+	static EObject apply(EProc proc, EObject fun, EObject args) throws Pausable {
 		ESeq a = args.testWellformedList();
 		if (a==null) throw ERT.badarg(fun,args);
 		
@@ -92,7 +93,7 @@ public class ErlBif {
 	
 	
 	@BIF
-	static EObject apply(EProc proc, EObject one, EObject two, EObject three) {
+	static EObject apply(EProc proc, EObject one, EObject two, EObject three) throws Pausable {
 		throw new NotImplemented();		
 	}
 	

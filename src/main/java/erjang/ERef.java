@@ -28,6 +28,11 @@ public class ERef extends EObject {
 	private int creation;
 	private int[] ids;
 
+	@Override
+	public ERef testReference() {
+		return this;
+	}
+	
 	/**
 	 * @param node
 	 * @param refId

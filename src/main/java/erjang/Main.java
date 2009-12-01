@@ -61,6 +61,8 @@ public class Main {
 				throw new Error("no path to: "+path);
 			}
 			
+			Object o = new kilim.State();
+			
 			modules[i] = EModule.load_module(EAtom.intern(mod), path.toURI().toURL());
 		}
 
@@ -81,5 +83,7 @@ public class Main {
 		EProc proc = new EProc(null, ring, am_start, new EObject[]{ env, argv });
 
 		proc.run();
+		
+		System.out.println("done.");
 	}
 }

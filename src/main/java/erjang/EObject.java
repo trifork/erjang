@@ -30,6 +30,10 @@ public abstract class EObject implements Comparable<EObject> {
 		return new EPair(h, this);
 	}
 	
+	public ERef testReference() {
+		return null;
+	}
+	
 
 	public EString testString()	{
 		return null;

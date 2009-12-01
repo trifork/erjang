@@ -22,6 +22,11 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
+import kilim.analysis.ClassInfo;
+import kilim.analysis.ClassWeaver;
+import kilim.analysis.Detector;
+import kilim.mirrors.Mirrors;
+
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.util.CheckClassAdapter;
@@ -73,7 +78,17 @@ public class Compiler implements Opcodes {
 			e.printStackTrace();
 		}
 		
-		repo.store(cv.getInternalClassName(), cw.toByteArray());
+		byte[] byteArray = cw.toByteArray();
+		
+		ClassWeaver cwe = new ClassWeaver(byteArray, Detector.DEFAULT);
+		for (ClassInfo ci : cwe.getClassInfos()) {
+			String name = ci.className;
+			byte[] bytes = ci.bytes;
+			
+			repo.store(name.replace('.', '/'), bytes);
+		}
+		
+		// repo.store(cv.getInternalClassName(), byteArray);
 
 	}
 	
@@ -94,14 +109,57 @@ public class Compiler implements Opcodes {
 		// the beam file reader, phase 1
 		BeamFileData reader = loader.load(file);
 
-		try {
-			// go!
-			reader.accept(analysis);
-		} finally {
-			classRepo.store(cv.getInternalClassName(), cw.toByteArray());
+		// go!
+		reader.accept(analysis);
+		
+		classRepo.store(cv.getInternalClassName(), cw.toByteArray());
+		
+		
+		ClassWeaver cwe = new ClassWeaver(cw.toByteArray(), new ErjangDetector(cv.getInternalClassName()));
+		for (ClassInfo ci : cwe.getClassInfos()) {
+			String name = ci.className;
+			byte[] bytes = ci.bytes;
+			
+			classRepo.store(name.replace('.', '/'), bytes);
 		}
-		// get byte code data
-		// classRepo.store(cv.getInternalClassName(), cw.toByteArray());
+
+	}
+	
+	static public class ErjangDetector extends Detector {
+
+		private final String className;
+
+		/**
+		 * @param className 
+		 * @param mirrors
+		 */
+		public ErjangDetector(String className) {
+			super(Mirrors.getRuntimeMirrors());
+			this.className = className;
+		}
+
+		@Override
+		public int getPausableStatus(String className, String methodName,
+				String desc) {
+			
+			if (className.startsWith(CompilerVisitor.EFUN_NAME)) {
+				if (methodName.equals("invoke_tail")) return Detector.METHOD_NOT_PAUSABLE;
+				if (methodName.equals("arity")) return Detector.METHOD_NOT_PAUSABLE;
+				if (methodName.equals("cast")) return Detector.METHOD_NOT_PAUSABLE;
+				
+				if (methodName.equals("go")) return Detector.PAUSABLE_METHOD_FOUND;
+				if (methodName.equals("invoke")) return Detector.PAUSABLE_METHOD_FOUND;
+			}
+			
+			if (className.equals(this.className)) {
+				if (methodName.endsWith("$tail")) return Detector.METHOD_NOT_PAUSABLE;
+				if (methodName.endsWith("init>")) return Detector.METHOD_NOT_PAUSABLE;
+				if (methodName.equals("module_name")) return Detector.METHOD_NOT_PAUSABLE;
+				return Detector.PAUSABLE_METHOD_FOUND;
+			}
+			
+			return super.getPausableStatus(className, methodName, desc);
+		}
 	}
 
 	public static String moduleClassName(String moduleName) {

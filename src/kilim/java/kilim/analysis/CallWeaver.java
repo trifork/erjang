@@ -218,6 +218,9 @@ public class CallWeaver {
         // ensure we don't touch any of the locals in the range that the
         // original
         // code knows about.
+        if (f == null) {
+        	System.err.println("we have no startFrame here!");
+        }
         varUsage.set(0, f.getMaxLocals());
 
         int i = bb.flow.isStatic() ? 0 : 1;

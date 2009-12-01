@@ -17,16 +17,10 @@
  **/
 package erjang.beam.analysis;
 
-import java.util.HashSet;
-import java.util.IdentityHashMap;
-import java.util.Set;
-import java.util.TreeSet;
-
 import org.objectweb.asm.Type;
 
 import erjang.EObject;
 import erjang.ETuple;
-import erjang.ETuple2;
 
 class TypeMap {
 	private static Type TYPE_EOBJECT = Type.getType(EObject.class);

@@ -23,6 +23,8 @@ import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
 
+import kilim.Pausable;
+
 /**
  * An erlang process
  */
@@ -169,7 +171,7 @@ public final class EProc extends ETask<EInternalPID> implements Runnable {
 
 	}
 
-	public void run0() {
+	public void run0() throws Pausable {
 
 		EFun boot = EModule.resolve(new FunID(run_mod, run_fun, run_args.length));
 
@@ -187,6 +189,10 @@ public final class EProc extends ETask<EInternalPID> implements Runnable {
 			result = e.reason();
 
 		} catch (Throwable e) {
+			
+			if (e instanceof Error) {
+				e.printStackTrace();
+			}
 
 			ESeq erl_trace = ErlangError.decodeTrace(e.getStackTrace());
 			ETuple java_ex = ETuple.make(
@@ -311,7 +317,7 @@ public final class EProc extends ETask<EInternalPID> implements Runnable {
 	 * will check if this process have received an exit signal (and we're not
 	 * trapping)
 	 */
-	void check_exit() {
+	public void check_exit() {
 		if (this.pstate == State.EXIT_SIG) {
 			if (Thread.currentThread() != runner) {
 				throw new Error("check_exit() should only be called on self");

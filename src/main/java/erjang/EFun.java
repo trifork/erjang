@@ -24,6 +24,12 @@ import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
 
+import kilim.Pausable;
+import kilim.analysis.ClassInfo;
+import kilim.analysis.ClassWeaver;
+import kilim.tools.Weaver;
+
+import org.objectweb.asm.ClassAdapter;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.Label;
@@ -31,6 +37,7 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
+import erjang.beam.Compiler;
 import erjang.beam.CompilerVisitor;
 import erjang.beam.EUtil;
 
@@ -54,12 +61,13 @@ public abstract class EFun extends EObject implements Opcodes {
 	}
 
 	/** used for translation of tail recursive methods */
-	public abstract EObject go(EProc eproc);
+	public abstract EObject go(EProc eproc) throws Pausable;
 
 	/** generic invoke, used only for apply */
-	public abstract EObject invoke(EProc proc, EObject[] args);
+	public abstract EObject invoke(EProc proc, EObject[] args) throws Pausable;
 
 	private static final Type EFUN_TYPE = Type.getType(EFun.class);
+	private static final String EFUN_NAME = EFUN_TYPE.getInternalName();
 	private static final Type EFUNHANDLER_TYPE = Type
 			.getType(EFunHandler.class);
 	private static final Type EOBJECT_TYPE = Type.getType(EObject.class);
@@ -69,6 +77,7 @@ public abstract class EFun extends EObject implements Opcodes {
 			+ EOBJECT_TYPE.getDescriptor();
 	private static final String EPROC_NAME = EPROC_TYPE.getInternalName();
 	private static final String EOBJECT_DESC = EOBJECT_TYPE.getDescriptor();
+	static final String[] PAUSABLE_EX = new String[] { Type.getType(Pausable.class).getInternalName() };
 
 	/**
 	 * @param method
@@ -125,8 +134,16 @@ public abstract class EFun extends EObject implements Opcodes {
 		}
 
 		byte[] data = gen_fun_class_data(arity);
+		
+		ClassWeaver w = new ClassWeaver(data, new Compiler.ErjangDetector("/xx/"));
+		for (ClassInfo ci : w.getClassInfos()) {
+			ETuple.dump(ci.className, ci.bytes);
+			
+			if (ci.className.equals(EFUN_NAME)) {
+				data = ci.bytes;
+			}
+		}
 
-		ETuple.dump(self_type, data);
 
 		return ERT.defineClass(EFun.class.getClassLoader(), self_type.replace(
 				'/', '.'), data, 0, data.length);
@@ -142,7 +159,7 @@ public abstract class EFun extends EObject implements Opcodes {
 
 		MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PUBLIC
 				| Opcodes.ACC_ABSTRACT, "invoke", EUtil.getSignature(arity,
-				true), null, null);
+				true), null, PAUSABLE_EX);
 		mv.visitEnd();
 
 		mv = cw.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_ABSTRACT,
@@ -158,7 +175,7 @@ public abstract class EFun extends EObject implements Opcodes {
 
 		mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "invoke", "("
 				+ EPROC_TYPE.getDescriptor() + EOBJECT_ARR_TYPE.getDescriptor()
-				+ ")" + EOBJECT_TYPE.getDescriptor(), null, null);
+				+ ")" + EOBJECT_TYPE.getDescriptor(), null, PAUSABLE_EX);
 		mv.visitCode();
 		mv.visitVarInsn(Opcodes.ALOAD, 0); // load this
 		mv.visitVarInsn(Opcodes.ALOAD, 1); // load proc
@@ -183,6 +200,8 @@ public abstract class EFun extends EObject implements Opcodes {
 		mv.visitMaxs(arity + 2, arity + 2);
 		mv.visitEnd();
 
+		create_cast(cw, arity);
+		
 		cw.visitEnd();
 
 		byte[] data = cw.toByteArray();
@@ -256,6 +275,31 @@ public abstract class EFun extends EObject implements Opcodes {
 			throw new Error(e);
 		}
 	}
+	
+	private static void create_cast(ClassWriter cw, int n) {
+		MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PUBLIC|Opcodes.ACC_STATIC, "cast", 
+				"(" + EOBJECT_DESC + ")L" + EFUN_NAME + n + ";",
+				null, null);
+		mv.visitCode();
+
+		mv.visitVarInsn(Opcodes.ALOAD, 0);
+		mv.visitTypeInsn(INSTANCEOF, EFUN_NAME+n);
+		
+		Label fail = new Label();
+		
+		mv.visitJumpInsn(Opcodes.IFEQ, fail);
+		mv.visitVarInsn(Opcodes.ALOAD, 0);
+		mv.visitTypeInsn(Opcodes.CHECKCAST, EFUN_NAME+n);
+		mv.visitInsn(Opcodes.ARETURN);
+		
+		mv.visitLabel(fail);
+		mv.visitInsn(Opcodes.ACONST_NULL);
+		mv.visitInsn(Opcodes.ARETURN);
+		
+		mv.visitMaxs(2, 2);
+		mv.visitEnd();
+	}
+
 
 	private static void make_go_method(ClassWriter cw, String self_type,
 			int arity) {
@@ -359,9 +403,15 @@ public abstract class EFun extends EObject implements Opcodes {
 	 * @param a
 	 * @return
 	 */
-	public EObject apply(EProc proc, ESeq a) {
+	public EObject apply(EProc proc, ESeq a) throws Pausable {
 		// TODO: this should be implemented for all EFunX
 		return invoke(proc, a.toArray());
+	}
+	
+	public static void main(String[] args) {
+		for (int i = 0; i < 10; i++) {
+			get_fun_class(i);
+		}
 	}
 
 }

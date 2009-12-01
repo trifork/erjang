@@ -52,7 +52,7 @@ term returns[EObject t]:
   ;
   
 list returns[ESeq res]
-@init{ res = ECons.NIL; ESeq tt = ECons.NIL; }
+@init{ res = ERT.NIL; ESeq tt = ERT.NIL; }
 : '[' 
     ( h=term (',' t=tail { tt=t; })?
        { res = tt.cons(h); }
@@ -60,7 +60,7 @@ list returns[ESeq res]
    ']';
 
 tail returns[ESeq res] 
-@init { res=ECons.NIL; }
+@init { res=ERT.NIL; }
 :
     h=term 
     (',' t=tail { res=t.cons(h); }

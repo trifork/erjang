@@ -114,7 +114,7 @@ public class EBinMatchState {
 
 	}
 
-	EAtom bs_skip_bits2(EObject count_o, int bits, int flags) {
+	public EObject bs_skip_bits2(EObject count_o, int bits, int flags) {
 		EInteger count;
 		if ((count = count_o.testInteger()) == null) {
 			// throw badarg?
@@ -131,9 +131,13 @@ public class EBinMatchState {
 
 		return ERT.TRUE;
 	}
+	
+	public EObject bs_test_unit(int size) {
+		throw new NotImplemented();
+	}
 
 	/** yields TRUE if we are at the end */
-	EObject bs_test_tail2() {
+	public EObject bs_test_tail2() {
 		if (bit_pos == bin.bitCount())
 			return ERT.TRUE;
 		return null;

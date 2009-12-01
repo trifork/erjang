@@ -250,7 +250,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 			}
 
 			// woo!
-			live_analysis();
+			// live_analysis();
 
 			SortedSet<Integer> labels = new TreeSet<Integer>();
 			labels.addAll(lbs.keySet());

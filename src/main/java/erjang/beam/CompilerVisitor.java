@@ -30,6 +30,8 @@ import java.util.Stack;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import kilim.Pausable;
+
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
@@ -85,7 +87,8 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 	private static final EObject ATOM_field_flags = EAtom.intern("field_flags");
 
-	static final Type EBINMATCHSTATE_TYPE = Type.getType(EBinMatchState.class);
+	static final String[] PAUSABLE_EX = new String[] { Type.getType(Pausable.class).getInternalName() };
+ 	static final Type EBINMATCHSTATE_TYPE = Type.getType(EBinMatchState.class);
 	static final Type EBINSTRINGBUILDER_TYPE = Type
 			.getType(EBitStringBuilder.class);
 	static final Type ERLANG_EXCEPTION_TYPE = Type
@@ -399,7 +402,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			String javaName = EUtil.getJavaName(fun_name, arity);
 			String signature = EUtil.getSignature(arity, true);
 			mv = cv.visitMethod(ACC_STATIC | ACC_PUBLIC, javaName, signature,
-					null, null);
+					null, PAUSABLE_EX);
 
 			add_erlfun_annotation(mv);
 
@@ -480,10 +483,10 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			String javaName = EUtil.getJavaName(fun_name, arity);
 			String signature = EUtil.getSignature(arity, true);
 			mv = cv.visitMethod(ACC_STATIC, javaName + "$call", signature,
-					null, null);
+					null, PAUSABLE_EX);
 			mv.visitCode();
 
-			if (isTailRecursive) {
+			//if (isTailRecursive) {
 
 				mv.visitVarInsn(ALOAD, 0);
 				for (int i = 0; i < arity; i++) {
@@ -516,6 +519,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				mv.visitLabel(done);
 				mv.visitVarInsn(ALOAD, arity + 1);
 
+				/*
 			} else {
 
 				mv.visitVarInsn(ALOAD, 0);
@@ -526,7 +530,8 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 						javaName, EUtil.getSignature(arity, true));
 
 			}
-
+*/
+				
 			mv.visitInsn(ARETURN);
 			mv.visitMaxs(arity + 2, arity + 2);
 			mv.visitEnd();
@@ -544,7 +549,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					null, null);
 			mv.visitCode();
 
-			if (isTailRecursive) {
+			//if (isTailRecursive) {
 
 				for (int i = 0; i < arity; i++) {
 					mv.visitVarInsn(ALOAD, 0);
@@ -562,6 +567,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				mv.visitFieldInsn(GETSTATIC, EPROC_NAME, "TAIL_MARKER",
 						EOBJECT_DESC);
 
+				/*
 			} else {
 				for (int i = 0; i < arity + 1; i++) {
 					mv.visitVarInsn(ALOAD, i);
@@ -570,7 +576,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				mv.visitMethodInsn(INVOKESTATIC, self_type.getInternalName(),
 						javaName, signature);
 			}
-
+*/
 			mv.visitInsn(ARETURN);
 			mv.visitMaxs(arity + 2, arity + 2);
 			mv.visitEnd();
@@ -1325,7 +1331,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					String funtype = EFUN_NAME + nargs;
 
 					mv.visitMethodInsn(INVOKESTATIC, funtype, "cast", "("
-							+ EOBJECT_DESC + ")L" + funtype + ";");
+							+ in[nargs].type.getDescriptor() + ")L" + funtype + ";");
 
 					mv.visitVarInsn(ALOAD, 0); // load proc
 					for (int i = 0; i < nargs; i++) {
@@ -1357,9 +1363,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					return;
 
 				case timeout:
-					mv.visitMethodInsn(INVOKESTATIC, ERT_NAME, "timeout", EUtil
-							.getSignature(0, false));
-					mv.visitInsn(ARETURN);
+					mv.visitMethodInsn(INVOKESTATIC, ERT_NAME, "timeout", "()V");
 					return;
 
 				case remove_message:
@@ -2312,7 +2316,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 						&& fun.fun == ASMFunctionAdapter.this.fun_name) {
 						
 						mv.visitVarInsn(ALOAD, 0);
-						mv.visitMethodInsn(INVOKESTATIC, ERT_NAME, "check_exit", "(" + EPROC_TYPE.getDescriptor() + ")V");
+						mv.visitMethodInsn(INVOKEVIRTUAL, EPROC_NAME, "check_exit", "()V");
 						
 						
 						// System.out.println("self-recursive in " + fun);
@@ -2472,7 +2476,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 	private static void make_invoke_method(ClassWriter cw, String outer_name,
 			String mname, int arity, boolean proc, int freevars, Type returnType) {
 		MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "invoke", EUtil
-				.getSignature(arity - freevars, true), null, null);
+				.getSignature(arity - freevars, true), null, PAUSABLE_EX);
 		mv.visitCode();
 		if (proc) {
 			mv.visitVarInsn(ALOAD, 1);
@@ -2538,7 +2542,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			String mname, String full_inner, int arity, boolean proc,
 			int freevars, Type returnType) {
 		MethodVisitor mv;
-		mv = cw.visitMethod(ACC_PUBLIC, "go", GO_DESC, null, null);
+		mv = cw.visitMethod(ACC_PUBLIC, "go", GO_DESC, null, PAUSABLE_EX);
 		mv.visitCode();
 		for (int i = 0; i < arity - freevars; i++) {
 			mv.visitVarInsn(ALOAD, 1);
