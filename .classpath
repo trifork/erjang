@@ -2,6 +2,8 @@
 <classpath>
 	<classpathentry kind="src" path="src/main/java"/>
 	<classpathentry kind="src" path="src/test/java"/>
+	<classpathentry kind="src" path="src/asm/java"/>
+	<classpathentry kind="src" path="src/kilim/java"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="lib/OtpErlang.jar"/>
 	<classpathentry kind="lib" path="lib/antlr-3.2.jar"/>

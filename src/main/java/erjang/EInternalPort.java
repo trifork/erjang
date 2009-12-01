@@ -22,11 +22,11 @@ package erjang;
 /**
  * 
  */
-public class ELocalPort extends EPort {
+public class EInternalPort extends EPort {
 
 	private final EDriverTask task;
 
-	public ELocalPort(EDriverTask task) {
+	public EInternalPort(EDriverTask task) {
 		this.task = task;
 	}
 	
@@ -44,8 +44,16 @@ public class ELocalPort extends EPort {
 	 * @see erjang.EHandle#self()
 	 */
 	@Override
-	EDriverTask self() {
+	EDriverTask task() {
 		return task;
+	}
+
+
+	/**
+	 * @return
+	 */
+	public int internal_port_number() {
+		throw new NotImplemented();
 	}
 
 

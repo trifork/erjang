@@ -161,5 +161,12 @@ public class ERef extends EObject {
         return s;
     }
 
+	/**
+	 * @return
+	 */
+	public int[] internal_ref_numbers() {
+		throw new NotImplemented();
+	}
+
 
 }

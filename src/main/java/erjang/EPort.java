@@ -61,6 +61,5 @@ public abstract class EPort extends EHandle {
 	public static EAtom am_out = EAtom.intern("out");
 	public static EAtom am_binary = EAtom.intern("binary");
 	public static EAtom am_eof = EAtom.intern("eof");
-	
 
 }

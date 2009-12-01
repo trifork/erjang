@@ -20,29 +20,23 @@ package erjang;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
 
 /**
  * An erlang process
  */
-public class EProc extends ETask<ELocalPID> implements Runnable {
+public final class EProc extends ETask<EInternalPID> implements Runnable {
 	public static final EObject TAIL_MARKER = new ETailMarker();
 
 	private static final EAtom am_trap_exit = EAtom.intern("trap_exit");
-
 	private static final EObject am_normal = EAtom.intern("normal");
-
 	private static final EObject am_java_exception = EAtom.intern("java_exception");
 
 	public EFun tail;
 	public EObject arg0, arg1, arg2, arg3, arg4, arg5, arg6;
 
-	private ELocalPID self = new ELocalPID(this);
+	private EInternalPID self;
 
 	private EAtom run_mod;
 
@@ -50,12 +44,18 @@ public class EProc extends ETask<ELocalPID> implements Runnable {
 
 	private EObject[] run_args;
 
+	private EPID group_leader;
+
 	/**
 	 * @param m
 	 * @param f
 	 * @param array
 	 */
-	public EProc(EAtom m, EAtom f, EObject[] args) {
+	public EProc(EPID group_leader, EAtom m, EAtom f, EObject[] args) {
+		self = new EInternalPID(this);
+		
+		// if no group leader is given, we're our own group leader
+		this.group_leader = group_leader == null ? self : group_leader;
 		this.run_mod = m;
 		this.run_fun = f;
 		this.run_args = args;
@@ -64,7 +64,7 @@ public class EProc extends ETask<ELocalPID> implements Runnable {
 	/**
 	 * @return
 	 */
-	public ELocalPID self() {
+	public EInternalPID self() {
 		return self;
 	}
 
@@ -93,11 +93,14 @@ public class EProc extends ETask<ELocalPID> implements Runnable {
 	}
 
 	/**
-	 * @return
+	 * @return list of the process dictionary
 	 */
 	public ECons get() {
-		// TODO Auto-generated method stub
-		return null;
+		ESeq res = ERT.NIL;
+		for (Map.Entry<EObject, EObject> ent : pdict.entrySet()) {
+			res.cons(ETuple.make(ent.getKey(), ent.getValue()));
+		}
+		return res;
 	}
 
 	/**
@@ -115,7 +118,17 @@ public class EProc extends ETask<ELocalPID> implements Runnable {
 	 * @return
 	 */
 	public EPID group_leader() {
-		throw new NotImplemented();
+		return group_leader;
+	}
+
+
+	/**
+	 * Only called from ELocalPID
+	 * 
+	 * @param group_leader
+	 */
+	void set_group_leader(EPID group_leader) {
+		this.group_leader = group_leader;
 	}
 
 	/**
@@ -187,8 +200,8 @@ public class EProc extends ETask<ELocalPID> implements Runnable {
 			this.pstate = State.DONE;
 		}
 
-		for (EHandle pid : links) {
-			pid.send_exit(self(), result);
+		for (EHandle handle : links) {
+			handle.exit_signal(self(), result);
 		}
 
 		// System.out.println("done: " + result);

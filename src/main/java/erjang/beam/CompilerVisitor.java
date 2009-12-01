@@ -2305,6 +2305,21 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					}
 
 				} else {
+					
+					// are we self-recursive?
+					if (is_tail
+						&& fun.no == ASMFunctionAdapter.this.arity
+						&& fun.fun == ASMFunctionAdapter.this.fun_name) {
+						
+						mv.visitVarInsn(ALOAD, 0);
+						mv.visitMethodInsn(INVOKESTATIC, ERT_NAME, "check_exit", "(" + EPROC_TYPE.getDescriptor() + ")V");
+						
+						
+						// System.out.println("self-recursive in " + fun);
+						mv.visitJumpInsn(GOTO, getLabel(ASMFunctionAdapter.this.startLabel));
+						return;
+						
+					}
 
 					mv.visitVarInsn(ALOAD, 0);
 					for (int i = 0; i < args.length; i++) {

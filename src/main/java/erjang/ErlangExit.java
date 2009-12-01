@@ -19,6 +19,8 @@
 
 package erjang;
 
+import java.io.IOException;
+
 /**
  * 
  */
@@ -29,6 +31,13 @@ public class ErlangExit extends ErlangException {
 	 */
 	public ErlangExit(EObject reason) {
 		super(reason);
+	}
+
+	/**
+	 * @param e
+	 */
+	public ErlangExit(Throwable e) {
+		super(ETuple.make(EString.fromString(e.getMessage()), decodeTrace(e.getStackTrace())));
 	}
 
 	public EAtom getExClass() { return am_exit; }

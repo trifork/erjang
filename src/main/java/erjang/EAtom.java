@@ -36,8 +36,8 @@ public class EAtom extends EObject implements CharSequence {
 		return null;
 	}
 
-
 	private final String value;
+	public final int hash;
 
 	@Override
 	int compare_same(EObject rhs) {
@@ -48,6 +48,7 @@ public class EAtom extends EObject implements CharSequence {
 
 	private EAtom(String name) {
 		this.value = name;
+		this.hash = name.hashCode();
 	}
 
 	@Override
@@ -55,7 +56,7 @@ public class EAtom extends EObject implements CharSequence {
 		return 1;
 	}
 	
-	Pattern ATOM = Pattern.compile("[a-z_]([a-z]|[A-Z]|@|_|[0-9])*");
+	static Pattern ATOM = Pattern.compile("[a-z_]([a-z]|[A-Z]|@|_|[0-9])*");
 
 	@Override
 	public String toString() {
@@ -117,7 +118,7 @@ public class EAtom extends EObject implements CharSequence {
 
 	@Override
 	public int hashCode() {
-		return value.hashCode();
+		return hash;
 	}
 
 	public static EAtom intern(String name) {

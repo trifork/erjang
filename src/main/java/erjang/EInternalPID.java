@@ -22,11 +22,11 @@ package erjang;
 /**
  * This is a PID on this node
  */
-public class ELocalPID extends EPID {
+public class EInternalPID extends EPID {
 
 	private final EProc proc;
 
-	public ELocalPID(EProc self) {
+	public EInternalPID(EProc self) {
 		this.proc = self;
 	}
 	
@@ -34,7 +34,7 @@ public class ELocalPID extends EPID {
 	 * @see erjang.EHandle#self()
 	 */
 	@Override
-	ETask<?> self() {
+	ETask<?> task() {
 		return proc;
 	}
 	
@@ -47,7 +47,7 @@ public class ELocalPID extends EPID {
 	 * @see erjang.EPID#send_exit(erjang.EPID, erjang.EObject)
 	 */
 	@Override
-	public void send_exit(EHandle from, EObject reason) {
+	public void exit_signal(EHandle from, EObject reason) {
 		proc.send_exit(from, reason);
 	}
 
@@ -57,5 +57,20 @@ public class ELocalPID extends EPID {
 	@Override
 	public void link_oneway(EHandle other) {
 		proc.link_oneway(other);
+	}
+
+	/* (non-Javadoc)
+	 * @see erjang.EPID#set_group_leader(erjang.EPID)
+	 */
+	@Override
+	public void set_group_leader(EPID group_leader) {
+		proc.set_group_leader(group_leader);
+	}
+
+	/**
+	 * @return
+	 */
+	public int internal_pid_number() {
+		throw new NotImplemented();
 	}
 }

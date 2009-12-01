@@ -22,16 +22,18 @@ package erjang;
 /**
  * 
  */
-public class EDriverTask extends ETask<ELocalPort> {
+public class EDriverTask extends ETask<EInternalPort> {
 
-	private final ELocalPort port;
+	private final EInternalPort port;
+	protected final EProc owner;
 
-	EDriverTask() {
-		this.port = new ELocalPort(this);
+	EDriverTask(EProc owner) {
+		this.owner = owner;
+		this.port = new EInternalPort(this);
 	}
 	
 	@Override
-	public ELocalPort self() {
+	public EInternalPort self() {
 		return port;
 	}
 

@@ -24,25 +24,29 @@ package erjang;
  */
 public abstract class EHandle extends EObject {
 
-	abstract ETask<?> self();
+	ETask<?> task() {
+		throw new Error("only local handles can provide task reference");
+	}
 
 	/**
 	 * @param msg
 	 */
 	public void send(EObject msg) {
-		self().mbox_send(msg);
+		task().mbox_send(msg);
 	}
 
 	/**
 	 * @param self
 	 * @param result
 	 */
-	public void send_exit(EHandle from, EObject reason) {
-		self().send_exit(from, reason);
+	public void exit_signal(EHandle from, EObject reason) {
+		task().send_exit(from, reason);
 	}
 
 	/**
-	 * @param self
+	 * A one-way link message.  (other is already linked to this handle).
+	 * 
+	 * @param other
 	 */
 	public abstract void link_oneway(EHandle other);
 	

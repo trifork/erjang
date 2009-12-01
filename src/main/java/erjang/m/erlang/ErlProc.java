@@ -96,12 +96,12 @@ public class ErlProc {
 		
 		EAtom m = mod.testAtom();
 		EAtom f = fun.testAtom();
-		ESeq  a = args.testWellformedList();
+		ESeq  a = args.testSeq();
 		
 		if (m==null||f==null||a==null) 
 			throw ERT.badarg(mod, fun, args);
 		
-		EProc p2 = new EProc(m, f, a.toArray());
+		EProc p2 = new EProc(proc.group_leader(), m, f, a.toArray());
 		
 		p2.link_to(proc);
 		
@@ -162,6 +162,20 @@ public class ErlProc {
 		return proc.group_leader();
 	}
 
+	@BIF
+	static EObject group_leader(EObject group_leader, EObject pid)
+	{
+		EPID p = pid.testPID();
+		EPID gl = group_leader.testPID();
+		
+		if (p==null || gl==null) throw ERT.badarg(group_leader, pid);
+		
+		p.set_group_leader(gl);
+		
+		return ERT.TRUE;
+	}
+	
+	
 	static EAtom am_allocator = EAtom.intern("allocator");
 	static EAtom am_heap_type = EAtom.intern("heap_type");
 	static EAtom am_shared = EAtom.intern("shared");

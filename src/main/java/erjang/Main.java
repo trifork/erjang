@@ -78,7 +78,7 @@ public class Main {
 		
 		String s = argv.toString();
 		
-		EProc proc = new EProc(ring, am_start, new EObject[]{ env, argv });
+		EProc proc = new EProc(null, ring, am_start, new EObject[]{ env, argv });
 
 		proc.run();
 	}

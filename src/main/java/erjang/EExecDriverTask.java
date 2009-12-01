@@ -63,19 +63,17 @@ public class EExecDriverTask extends EDriverTask {
 	private int line_length;
 
 	private Mode mode = Mode.STREAM;
-	private EProc owner;
 	private Process process;
 	private DataOutputStream out;
 	private DataInputStream in;
 
 	/**
-	 * @param proc
+	 * @param owner
 	 * @param name
 	 * @param portSetting
 	 */
-	public EExecDriverTask(EProc proc, ETuple2 name, EObject portSetting) {
-		
-		this.owner = proc;
+	public EExecDriverTask(EProc owner, ETuple2 name, EObject portSetting) {
+		super(owner);
 
 		// argument can be any list, ... turn it into a string
 		ECons cons;
@@ -260,14 +258,12 @@ public class EExecDriverTask extends EDriverTask {
 		try {
 			internal_send(data, data_off, data_len);
 		} catch (IOException e) {
-			owner.self().send( ETuple.make(ERT.EXIT, self(), ERT.get_posix_code(e)) );
+			throw new ErlangExit(e);
 		}
 		
 	}
 	
 	public synchronized void internal_send(byte[] data, int data_off, int data_len) throws IOException {
-
-
 		
 		switch (mode) {
 		case STREAM:

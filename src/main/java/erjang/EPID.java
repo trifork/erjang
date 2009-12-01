@@ -42,4 +42,9 @@ public abstract class EPID extends EHandle {
 		return toString().compareTo(rhs.toString());
 	}
 
+	/**
+	 * @param gl
+	 */
+	public abstract void set_group_leader(EPID gl);
+
 }
