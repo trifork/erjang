@@ -33,4 +33,11 @@ public abstract class EInteger extends ENumber {
 		return this;
 	}
 
+	/**
+	 * @return
+	 */
+	public long longValue() {
+		return bigintValue().longValue();
+	}
+
 }

@@ -22,18 +22,22 @@ package erjang;
 import java.util.Set;
 import java.util.TreeSet;
 
+import kilim.Pausable;
+import kilim.Task;
+
 /**
  * An ETask is what is common for processes and open ports
  */
-public abstract class ETask<H extends EHandle> {
+public abstract class ETask<H extends EHandle> extends kilim.Task {
 	
-	public abstract void mbox_send(EObject msg);
+	public abstract void mbox_send(EObject msg) throws Pausable;
 
 	/**
 	 * @param from
 	 * @param reason
+	 * @throws Pausable 
 	 */
-	public abstract void send_exit(EHandle from, EObject reason);
+	public abstract void send_exit(EHandle from, EObject reason) throws Pausable;
 
 	/**
 	 * @return

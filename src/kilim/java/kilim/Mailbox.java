@@ -95,6 +95,86 @@ public class Mailbox<T> implements PauseReason, EventPublisher {
         return msg;
     }
     
+
+    /**
+     * @return non-null message.
+     * @throws Pausable
+     */
+    public void untilHasMessage() throws Pausable{
+        Task t = Task.getCurrentTask();
+        boolean msg = hasMessage(t);
+        while (msg == false) {
+            Task.pause(this);
+            msg = hasMessage(t);
+        }
+    }
+
+
+    /**
+     * @return non-null message.
+     * @throws Pausable
+     */
+    public boolean untilHasMessage(long timeoutMillis) throws Pausable {
+        final Task t = Task.getCurrentTask();
+        boolean has_msg = hasMessage(t);
+        long begin = System.currentTimeMillis();
+        while (has_msg == false) {
+            TimerTask tt = new TimerTask() {
+                public void run() {
+                    Mailbox.this.removeMsgAvailableListener(t);
+                    t.onEvent(Mailbox.this, timedOut);
+                }
+            };
+            Task.timer.schedule(tt, timeoutMillis);
+            Task.pause(this);
+            tt.cancel();
+            if (System.currentTimeMillis() - begin > timeoutMillis) {
+                break;
+            }
+            has_msg = hasMessage(t);
+        }
+        return has_msg;
+    }
+    
+    
+    /**
+     * Non-blocking, nonpausing "wait-until-message-available". 
+     * @param eo. If non-null, registers this observer and calls it with a MessageAvailable event when
+     *  a put() is done.
+     * @return true's one, or false 
+     */
+    public boolean hasMessage(EventSubscriber eo) {
+        boolean has_msg;
+        synchronized(this) {
+            int n = numMsgs;
+            if (n > 0) {
+            	has_msg = true;
+            } else {
+                has_msg = false;
+                addMsgAvailableListener(eo);
+            }
+        }
+        return has_msg;
+    }
+    
+    /**
+     * Non-blocking, nonpausing peek. 
+     * @return buffered message if there's one, or null 
+     */
+    public T peek() {
+        T msg;
+        synchronized(this) {
+            int n = numMsgs;
+            if (n > 0) {
+                int ic = icons;
+                msg = msgs[ic];
+            } else {
+                msg = null;
+            }
+        }
+        return msg;
+    }
+    
     /**
      * Non-blocking, nonpausing put. 
      * @param eo. If non-null, registers this observer and calls it with an SpaceAvailable event 
@@ -143,6 +223,7 @@ public class Mailbox<T> implements PauseReason, EventPublisher {
         }
         // notify get's subscriber that something is available
         if (subscriber != null) {
+        	System.err.println("sending messageAvailable to "+subscriber);
             subscriber.onEvent(this, messageAvailable);
         }
         return ret;

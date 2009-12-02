@@ -37,6 +37,10 @@ public class ESmall extends EInteger {
 	public ESmall(int value) {
 		this.value = value;
 	}
+	
+	public long longValue() {
+		return value;
+	}
 
 	@Override
 	int compare_same(EObject rhs) {

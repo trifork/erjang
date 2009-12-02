@@ -23,6 +23,7 @@ public class WorkerThread extends Thread {
     public int numResumes = 0;
     
     WorkerThread(Scheduler ascheduler) {
+    	setDaemon(true);
         scheduler=ascheduler;
     }
     

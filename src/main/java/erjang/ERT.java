@@ -287,9 +287,10 @@ public class ERT {
 	/**
 	 * @param owner
 	 * @param make
+	 * @throws Pausable 
 	 */
 	@BIF(name="!")
-	public static EObject send(EProc proc, EObject pid, EObject msg) {
+	public static EObject send(EProc proc, EObject pid, EObject msg) throws Pausable {
 		
 		proc.check_exit();
 		
@@ -407,10 +408,11 @@ public class ERT {
 		throw new ErlangError(ETuple.make(am_try_case_clause, val));
 	}
 	
-	static Executor executor = new ScheduledThreadPoolExecutor(8);
+	static kilim.Scheduler scheduler = new kilim.Scheduler(4);
 	
-	public static void run(EProc proc) {
-		executor.execute(proc);
+	public static void run(ETask<?> task) {
+		task.setScheduler(scheduler);
+		task.start();
 	}
 	
 	/** peek mbox */
@@ -418,11 +420,11 @@ public class ERT {
 		return proc.mbox_peek();
 	}
 	
-	public static void remove_message(EProc proc) {
+	public static void remove_message(EProc proc) throws Pausable {
 		proc.mbox_remove_one();
 	}
 	
-	public static void wait_forever(EProc proc) {
+	public static void wait_forever(EProc proc) throws Pausable {
 		proc.mbox_wait();
 	}
 	
@@ -457,8 +459,10 @@ public class ERT {
 		throw new ErlangError(AM_BADMATCH);
 	}
 	
-	public static boolean wait_timeout(EProc proc, EObject howlong) {
-		throw new NotImplemented();
+	public static boolean wait_timeout(EProc proc, EObject howlong) throws Pausable {
+		EInteger ei;
+		if ((ei = howlong.testInteger()) == null) throw badarg(howlong);
+		return proc.mbox_wait(ei.longValue());
 	}
 	
 	public static void timeout() {

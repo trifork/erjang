@@ -368,13 +368,13 @@ public abstract class ETuple extends EObject implements Cloneable /*, Indexed*/ 
 		
 		String pkg = name.substring(0, name.lastIndexOf('/'));
 		
-		File out_dir = new File( new File("target/gen"), pkg);
+		File out_dir = new File( new File("target/woven"), pkg);
 
 		out_dir.mkdirs();
 		
 		FileOutputStream fo;
 		try {
-			String fname = "target/gen/" + name + ".class";
+			String fname = "target/woven/" + name + ".class";
 			fo = new FileOutputStream(fname);
 			fo.write(data);
 			fo.close();

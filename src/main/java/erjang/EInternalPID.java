@@ -19,6 +19,8 @@
 
 package erjang;
 
+import kilim.Pausable;
+
 /**
  * This is a PID on this node
  */
@@ -39,7 +41,7 @@ public class EInternalPID extends EPID {
 	}
 	
 	@Override
-	public void send(EObject msg) {
+	public void send(EObject msg) throws Pausable {
 		proc.mbox_send(msg);
 	}
 	
@@ -47,7 +49,7 @@ public class EInternalPID extends EPID {
 	 * @see erjang.EPID#send_exit(erjang.EPID, erjang.EObject)
 	 */
 	@Override
-	public void exit_signal(EHandle from, EObject reason) {
+	public void exit_signal(EHandle from, EObject reason) throws Pausable {
 		proc.send_exit(from, reason);
 	}
 
@@ -72,5 +74,13 @@ public class EInternalPID extends EPID {
 	 */
 	public int internal_pid_number() {
 		throw new NotImplemented();
+	}
+	
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "PID<" + task() + ">";
 	}
 }

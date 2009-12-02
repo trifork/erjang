@@ -82,7 +82,8 @@ public class Main {
 		
 		EProc proc = new EProc(null, ring, am_start, new EObject[]{ env, argv });
 
-		proc.run();
+		ERT.run(proc);
+		proc.joinb();
 		
 		System.out.println("done.");
 	}

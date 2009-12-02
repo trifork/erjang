@@ -110,6 +110,8 @@ public abstract class EFun extends EObject implements Opcodes {
 		// make sure we have it's superclass loaded
 		get_fun_class(ary);
 
+		data = weave(data);
+		
 		Class<? extends EFun> res_class = ERT.defineClass(cl, clname.replace(
 				'/', '.'), data, 0, data.length);
 
@@ -135,14 +137,7 @@ public abstract class EFun extends EObject implements Opcodes {
 
 		byte[] data = gen_fun_class_data(arity);
 		
-		ClassWeaver w = new ClassWeaver(data, new Compiler.ErjangDetector("/xx/"));
-		for (ClassInfo ci : w.getClassInfos()) {
-			ETuple.dump(ci.className, ci.bytes);
-			
-			if (ci.className.equals(EFUN_NAME)) {
-				data = ci.bytes;
-			}
-		}
+		data = weave(data);
 
 
 		return ERT.defineClass(EFun.class.getClassLoader(), self_type.replace(
@@ -254,7 +249,7 @@ public abstract class EFun extends EObject implements Opcodes {
 			cw.visitEnd();
 			byte[] data = cw.toByteArray();
 
-			ETuple.dump(self_type, data);
+			data = weave(data);
 
 			Class<? extends EFun> clazz = ERT.defineClass(EFun.class
 					.getClassLoader(), self_type.replace('/', '.'), data, 0,
@@ -274,6 +269,17 @@ public abstract class EFun extends EObject implements Opcodes {
 		} catch (Exception e) {
 			throw new Error(e);
 		}
+	}
+
+	public static byte[] weave(byte[] data) {
+		ClassWeaver w = new ClassWeaver(data, new Compiler.ErjangDetector("/xx/"));
+		for (ClassInfo ci : w.getClassInfos()) {
+			ETuple.dump(ci.className, ci.bytes);
+			
+			if (!ci.className.startsWith("kilim"))
+				data = ci.bytes;
+		}
+		return data;
 	}
 	
 	private static void create_cast(ClassWriter cw, int n) {
@@ -304,7 +310,7 @@ public abstract class EFun extends EObject implements Opcodes {
 	private static void make_go_method(ClassWriter cw, String self_type,
 			int arity) {
 		MethodVisitor mv;
-		mv = cw.visitMethod(ACC_PUBLIC, "go", GO_DESC, null, null);
+		mv = cw.visitMethod(ACC_PUBLIC, "go", GO_DESC, null, PAUSABLE_EX);
 		mv.visitCode();
 
 		for (int i = 0; i < arity; i++) {
@@ -349,7 +355,7 @@ public abstract class EFun extends EObject implements Opcodes {
 	private static void make_invoke_method(ClassWriter cw, String self_type,
 			int arity) {
 		MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "invoke", EUtil
-				.getSignature(arity, true), null, null);
+				.getSignature(arity, true), null, PAUSABLE_EX);
 		mv.visitCode();
 		mv.visitVarInsn(ALOAD, 0);
 		mv.visitVarInsn(ALOAD, 1);

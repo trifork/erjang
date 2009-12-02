@@ -31,6 +31,8 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 import kilim.Pausable;
+import kilim.analysis.ClassInfo;
+import kilim.analysis.ClassWeaver;
 
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassVisitor;
@@ -87,8 +89,9 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 	private static final EObject ATOM_field_flags = EAtom.intern("field_flags");
 
-	static final String[] PAUSABLE_EX = new String[] { Type.getType(Pausable.class).getInternalName() };
- 	static final Type EBINMATCHSTATE_TYPE = Type.getType(EBinMatchState.class);
+	static final String[] PAUSABLE_EX = new String[] { Type.getType(
+			Pausable.class).getInternalName() };
+	static final Type EBINMATCHSTATE_TYPE = Type.getType(EBinMatchState.class);
 	static final Type EBINSTRINGBUILDER_TYPE = Type
 			.getType(EBitStringBuilder.class);
 	static final Type ERLANG_EXCEPTION_TYPE = Type
@@ -106,7 +109,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 	static final String EOBJECT_DESC = EOBJECT_TYPE.getDescriptor();
 	static final Type EPROC_TYPE = Type.getType(EProc.class);
 	static final String EPROC_NAME = EPROC_TYPE.getInternalName();
-	
+
 	static final Type ESMALL_TYPE = Type.getType(ESmall.class);
 	static final String ESMALL_NAME = ESMALL_TYPE.getInternalName();
 
@@ -468,11 +471,15 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			byte[] data = CompilerVisitor.make_invoker(self_type, mname, mname,
 					arity, true, freevars, EOBJECT_TYPE);
 
-			try {
-				classRepo.store(full_inner_name, data);
-			} catch (IOException e) {
-				e.printStackTrace();
+			ClassWeaver w = new ClassWeaver(data, new Compiler.ErjangDetector(self_type.getInternalName()));
+			for (ClassInfo ci : w.getClassInfos()) {
+				try {
+					classRepo.store(ci.className, ci.bytes);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
 			}
+
 		}
 
 		/**
@@ -486,52 +493,48 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					null, PAUSABLE_EX);
 			mv.visitCode();
 
-			//if (isTailRecursive) {
+			// if (isTailRecursive) {
 
-				mv.visitVarInsn(ALOAD, 0);
-				for (int i = 0; i < arity; i++) {
-					mv.visitVarInsn(ALOAD, i + 1);
-				}
-				mv.visitMethodInsn(INVOKESTATIC, self_type.getInternalName(),
-						javaName, EUtil.getSignature(arity, true));
-				mv.visitVarInsn(ASTORE, arity + 1);
-
-				Label done = new Label();
-				Label loop = new Label();
-				mv.visitLabel(loop);
-				mv.visitVarInsn(ALOAD, arity + 1);
-				mv.visitFieldInsn(GETSTATIC, EPROC_NAME, "TAIL_MARKER",
-						EOBJECT_DESC);
-				mv.visitJumpInsn(IF_ACMPNE, done);
-
-				// load proc
-				mv.visitVarInsn(ALOAD, 0);
-				mv
-						.visitFieldInsn(GETFIELD, EPROC_NAME, "tail",
-								EFUN_DESCRIPTOR);
-				mv.visitVarInsn(ALOAD, 0);
-
-				mv.visitMethodInsn(INVOKEVIRTUAL, EFUN_NAME, "go", GO_DESC);
-				mv.visitVarInsn(ASTORE, arity + 1);
-
-				mv.visitJumpInsn(GOTO, loop);
-
-				mv.visitLabel(done);
-				mv.visitVarInsn(ALOAD, arity + 1);
-
-				/*
-			} else {
-
-				mv.visitVarInsn(ALOAD, 0);
-				for (int i = 0; i < arity; i++) {
-					mv.visitVarInsn(ALOAD, i + 1);
-				}
-				mv.visitMethodInsn(INVOKESTATIC, self_type.getInternalName(),
-						javaName, EUtil.getSignature(arity, true));
-
+			mv.visitVarInsn(ALOAD, 0);
+			for (int i = 0; i < arity; i++) {
+				mv.visitVarInsn(ALOAD, i + 1);
 			}
-*/
-				
+			mv.visitMethodInsn(INVOKESTATIC, self_type.getInternalName(),
+					javaName, EUtil.getSignature(arity, true));
+			mv.visitVarInsn(ASTORE, arity + 1);
+
+			Label done = new Label();
+			Label loop = new Label();
+			mv.visitLabel(loop);
+			mv.visitVarInsn(ALOAD, arity + 1);
+			mv.visitFieldInsn(GETSTATIC, EPROC_NAME, "TAIL_MARKER",
+					EOBJECT_DESC);
+			mv.visitJumpInsn(IF_ACMPNE, done);
+
+			// load proc
+			mv.visitVarInsn(ALOAD, 0);
+			mv.visitFieldInsn(GETFIELD, EPROC_NAME, "tail", EFUN_DESCRIPTOR);
+			mv.visitVarInsn(ALOAD, 0);
+
+			mv.visitMethodInsn(INVOKEVIRTUAL, EFUN_NAME, "go", GO_DESC);
+			mv.visitVarInsn(ASTORE, arity + 1);
+
+			mv.visitJumpInsn(GOTO, loop);
+
+			mv.visitLabel(done);
+			mv.visitVarInsn(ALOAD, arity + 1);
+
+			/*
+			 * } else {
+			 * 
+			 * mv.visitVarInsn(ALOAD, 0); for (int i = 0; i < arity; i++) {
+			 * mv.visitVarInsn(ALOAD, i + 1); } mv.visitMethodInsn(INVOKESTATIC,
+			 * self_type.getInternalName(), javaName, EUtil.getSignature(arity,
+			 * true));
+			 * 
+			 * }
+			 */
+
 			mv.visitInsn(ARETURN);
 			mv.visitMaxs(arity + 2, arity + 2);
 			mv.visitEnd();
@@ -549,34 +552,30 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					null, null);
 			mv.visitCode();
 
-			//if (isTailRecursive) {
+			// if (isTailRecursive) {
 
-				for (int i = 0; i < arity; i++) {
-					mv.visitVarInsn(ALOAD, 0);
-					mv.visitVarInsn(ALOAD, i + 1);
-					mv.visitFieldInsn(PUTFIELD, EPROC_NAME, "arg" + i,
-							EOBJECT_DESC);
-				}
-
+			for (int i = 0; i < arity; i++) {
 				mv.visitVarInsn(ALOAD, 0);
-				mv.visitFieldInsn(GETSTATIC, self_type.getInternalName(),
-						javaName, "L" + EFUN_NAME + arity + ";");
+				mv.visitVarInsn(ALOAD, i + 1);
 				mv
-						.visitFieldInsn(PUTFIELD, EPROC_NAME, "tail",
-								EFUN_DESCRIPTOR);
-				mv.visitFieldInsn(GETSTATIC, EPROC_NAME, "TAIL_MARKER",
-						EOBJECT_DESC);
-
-				/*
-			} else {
-				for (int i = 0; i < arity + 1; i++) {
-					mv.visitVarInsn(ALOAD, i);
-				}
-
-				mv.visitMethodInsn(INVOKESTATIC, self_type.getInternalName(),
-						javaName, signature);
+						.visitFieldInsn(PUTFIELD, EPROC_NAME, "arg" + i,
+								EOBJECT_DESC);
 			}
-*/
+
+			mv.visitVarInsn(ALOAD, 0);
+			mv.visitFieldInsn(GETSTATIC, self_type.getInternalName(), javaName,
+					"L" + EFUN_NAME + arity + ";");
+			mv.visitFieldInsn(PUTFIELD, EPROC_NAME, "tail", EFUN_DESCRIPTOR);
+			mv.visitFieldInsn(GETSTATIC, EPROC_NAME, "TAIL_MARKER",
+					EOBJECT_DESC);
+
+			/*
+			 * } else { for (int i = 0; i < arity + 1; i++) {
+			 * mv.visitVarInsn(ALOAD, i); }
+			 * 
+			 * mv.visitMethodInsn(INVOKESTATIC, self_type.getInternalName(),
+			 * javaName, signature); }
+			 */
 			mv.visitInsn(ARETURN);
 			mv.visitMaxs(arity + 2, arity + 2);
 			mv.visitEnd();
@@ -1083,9 +1082,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			private void emit_unbox(Type fromType, Type toType) {
 				if (toType.equals(Type.INT_TYPE)) {
 					if (fromType.equals(ESMALL_TYPE)) {
-						mv
-								.visitFieldInsn(GETFIELD, ESMALL_NAME,
-										"value", "I");
+						mv.visitFieldInsn(GETFIELD, ESMALL_NAME, "value", "I");
 						return;
 					}
 				}
@@ -1331,7 +1328,8 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					String funtype = EFUN_NAME + nargs;
 
 					mv.visitMethodInsn(INVOKESTATIC, funtype, "cast", "("
-							+ in[nargs].type.getDescriptor() + ")L" + funtype + ";");
+							+ in[nargs].type.getDescriptor() + ")L" + funtype
+							+ ";");
 
 					mv.visitVarInsn(ALOAD, 0); // load proc
 					for (int i = 0; i < nargs; i++) {
@@ -1363,7 +1361,9 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					return;
 
 				case timeout:
-					mv.visitMethodInsn(INVOKESTATIC, ERT_NAME, "timeout", "()V");
+					mv
+							.visitMethodInsn(INVOKESTATIC, ERT_NAME, "timeout",
+									"()V");
 					return;
 
 				case remove_message:
@@ -2149,14 +2149,12 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 										"(Ljava/lang/Object;)Z");
 							}
 							mv.visitJumpInsn(IFNE, target_j);
-						}	
+						}
 					}
 
 					mv.visitJumpInsn(GOTO, getLabel(failLabel));
 				}
-				
-				
-				
+
 			}
 
 			/**
@@ -2309,20 +2307,20 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					}
 
 				} else {
-					
+
 					// are we self-recursive?
-					if (is_tail
-						&& fun.no == ASMFunctionAdapter.this.arity
-						&& fun.fun == ASMFunctionAdapter.this.fun_name) {
-						
+					if (is_tail && fun.no == ASMFunctionAdapter.this.arity
+							&& fun.fun == ASMFunctionAdapter.this.fun_name) {
+
 						mv.visitVarInsn(ALOAD, 0);
-						mv.visitMethodInsn(INVOKEVIRTUAL, EPROC_NAME, "check_exit", "()V");
-						
-						
+						mv.visitMethodInsn(INVOKEVIRTUAL, EPROC_NAME,
+								"check_exit", "()V");
+
 						// System.out.println("self-recursive in " + fun);
-						mv.visitJumpInsn(GOTO, getLabel(ASMFunctionAdapter.this.startLabel));
+						mv.visitJumpInsn(GOTO,
+								getLabel(ASMFunctionAdapter.this.startLabel));
 						return;
-						
+
 					}
 
 					mv.visitVarInsn(ALOAD, 0);

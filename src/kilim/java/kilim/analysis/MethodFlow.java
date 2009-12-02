@@ -175,6 +175,15 @@ public class MethodFlow extends MethodNode {
         return className.replace('/', '.') + '.' + methName + desc;
     }
     
+    /* (non-Javadoc)
+     * @see org.objectweb.asm.tree.MethodNode#visitLineNumber(int, org.objectweb.asm.Label)
+     */
+    @Override
+    public void visitLineNumber(int line, Label start) {
+    	// TODO Auto-generated method stub
+    	super.visitLineNumber(line, start);
+    }
+    
     @Override
     public void visitLabel(Label label) {
 //        if (hasPausableAnnotation)

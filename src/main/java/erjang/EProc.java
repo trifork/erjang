@@ -23,17 +23,19 @@ import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
 
+import kilim.Mailbox;
 import kilim.Pausable;
 
 /**
  * An erlang process
  */
-public final class EProc extends ETask<EInternalPID> implements Runnable {
+public final class EProc extends ETask<EInternalPID> {
 	public static final EObject TAIL_MARKER = new ETailMarker();
 
 	private static final EAtom am_trap_exit = EAtom.intern("trap_exit");
 	private static final EObject am_normal = EAtom.intern("normal");
-	private static final EObject am_java_exception = EAtom.intern("java_exception");
+	private static final EObject am_java_exception = EAtom
+			.intern("java_exception");
 
 	public EFun tail;
 	public EObject arg0, arg1, arg2, arg3, arg4, arg5, arg6;
@@ -55,7 +57,7 @@ public final class EProc extends ETask<EInternalPID> implements Runnable {
 	 */
 	public EProc(EPID group_leader, EAtom m, EAtom f, EObject[] args) {
 		self = new EInternalPID(this);
-		
+
 		// if no group leader is given, we're our own group leader
 		this.group_leader = group_leader == null ? self : group_leader;
 		this.run_mod = m;
@@ -80,7 +82,7 @@ public final class EProc extends ETask<EInternalPID> implements Runnable {
 
 	private EAtom trap_exit = ERT.FALSE;
 
-	private Thread runner;
+	// private Thread runner;
 
 	public EObject put(EObject key, EObject value) {
 		EObject res = pdict.put(key, value);
@@ -123,7 +125,6 @@ public final class EProc extends ETask<EInternalPID> implements Runnable {
 		return group_leader;
 	}
 
-
 	/**
 	 * Only called from ELocalPID
 	 * 
@@ -162,55 +163,54 @@ public final class EProc extends ETask<EInternalPID> implements Runnable {
 	 * @see java.lang.Runnable#run()
 	 */
 	@Override
-	public void run() {
+	public void execute() throws Pausable {
 		try {
-			run0();
+
+			EFun boot = EModule.resolve(new FunID(run_mod, run_fun,
+					run_args.length));
+
+			EObject result = null;
+			try {
+				// this.runner = Thread.currentThread();
+				this.pstate = State.RUNNING;
+
+				System.out.println(boot.getClass().getName());
+				boot.invoke(this, run_args);
+				result = am_normal;
+
+			} catch (ErlangException e) {
+				e.printStackTrace();
+				result = e.reason();
+
+			} catch (ErlangExitSignal e) {
+				e.printStackTrace();
+				result = e.reason();
+
+			} catch (Throwable e) {
+
+				e.printStackTrace();
+
+				ESeq erl_trace = ErlangError.decodeTrace(e.getStackTrace());
+				ETuple java_ex = ETuple.make(am_java_exception, EString
+						.fromString(describe_exception(e)));
+
+				result = ETuple.make(java_ex, erl_trace);
+
+			} finally {
+				// this.runner = null;
+				this.pstate = State.DONE;
+			}
+
+			System.err.println("task "+this+" exited with "+result);
+			
+			for (EHandle handle : links) {
+				handle.exit_signal(self(), result);
+			}
+
 		} catch (Throwable e) {
 			e.printStackTrace();
 		}
 
-	}
-
-	public void run0() throws Pausable {
-
-		EFun boot = EModule.resolve(new FunID(run_mod, run_fun, run_args.length));
-
-		EObject result = null;
-		try {
-			this.runner = Thread.currentThread();
-			this.pstate = State.RUNNING;
-			boot.invoke(this, run_args);
-			result = am_normal;
-
-		} catch (ErlangException e) {
-			result = e.reason();
-
-		} catch (ErlangExitSignal e) {
-			result = e.reason();
-
-		} catch (Throwable e) {
-			
-			if (e instanceof Error) {
-				e.printStackTrace();
-			}
-
-			ESeq erl_trace = ErlangError.decodeTrace(e.getStackTrace());
-			ETuple java_ex = ETuple.make(
-					am_java_exception,
-					EString.fromString(describe_exception(e)));
-			
-			result = ETuple.make(java_ex, erl_trace);
-
-		} finally {
-			this.runner = null;
-			this.pstate = State.DONE;
-		}
-
-		for (EHandle handle : links) {
-			handle.exit_signal(self(), result);
-		}
-
-		// System.out.println("done: " + result);
 	}
 
 	/**
@@ -225,7 +225,7 @@ public final class EProc extends ETask<EInternalPID> implements Runnable {
 		return sw.toString();
 	}
 
-	EMBox mbox = new EMBox();
+	Mailbox<EObject> mbox = new Mailbox<EObject>();
 
 	static enum State {
 		INIT, RUNNING, EXIT_SIG, DONE
@@ -243,34 +243,46 @@ public final class EProc extends ETask<EInternalPID> implements Runnable {
 	}
 
 	/**
+	 * @throws Pausable
 	 * 
 	 */
-	public void mbox_wait() {
-		mbox.wait_forever(this);
+	public void mbox_wait() throws Pausable {
+		mbox.untilHasMessage();
+	}
+
+	/**
+	 * @param longValue
+	 */
+	public boolean mbox_wait(long timeoutMillis) throws Pausable {
+		return mbox.untilHasMessage(timeoutMillis);
 	}
 
 	/**
 	 * @param msg
+	 * @throws Pausable
 	 */
-	public void mbox_send(EObject msg) {
-		mbox.send(msg);
+	public void mbox_send(EObject msg) throws Pausable {
+		mbox.put(msg);
 	}
 
 	/**
 	 * @return
+	 * @throws Pausable
 	 */
-	public void mbox_remove_one() {
-		mbox.remove_one();
+	public void mbox_remove_one() throws Pausable {
+		mbox.get();
 	}
 
 	/**
 	 * @param from
 	 * @param reason
 	 */
-	public void send_exit(EHandle from, EObject reason) {
+	public void send_exit(EHandle from, EObject reason) throws Pausable {
+
+		System.err.println("exit "+from.task()+" -> "+this);
 
 		// ignore exit signals from myself
-		if (from.equals(self())) {
+		if (from == self()) {
 			return;
 		}
 
@@ -295,20 +307,19 @@ public final class EProc extends ETask<EInternalPID> implements Runnable {
 			case RUNNING:
 
 				if (trap_exit != ERT.TRUE) {
+					System.err.println("kill signal");
 					// try to kill this thread
 					this.exit_reason = reason;
 					this.pstate = State.EXIT_SIG;
-					Thread t = this.runner;
-					if (t != null) {
-						t.interrupt();
-					}
+					this.kill(new ErlangExitSignal(reason));
 					return;
 				}
 			}
 		}
-		
+
 		// we're trapping exits, so we in stead send an {'EXIT', from,
 		// reason} to self
+		System.err.println("kill message");
 		mbox_send(ETuple.make(ERT.EXIT, from, reason));
 
 	}
@@ -319,9 +330,6 @@ public final class EProc extends ETask<EInternalPID> implements Runnable {
 	 */
 	public void check_exit() {
 		if (this.pstate == State.EXIT_SIG) {
-			if (Thread.currentThread() != runner) {
-				throw new Error("check_exit() should only be called on self");
-			}
 			throw new ErlangExitSignal(exit_reason);
 		}
 	}

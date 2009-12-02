@@ -19,6 +19,8 @@
 
 package erjang;
 
+import kilim.Pausable;
+
 /**
  * 
  */
@@ -38,13 +40,13 @@ public class EDriverTask extends ETask<EInternalPort> {
 	}
 
 	@Override
-	public void send_exit(EHandle from, EObject reason) {
+	public void send_exit(EHandle from, EObject reason) throws Pausable {
 		// TODO Auto-generated method stub
 
 	}
 
 	@Override
-	public void mbox_send(EObject msg) {
+	public void mbox_send(EObject msg) throws Pausable {
 		// TODO Auto-generated method stub
 
 	}

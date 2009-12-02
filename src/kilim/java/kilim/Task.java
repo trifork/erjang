@@ -81,6 +81,9 @@ public abstract class Task implements EventSubscriber {
 
     public    Object           exitResult = "OK";
 
+    
+	private   Error 		   death_ex;
+
     // TODO: move into a separate timer service or into the schduler.
     public final static Timer timer = new Timer(true);
 
@@ -120,6 +123,24 @@ public abstract class Task implements EventSubscriber {
         return this;
     }
     
+    /** 
+     * Used to make an exception happen inside this task
+     * @param ex
+     */
+    public void kill(Error ex) {
+		System.err.println("killing "+this+" setting "+death_ex);
+
+    	this.death_ex = ex;
+    	resume();
+    }
+    
+    private void maybeKill() {
+    	if (this.death_ex != null) {
+    		System.err.println("killing "+this+": throw "+death_ex);
+    		throw this.death_ex;
+    	}
+    }
+    
     /**
      * The generated code calls Fiber.upEx, which in turn calls
      * this to find out out where the current method is w.r.t
@@ -146,12 +167,15 @@ public abstract class Task implements EventSubscriber {
         // is mailbox.put or get(), and that it'll be the pausereason as well. 
         if (ep == pauseReason) {
             resume();
-        } 
+        } else {
+        	System.err.println("not current pause reason");
+        }
     }
     /**
      * This is typically called by a pauseReason to resume the task.
      */
     public void resume() {
+    	System.err.println("resuming "+this+" on "+scheduler);
         if (scheduler == null) return;
         
         boolean doSchedule = false;
@@ -271,6 +295,7 @@ public abstract class Task implements EventSubscriber {
             f.task.setPauseReason(null);
         }
         f.togglePause();
+        f.task.maybeKill();
     }
 
     /*
@@ -335,6 +360,9 @@ public abstract class Task implements EventSubscriber {
         try {
             currentThread = Thread.currentThread();
             assert (preferredResumeThread == null || preferredResumeThread == thread) : "Resumed " + id + " in incorrect thread. ";
+            
+            System.err.println("scheduling "+this);
+            
             // start execute. fiber is wound to the beginning.
             execute(f.begin());
         
