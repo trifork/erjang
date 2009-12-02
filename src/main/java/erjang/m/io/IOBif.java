@@ -17,13 +17,23 @@
  **/
 
 
-package erjang;
+package erjang.m.io;
 
-import kilim.Pausable;
+import erjang.BIF;
+import erjang.EObject;
+import erjang.ERT;
 
 /**
  * 
  */
-public interface EFunHandler {
-	EObject invoke(EProc proc, EObject[] args) throws Pausable;
+public class IOBif {
+
+	@BIF
+	static public EObject format(EObject a1, EObject a2) {
+		
+		System.out.println("io:format "+a1+" "+a2);
+		
+		return ERT.TRUE;
+	}
+	
 }

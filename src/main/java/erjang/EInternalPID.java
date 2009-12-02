@@ -46,6 +46,22 @@ public class EInternalPID extends EPID {
 	}
 	
 	/* (non-Javadoc)
+	 * @see erjang.EPID#compare_same(erjang.EObject)
+	 */
+	@Override
+	int compare_same(EObject rhs) {
+		return r_compare_same(this);
+	}
+
+	/* (non-Javadoc)
+	 * @see erjang.EObject#r_compare_same(erjang.EInternalPID)
+	 */
+	@Override
+	int r_compare_same(EInternalPID lhs) {
+		return proc.id - lhs.proc.id;
+	}
+	
+	/* (non-Javadoc)
 	 * @see erjang.EPID#send_exit(erjang.EPID, erjang.EObject)
 	 */
 	@Override

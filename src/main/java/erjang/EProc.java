@@ -46,7 +46,7 @@ public final class EProc extends ETask<EInternalPID> {
 
 	private EAtom run_fun;
 
-	private EObject[] run_args;
+	private ESeq run_args;
 
 	private EPID group_leader;
 
@@ -55,7 +55,7 @@ public final class EProc extends ETask<EInternalPID> {
 	 * @param f
 	 * @param array
 	 */
-	public EProc(EPID group_leader, EAtom m, EAtom f, EObject[] args) {
+	public EProc(EPID group_leader, EAtom m, EAtom f, ESeq args) {
 		self = new EInternalPID(this);
 
 		// if no group leader is given, we're our own group leader
@@ -166,16 +166,25 @@ public final class EProc extends ETask<EInternalPID> {
 	public void execute() throws Pausable {
 		try {
 
+			int run_arity = run_args.length();
 			EFun boot = EModule.resolve(new FunID(run_mod, run_fun,
-					run_args.length));
+					run_arity));
 
 			EObject result = null;
 			try {
 				// this.runner = Thread.currentThread();
 				this.pstate = State.RUNNING;
 
-				System.out.println(boot.getClass().getName());
-				boot.invoke(this, run_args);
+				//System.out.println(run_mod + ":" + run_fun + "/" + run_arity);
+				
+				if (boot == null) {
+					throw new ErlangError(EAtom.intern("no_such_function"), 
+											run_mod, run_fun, new ESmall(run_arity));
+				}
+				
+
+				
+				boot.invoke(this, run_args.toArray());
 				result = am_normal;
 
 			} catch (ErlangException e) {
@@ -201,7 +210,7 @@ public final class EProc extends ETask<EInternalPID> {
 				this.pstate = State.DONE;
 			}
 
-			System.err.println("task "+this+" exited with "+result);
+			//System.err.println("task "+this+" exited with "+result);
 			
 			for (EHandle handle : links) {
 				handle.exit_signal(self(), result);

@@ -101,10 +101,27 @@ public class ErlProc {
 		if (m==null||f==null||a==null) 
 			throw ERT.badarg(mod, fun, args);
 		
-		EProc p2 = new EProc(proc.group_leader(), m, f, a.toArray());
+		EProc p2 = new EProc(proc.group_leader(), m, f, a);
 		
 		p2.link_to(proc);
 		
+		ERT.run(p2);
+		
+		return p2.self();
+	}
+	
+	@BIF
+	public static EObject spawn(EProc proc, EObject mod, EObject fun, EObject args) {
+		
+		EAtom m = mod.testAtom();
+		EAtom f = fun.testAtom();
+		ESeq  a = args.testSeq();
+		
+		if (m==null||f==null||a==null) 
+			throw ERT.badarg(mod, fun, args);
+		
+		EProc p2 = new EProc(proc.group_leader(), m, f, a);
+				
 		ERT.run(p2);
 		
 		return p2.self();

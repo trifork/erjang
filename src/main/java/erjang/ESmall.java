@@ -174,6 +174,11 @@ public class ESmall extends EInteger {
 		return other.r_subtract(value);
 	}
 
+	@Deprecated
+	public ENumber subtract(int rhs) { 
+			return ERT.box((long)value - rhs);
+	}
+
 	public ENumber r_subtract(int lhs) {
 		return ERT.box((long) lhs - (long) value);
 	}

@@ -59,6 +59,16 @@ public abstract class EFun extends EObject implements Opcodes {
 	int cmp_order() {
 		return 3;
 	}
+	
+	/* (non-Javadoc)
+	 * @see erjang.EObject#compare_same(erjang.EObject)
+	 */
+	@Override
+	int compare_same(EObject rhs) {
+		if (rhs == this) return 0;
+		return (System.identityHashCode(this)&0xffff)
+			 - (System.identityHashCode(rhs)&0xffff);
+	}
 
 	/** used for translation of tail recursive methods */
 	public abstract EObject go(EProc eproc) throws Pausable;

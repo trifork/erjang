@@ -17,13 +17,19 @@
  **/
 
 
-package erjang;
+package erjang.m.io;
 
-import kilim.Pausable;
+import erjang.EModule;
 
 /**
  * 
  */
-public interface EFunHandler {
-	EObject invoke(EProc proc, EObject[] args) throws Pausable;
+public class io extends EModule {
+
+	@Override
+	public String module_name() {
+		return "io";
+	}
+	
+
 }

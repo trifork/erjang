@@ -167,15 +167,12 @@ public abstract class Task implements EventSubscriber {
         // is mailbox.put or get(), and that it'll be the pausereason as well. 
         if (ep == pauseReason) {
             resume();
-        } else {
-        	System.err.println("not current pause reason");
         }
     }
     /**
      * This is typically called by a pauseReason to resume the task.
      */
     public void resume() {
-    	System.err.println("resuming "+this+" on "+scheduler);
         if (scheduler == null) return;
         
         boolean doSchedule = false;
@@ -360,8 +357,6 @@ public abstract class Task implements EventSubscriber {
         try {
             currentThread = Thread.currentThread();
             assert (preferredResumeThread == null || preferredResumeThread == thread) : "Resumed " + id + " in incorrect thread. ";
-            
-            System.err.println("scheduling "+this);
             
             // start execute. fiber is wound to the beginning.
             execute(f.begin());

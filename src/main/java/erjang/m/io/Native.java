@@ -17,13 +17,18 @@
  **/
 
 
-package erjang;
+package erjang.m.io;
 
-import kilim.Pausable;
+import erjang.ENative;
 
 /**
  * 
  */
-public interface EFunHandler {
-	EObject invoke(EProc proc, EObject[] args) throws Pausable;
+public class Native extends ENative {
+
+	@Override
+	protected Class<?>[] getNativeClasses() {
+		return new Class[] { IOBif.class };
+	}
+
 }

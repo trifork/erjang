@@ -185,7 +185,7 @@ public class ERT {
 	 * @param longValue
 	 * @return
 	 */
-	public static EInteger box(long longVal) {
+	public static EInteger box2(long longVal) {
 		
 		// very simple: see if the longValue can be converted
 		// to an int and back again without loosing it's value
@@ -198,7 +198,7 @@ public class ERT {
 		}
 	}
 	
-	public static EInteger box2(long longVal) {
+	public static EInteger box(long longVal) {
 			
 
 		// compute l's offset from Integer.MIN_VALUE

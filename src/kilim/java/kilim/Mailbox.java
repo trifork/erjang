@@ -223,7 +223,6 @@ public class Mailbox<T> implements PauseReason, EventPublisher {
         }
         // notify get's subscriber that something is available
         if (subscriber != null) {
-        	System.err.println("sending messageAvailable to "+subscriber);
             subscriber.onEvent(this, messageAvailable);
         }
         return ret;
@@ -315,7 +314,7 @@ public class Mailbox<T> implements PauseReason, EventPublisher {
 
 
     public synchronized void addMsgAvailableListener(EventSubscriber msgSub) {
-        if (sink != null) {
+        if (sink != null && sink != msgSub) {
             throw new AssertionError(
                     "Error: A mailbox can not be shared by two consumers.  New = "
                             + msgSub + ", Old = " + sink);

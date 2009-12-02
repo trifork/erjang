@@ -242,6 +242,7 @@ public abstract class EObject implements Comparable<EObject> {
 	int r_compare_same(ESmall lhs) { throw new NotImplemented(); }
 	int r_compare_same(EBig lhs) { throw new NotImplemented(); }
 	int r_compare_same(EDouble lhs) { throw new NotImplemented(); }
+	int r_compare_same(EInternalPID lhs) { throw new NotImplemented(); }
 	
 	public boolean equalsExactly(EObject rhs) {
 		return compare_same(rhs) == 0;

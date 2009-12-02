@@ -34,6 +34,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
 
+import kilim.Pausable;
+
 import sun.tools.java.Imports;
 
 import erjang.beam.ClassRepo;
@@ -81,7 +83,9 @@ public abstract class EModule {
 			} else {
 				Object h = EFun.get_fun_with_handler(fun.arity,
 						new EFunHandler() {
-							public EObject invoke(EProc proc, EObject[] args) {
+							public EObject invoke(EProc proc, EObject[] args) 
+								throws Pausable
+							{
 								System.out.println("undefined "+fun);
 								throw new ErlangUndefined(fun.module, fun.function, ESmall.make(fun.arity));
 							}

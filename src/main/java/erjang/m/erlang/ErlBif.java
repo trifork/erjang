@@ -644,15 +644,17 @@ public class ErlBif {
 
 		long now = System.currentTimeMillis();
 		long megas = now / 1000000000;
-		long secs = (now / 1000) % 1000000;
+		long secs = ((now % 1000000000) / 1000);
 		long micros = (now % 1000) * 1000;
 
 		ETuple3 res = new ETuple3();
 
-		res.elem1 = new ESmall((int) megas);
-		res.elem2 = new ESmall((int) secs);
-		res.elem2 = new ESmall((int) micros);
+		res.elem1 = ERT.box(megas);
+		res.elem2 = ERT.box(secs);
+		res.elem3 = ERT.box(micros);
 
+		//System.out.println("now() => "+res);
+		
 		return res;
 	}
 
