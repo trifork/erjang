@@ -50,7 +50,7 @@ public class EInternalPID extends EPID {
 	 */
 	@Override
 	int compare_same(EObject rhs) {
-		return r_compare_same(this);
+		return rhs.r_compare_same(this);
 	}
 
 	/* (non-Javadoc)
