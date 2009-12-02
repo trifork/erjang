@@ -101,11 +101,8 @@ public class Mailbox<T> implements PauseReason, EventPublisher {
      * @throws Pausable
      */
     public void untilHasMessage() throws Pausable{
-        Task t = Task.getCurrentTask();
-        boolean msg = hasMessage(t);
-        while (msg == false) {
+        while (hasMessage(Task.getCurrentTask()) == false) {
             Task.pause(this);
-            msg = hasMessage(t);
         }
     }
 

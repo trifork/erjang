@@ -42,12 +42,6 @@ public final class EProc extends ETask<EInternalPID> {
 
 	private EInternalPID self;
 
-	private EAtom run_mod;
-
-	private EAtom run_fun;
-
-	private ESeq run_args;
-
 	private EPID group_leader;
 
 	/**
@@ -55,14 +49,45 @@ public final class EProc extends ETask<EInternalPID> {
 	 * @param f
 	 * @param array
 	 */
-	public EProc(EPID group_leader, EAtom m, EAtom f, ESeq args) {
+	public EProc(EPID group_leader, EAtom m, EAtom f, ESeq a) {
 		self = new EInternalPID(this);
 
 		// if no group leader is given, we're our own group leader
 		this.group_leader = group_leader == null ? self : group_leader;
-		this.run_mod = m;
-		this.run_fun = f;
-		this.run_args = args;
+		//this.run_mod = m;
+		//this.run_fun = f;
+		//this.run_args = a;
+		
+		int arity = a.length();
+		EFun target = EModule.resolve(new FunID(m,f,arity));
+		
+		if (target == null) {
+			throw new ErlangUndefined(m, f, new ESmall(arity));
+		}
+		
+		this.tail = target;
+		a = a.reverse();
+		switch (arity) {
+		default:
+			throw new NotImplemented();
+		case 7: 
+			this.arg6 = a.head(); a = a.tail();
+		case 6: 
+			this.arg5 = a.head(); a = a.tail();
+		case 5: 
+			this.arg4 = a.head(); a = a.tail();
+		case 4: 
+			this.arg3 = a.head(); a = a.tail();
+		case 3: 
+			this.arg2 = a.head(); a = a.tail();
+		case 2: 
+			this.arg1 = a.head(); a = a.tail();
+		case 1: 
+			this.arg0 = a.head(); a = a.tail();
+		case 0:
+		}
+		
+
 	}
 
 	/**
@@ -166,25 +191,17 @@ public final class EProc extends ETask<EInternalPID> {
 	public void execute() throws Pausable {
 		try {
 
-			int run_arity = run_args.length();
-			EFun boot = EModule.resolve(new FunID(run_mod, run_fun,
-					run_arity));
-
 			EObject result = null;
 			try {
-				// this.runner = Thread.currentThread();
 				this.pstate = State.RUNNING;
 
-				//System.out.println(run_mod + ":" + run_fun + "/" + run_arity);
-				
-				if (boot == null) {
-					throw new ErlangError(EAtom.intern("no_such_function"), 
-											run_mod, run_fun, new ESmall(run_arity));
+				EObject tmp;
+				while((tmp = this.tail.go(this)) == TAIL_MARKER) {
+					/* skip */
 				}
+				 
+				//System.out.println("proc "+this+" exited "+tmp);
 				
-
-				
-				boot.invoke(this, run_args.toArray());
 				result = am_normal;
 
 			} catch (ErlangException e) {
@@ -216,6 +233,9 @@ public final class EProc extends ETask<EInternalPID> {
 				handle.exit_signal(self(), result);
 			}
 
+		} catch (ThreadDeath e) {
+			throw e;
+			
 		} catch (Throwable e) {
 			e.printStackTrace();
 		}
@@ -341,6 +361,13 @@ public final class EProc extends ETask<EInternalPID> {
 		if (this.pstate == State.EXIT_SIG) {
 			throw new ErlangExitSignal(exit_reason);
 		}
+	}
+
+	/**
+	 * @return
+	 */
+	public Mailbox<EObject> mbox() {
+		return mbox;
 	}
 
 }

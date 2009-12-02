@@ -155,9 +155,27 @@ public final class Fiber {
                 pc = cs.pc;
 //                if (debug) System.out.println("\nup(not pausing)" + this);;
 //                if (debug) ds();
+                cs.releaseTo(this);
                 return NOT_PAUSING__HAS_STATE;
               }
         }
+    }
+    
+    private static final int STATE_POOL_SIZE = 10;
+    int pool_count = 0;
+    State[] pool = new State[STATE_POOL_SIZE];
+    
+    public final State allocState()
+    {
+    	if (pool_count==0) return new State();
+    	return pool[--pool_count];
+    }
+    
+    final void release(State s) {
+    	if (pool_count != STATE_POOL_SIZE) {
+    		pool[pool_count++] = s;
+    		s.self = null;
+    	}
     }
     
     

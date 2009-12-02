@@ -26,6 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
+import kilim.Mailbox;
 import kilim.Pausable;
 
 
@@ -291,7 +292,7 @@ public class ERT {
 	 */
 	@BIF(name="!")
 	public static EObject send(EProc proc, EObject pid, EObject msg) throws Pausable {
-		
+		// TODO handle ports also?
 		proc.check_exit();
 		
 		EPID p;
@@ -417,19 +418,19 @@ public class ERT {
 	
 	/** peek mbox */
 	public static EObject receive_peek(EProc proc) {
-		return proc.mbox_peek();
+		return proc.mbox.peek();
 	}
 	
 	public static void remove_message(EProc proc) throws Pausable {
-		proc.mbox_remove_one();
+		proc.mbox.get();
 	}
 	
 	public static void wait_forever(EProc proc) throws Pausable {
-		proc.mbox_wait();
+		proc.mbox.untilHasMessage();
 	}
 	
 	public static EObject loop_rec_end(EProc proc) {
-		EObject msg = proc.mbox_peek();
+		EObject msg = proc.mbox.peek();
 		throw new ErlangError(am_receive_clause, msg);
 	}
 	
@@ -462,7 +463,7 @@ public class ERT {
 	public static boolean wait_timeout(EProc proc, EObject howlong) throws Pausable {
 		EInteger ei;
 		if ((ei = howlong.testInteger()) == null) throw badarg(howlong);
-		return proc.mbox_wait(ei.longValue());
+		return proc.mbox.untilHasMessage(ei.longValue());
 	}
 	
 	public static void timeout() {

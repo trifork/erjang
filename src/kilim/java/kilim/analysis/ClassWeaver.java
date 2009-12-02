@@ -190,6 +190,12 @@ public class ClassWeaver {
         ClassWriter cw = new ClassWriter(0);
         cw.visit(V1_1, ACC_PUBLIC | ACC_FINAL, className, null, "kilim/State", null);
 
+        MethodVisitor mv = cw.visitMethod(0, "releaseTo", "(Lkilim/Fiber;)V" , null, null);
+        mv.visitCode();
+        mv.visitInsn(RETURN);
+        mv.visitMaxs(1, 2);
+        mv.visitEnd();
+        
         // Create default constructor
         // <init>() {
         // super(); // call java/lang/Object.<init>()

@@ -30,6 +30,7 @@ import java.util.List;
 import erjang.BIF;
 import erjang.EAtom;
 import erjang.ECons;
+import erjang.EFun;
 import erjang.EModule;
 import erjang.EObject;
 import erjang.EPID;
@@ -43,6 +44,7 @@ import erjang.EString;
 import erjang.ETuple;
 import erjang.ErlangException;
 import erjang.ErlangExit;
+import erjang.FunID;
 import erjang.NotImplemented;
 
 /**

@@ -1,6 +1,8 @@
 -module(ring).
 %%-import(lists, [last/1]).
 -export([startRing/2,main/0]).
+-define(CYCLES, 1000000).
+-define(PROCS, 100).
 
 %%
 last([End|[]]) -> 
@@ -20,12 +22,12 @@ spawnNodes(Remaining, Pids, TimerPid) ->
     spawnNodes(Remaining-1, [Pid|Pids], TimerPid).
 
 %% Connect F and S until there are no nodes left to connect
-connectNodes([F|[S|T]]) ->
+connectNodes([F,S|[]]) ->
     F ! {connect,S},
-    if
-	length(T) > 0 -> connectNodes([S|T]);
-	true -> S
-    end.
+    S;
+connectNodes([F,S|T]) ->
+    F ! {connect,S},
+    connectNodes([S|T]).
 
 %% Run node unconnected until there is a connect message
 unconnectedNode(TimerPid) ->
@@ -38,21 +40,30 @@ unconnectedNode(TimerPid) ->
 %% message where Source is the Pid of the node that originated the message.
 nodeloop(SendTo,TimerPid) ->
     receive
-	stop ->
-	    SendTo ! stop;
+	{stop,_From} ->
+	    SendTo ! {stop,self()}, 
+	    % io:format("~p received stop from ~p ~n", [self(), From]),
+	    done;
 	start ->
 	    io:format("~p Starting message~n", [now()]),
-	    TimerPid ! start,
+	    TimerPid ! xstart,
+		%	io:format("msg[~p] ~p -> ~p~n", [0, self(), SendTo]),
 	    SendTo ! {self(), 0},
 	    nodeloop(SendTo,TimerPid);
-	{Source, Val} when Source == self() ->
+	{Source, Val} when Source =:= self() ->
 	    logOnNth(Val+1, 10000),
 	    if
-		Val+1 == 1000000 -> TimerPid ! stop, SendTo ! stop;
-		true -> SendTo ! {Source, Val+1}
+		Val+1 == ?CYCLES -> 
+		%	io:format("~p == ~p ... stop ", [Val+1, ?CYCLES]),
+			TimerPid ! stop, 
+			SendTo ! {stop,self()};
+		true -> 
+		%	io:format("msg[~p] ~p -> ~p~n", [Val+1, self(), SendTo]),
+			SendTo ! {Source, Val+1}
 	    end,
 	    nodeloop(SendTo,TimerPid);
 	{Source,Val} ->
+	    % io:format("msg[~p] ~p -> ~p~n", [Val, self(), SendTo]),
 	    SendTo ! {Source, Val},
 	    nodeloop(SendTo,TimerPid)
     end.
@@ -63,22 +74,22 @@ logOnNth(Val, Nth) when Val rem Nth == 0 ->
 logOnNth(_Val, _Nth) -> void.
 
 %% Start timer listener process, return Pid of timer listener
-startTimer() ->
-    spawn(fun() -> timerOff() end).
+startTimer(Main) ->
+    spawn(fun() -> timerOff(Main) end).
 
-timerOff() ->
+timerOff(Main) ->
     receive
 	cancel -> void;
-	start -> timerOn(now())
+	xstart -> timerOn(Main,now())
     end.
 
-timerOn(Start) ->
+timerOn(Main,Start) ->
     receive
 	cancel -> {timer,aborted};
 	stop ->
 	    End=now(),
-	    io:format("Start=~p Stop=~p Elapsed=~p~n", [Start,End,diff(Start,End)]),
-	    timerOff()
+	    Main ! [Start,End] ,
+	    timerOff(Main)	    
     end.
 
 diff(Start, End) ->
@@ -89,9 +100,9 @@ diff(Start, End) ->
 
 
 main() ->
-    T = startTimer(),
-    R = startRing(100, T),
+    T = startTimer(self()),
+    R = startRing(?PROCS, T),
     R ! start,
-    receive _ -> true end.
+    receive [Start,End] -> io:format("Start=~p Stop=~p Elapsed=~p~n", [Start,End,diff(Start,End)]) end.
    
 

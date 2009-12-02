@@ -516,10 +516,15 @@ public class CallWeaver {
          * the method weaver's list. This allows us to do a switch in the
          * method's entry.
          */
-        mv.visitTypeInsn(NEW, stateClassName);
-        mv.visitInsn(DUP); // 
-        // call constructor
-        mv.visitMethodInsn(INVOKESPECIAL, stateClassName, "<init>", "()V");
+        if (stateClassName.equals(STATE_CLASS)) {
+            loadVar(mv, TOBJECT, methodWeaver.getFiberVar());
+            mv.visitMethodInsn(INVOKEVIRTUAL, FIBER_CLASS, "allocState", "()" + D_STATE);
+        } else {
+          mv.visitTypeInsn(NEW, stateClassName);
+          mv.visitInsn(DUP); // 
+          // call constructor
+          mv.visitMethodInsn(INVOKESPECIAL, stateClassName, "<init>", "()V");
+        }
         // save state in register
         int stateVar = allocVar(1);
         storeVar(mv, TOBJECT, stateVar);

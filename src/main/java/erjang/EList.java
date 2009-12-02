@@ -18,15 +18,11 @@
 
 package erjang;
 
-import java.math.BigInteger;
-
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
-import erjang.m.erlang.ErlBif;
-
-public class EList extends ESeq {
+public final class EList extends ESeq {
 	
 	private final EObject head;
 	private final ESeq tail;
@@ -67,9 +63,11 @@ public class EList extends ESeq {
 	@Override
 	public String toString() {
 		StringBuffer sb = new StringBuffer("[");
+
+		assert (this instanceof EList);
 		
 		ESeq val = this;
-		while (val != ERT.NIL) {
+		while ((val.testNil()) == null) {
 			if (val != this) { sb.append(","); }
 			sb.append(val.head());
 			val = val.tail();

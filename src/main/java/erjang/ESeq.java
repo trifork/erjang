@@ -122,4 +122,16 @@ public abstract class ESeq extends ECons {
 		return new EString(barr.toByteArray(), 0);
 	}
 
+	/**
+	 * @return
+	 */
+	public ESeq reverse() {
+		ESeq result = ERT.NIL;
+		EObject[] val = this.toArray();
+		for (int i = 0; i < val.length; i++) {
+			result = result.cons(val[i]);
+		}
+		return result;
+	}
+
 }

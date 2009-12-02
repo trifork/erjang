@@ -74,11 +74,21 @@ public class Erj {
 		
 		//String s = argv.toString();
 		
-		EProc proc = new EProc(null, module, fun, argv );
+		EProc p;
+		ERT.run(p=new EProc(null, module, fun, argv ));
+		p.joinb();
 
-		ERT.run(proc);
-		proc.joinb();
-		
+		System.out.println("ready for second run...");
+		try {
+			Thread.sleep(10000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+
+		ERT.run(p=new EProc(null, module, fun, argv ));
+		p.joinb();
+
+
 		System.out.println("done.");
 	}
 
