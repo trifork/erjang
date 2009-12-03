@@ -22,6 +22,8 @@ import java.io.File;
 import java.net.MalformedURLException;
 
 /**
+ * This will eventually be the main entrypoint for an OTP node.
+ * Loads preloaded erlang modules, and invokes otp_ring0:start/2
  * 
  */
 public class OTPMain {
@@ -33,20 +35,6 @@ public class OTPMain {
 
 	@SuppressWarnings("unchecked")
 	public static void main(String[] args) throws ClassNotFoundException, MalformedURLException, InstantiationException, IllegalAccessException {
-
-		/*
-		for (int i = 1; i < 20; i++) {
-			byte[] data = ETuple.make_tuple_class_data(i);
-			ETuple.dump("erjang/ETuple"+i, data);
-
-			data = EFun.gen_fun_class_data(i);
-			ETuple.dump("erjang/EFun"+i, data);
-
-		}
-		*/
-		
-		//new bootstrap_lists();
-		//new boot_net_kernel();
 		
 		EModule[] modules = new EModule[MODULES.length];
 		File preloaded_dir = new File(PRELOADED);
@@ -55,10 +43,11 @@ public class OTPMain {
 			
 			String mod = MODULES[i];
 			
+			// assume preloaded classes are compiled
 			File path = new File(preloaded_dir, mod + ".classes");
 			
 			if (!path.exists() || !path.isDirectory()) {
-				throw new Error("no path to: "+path);
+				throw new Error("no path to: "+path+"\n run java erjang.ErjC "+preloaded_dir+"/"+mod+".beam");
 			}
 			
 			Object o = new kilim.State();

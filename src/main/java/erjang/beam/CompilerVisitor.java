@@ -194,7 +194,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 		this.module_name = name;
 
-		this.self_type = Type.getObjectType(getInternalClassName());
+		this.self_type = Type.getType("L"+getInternalClassName()+";");
 
 		cv.visit(V1_6, ACC_PUBLIC, self_type.getInternalName(), null,
 				EMODULE_NAME, null);
@@ -2428,7 +2428,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 		String inner_name = "FN_" + mname;
 		String full_inner_name = outer_name + "$" + inner_name;
 
-		ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+		ClassWriter cw = new ClassWriter(true);
 		String super_class_name = EFUN_NAME + (arity - freevars);
 		cw.visit(V1_6, ACC_FINAL | ACC_PUBLIC, full_inner_name, null,
 				super_class_name, null);

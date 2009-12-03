@@ -39,7 +39,7 @@ import erjang.beam.analysis.BeamTypeAnalysis;
 
 public class ErlangBeamDisLoader extends BeamLoader {
 
-	String myid = "JVM@localhost";
+	String myid = "JVM2@localhost";
 	OtpConnection conn;
 	private OtpSelf self;
 	private OtpPeer peer;

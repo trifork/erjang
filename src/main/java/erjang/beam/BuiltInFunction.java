@@ -47,7 +47,9 @@ public class BuiltInFunction {
 	 */
 	public BuiltInFunction(java.lang.reflect.Method m) {
 		this.owner = Type.getType(m.getDeclaringClass());
-		this.method = Method.getMethod(m);
+		this.method = new Method(m.getName(), 
+					Type.getType(m.getReturnType()),
+					Type.getArgumentTypes(m));
 	}
 
 	/**

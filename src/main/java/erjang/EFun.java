@@ -158,7 +158,7 @@ public abstract class EFun extends EObject implements Opcodes {
 
 		String self_type = EFUN_TYPE.getInternalName() + arity;
 
-		ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+		ClassWriter cw = new ClassWriter(true);
 		cw.visit(Opcodes.V1_5, Opcodes.ACC_PUBLIC | Opcodes.ACC_ABSTRACT,
 				self_type, null, EFUN_TYPE.getInternalName(), null);
 
@@ -222,7 +222,7 @@ public abstract class EFun extends EObject implements Opcodes {
 
 			String self_type = EFUN_TYPE.getInternalName() + "Handler" + arity;
 
-			ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+			ClassWriter cw = new ClassWriter(true);
 			String super_class_name = EFUN_TYPE.getInternalName() + arity;
 			cw.visit(Opcodes.V1_4, ACC_PUBLIC, self_type, null,
 					super_class_name, null);

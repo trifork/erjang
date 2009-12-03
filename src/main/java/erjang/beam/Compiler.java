@@ -57,7 +57,7 @@ public class Compiler implements Opcodes {
 	public static void compile(EBinary data, ClassRepo repo) throws IOException
 	{
 		// class writer, phase 4
-		ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+		ClassWriter cw = new ClassWriter(true);
 
 		// 
 		CheckClassAdapter ca = new CheckClassAdapter(cw);
@@ -95,7 +95,7 @@ public class Compiler implements Opcodes {
 	public void compile(File file) throws IOException {
 		
 		// class writer, phase 4
-		ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+		ClassWriter cw = new ClassWriter(true);
 
 		// 
 		CheckClassAdapter ca = new CheckClassAdapter(cw);

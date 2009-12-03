@@ -143,8 +143,7 @@ public abstract class ETuple extends EObject implements Cloneable /*, Indexed*/ 
 	}
 
 	static byte[] make_tuple_class_data(int num_cells) {
-		ClassWriter cww = new ClassWriter(ClassWriter.COMPUTE_FRAMES
-				| ClassWriter.COMPUTE_MAXS);
+		ClassWriter cww = new ClassWriter(true);
 
 		CheckClassAdapter cw = new CheckClassAdapter(cww);
 
@@ -378,7 +377,7 @@ public abstract class ETuple extends EObject implements Cloneable /*, Indexed*/ 
 			fo = new FileOutputStream(fname);
 			fo.write(data);
 			fo.close();
-			System.out.println("wrote "+fname);
+			// System.out.println("wrote "+fname);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

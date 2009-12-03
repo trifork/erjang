@@ -2,12 +2,12 @@
 <classpath>
 	<classpathentry kind="src" path="src/main/java"/>
 	<classpathentry kind="src" path="src/test/java"/>
-	<classpathentry kind="src" path="src/asm/java"/>
-	<classpathentry kind="src" path="src/kilim/java"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="lib/OtpErlang.jar"/>
 	<classpathentry kind="lib" path="lib/antlr-3.2.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/3"/>
 	<classpathentry kind="lib" path="target/gen"/>
+	<classpathentry kind="lib" path="lib/asm-all-2.2.3.jar"/>
+	<classpathentry kind="lib" path="lib/kilim-0.6-KRAB.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>
