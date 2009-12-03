@@ -24,7 +24,7 @@ import java.net.MalformedURLException;
 /**
  * 
  */
-public class Main {
+public class OTPMain {
 
 	public static String PRELOADED = "src/main/erl/preloaded/ebin";
 	public static String[] MODULES = new String[] { "erl_prim_loader",
