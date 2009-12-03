@@ -80,7 +80,7 @@ public class Main {
 		
 		String s = argv.toString();
 		
-		EProc proc = new EProc(null, ring, am_start, new EObject[]{ env, argv });
+		EProc proc = new EProc(null, ring, am_start, ERT.NIL.cons(argv).cons(env));
 
 		ERT.run(proc);
 		proc.joinb();
