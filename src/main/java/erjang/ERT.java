@@ -348,7 +348,7 @@ public class ERT {
 		if (m==null||f==null) throw ERT.badarg(mod, fun);
 		
 		EFun efun = EModule.resolve(new FunID(m,f,0));
-		return efun.invoke(proc, new EObject[] { });
+		return efun.invoke(proc, new EObject[0]);
 	}
 
 	public static EObject apply$last(EProc proc, EObject arg1, EObject mod, EObject fun)

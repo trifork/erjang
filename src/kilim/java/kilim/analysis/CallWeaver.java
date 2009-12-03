@@ -516,32 +516,41 @@ public class CallWeaver {
          * the method weaver's list. This allows us to do a switch in the
          * method's entry.
          */
-        if (stateClassName.equals(STATE_CLASS)) {
+        boolean is_simple_state = stateClassName.equals(STATE_CLASS);
+
+        if (is_simple_state) {
+        	
             loadVar(mv, TOBJECT, methodWeaver.getFiberVar());
-            mv.visitMethodInsn(INVOKEVIRTUAL, FIBER_CLASS, "allocState", "()" + D_STATE);
+
+            if (!bb.flow.isStatic()) {
+                mv.visitInsn(ALOAD_0); // for state.self == this
+            }
+            
+            int pc = methodWeaver.getPC(this);
+            if (pc < 6) {
+            	mv.visitInsn(ICONST_0 + pc);
+            } else {
+                mv.visitIntInsn(BIPUSH, pc);
+            }
+
+            if (!bb.flow.isStatic()) {
+            	methodWeaver.ensureMaxStack(3);
+                mv.visitMethodInsn(INVOKEVIRTUAL, FIBER_CLASS, "setState", "(Ljava/lang/Object;I)V");
+            } else {
+            	methodWeaver.ensureMaxStack(2);
+                mv.visitMethodInsn(INVOKEVIRTUAL, FIBER_CLASS, "setState", "(I)V");
+            }
+            
+        	
         } else {
           mv.visitTypeInsn(NEW, stateClassName);
           mv.visitInsn(DUP); // 
           // call constructor
           mv.visitMethodInsn(INVOKESPECIAL, stateClassName, "<init>", "()V");
-        }
+
         // save state in register
         int stateVar = allocVar(1);
         storeVar(mv, TOBJECT, stateVar);
-        // state.self = this if the current executing method isn't static
-        if (!bb.flow.isStatic()) {
-            loadVar(mv, TOBJECT, stateVar);
-            mv.visitInsn(ALOAD_0); // for state.self == this
-            mv.visitFieldInsn(PUTFIELD, STATE_CLASS, "self", D_OBJECT);
-        }
-        int pc = methodWeaver.getPC(this);
-        loadVar(mv, TOBJECT, stateVar); // state.pc
-        if (pc < 6) {
-            mv.visitInsn(ICONST_0 + pc);
-        } else {
-            mv.visitIntInsn(BIPUSH, pc);
-        }
-        mv.visitFieldInsn(PUTFIELD, STATE_CLASS, "pc", D_INT);
 
         // First save bottom stack into state
         int i = getNumBottom() - 1;
@@ -585,9 +594,32 @@ public class CallWeaver {
         // Fiber.setState(state);
         loadVar(mv, TOBJECT, methodWeaver.getFiberVar());
         loadVar(mv, TOBJECT, stateVar);
-        mv.visitMethodInsn(INVOKEVIRTUAL, FIBER_CLASS, "setState", "("
-                + D_STATE + ")V");
+        
+        if (!bb.flow.isStatic()) {
+            mv.visitInsn(ALOAD_0); // for state.self == this
+        }
+        
+        int pc = methodWeaver.getPC(this);
+        if (pc < 6) {
+        	mv.visitInsn(ICONST_0 + pc);
+        } else {
+            mv.visitIntInsn(BIPUSH, pc);
+        }
+
+        if (!bb.flow.isStatic()) {
+        	methodWeaver.ensureMaxStack(4);
+            mv.visitMethodInsn(INVOKEVIRTUAL, FIBER_CLASS, "setState", "("
+                    + D_STATE + "Ljava/lang/Object;I)V");
+        } else {
+        	methodWeaver.ensureMaxStack(3);
+            mv.visitMethodInsn(INVOKEVIRTUAL, FIBER_CLASS, "setState", "("
+                    + D_STATE + "I)V");
+        }
+        
         releaseVar(stateVar, 1);
+        }
+        
+        
         // Figure out the return type of the calling method and issue the
         // appropriate xRETURN instruction
         retType = TypeDesc.getReturnTypeDesc(bb.flow.desc);

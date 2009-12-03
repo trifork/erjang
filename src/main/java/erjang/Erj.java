@@ -62,6 +62,7 @@ public class Erj {
 		}		
 		
 		EModule.load_module(EAtom.intern("io"), new File("target/classes").toURL());
+		EModule.load_module(EAtom.intern("timer"), new File("target/classes").toURL());
 		
 		load(new File("src/main/erl/" + m + ".classes"), m);
 		

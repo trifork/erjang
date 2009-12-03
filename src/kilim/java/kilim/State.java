@@ -25,13 +25,6 @@ package kilim;
  */
 
 public class State {
-    public int pc;
-    public Object self;
-    
-	/**
-	 * @param fiber
-	 */
-	void releaseTo(Fiber fiber) {
-		fiber.release(this);
-	}
+    //public int pc;
+    //public Object self;
 }

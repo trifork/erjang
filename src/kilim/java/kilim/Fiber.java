@@ -42,7 +42,9 @@ public final class Fiber {
      * One State object for each activation frame in the call hierarchy.
      */
     private State[]            stateStack              = new State[10];
-
+    private Object[]           selfStack               = new Object[10];
+    private int[]              pcStack                 = new int[10];
+       
     /*
      * Index into stateStack and equal to depth of call hierarchy - 1
      */
@@ -60,7 +62,9 @@ public final class Fiber {
     /*
      * Special marker state used by pause
      */
+    private static final int PAUSE_STATE_PC            = 1;
     private static final State PAUSE_STATE             = new State();
+    private static final State EMPTY_STATE             = new State();
 
     /*
      * Status indicators returned by down()
@@ -85,10 +89,6 @@ public final class Fiber {
      */
     private static final int   PAUSING__HAS_STATE     = 3;
 
-    static {
-        PAUSE_STATE.pc = 1;
-    }
-    
     public Fiber(Task t) {
         task = t;
     }
@@ -152,32 +152,13 @@ public final class Fiber {
                 return NOT_PAUSING__NO_STATE;
             } else {
                 stack[d] = null; // clean up
-                pc = cs.pc;
+                pc = pcStack[d];
 //                if (debug) System.out.println("\nup(not pausing)" + this);;
 //                if (debug) ds();
-                cs.releaseTo(this);
                 return NOT_PAUSING__HAS_STATE;
               }
         }
     }
-    
-    private static final int STATE_POOL_SIZE = 10;
-    int pool_count = 0;
-    State[] pool = new State[STATE_POOL_SIZE];
-    
-    public final State allocState()
-    {
-    	if (pool_count==0) return new State();
-    	return pool[--pool_count];
-    }
-    
-    final void release(State s) {
-    	if (pool_count != STATE_POOL_SIZE) {
-    		pool[pool_count++] = s;
-    		s.self = null;
-    	}
-    }
-    
     
     public final Fiber begin() {
         return down();
@@ -219,7 +200,7 @@ public final class Fiber {
         } else {
             State s = stateStack[d];
             curState = s;
-            pc = (s == null) ? 0 : s.pc;
+            pc = (s == null) ? 0 : pcStack[d];
         }
 //        if (debug) System.out.println("down:\n" + this);
 //        if (debug) ds();
@@ -262,16 +243,17 @@ public final class Fiber {
      */
     public int upEx() {
         // compute new iStack. 
-        int is = task.getStackDepth() - 2; // remove upEx and convert to 0-based index. 
+        final int is = task.getStackDepth() - 2; // remove upEx and convert to 0-based index. 
         State cs = stateStack[is];
 
         for (int i = iStack; i >= is; i--) {
             stateStack[i] = null; // release state
+            selfStack[i] = null; // release state
         }
 
         iStack = is;
         curState = cs;
-        return (cs == null) ? 0 : cs.pc;
+        return (cs == null) ? 0 : pcStack[is];
     }
     
     /**
@@ -282,16 +264,25 @@ public final class Fiber {
     public Object getCallee() {
         assert stateStack[iStack] != PAUSE_STATE : "No callee: this state is the pause state";
         assert stateStack[iStack] != null : "Callee is null";
-        return stateStack[iStack + 1].self;
+        return selfStack[iStack + 1];
     }
 
-    private State[] ensureSize(int newsize) {
+    private void ensureSize(int newsize) {
 //        System.out.println("ENSURE SIZE = " + newsize);
+    	int len = stateStack.length;
+    	
         State[] newStack = new State[newsize];
-        System.arraycopy(stateStack, 0, newStack, 0, stateStack.length);
+        System.arraycopy(stateStack, 0, newStack, 0, len);
         stateStack = newStack;
-        return newStack;
-    }
+
+        Object[] newSelfStack = new Object[newsize];
+        System.arraycopy(selfStack, 0, newSelfStack, 0, len);
+        selfStack = newSelfStack;
+
+        int[] newPCStack = new int[newsize];
+        System.arraycopy(pcStack, 0, newPCStack, 0, len);
+        pcStack = newPCStack;
+}
 
     /**
      * Called by the generated code before pausing and unwinding its stack
@@ -299,8 +290,34 @@ public final class Fiber {
      * 
      * @param state
      */
-    public void setState(State state) {
+    public void setState(State state, Object self, int pc) {
         stateStack[iStack] = state;
+        selfStack[iStack] = self;
+        pcStack[iStack] = pc;
+        isPausing = true;
+//        System.out.println("setState[" + + iStack + "] = " + this);
+    }
+
+    public void setState(State state, int pc) {
+        stateStack[iStack] = state;
+        selfStack[iStack] = null;
+        pcStack[iStack] = pc;
+        isPausing = true;
+//        System.out.println("setState[" + + iStack + "] = " + this);
+    }
+
+    public void setState(Object self, int pc) {
+        stateStack[iStack] = EMPTY_STATE;
+        selfStack[iStack] = self;
+        pcStack[iStack] = pc;
+        isPausing = true;
+//        System.out.println("setState[" + + iStack + "] = " + this);
+    }
+
+    public void setState(int pc) {
+        stateStack[iStack] = EMPTY_STATE;
+        selfStack[iStack] = null;
+        pcStack[iStack] = pc;
         isPausing = true;
 //        System.out.println("setState[" + + iStack + "] = " + this);
     }
@@ -311,9 +328,10 @@ public final class Fiber {
         // upto date.
         
         if (curState == null) {
-            setState(PAUSE_STATE);
+            setState(PAUSE_STATE, PAUSE_STATE_PC);
         } else {
-            assert curState == PAUSE_STATE : "togglePause: Expected PAUSE_STATE, instead got: iStack == " + iStack + ", state = " + curState;
+            assert curState == PAUSE_STATE : 
+            	"togglePause: Expected PAUSE_STATE, instead got: iStack == " + iStack + ", state = " + curState;
             stateStack[iStack] = null;
             isPausing = false;
         }
