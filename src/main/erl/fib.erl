@@ -54,11 +54,11 @@ makeList(N) -> [N,makeList(N-1)].
 runLength(_,N) when N==0 -> done;
 runLength(L,N) -> tlength(L), runLength(L,N-1).
    
-main() ->
+main2() ->
    List = makeList(2000),
    io:format("time=~w~n", [timer:tc(fib,runLength,[List,1000000])]).
        
-main2() ->   
+main() ->   
    time(fibo3,10),
    time(fibo3,100),
    time(fibo3,1000),
