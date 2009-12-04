@@ -77,6 +77,10 @@ class EModuleLoader extends URLClassLoader {
 		
 		if (name.startsWith("kilim.S_")) {
 			InputStream resource = super.getResourceAsStream(name.replace('.', '/')  + ".class");
+
+			if (resource == null) {
+				throw new ClassNotFoundException(name, new Error("while loading "+this.getURLs()[0]));
+			}
 			
 			try {
 				byte[] bb = new byte[resource.available()];

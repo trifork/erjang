@@ -1,12 +1,78 @@
-Erjang Readme
+Erjang - a JVM-based Erlang VM
 
--- 
+  Wiki Pages: www.erjang.org
+  Discussion: http://groups.google.com/group/erjang
+  Source: http://github.com/krestenkrab/erjang
 
-At this stage nothing works, so don't get your hopes up. 
-You cannot even compile "hello world".
+--
+
+BUILDING
+
+
+You should be able to do "ant jar", and thereafter run the sample
+with 
+
+  prompt% ant jar
+  ...
+  prompt% ./ring_test.sh 
+  ...
+  loading io
+  loading timer
+  loading ring
+  loading erlang
+  io:format "~p Starting message~n" [{1259,922511,63000}]
+  io:format "~p Around ring ~p times ~n" [{1259,922512,434000},10000]
+  io:format "~p Around ring ~p times ~n" [{1259,922513,600000},20000]
+  io:format "~p Around ring ~p times ~n" [{1259,922514,763000},30000]
+  io:format "~p Around ring ~p times ~n" [{1259,922515,930000},40000]
+  io:format "~p Around ring ~p times ~n" [{1259,922517,117000},50000]
+  ....
+
+The source for the few samples are in src/main/erl.
+
+--
+
+RUNNING
+
+When running, it writes files named ".erj/module-${CRC}.jar".  These
+files are written in response to erlang:compile_module(Module,Binary).
+
+These files also serve as a cache of files translated from beam -> jar.
+If something goes astray, it may help to remove the .erj directory
+forcing Erjang to recompile next time it runs.
+
+--
+
+PREREQUISITES
+
+I have only been testing this with Erlang/OTP R13B02.
+
+While we are still bootstrapping, the compiler uses a remote
+erlang process to parse beam files (using beam_disasm), so you 
+need to have this running:
+
+  prompt% cd src/main/erl
+  prompt% erl -sname beam_loader@localhost -s beam_loader
+
+Otherwise you will get errors like this:
+
+Exception in thread "main" java.lang.Error: java.io.IOException: Cannot connect to peer node
+	at erjang.beam.Compiler.<clinit>(Compiler.java:55)
+	at erjang.EModule.load_module(EModule.java:429)
+	at erjang.Erj.main(Erj.java:61)
+
+Eventually this will obviously be self-hosted in Erjang.
+
+
+To run the tests, you need an OTP distribution, and go edit src/test/java/erjang/TestAll.java
+to tell it where your OTP_HOME is.
+
+
+
+Cheers!
 
 Kresten Krab Thorup
-krab@trifork.com
+krab _at_ trifork dot com
 
 
 

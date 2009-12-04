@@ -27,11 +27,6 @@ import java.net.MalformedURLException;
  */
 public class Erj {
 
-	public static String PRELOADED = "src/main/erl/preloaded/ebin";
-	public static String[] MODULES = new String[] { "erl_prim_loader",
-			"erlang", "init", "otp_ring0", "prim_file", "prim_inet",
-			"prim_zip", "zlib" };
-
 	@SuppressWarnings("unchecked")
 	public static void main(String[] args) 
 		throws Exception {
@@ -49,15 +44,7 @@ public class Erj {
 		EAtom module = EAtom.intern(m);
 		EAtom fun = EAtom.intern(f);
 		
-		EModule[] modules = new EModule[MODULES.length];
-		
-		for (int i = 0; i < modules.length; i++) {
-			
-			String mod = MODULES[i];
-
-			ERT.load(EAtom.intern(mod));
-		}		
-		
+		// TODO: remove this hack, it prevents loading real modules for these
 		EModule.load_module(EAtom.intern("io"), new File("target/classes").toURL());
 		EModule.load_module(EAtom.intern("timer"), new File("target/classes").toURL());
 		

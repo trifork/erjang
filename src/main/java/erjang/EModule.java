@@ -74,7 +74,7 @@ public abstract class EModule {
 		 * @throws IllegalAccessException
 		 * @throws IllegalArgumentException
 		 */
-		synchronized boolean add_import(Field ref) throws Exception {
+		synchronized boolean add_import(final Field ref) throws Exception {
 			resolve_points.add(ref);
 			if (resolved_value != null) {
 				//System.out.println("binding "+fun+" "+resolved_value+" -> "+ref);
@@ -86,8 +86,19 @@ public abstract class EModule {
 							public EObject invoke(EProc proc, EObject[] args) 
 								throws Pausable
 							{
-								System.out.println("undefined "+fun);
-								throw new ErlangUndefined(fun.module, fun.function, ESmall.make(fun.arity));
+								EFun found = null;
+								try {
+									ERT.load(fun.module);
+									found = EModule.resolve(fun);
+								} catch (Throwable ex) {
+									System.out.println("unable to load module for "+fun);
+								}
+								
+								if (found == null) {
+									throw new ErlangUndefined(fun.module, fun.function, ESmall.make(fun.arity));
+								} else {
+									return found.invoke(proc, args);
+								}
 							}
 						});
 				ref.set(null, h);
