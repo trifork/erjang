@@ -19,6 +19,7 @@
 package erjang;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.MalformedURLException;
 
 /**
@@ -28,33 +29,18 @@ import java.net.MalformedURLException;
  */
 public class OTPMain {
 
-	public static String PRELOADED = "src/main/erl/preloaded/ebin";
 	public static String[] MODULES = new String[] { "erl_prim_loader",
 			"erlang", "init", "otp_ring0", "prim_file", "prim_inet",
 			"prim_zip", "zlib" };
 
 	@SuppressWarnings("unchecked")
-	public static void main(String[] args) throws ClassNotFoundException, MalformedURLException, InstantiationException, IllegalAccessException {
+	public static void main(String[] args) throws ClassNotFoundException, InstantiationException, IllegalAccessException, IOException {
 		
-		EModule[] modules = new EModule[MODULES.length];
-		File preloaded_dir = new File(PRELOADED);
-		
-		for (int i = 0; i < modules.length; i++) {
-			
-			String mod = MODULES[i];
-			
-			// assume preloaded classes are compiled
-			File path = new File(preloaded_dir, mod + ".classes");
-			
-			if (!path.exists() || !path.isDirectory()) {
-				throw new Error("no path to: "+path+"\n run java erjang.ErjC "+preloaded_dir+"/"+mod+".beam");
-			}
-			
-			Object o = new kilim.State();
-			
-			modules[i] = EModule.load_module(EAtom.intern(mod), path.toURI().toURL());
+		for (int i = 0; i < MODULES.length; i++) {
+			ERT.load(EAtom.intern(MODULES[i]));
 		}
 
+		
 		args=new String[] {"-boot", "/foo/bar", "-root", "/xx/yy"};
 		
 		
