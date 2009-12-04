@@ -51,10 +51,12 @@ public class JarClassRepo implements ClassRepo {
 	@Override
 	public void store(String internalName, byte[] data) throws IOException {
 		String out = internalName + ".class";
-	
+		
+		//System.out.println("# "+out);
+		
 		jo.putNextEntry(new ZipEntry(out));
 		jo.write(data);
-		
+		jo.closeEntry();
 	}
 
 }

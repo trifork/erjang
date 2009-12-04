@@ -430,4 +430,11 @@ public abstract class EFun extends EObject implements Opcodes {
 		}
 	}
 
+	/**
+	 * @param arity
+	 */
+	public static void ensure(int arity) {
+		get_fun_class(arity);
+	}
+
 }

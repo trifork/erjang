@@ -40,8 +40,8 @@ public class ErjC {
 			if (args[i].endsWith(".beam")) {
 				File in = new File(args[i]);
 				int idx = args[i].lastIndexOf('.');
-				File out = new File(args[i].substring(0, idx) + ".classes");
-				DirClassRepo jcp = new DirClassRepo(out);
+				File out = new File(args[i].substring(0, idx) + ".jar");
+				JarClassRepo jcp = new JarClassRepo(out);
 				
 				System.out.println("compining "+in+" -> "+out+" ...");
 				new Compiler(jcp).compile(in);

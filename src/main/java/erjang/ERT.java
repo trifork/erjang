@@ -18,16 +18,15 @@
 
 package erjang;
 
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.math.BigInteger;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 
-import kilim.Mailbox;
 import kilim.Pausable;
+import erjang.beam.Compiler;
 
 
 @Module(value="erlang")
@@ -270,6 +269,7 @@ public class ERT {
 	private static final EAtom AM_TIMEOUT = EAtom.intern("timeout");
 	private static final EAtom am_try_case_clause = EAtom.intern("try_case_clause");
 	private static final EAtom am_if_clause = EAtom.intern("if_clause");
+	public static final boolean DEBUG = false;
 
 	public EBitStringBuilder bs_init(int size, int flags) {
 		return new EBitStringBuilder(size, flags);
@@ -470,5 +470,8 @@ public class ERT {
 		// skip //
 	}
 	
-	
+	static void load(EAtom module) throws IOException {
+		File f = Compiler.find_and_compile(module.getName());
+		EModule.load_module(module, f.toURI().toURL());
+	}
 }

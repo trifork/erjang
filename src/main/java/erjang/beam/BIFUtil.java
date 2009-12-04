@@ -29,6 +29,7 @@ import org.objectweb.asm.Type;
 import erjang.EAtom;
 import erjang.EBig;
 import erjang.EDouble;
+import erjang.ERT;
 import erjang.ESmall;
 import erjang.EObject;
 import erjang.EProc;
@@ -272,8 +273,8 @@ public class BIFUtil {
 			for (Args a : args.generalize()) {
 				m = found.get(a);
 				if (m != null) {
-
-					System.err.println("missed opportunity erlang:"
+					if (ERT.DEBUG)
+						System.err.println("missed opportunity erlang:"
 							+ EAtom.intern(name) + "/" + parmTypes.length + " "
 							+ args + ", \n\tusing " + m);
 

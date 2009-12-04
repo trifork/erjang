@@ -300,13 +300,13 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 		}
 
 		private void dump() {
-
+			if (ERT.DEBUG) {
 			System.err.println("DUMPING " + name + "/" + arity);
 
 			for (Map.Entry<Integer, LabeledBlock> ent : lbs.entrySet()) {
 				ent.getValue().dump();
 			}
-
+			}
 		}
 
 		@Override
@@ -1048,6 +1048,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 			}
 
 			private void dump() {
+				if (ERT.DEBUG == false) return;
 				next_insn: for (int i = 0; i < insns.size(); i++) {
 					System.err.println(name + "(" + block_label + "):" + i
 							+ " :: " + (map == null ? "?" : map[i]));
@@ -1504,6 +1505,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 						System.out.println("merge " + current + "\n    | "
 								+ lbv.initial + "\n FAILED");
+						throw e;
 
 					}
 				}

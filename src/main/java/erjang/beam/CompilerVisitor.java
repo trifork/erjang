@@ -254,6 +254,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 			FieldVisitor fv = cv.visitField(ACC_STATIC, ent.getKey(), "L"
 					+ EFUN_NAME + f.no + ";", null, null);
+			EFun.ensure(f.no);
 			AnnotationVisitor av = fv.visitAnnotation(IMPORT_ANN_TYPE
 					.getDescriptor(), true);
 			av.visit("module", f.mod.getName());
@@ -446,9 +447,10 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 				FieldVisitor fv = cv.visitField(ACC_STATIC | ACC_FINAL, mname,
 						"L" + EFUN_NAME + arity + ";", null, null);
-
+				EFun.ensure(arity);
+				
 				if (isExported(fun_name, arity)) {
-					System.err.println("export " + module_name + ":" + fun_name
+					if (ERT.DEBUG) System.err.println("export " + module_name + ":" + fun_name
 							+ "/" + arity);
 					AnnotationVisitor an = fv.visitAnnotation(EXPORT_ANN_TYPE
 							.getDescriptor(), true);
@@ -462,7 +464,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 				funs.put(mname, full_inner_name);
 				funt.put(mname, EFUN_NAME + arity);
-
+				EFun.ensure(arity);
 			}
 
 			cv.visitInnerClass(full_inner_name, outer_name, inner_name,
@@ -474,6 +476,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			ClassWeaver w = new ClassWeaver(data, new Compiler.ErjangDetector(self_type.getInternalName()));
 			for (ClassInfo ci : w.getClassInfos()) {
 				try {
+					//System.out.println("> storing "+ci.className);
 					classRepo.store(ci.className, ci.bytes);
 				} catch (IOException e) {
 					e.printStackTrace();
@@ -2289,6 +2292,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 							.getExternalFunction(fun);
 
 					String funTypeName = EFUN_NAME + args.length;
+					EFun.ensure(args.length);
 					mv.visitFieldInsn(GETSTATIC, self_type.getInternalName(),
 							field, "L" + funTypeName + ";");
 					mv.visitVarInsn(ALOAD, 0);
@@ -2430,6 +2434,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 		ClassWriter cw = new ClassWriter(true);
 		String super_class_name = EFUN_NAME + (arity - freevars);
+		EFun.ensure(arity-freevars);
 		cw.visit(V1_6, ACC_FINAL | ACC_PUBLIC, full_inner_name, null,
 				super_class_name, null);
 

@@ -19,6 +19,7 @@
 package erjang;
 
 import java.util.zip.Adler32;
+import java.util.zip.CRC32;
 
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -115,6 +116,20 @@ public class EBinary extends EBitString {
 			}
 		}
 		return res;
+	}
+	
+	public long crc() {
+		CRC32 crc = new CRC32();
+		
+		int octets = bitCount() / 8;
+		if ((bitOff % 8) == 0) {
+			crc.update(data, bitOff / 8, octets);
+		} else {
+			for (int i = 0; i < octets; i++) {
+				crc.update( (byte) octetAt(i) );
+			}
+		}
+		return crc.getValue();
 	}
 
 	/**

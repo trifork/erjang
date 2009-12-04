@@ -19,8 +19,8 @@
 package erjang;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.MalformedURLException;
-import java.net.URL;
 
 /**
  * 
@@ -33,7 +33,8 @@ public class Erj {
 			"prim_zip", "zlib" };
 
 	@SuppressWarnings("unchecked")
-	public static void main(String[] args) throws ClassNotFoundException, MalformedURLException, InstantiationException, IllegalAccessException {
+	public static void main(String[] args) 
+		throws Exception {
 
 		String m = args[0];
 		String f;
@@ -49,22 +50,18 @@ public class Erj {
 		EAtom fun = EAtom.intern(f);
 		
 		EModule[] modules = new EModule[MODULES.length];
-		File preloaded_dir = new File(PRELOADED);
 		
 		for (int i = 0; i < modules.length; i++) {
 			
 			String mod = MODULES[i];
-			File dir = preloaded_dir;
-			
-			File path = new File(dir, mod + ".classes");
-			
-			load(path, mod);
+
+			ERT.load(EAtom.intern(mod));
 		}		
 		
 		EModule.load_module(EAtom.intern("io"), new File("target/classes").toURL());
 		EModule.load_module(EAtom.intern("timer"), new File("target/classes").toURL());
 		
-		load(new File("src/main/erl/" + m + ".classes"), m);
+		ERT.load(EAtom.intern(m));
 		
 		ESeq env = ERT.NIL;
 		ESeq argv = ERT.NIL;
@@ -78,17 +75,6 @@ public class Erj {
 		EProc p;
 		ERT.run(p=new EProc(null, module, fun, argv ));
 		p.joinb();
-
-		System.out.println("ready for second run...");
-		try {
-			Thread.sleep(10000);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-
-		ERT.run(p=new EProc(null, module, fun, argv ));
-		p.joinb();
-
 
 		System.out.println("done.");
 	}
