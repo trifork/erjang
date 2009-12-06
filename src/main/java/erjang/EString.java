@@ -19,8 +19,10 @@
 package erjang;
 
 import java.io.ByteArrayOutputStream;
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Arrays;
+import java.util.List;
 
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -31,152 +33,168 @@ public class EString extends ESeq implements CharSequence {
 	private static final Charset ISO_LATIN_1 = Charset.forName("ISO-8859-1");
 
 	private static final EString EMPTY = new EString("");
-	
+
 	final byte[] data;
 	final int off;
 	private int hash = -1;
-	
+
 	public EString(String value) {
 		this.hash = value.hashCode();
 		this.data = value.getBytes(ISO_LATIN_1);
 		this.off = 0;
 	}
-	
-	public EString testString()
-	{
+
+	public EString testString() {
 		return this;
 	}
-	
-	EString(byte[] data, int off)
-	{
+
+	EString(byte[] data, int off) {
 		this.data = data;
 		this.off = off;
 	}
-	
-	
+
+	/**
+	 * @param array
+	 * @param arrayOffset
+	 * @param len
+	 */
+	public static EString make(byte[] array, int arrayOffset, int len) {
+		if (len == array.length-arrayOffset) {
+			return new EString(array, arrayOffset);
+		} else {
+			byte[] copy = new byte[len];
+			System.arraycopy(array, arrayOffset, copy, 0, len);
+			return new EString(array, len);
+		}
+	}
+
 	/**
 	 * @param list
 	 */
 	public static EString make(ECons list) {
 		EString s;
-		if ((s=list.testString()) != null) { 
+		if ((s = list.testString()) != null) {
 			return s;
 
 		} else if (list.isNil()) {
 			return EString.EMPTY;
-			
+
 		} else {
 			ByteArrayOutputStream barr = new ByteArrayOutputStream();
-			
+
 			EObject tail = list;
 			while ((list = tail.testNonEmptyList()) != null) {
-				
+
 				EObject head = list.head();
-				
+
 				ESmall intval;
 				if ((intval = head.testSmall()) == null) {
 					throw ERT.badarg();
 				}
-				
+
 				int byteValue = intval.value & 0xff;
 				if (intval.value != byteValue) {
 					throw ERT.badarg();
 				}
-				
-				barr.write( byteValue );
+
+				barr.write(byteValue);
 				tail = list.tail();
 			}
-			
+
 			return new EString(barr.toByteArray(), 0);
 		}
 	}
 
 	@Override
 	public int hashCode() {
-		if (hash == -1) { hash = stringValue().hashCode(); }
+		if (hash == -1) {
+			hash = stringValue().hashCode();
+		}
 		return hash;
 	}
-	
+
 	public String stringValue() {
-		return new String(data, off, data.length-off, ISO_LATIN_1);
+		return new String(data, off, data.length - off, ISO_LATIN_1);
 	}
-	
+
 	public boolean equalsExactly(EObject rhs) {
 		ENil nil;
 		int length = length();
-		
-		if ((nil=rhs.testNil()) != null) {
-			return length==0;
+
+		if ((nil = rhs.testNil()) != null) {
+			return length == 0;
 		}
-		
+
 		EString str;
-		if ((str=rhs.testString()) != null) {
+		if ((str = rhs.testString()) != null) {
 			EString es = str;
-			
-			if (length != es.length()) return false;
-			
+
+			if (length != es.length())
+				return false;
+
 			for (int i = 0; i < length; i++) {
-				if (charAt(i) != es.charAt(i)) return false;
+				if (charAt(i) != es.charAt(i))
+					return false;
 			}
-			
+
 			return true;
 
 		}
-		
+
 		ESeq seq;
 		if ((seq = rhs.testWellformedList()) != null) {
-			
+
 			int i = 0;
-			
+
 			while (i < length) {
-				
-				if (seq.testNil() != null) return false;
-				
+
+				if (seq.testNil() != null)
+					return false;
+
 				if (!seq.head().equalsExactly(new ESmall(charAt(i)))) {
 					return false;
 				}
-				
+
 				seq = seq.tail();
-				
+
 			}
-			
-			
+
 		}
-		
+
 		return false;
 	}
-	
+
 	@Override
 	public boolean equals(Object obj) {
 		if (obj instanceof String) {
-			return ((String)obj).equals(stringValue());
+			return ((String) obj).equals(stringValue());
 		}
-		
+
 		if (!(obj instanceof EObject)) {
 			return false;
 		}
-		
-		return compare_same((EObject)obj) == 0;
+
+		return compare_same((EObject) obj) == 0;
 
 	}
 
 	@Override
 	public char charAt(int index) {
-		return (char) (data[off+index] & 0xff);
+		return (char) (data[off + index] & 0xff);
 	}
 
 	@Override
 	public int length() {
-		return data.length-off;
+		return data.length - off;
 	}
 
 	@Override
-	public CharSequence subSequence(final int start, final int end) {		
-		if (end == length()) return new EString(data, off+start);
-		return new SubSequence(start, end-start);
+	public CharSequence subSequence(final int start, final int end) {
+		if (end == length())
+			return new EString(data, off + start);
+		return new SubSequence(start, end - start);
 	}
-	
-	
+
 	public class SubSequence implements CharSequence {
 
 		private final int offset;
@@ -190,7 +208,7 @@ public class EString extends ESeq implements CharSequence {
 
 		@Override
 		public char charAt(int index) {
-			return EString.this.charAt(offset+index);
+			return EString.this.charAt(offset + index);
 		}
 
 		@Override
@@ -200,16 +218,16 @@ public class EString extends ESeq implements CharSequence {
 
 		@Override
 		public CharSequence subSequence(int start, int end) {
-			return new SubSequence(this.offset+start, end-start);
+			return new SubSequence(this.offset + start, end - start);
 		}
 
 	}
 
 	void check_subseq(int offset, int length) {
-		if (offset < 0 || length < 0 || (offset+length) > length())
+		if (offset < 0 || length < 0 || (offset + length) > length())
 			throw new IllegalArgumentException();
 	}
-	
+
 	@Override
 	public String toString() {
 		return '"' + stringValue() + '"';
@@ -226,15 +244,18 @@ public class EString extends ESeq implements CharSequence {
 	public Type emit_const(MethodVisitor fa) {
 
 		Type type = ESTRING_TYPE;
-		
+
 		fa.visitLdcInsn(this.stringValue());
 		fa.visitMethodInsn(Opcodes.INVOKESTATIC, type.getInternalName(),
-					"fromString", "(" + STRING_TYPE.getDescriptor() + ")" + type.getDescriptor());
-		
+				"fromString", "(" + STRING_TYPE.getDescriptor() + ")"
+						+ type.getDescriptor());
+
 		return type;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see erjang.ESeq#cons(erjang.EObject)
 	 */
 	@Override
@@ -242,16 +263,21 @@ public class EString extends ESeq implements CharSequence {
 		return new EList(h, this);
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see erjang.ESeq#tail()
 	 */
 	@Override
 	public ESeq tail() {
-		if (off == data.length) return ERT.NIL;
-		return new EString(data, off+1);
+		if (off == data.length)
+			return ERT.NIL;
+		return new EString(data, off + 1);
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see erjang.ECons#head()
 	 */
 	@Override
@@ -264,14 +290,16 @@ public class EString extends ESeq implements CharSequence {
 		return length() == 0 ? ERT.NIL : null;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see erjang.ESeq#testWellformedList()
 	 */
 	@Override
 	public ESeq testWellformedList() {
 		return this;
 	}
-	
+
 	public ECons testNonEmptyList() {
 		return length() == 0 ? null : this;
 	}
@@ -279,67 +307,75 @@ public class EString extends ESeq implements CharSequence {
 	public ECons testCons() {
 		return this;
 	}
-	
-	/* (non-Javadoc)
+
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see erjang.ECons#compare_same(erjang.EObject)
 	 */
 	@Override
 	int compare_same(EObject rhs) {
-		
+
 		int length = length();
-		
+
 		if ((rhs.testNil()) != null) {
-			return length==0 ? 0 : 1;
+			return length == 0 ? 0 : 1;
 		}
-		
+
 		EString str;
-		if ((str=rhs.testString()) != null) {
+		if ((str = rhs.testString()) != null) {
 			EString es = str;
 			int length2 = str.length();
 			int limit = Math.min(length, length2);
 			for (int i = 0; i < limit; i++) {
 				char ch1 = charAt(i);
 				char ch2 = es.charAt(i);
-				if (ch1 < ch2) return -1;
-				if (ch1 > ch2) return 1;
+				if (ch1 < ch2)
+					return -1;
+				if (ch1 > ch2)
+					return 1;
 			}
-			
-			if (length > length2) return 1;
-			if (length < length2) return -1;
+
+			if (length > length2)
+				return 1;
+			if (length < length2)
+				return -1;
 			return 0;
 
 		}
-		
+
 		ECons seq;
 		if ((seq = rhs.testCons()) != null) {
-			
+
 			int i = 0;
-			
+
 			while (i < length) {
-				
+
 				if ((seq.testNil()) != null) {
 					return -1; // I AM SHORTER
 				}
-				
-				int cmp = (new ESmall(charAt(i++))).compareTo( seq.head() );
-				if (cmp != 0) return cmp;
-				
+
+				int cmp = (new ESmall(charAt(i++))).compareTo(seq.head());
+				if (cmp != 0)
+					return cmp;
+
 				EObject res = seq.tail();
-				
+
 				if ((seq = res.testCons()) != null) {
 					continue;
 				}
 
-				return - res.compareTo( new EString(data, i)  );
+				return -res.compareTo(new EString(data, i));
 			}
-			
-			
+
 		}
-		
-		return - rhs.compareTo(this);		
+
+		return -rhs.compareTo(this);
 	}
-	
-	/* (non-Javadoc)
+
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see erjang.ECons#prepend(erjang.ECons)
 	 */
 	@Override
@@ -348,7 +384,8 @@ public class EString extends ESeq implements CharSequence {
 		if (other != null) {
 			byte[] out = new byte[length() + other.length()];
 			System.arraycopy(other.data, other.off, out, 0, other.length());
-			System.arraycopy(this.data, this.off, out, other.length(), this.length());
+			System.arraycopy(this.data, this.off, out, other.length(), this
+					.length());
 			return new EString(out, out.length);
 		} else {
 			return super.prepend(list);
@@ -368,7 +405,8 @@ public class EString extends ESeq implements CharSequence {
 	 */
 	public static EString make(EObject eObject) {
 		ESeq str;
-		if ((str=eObject.testSeq()) == null) throw ERT.badarg();
+		if ((str = eObject.testSeq()) == null)
+			throw ERT.badarg();
 		return make(str);
 	}
 
@@ -377,10 +415,21 @@ public class EString extends ESeq implements CharSequence {
 	 * @return
 	 */
 	public static EString fromBinary(EBinary bin) {
-		if ((bin.bitOff%8) == 0) {
-			return new EString(bin.data, bin.bitOff/8);
+		if ((bin.bitOff % 8) == 0) {
+			// TODO: bin also has a bitlength, which may differ from bin.data.length*8
+			return new EString(bin.data, bin.bitOff / 8);
 		}
 
 		throw new NotImplemented();
+	}
+
+	/**
+	 * @return the contents of this string as a java.nio.ByteBuffer
+	 */
+	public boolean collectIOList(List<ByteBuffer> out) {
+		if (length() != 0) {
+			out.add(ByteBuffer.wrap(data, off, data.length - off));
+		}
+		return true;
 	}
 }

@@ -19,6 +19,12 @@
 
 package erjang;
 
+import java.nio.ByteBuffer;
+
+import kilim.Pausable;
+
+import erjang.driver.EDriverTask;
+
 /**
  * 
  */
@@ -30,14 +36,17 @@ public class EInternalPort extends EPort {
 		this.task = task;
 	}
 	
+	@Override
+	public EInternalPort testInternalPort() {
+		return this;
+	}
 
 	/* (non-Javadoc)
 	 * @see erjang.EHandle#link_oneway(erjang.EHandle)
 	 */
 	@Override
 	public void link_oneway(EHandle other) {
-		// TODO Auto-generated method stub
-		
+		task.link_oneway(other);
 	}
 
 	/* (non-Javadoc)
@@ -56,5 +65,32 @@ public class EInternalPort extends EPort {
 		throw new NotImplemented();
 	}
 
+	/**
+	 * @param op
+	 * @param out
+	 * @return
+	 */
+	public EObject control(int op, ByteBuffer[] out) {
+		return task.control(op, out);
+	}
 
+	/**
+	 * @param value
+	 * @param data
+	 * @return
+	 */
+	public EObject call(int op, EObject data) {
+		return task.call(op, data);
+	}
+
+	/**
+	 * @param out
+	 * @return
+	 * @throws Pausable 
+	 */
+	public void command(ByteBuffer[] out) throws Pausable {
+		task.command(out);
+	}
+
+	
 }

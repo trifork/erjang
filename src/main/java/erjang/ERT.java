@@ -20,18 +20,24 @@ package erjang;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.reflect.Method;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import kilim.Pausable;
 import erjang.beam.Compiler;
+import erjang.driver.EDriver;
 
 
 @Module(value="erlang")
 public class ERT {
 	
+	public static EAtom am_badsig = EAtom.intern("badsig");
+
 	@BIF
 	public static ErlangException raise(EObject kind, EObject value, EObject trace) throws ErlangException {
 		
@@ -263,16 +269,30 @@ public class ERT {
 	public static final EAtom IGNORED = EAtom.intern("ignored");
 	private static final EAtom am_badmatch = EAtom.intern("badmatch");
 	private static final EAtom am_case_clause = EAtom.intern("case_clause");
-	static final EObject am_undefined = EAtom.intern("undefined");
-	private static final EObject am_receive_clause = EAtom.intern("receive_clause");
+	public static final EObject am_undefined = EAtom.intern("undefined");
+	public static final EObject am_receive_clause = EAtom.intern("receive_clause");
 	public static final EObject AM_NOT_IMPLEMENTED = EAtom.intern("not_implemented");
 	private static final EAtom AM_TIMEOUT = EAtom.intern("timeout");
 	private static final EAtom am_try_case_clause = EAtom.intern("try_case_clause");
 	private static final EAtom am_if_clause = EAtom.intern("if_clause");
 	public static final boolean DEBUG = false;
+	public static final EBinary EMPTY_BINARY = new EBinary(new byte[0]);
+	public static final ByteBuffer EMPTY_BYTEBUFFER = ByteBuffer.allocate(0);
 
 	public EBitStringBuilder bs_init(int size, int flags) {
 		return new EBitStringBuilder(size, flags);
+	}
+
+	/**
+	 * @param e
+	 * @return
+	 */
+	public static String describe_exception(Throwable e) {
+		StringWriter sw = new StringWriter();
+		PrintWriter pw = new PrintWriter(sw);
+		e.printStackTrace(pw);
+		pw.close();
+		return sw.toString();
 	}
 
 	/**
@@ -473,5 +493,14 @@ public class ERT {
 	static void load(EAtom module) throws IOException {
 		File f = Compiler.find_and_compile(module.getName());
 		EModule.load_module(module, f.toURI().toURL());
+	}
+
+	/**
+	 * @param command
+	 * @return
+	 */
+	public static EDriver find_driver(EString command) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

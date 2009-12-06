@@ -18,6 +18,10 @@
 
 package erjang;
 
+import java.io.ByteArrayOutputStream;
+import java.nio.ByteBuffer;
+import java.util.List;
+
 import erjang.m.erlang.ErlBif;
 
 public abstract class ECons extends EObject {
@@ -26,18 +30,20 @@ public abstract class ECons extends EObject {
 	int cmp_order() {
 		return 7;
 	}
-	
+
 	@Override
 	int compare_same(EObject rhs) {
 		ECons other = rhs.testCons();
 		int cmp1 = head().compareTo(other.head());
-		if (cmp1 != 0) return cmp1;
+		if (cmp1 != 0)
+			return cmp1;
 		return tail().compareTo(other.tail());
 	}
 
 	public abstract EObject head();
+
 	public abstract EObject tail();
-	
+
 	public ECons testCons() {
 		return this;
 	}
@@ -47,26 +53,86 @@ public abstract class ECons extends EObject {
 		EObject cell = tail();
 		int count = 1;
 		while (cell != ERT.NIL && (cell instanceof ECons)) {
-			cell = ((ECons)cell).tail();
+			cell = ((ECons) cell).tail();
 			count += 1;
 		}
 		return count;
 	}
+
 	/**
 	 * @param c1
 	 * @return
 	 */
 	public ECons prepend(ECons list) {
-		if (list.testNil() !=null) { return this; }
+		if (list.testNil() != null) {
+			return this;
+		}
 		return prepend(list.tail()).cons(list.head());
 	}
 
 	private ECons prepend(EObject o) {
-		if (o.testNil() !=null) { return this; }
+		if (o.testNil() != null) {
+			return this;
+		}
 		ECons list = o.testCons();
-		if (list == null) { throw ERT.badarg(); }
+		if (list == null) {
+			throw ERT.badarg();
+		}
 		return prepend(list.tail()).cons(list.head());
 	}
-	
-}
 
+	public boolean collectIOList(List<ByteBuffer> out) {
+
+		EObject tail = null;
+		EBinary binary;
+
+		ECons list = this;
+		while (!list.isNil()) {
+
+			EObject head = list.head();
+
+			ESmall intval;
+			if ((intval = head.testSmall()) != null) {
+				ByteArrayOutputStream barr = new ByteArrayOutputStream();
+
+				byte_loop: do {
+
+					int byteValue = intval.value & 0xff;
+					if (intval.value != byteValue) {
+						return false;
+					}
+
+					barr.write(byteValue);
+
+					tail = list.tail();
+					if ((list = tail.testCons()) != null) {
+						head = list.head();
+					} else {
+						break byte_loop;
+					}
+					
+				} while ((intval = head.testSmall()) != null);
+
+				out.add(ByteBuffer.wrap(barr.toByteArray()));
+
+			} else if ((binary = head.testBinary()) != null) {
+				binary.collectIOList(out);
+
+			} else {
+				// not a well-formed iolist
+				return false;
+			}
+
+			tail = list.tail();
+			if ((list = tail.testCons()) == null)
+				break;
+		}
+
+		if (!tail.collectIOList(out)) {
+			return false;
+		}
+
+		return true;
+	}
+
+}

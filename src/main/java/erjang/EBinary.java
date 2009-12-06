@@ -18,6 +18,9 @@
 
 package erjang;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.zip.Adler32;
 import java.util.zip.CRC32;
 
@@ -27,7 +30,7 @@ import org.objectweb.asm.Type;
 
 public class EBinary extends EBitString {
 
-	EBinary(byte[] data, int byteOff, int byteLength) {
+	public EBinary(byte[] data, int byteOff, int byteLength) {
 		super(data, byteOff * 8, byteLength * 8);
 	}
 
@@ -76,7 +79,6 @@ public class EBinary extends EBitString {
 	}
 
 	static final int MOD_ADLER = 65521;
-
 	long adler32() {
 		return adler32(1);
 	}
@@ -137,6 +139,18 @@ public class EBinary extends EBitString {
 	 */
 	public int byteSize() {
 		return bitCount() / 8;
+	}
+
+	/**
+	 * @param barr
+	 * @throws IOException 
+	 */
+	public void appendTo(OutputStream barr) {
+		try {
+			barr.write(data, bitOff/8, bits/8);
+		} catch (IOException e) {
+			throw new Error(e);
+		}
 	}
 
 }

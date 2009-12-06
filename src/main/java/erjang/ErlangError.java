@@ -47,6 +47,11 @@ public class ErlangError extends ErlangException {
 		this.args = ESeq.fromArray(args);
 	}
 
+	public ErlangError(EObject reason, Throwable cause, EObject... args) {
+		super(reason, cause);
+		this.args = ESeq.fromArray(args);
+	}
+
 	/*
 	 * (non-Javadoc)
 	 * 

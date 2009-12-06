@@ -18,6 +18,9 @@
 
 package erjang;
 
+import java.nio.ByteBuffer;
+import java.util.List;
+
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -26,6 +29,8 @@ public class ENil extends ESeq {
 
 	private static final Type ENIL_TYPE = Type.getType(ENil.class);
 	private static final Type ERT_TYPE = Type.getType(ERT.class);
+	
+	private static ByteBuffer EMPTY_BB = ByteBuffer.allocate(0);
 
 	public ENil() {
 		super();
@@ -39,6 +44,10 @@ public class ENil extends ESeq {
 	@Override
 	public EList tail() {
 		throw new UnsupportedOperationException();
+	}
+	
+	public boolean collectIOList(List<ByteBuffer> out) {
+		return true;
 	}
 
 	@Override

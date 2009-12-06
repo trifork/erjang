@@ -18,18 +18,28 @@
 
 package erjang.m.erlang;
 
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
+
+import kilim.Pausable;
+
 import erjang.BIF;
 import erjang.EAtom;
-import erjang.EExecDriverTask;
+import erjang.EInternalPort;
 import erjang.EObject;
 import erjang.EPort;
 import erjang.EProc;
 import erjang.ERT;
+import erjang.ESmall;
+import erjang.EString;
 import erjang.ETask;
 import erjang.ETuple;
 import erjang.ETuple2;
-import erjang.ErlangError;
 import erjang.NotImplemented;
+import erjang.driver.EDriver;
+import erjang.driver.EExecDriverTask;
+import erjang.driver.ESpawnDriverTask;
 
 /**
  * 
@@ -39,6 +49,76 @@ public class ErlPort {
 	static EAtom am_spawn = EAtom.intern("spawn");
 	static EAtom am_spawn_driver = EAtom.intern("spawn_driver");
 	static EAtom am_spawn_executable = EAtom.intern("spawn_executable");
+	
+	@BIF
+	static EObject port_command(EProc proc, EObject port, EObject data) throws Pausable
+	{
+		EInternalPort p = port.testInternalPort();
+		
+		if (p == null) {
+			port = ERT.whereis(port);
+			if (port == ERT.am_undefined)
+				port = null;
+			
+			p = port.testInternalPort();
+		}
+
+		List<ByteBuffer> ovec = new ArrayList<ByteBuffer>();
+		if (p == null || !data.collectIOList(ovec)) { throw ERT.badarg(port, data); }
+		
+		ByteBuffer[] out = new ByteBuffer[ovec.size()];
+		ovec.toArray(out);
+
+		p.command(out);
+		
+		return ERT.TRUE;
+	}
+	
+	@BIF
+	static EObject port_control(EProc proc, EObject port, EObject operation, EObject data)
+	{
+		EInternalPort p = port.testInternalPort();
+		
+		if (p == null) {
+			port = ERT.whereis(port);
+			if (port == ERT.am_undefined)
+				port = null;
+			
+			p = port.testInternalPort();
+		}
+
+		ESmall op = operation.testSmall();
+		
+		List<ByteBuffer> ovec = new ArrayList<ByteBuffer>();
+		if (p == null || op == null || !data.collectIOList(ovec)) { throw ERT.badarg(port, operation, data); }
+		
+		ByteBuffer[] out = new ByteBuffer[ovec.size()];
+		ovec.toArray(out);
+
+		// TODO: improve exception handling/wrapping here so we get ErlangException types only!
+		return p.control(op.value, out);
+	}
+	
+	@BIF
+	static EObject port_call(EProc proc, EObject port, EObject operation, EObject data)
+	{
+		EInternalPort p = port.testInternalPort();
+		
+		if (p == null) {
+			port = ERT.whereis(port);
+			if (port == ERT.am_undefined)
+				port = null;
+			
+			p = port.testInternalPort();
+		}
+
+		ESmall op = operation.testSmall();
+		
+		if (p == null || op == null) { throw ERT.badarg(port, operation, data); }
+		
+		// TODO: improve exception handling/wrapping here so we get ErlangException types only!
+		return p.call(op.value, data);
+	}
 	
 	@BIF
 	static EPort open_port(EProc proc, EObject portName, EObject portSetting) {
@@ -52,15 +132,46 @@ public class ErlPort {
 		if ((name = ETuple2.cast(t)) == null)
 			throw ERT.badarg(portName, portSetting);
 
+		EString command = EString.make(name.elem2);
+		
+		
+		
 		if (name.elem1 == am_spawn) {
-			throw new ErlangError(ERT.AM_NOT_IMPLEMENTED, portName, portSetting);
+			ETask<? extends EPort> task;
+			EDriver drv = ERT.find_driver(command);
+
+			if (drv == null) {
+				task = new EExecDriverTask(proc, name, portSetting);
+			} else {
+				task = new ESpawnDriverTask(proc, drv, command, portSetting);
+			}
+		
+			// link this proc and the driver task
+			task.link_to(proc);
+			ERT.run(task);
+			
+			return task.self();
 			
 		} else if (name.elem1 == am_spawn_driver) {
-			throw new NotImplemented();
+			EDriver drv = ERT.find_driver(command);
+			if (drv == null) {
+				throw ERT.badarg(portName, portSetting);
+			}
+			ETask<? extends EPort> task = new ESpawnDriverTask(proc, drv, command, portSetting);
+			
+			// link this proc and the driver task
+			task.link_to(proc);
+			ERT.run(task);
+			
+			return task.self();
 			
 		} else if (name.elem1 == am_spawn_executable) {
 			ETask<? extends EPort> task = new EExecDriverTask(proc, name, portSetting);
 			
+			// link this proc and the driver task
+			task.link_to(proc);
+			ERT.run(task);
+
 			return task.self();
 		}
 			

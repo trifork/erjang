@@ -1,8 +1,8 @@
 -module(ring).
 %%-import(lists, [last/1]).
 -export([startRing/2,main/0]).
--define(CYCLES, 1000000).
--define(PROCS, 100).
+-define(CYCLES, 10000).
+-define(PROCS, 10000).
 
 %%
 last([End|[]]) -> 

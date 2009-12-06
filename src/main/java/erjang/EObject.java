@@ -19,9 +19,13 @@
 package erjang;
 
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.util.List;
 
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
+
+import erjang.driver.EPortControl;
 
 public abstract class EObject implements Comparable<EObject> {
 
@@ -98,9 +102,6 @@ public abstract class EObject implements Comparable<EObject> {
 		return null;
 	}
 
-	/**
-	 * @return
-	 */
 	public EBinary testBinary() {
 		return null;
 	}
@@ -128,6 +129,9 @@ public abstract class EObject implements Comparable<EObject> {
 		return null;
 	}
 	
+	public boolean collectIOList(List<ByteBuffer> out) {
+		return false;
+	}
 	
 	public Type emit_const(MethodVisitor mv) {
 		throw new NotImplemented();
@@ -237,7 +241,7 @@ public abstract class EObject implements Comparable<EObject> {
 		}
 	}
 
-	abstract int compare_same(EObject rhs); 
+	int compare_same(EObject rhs) { throw new Error("cannot compare"); }
 	
 	int r_compare_same(ESmall lhs) { throw new NotImplemented(); }
 	int r_compare_same(EBig lhs) { throw new NotImplemented(); }
@@ -267,7 +271,7 @@ public abstract class EObject implements Comparable<EObject> {
 	 * 	number[0] < atom[1] < reference[2] < fun[3] < port[4] < pid[5] < tuple[6] < list[7] < bit string[8]
 	 * @return
 	 */
-	abstract int cmp_order();
+	int cmp_order() { throw new Error("cannot compare"); }
 
 
 	/**
@@ -283,6 +287,20 @@ public abstract class EObject implements Comparable<EObject> {
 	 * @return
 	 */
 	public EBitString testBinString() {
+		return null;
+	}
+
+	/**
+	 * @return non-null if this is an internal port
+	 */
+	public EInternalPort testInternalPort() {
+		return null;
+	}
+
+	/**
+	 * @return
+	 */
+	public EPortControl testPortControl() {
 		return null;
 	}
 

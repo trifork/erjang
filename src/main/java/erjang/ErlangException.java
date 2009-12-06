@@ -42,6 +42,11 @@ public abstract class ErlangException extends RuntimeException {
 		this.reason = reason;
 	}
 
+	public ErlangException(EObject reason, Throwable cause) {
+		super(cause);
+		this.reason = reason;
+	}
+
 	public ErlangException(Throwable cause) {
 		super(cause);
 		this.reason = am_java_exception;

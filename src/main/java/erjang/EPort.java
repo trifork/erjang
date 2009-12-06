@@ -37,12 +37,15 @@ public abstract class EPort extends EHandle {
 	
 	@Override
 	int compare_same(EObject rhs) {
-		
 		// TODO: make faster
 		return toString().compareTo(rhs.toString());
 	}
 	
-
+	@Override
+	public EPort testPort() {
+		return this;
+	}
+	
 
 	public static EAtom am_fd = EAtom.intern("fd");
 	public static EAtom am_packet = EAtom.intern("packet");
@@ -61,5 +64,9 @@ public abstract class EPort extends EHandle {
 	public static EAtom am_out = EAtom.intern("out");
 	public static EAtom am_binary = EAtom.intern("binary");
 	public static EAtom am_eof = EAtom.intern("eof");
+	public static EAtom am_close = EAtom.intern("close");
+	public static EAtom am_command = EAtom.intern("command");
+	public static EAtom am_connect = EAtom.intern("connect");
+	public static EAtom am_connected = EAtom.intern("connected");
 
 }

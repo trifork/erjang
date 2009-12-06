@@ -17,39 +17,24 @@
  **/
 
 
-package erjang;
+package erjang.driver;
 
 import kilim.Pausable;
+import erjang.EObject;
 
 /**
- * 
+ * Class internal to the driver subsystem, used for async messages to a port task
  */
-public class EDriverTask extends ETask<EInternalPort> {
+public abstract class EPortControl extends EObject {
 
-	private final EInternalPort port;
-	protected final EProc owner;
-
-	EDriverTask(EProc owner) {
-		this.owner = owner;
-		this.port = new EInternalPort(this);
+	public EPortControl testPortControl() {
+		return this;
 	}
+
+	/**
+	 * 
+	 */
+	public abstract void execute() throws Pausable;
 	
-	@Override
-	public EInternalPort self() {
-		return port;
-	}
-
-	@Override
-	public void send_exit(EHandle from, EObject reason) throws Pausable {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void mbox_send(EObject msg) throws Pausable {
-		// TODO Auto-generated method stub
-
-	}
-
-
+	
 }

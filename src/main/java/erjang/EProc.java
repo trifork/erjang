@@ -18,10 +18,10 @@
 
 package erjang;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
+
+import erjang.ETask.State;
 
 import kilim.Mailbox;
 import kilim.Pausable;
@@ -33,9 +33,6 @@ public final class EProc extends ETask<EInternalPID> {
 	public static final EObject TAIL_MARKER = new ETailMarker();
 
 	private static final EAtom am_trap_exit = EAtom.intern("trap_exit");
-	private static final EObject am_normal = EAtom.intern("normal");
-	private static final EObject am_java_exception = EAtom
-			.intern("java_exception");
 
 	public EFun tail;
 	public EObject arg0, arg1, arg2, arg3, arg4, arg5, arg6;
@@ -106,6 +103,23 @@ public final class EProc extends ETask<EInternalPID> {
 	Map<EObject, EObject> pdict = new HashMap<EObject, EObject>();
 
 	private EAtom trap_exit = ERT.FALSE;
+
+
+	protected void process_incoming_exit(EHandle from, EObject reason) throws Pausable
+	{
+		if (trap_exit == ERT.TRUE) {
+			// we're trapping exits, so we in stead send an {'EXIT', from,
+			// reason} to self
+			System.err.println("kill message");
+			mbox_send(ETuple.make(ERT.EXIT, from, reason));
+		} else {
+			System.err.println("kill signal");
+			// try to kill this thread
+			this.exit_reason = reason;
+			this.pstate = State.EXIT_SIG;
+			this.kill(new ErlangExitSignal(reason));
+		}
+	}
 
 	// private Thread runner;
 
@@ -182,11 +196,6 @@ public final class EProc extends ETask<EInternalPID> {
 		throw new NotImplemented();
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see java.lang.Runnable#run()
-	 */
 	@Override
 	public void execute() throws Pausable {
 		try {
@@ -218,7 +227,7 @@ public final class EProc extends ETask<EInternalPID> {
 
 				ESeq erl_trace = ErlangError.decodeTrace(e.getStackTrace());
 				ETuple java_ex = ETuple.make(am_java_exception, EString
-						.fromString(describe_exception(e)));
+						.fromString(ERT.describe_exception(e)));
 
 				result = ETuple.make(java_ex, erl_trace);
 
@@ -229,9 +238,7 @@ public final class EProc extends ETask<EInternalPID> {
 
 			//System.err.println("task "+this+" exited with "+result);
 			
-			for (EHandle handle : links) {
-				handle.exit_signal(self(), result);
-			}
+			send_exit_to_all_linked(result);
 
 		} catch (ThreadDeath e) {
 			throw e;
@@ -242,133 +249,7 @@ public final class EProc extends ETask<EInternalPID> {
 
 	}
 
-	/**
-	 * @param e
-	 * @return
-	 */
-	private static String describe_exception(Throwable e) {
-		StringWriter sw = new StringWriter();
-		PrintWriter pw = new PrintWriter(sw);
-		e.printStackTrace(pw);
-		pw.close();
-		return sw.toString();
-	}
 
-	Mailbox<EObject> mbox = new Mailbox<EObject>();
-
-	static enum State {
-		INIT, RUNNING, EXIT_SIG, DONE
-	};
-
-	private State pstate = State.INIT;
-	private EObject exit_reason;
-
-	/**
-	 * @return
-	 */
-	public EObject mbox_peek() {
-		check_exit();
-		return mbox.peek();
-	}
-
-	/**
-	 * @throws Pausable
-	 * 
-	 */
-	public void mbox_wait() throws Pausable {
-		mbox.untilHasMessage();
-	}
-
-	/**
-	 * @param longValue
-	 */
-	public boolean mbox_wait(long timeoutMillis) throws Pausable {
-		return mbox.untilHasMessage(timeoutMillis);
-	}
-
-	/**
-	 * @param msg
-	 * @throws Pausable
-	 */
-	public void mbox_send(EObject msg) throws Pausable {
-		mbox.put(msg);
-	}
-
-	/**
-	 * @return
-	 * @throws Pausable
-	 */
-	public void mbox_remove_one() throws Pausable {
-		mbox.get();
-	}
-
-	/**
-	 * @param from
-	 * @param reason
-	 */
-	public void send_exit(EHandle from, EObject reason) throws Pausable {
-
-		System.err.println("exit "+from.task()+" -> "+this);
-
-		// ignore exit signals from myself
-		if (from == self()) {
-			return;
-		}
-
-		synchronized (this) {
-			switch (pstate) {
-
-			// process is already "done", just ignore exit signal
-			case DONE:
-				return;
-
-				// we have already received one exit signal, ignore
-				// subsequent ones...
-			case EXIT_SIG:
-				// TODO: warn that this process is not yet dead. why?
-				return;
-
-				// the process is not running yet, this should not happen
-			case INIT:
-				throw new Error(
-						"cannot receive exit signal before we're running");
-
-			case RUNNING:
-
-				if (trap_exit != ERT.TRUE) {
-					System.err.println("kill signal");
-					// try to kill this thread
-					this.exit_reason = reason;
-					this.pstate = State.EXIT_SIG;
-					this.kill(new ErlangExitSignal(reason));
-					return;
-				}
-			}
-		}
-
-		// we're trapping exits, so we in stead send an {'EXIT', from,
-		// reason} to self
-		System.err.println("kill message");
-		mbox_send(ETuple.make(ERT.EXIT, from, reason));
-
-	}
-
-	/**
-	 * will check if this process have received an exit signal (and we're not
-	 * trapping)
-	 */
-	public void check_exit() {
-		if (this.pstate == State.EXIT_SIG) {
-			throw new ErlangExitSignal(exit_reason);
-		}
-	}
-
-	/**
-	 * @return
-	 */
-	public Mailbox<EObject> mbox() {
-		return mbox;
-	}
 
 }
 

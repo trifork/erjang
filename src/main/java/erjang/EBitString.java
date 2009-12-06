@@ -18,6 +18,9 @@
 
 package erjang;
 
+import java.nio.ByteBuffer;
+import java.util.List;
+
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -28,8 +31,9 @@ import org.objectweb.asm.Type;
 public class EBitString extends EObject {
 
 	public static final Type EBITSTRING_TYPE = Type.getType(EBitString.class);
-	public static final String EBITSTRING_NAME = EBITSTRING_TYPE.getInternalName();
-	
+	public static final String EBITSTRING_NAME = EBITSTRING_TYPE
+			.getInternalName();
+
 	protected final byte[] data;
 	protected final int bits;
 	protected final int bitOff;
@@ -37,43 +41,40 @@ public class EBitString extends EObject {
 	public EBitString(byte[] data) {
 		this(data.clone(), 0, data.length * 8);
 	}
-	
+
 	public EBitString testBinString() {
 		return this;
 	}
 
-	public EBinary testBinary() { 
+	public EBinary testBinary() {
 		if (isBinary()) {
 			return new EBinary(toByteArray());
 		}
 		return null;
 	}
-	
-	
-	
+
 	@Override
 	int cmp_order() {
 		return CMP_ORDER_BITSTRING;
 	}
 
-
 	@Override
 	public Type emit_const(MethodVisitor fa) {
 		char[] chs = new char[bits / 8 + 1];
-		
+
 		for (int pos = 0; pos < bits; pos += 8) {
-			
-			int rest = Math.min(8, bits-pos);
-			
+
+			int rest = Math.min(8, bits - pos);
+
 			int oc = 0xff & intBitsAt(pos, rest);
 
 			if (rest < 8) {
-				oc <<= (8-rest);
+				oc <<= (8 - rest);
 			}
-			
-			chs[pos/8] = (char)oc;
+
+			chs[pos / 8] = (char) oc;
 		}
-		
+
 		String str = new String(chs);
 
 		fa.visitLdcInsn(str);
@@ -85,63 +86,69 @@ public class EBitString extends EObject {
 	}
 
 	public static EBitString fromString(String str, int extra) {
-		int size = str.length()*8;
-		byte[] data = new byte[size/8];
+		int size = str.length() * 8;
+		byte[] data = new byte[size / 8];
 		for (int i = 0; i < str.length(); i++) {
 			data[i] = (byte) str.charAt(i);
 		}
-		return new EBitString(data, 0, extra == 0 ? size : size-8+extra);
+		return new EBitString(data, 0, extra == 0 ? size : size - 8 + extra);
 	}
-	
+
 	@Override
 	public boolean equalsExactly(EObject rhs) {
-		if (rhs.cmp_order() != CMP_ORDER_BITSTRING) return false;
-		
-		EBitString ebs = (EBitString)rhs;
-		
-		if (bitCount() != ebs.bitCount()) return false;
+		if (rhs.cmp_order() != CMP_ORDER_BITSTRING)
+			return false;
+
+		EBitString ebs = (EBitString) rhs;
+
+		if (bitCount() != ebs.bitCount())
+			return false;
 
 		int bc1 = bitCount();
 		int bc2 = ebs.bitCount();
 		int limit = Math.min(bc1, bc2);
-		
+
 		for (int pos = 0; pos < limit; pos += 8) {
-			
-			int rest = Math.min(8, limit-pos);
-			
+
+			int rest = Math.min(8, limit - pos);
+
 			int oc1 = 0xff & intBitsAt(pos, rest);
 			int oc2 = 0xff & ebs.intBitsAt(pos, rest);
 
-			if (oc1 != oc2) return false;
+			if (oc1 != oc2)
+				return false;
 		}
-		
+
 		return true;
 	}
 
 	@Override
 	int compare_same(EObject rhs) {
-		EBitString ebs = (EBitString)rhs;
-		
+		EBitString ebs = (EBitString) rhs;
+
 		int bc1 = bitCount();
 		int bc2 = ebs.bitCount();
 		int limit = Math.min(bc1, bc2);
-		
+
 		for (int pos = 0; pos < limit; pos += 8) {
-			
-			int rest = Math.min(8, limit-pos);
-			
+
+			int rest = Math.min(8, limit - pos);
+
 			int oc1 = 0xff & intBitsAt(pos, rest);
 			int oc2 = 0xff & ebs.intBitsAt(pos, rest);
-			
-			if (oc1 == oc2) continue;
-			
-			if (oc1 < oc2) return -1;
-			if (oc1 > oc2) return 1;
+
+			if (oc1 == oc2)
+				continue;
+
+			if (oc1 < oc2)
+				return -1;
+			if (oc1 > oc2)
+				return 1;
 		}
 
 		if (bc1 == bc2)
 			return 0;
-		
+
 		if (bc1 < bc2)
 			return -1;
 		else
@@ -152,8 +159,8 @@ public class EBitString extends EObject {
 		this.data = data;
 		this.bitOff = offset;
 		this.bits = bits;
-		
-		if (data.length*8 < bitOff+bits) {
+
+		if (data.length * 8 < bitOff + bits) {
 			throw new IllegalArgumentException();
 		}
 	}
@@ -357,8 +364,8 @@ public class EBitString extends EObject {
 				char ch = (char) (0xff & intBitsAt(i, 8));
 				if (ch < ' ' || ch > '~')
 					break foo;
-				
-				sb.append((char)ch);
+
+				sb.append((char) ch);
 			}
 
 			sb.append("\">>");
@@ -385,13 +392,33 @@ public class EBitString extends EObject {
 	 * @return
 	 */
 	public byte[] toByteArray() {
-		if (!isBinary()) throw ERT.badarg();
-		
-		byte[] result = new byte[bits/8];
+		if (!isBinary())
+			throw ERT.badarg();
+
+		byte[] result = new byte[bits / 8];
 		for (int i = 0; i < result.length; i++) {
-			result[i] = this.byteAt(i*8);
+			result[i] = this.byteAt(i * 8);
 		}
 		return result;
+	}
+
+	/**
+	 * @return true if successful
+	 */
+	@Override
+	public boolean collectIOList(List<ByteBuffer> out) {
+		if ((bits % 8) != 0) 
+			return false;
+		
+		if (bits != 0) {
+			if ((bitOff % 8) == 0) {
+				out.add(ByteBuffer.wrap(data, bitOff / 8, bits / 8));
+			} else {
+				out.add(ByteBuffer.wrap(toByteArray()));
+			}
+		}
+		
+		return true;
 	}
 
 }
