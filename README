@@ -34,8 +34,8 @@ The source for the few samples are in src/main/erl.
 
 RUNNING
 
-When running, it writes files named ".erj/module-${CRC}.jar".  These
-files are written in response to erlang:compile_module(Module,Binary).
+When running, it writes files named ".erj/${module}-${CRC}.jar".  These
+files are written in response to erlang:load_module(Module,Binary).
 
 These files also serve as a cache of files translated from beam -> jar.
 If something goes astray, it may help to remove the .erj directory
