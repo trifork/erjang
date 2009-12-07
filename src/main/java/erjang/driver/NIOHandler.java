@@ -19,35 +19,34 @@
 
 package erjang.driver;
 
-import kilim.Pausable;
-import erjang.EHandle;
-import erjang.EObject;
-import erjang.EPID;
-import erjang.EPort;
-import erjang.EProc;
-import erjang.ERT;
-import erjang.EString;
-import erjang.ETask;
-import erjang.ETuple;
-import erjang.ETuple2;
+import java.io.IOException;
+import java.nio.channels.SelectableChannel;
+
 
 /**
  * 
  */
-public class ESpawnDriverTask extends EDriverTask {
-
-	private final EString command;
-	private final EObject portSetting;
+public interface NIOHandler {
 
 	/**
-	 * @param proc
-	 * @param portSetting 
-	 * @param command 
+	 * Exception happened during IO/Select
+	 * @param ch 
+	 * 
+	 * @param e
 	 */
-	public ESpawnDriverTask(EProc proc, EDriver driver, EString command, EObject portSetting) {
-		super(proc, driver.start(command));
-		this.command = command;
-		this.portSetting = portSetting;
-		super.parseOptions(command, portSetting);
-	}
+	void exception(SelectableChannel ch, IOException e);
+
+	/**
+	 * @param ch
+	 * @param i
+	 */
+	void ready(SelectableChannel ch, int readyOps);
+
+	/**
+	 * Called when <code>ch</code> is free to be closed.
+	 * 
+	 * @param ch
+	 */
+	void released(SelectableChannel ch);
+
 }

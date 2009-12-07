@@ -19,6 +19,7 @@
 package erjang.driver;
 
 import java.nio.ByteBuffer;
+import java.nio.channels.SelectableChannel;
 import java.util.concurrent.locks.Lock;
 
 import erjang.EObject;
@@ -112,7 +113,7 @@ class LockingDriverInstance extends EDriverInstance {
 	}
 
 	@Override
-	protected void readyAsync(Object data) {
+	protected void readyAsync(SelectableChannel data) {
 		lock.lock();
 		try {
 			target.readyAsync(data);
@@ -122,7 +123,7 @@ class LockingDriverInstance extends EDriverInstance {
 	}
 
 	@Override
-	protected void readyInput(EDriverEvent evt) {
+	protected void readyInput(SelectableChannel evt) {
 		lock.lock();
 		try {
 			target.readyInput(evt);
@@ -132,7 +133,7 @@ class LockingDriverInstance extends EDriverInstance {
 	}
 
 	@Override
-	protected void readyOutput(EDriverEvent evt) {
+	protected void readyOutput(SelectableChannel evt) {
 		lock.lock();
 		try {
 			target.readyOutput(evt);
@@ -152,10 +153,10 @@ class LockingDriverInstance extends EDriverInstance {
 	}
 
 	@Override
-	protected void stopSelect() {
+	protected void stopSelect(SelectableChannel ch) {
 		lock.lock();
 		try {
-			target.stopSelect();
+			target.stopSelect(ch);
 		} finally {
 			lock.unlock();
 		}
@@ -171,4 +172,5 @@ class LockingDriverInstance extends EDriverInstance {
 		}
 	}
 
+	 
 }

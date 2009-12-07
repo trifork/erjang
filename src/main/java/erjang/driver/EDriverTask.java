@@ -35,7 +35,9 @@ import static erjang.EPort.am_packet;
 import static erjang.EPort.am_stream;
 import static erjang.EPort.am_use_stdio;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.SelectableChannel;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -43,6 +45,7 @@ import java.util.List;
 import kilim.Pausable;
 import erjang.EBinary;
 import erjang.ECons;
+import erjang.EHandle;
 import erjang.EInternalPort;
 import erjang.EObject;
 import erjang.EPID;
@@ -54,22 +57,25 @@ import erjang.EString;
 import erjang.ETask;
 import erjang.ETuple;
 import erjang.ETuple2;
+import erjang.ETuple3;
 import erjang.ErlangError;
 import erjang.ErlangException;
 import erjang.ErlangExitSignal;
+import erjang.NotImplemented;
 
 /**
- * 
+ * Base class for the two kinds of driver tasks: drivers, and "exec"s
  */
-public abstract class EDriverTask extends ETask<EInternalPort> {
+public abstract class EDriverTask extends ETask<EInternalPort> implements
+		NIOHandler {
 
 	private final EInternalPort port;
 	protected EPID owner;
-	private final EDriverInstance driver;
+	private final EDriverInstance instance;
 
 	protected EDriverTask(EProc owner, EDriverInstance driver) {
 		this.owner = owner.self();
-		this.driver = driver;
+		this.instance = driver;
 		this.port = new EInternalPort(this);
 	}
 
@@ -102,6 +108,7 @@ public abstract class EDriverTask extends ETask<EInternalPort> {
 	 * @param portSetting
 	 */
 	protected void parseOptions(EString es, EObject portSetting) {
+		// TODO: most of this is way too expensive for non-exec ports
 
 		// set by options
 		this.cmd = new String[] { es.stringValue() };
@@ -235,11 +242,11 @@ public abstract class EDriverTask extends ETask<EInternalPort> {
 				result = am_normal;
 
 			} catch (ErlangException e) {
-				e.printStackTrace();
+				// e.printStackTrace();
 				result = e.reason();
 
 			} catch (ErlangExitSignal e) {
-				e.printStackTrace();
+				// e.printStackTrace();
 				result = e.reason();
 
 			} catch (Throwable e) {
@@ -260,8 +267,8 @@ public abstract class EDriverTask extends ETask<EInternalPort> {
 			// System.err.println("task "+this+" exited with "+result);
 			send_exit_to_all_linked(result);
 
-			driver.stop();
-			
+			instance.stop();
+
 		} catch (ThreadDeath e) {
 			throw e;
 
@@ -284,6 +291,7 @@ public abstract class EDriverTask extends ETask<EInternalPort> {
 
 			ETuple2 t2;
 			EPortControl ctrl;
+			ETuple3 t3;
 			if ((t2 = ETuple2.cast(msg)) != null) {
 
 				EObject sender = t2.elem1;
@@ -300,17 +308,17 @@ public abstract class EDriverTask extends ETask<EInternalPort> {
 						if (cmd.elem2.collectIOList(out)) {
 							if (out.size() == 0) {
 								// nothing to do?
-								driver.output(ERT.EMPTY_BYTEBUFFER);
-								
+								instance.output(ERT.EMPTY_BYTEBUFFER);
+
 							} else if (out.size() == 1) {
-								driver.output(out.get(0));
-								
+								instance.output(out.get(0));
+
 							} else {
-								driver.outputv(out.toArray(new ByteBuffer[out
+								instance.outputv(out.toArray(new ByteBuffer[out
 										.size()]));
 							}
 						}
-						
+
 						continue next_message;
 
 					} else if (cmd.elem1 == EPort.am_connect) {
@@ -329,16 +337,23 @@ public abstract class EDriverTask extends ETask<EInternalPort> {
 					}
 
 				} else if (t2.elem2 == am_close) {
-					// will call driver.stop()
+					// will call instance.stop()
 					return;
 				}
-				
-			} else if ((ctrl=msg.testPortControl()) != null) {
-				
+
+			} else if ((ctrl = msg.testPortControl()) != null) {
+
 				// port control messages are simply run
 				ctrl.execute();
 				continue next_message;
-				
+
+			} else if ((t3 = ETuple3.cast(msg)) != null) {
+
+				// {'EXIT', From, Reason} comes in this way
+				if (t3.elem1 == ERT.EXIT) {
+					// close
+					return;
+				}
 			}
 
 			break;
@@ -354,22 +369,22 @@ public abstract class EDriverTask extends ETask<EInternalPort> {
 	 * @param out
 	 */
 	public EObject control(int op, ByteBuffer[] out) {
-		
+
 		if (pstate != State.RUNNING) {
 			throw ERT.badarg();
 		}
-		
+
 		ByteBuffer odata = flatten(out);
-		
-		ByteBuffer bb = driver.control(op, odata);
-		
-		if (bb == null || bb.position()==0) {
+
+		ByteBuffer bb = instance.control(op, odata);
+
+		if (bb == null || bb.position() == 0) {
 			if (this.send_binary_data) {
 				return ERT.EMPTY_BINARY;
 			} else {
 				return ERT.NIL;
 			}
-			
+
 		} else {
 			int len = bb.position();
 
@@ -414,8 +429,8 @@ public abstract class EDriverTask extends ETask<EInternalPort> {
 		if (pstate != State.RUNNING) {
 			throw ERT.badarg();
 		}
-		
-		return driver.call(op, data);
+
+		return instance.call(op, data);
 	}
 
 	/**
@@ -423,21 +438,91 @@ public abstract class EDriverTask extends ETask<EInternalPort> {
 	 * 
 	 * @param out
 	 * @return
-	 * @throws Pausable 
+	 * @throws Pausable
 	 */
 	public void command(final ByteBuffer[] out) throws Pausable {
+
+		if (mode != Mode.STREAM) {
+			// do we need to encode the packet length here?
+			// guess so, if we are non-stream mode
+			throw new NotImplemented();
+		}
+
 		mbox.put(new EPortControl() {
 
 			@Override
 			public void execute() throws Pausable {
-				if (out.length==0) {
-					driver.output(ERT.EMPTY_BYTEBUFFER);
-				} else if (out.length==1) {
-					driver.output(out[0]);
+				if (out.length == 0) {
+					instance.output(ERT.EMPTY_BYTEBUFFER);
+				} else if (out.length == 1) {
+					instance.output(out[0]);
 				} else {
-					driver.outputv(out);
+					instance.outputv(out);
 				}
-			}});
+			}
+		});
 	}
 
+	/** our owner died, do something! */
+	@Override
+	protected void process_incoming_exit(EHandle from, EObject reason)
+			throws Pausable {
+		mbox.put(ETuple.make(ERT.EXIT, from, reason));
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see erjang.driver.IOHandler#ready(java.nio.channels.SelectableChannel,
+	 * int)
+	 */
+	@Override
+	public void ready(final SelectableChannel ch, final int readyOps) {
+		mbox.putb(new EPortControl() {
+			@Override
+			public void execute() throws Pausable {
+				if ((readyOps & EDriverInstance.ERL_DRV_READ) == EDriverInstance.ERL_DRV_READ) {
+					instance.readyInput(ch);
+				}
+				if ((readyOps & EDriverInstance.ERL_DRV_WRITE) == EDriverInstance.ERL_DRV_WRITE) {
+					instance.readyOutput(ch);
+				}
+				if ((readyOps & EDriverInstance.ERL_DRV_CONNECT) == EDriverInstance.ERL_DRV_CONNECT) {
+					instance.readyConnect(ch);
+				}
+				if ((readyOps & EDriverInstance.ERL_DRV_ACCEPT) == EDriverInstance.ERL_DRV_ACCEPT) {
+					instance.readyAccept(ch);
+				}
+			}
+		});
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * erjang.driver.IOHandler#released(java.nio.channels.SelectableChannel)
+	 */
+	@Override
+	public void released(final SelectableChannel ch) {
+		mbox.putb(new EPortControl() {
+			@Override
+			public void execute() throws Pausable {
+				instance.stopSelect(ch);
+			}
+		});
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * erjang.driver.IOHandler#exception(java.nio.channels.SelectableChannel,
+	 * java.io.IOException)
+	 */
+	@Override
+	public void exception(SelectableChannel ch, IOException e) {
+		// TODO Auto-generated method stub
+
+	}
 }

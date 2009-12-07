@@ -72,4 +72,17 @@ public class ETuple3 extends ETuple {
 		}
 	}
 
+
+	/**
+	 * @param msg
+	 * @return
+	 */
+	public static ETuple3 cast(EObject msg) {
+		if (msg instanceof ETuple3) {
+			return (ETuple3) msg;
+		} else {
+			return null;
+		}
+	}
+
 }

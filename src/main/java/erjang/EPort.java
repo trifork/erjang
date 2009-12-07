@@ -68,5 +68,8 @@ public abstract class EPort extends EHandle {
 	public static EAtom am_command = EAtom.intern("command");
 	public static EAtom am_connect = EAtom.intern("connect");
 	public static EAtom am_connected = EAtom.intern("connected");
-
+	/**
+	 * @return
+	 */
+	public abstract boolean isOpen();
 }

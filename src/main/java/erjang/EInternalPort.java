@@ -92,5 +92,12 @@ public class EInternalPort extends EPort {
 		task.command(out);
 	}
 
-	
+	/* (non-Javadoc)
+	 * @see erjang.EPort#isOpen()
+	 */
+	@Override
+	public boolean isOpen() {
+		// TODO: this can be wrong in a race condition, but nothing to do about it.
+		return !task.isDone();
+	}
 }

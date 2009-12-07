@@ -59,9 +59,7 @@ public class ErlangError extends ErlangException {
 	 */
 	@Override
 	public EObject reason() {
-		ETuple2 val = new ETuple2();
-		val.elem1 = super.reason();
-		val.elem2 = getTrace();
+		ETuple2 val = new ETuple2(super.reason(), getTrace());
 		return val;
 	}
 

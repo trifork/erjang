@@ -22,6 +22,17 @@ public class ETuple2 extends ETuple {
 	public EObject elem1;
 	public EObject elem2;
 
+	/**
+	 * @param self
+	 * @param amClose
+	 */
+	public ETuple2(EObject elem1, EObject elem2) {
+		this.elem1 = elem1;
+		this.elem2 = elem2;
+	}
+
+	public ETuple2() {}
+	
 	static public ETuple2 cast(ETuple value) {
 		if (value.arity() == 2)
 			return (ETuple2) value;

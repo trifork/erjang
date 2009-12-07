@@ -26,10 +26,10 @@ import kilim.Pausable;
  */
 public class EInternalPID extends EPID {
 
-	private final EProc proc;
+	private final EProc drvTask;
 
 	public EInternalPID(EProc self) {
-		this.proc = self;
+		this.drvTask = self;
 	}
 	
 	/* (non-Javadoc)
@@ -37,12 +37,12 @@ public class EInternalPID extends EPID {
 	 */
 	@Override
 	ETask<?> task() {
-		return proc;
+		return drvTask;
 	}
 	
 	@Override
 	public void send(EObject msg) throws Pausable {
-		proc.mbox_send(msg);
+		drvTask.mbox.put(msg);
 	}
 	
 	/* (non-Javadoc)
@@ -58,23 +58,16 @@ public class EInternalPID extends EPID {
 	 */
 	@Override
 	int r_compare_same(EInternalPID lhs) {
-		return proc.id - lhs.proc.id;
+		return drvTask.id - lhs.drvTask.id;
 	}
 	
-	/* (non-Javadoc)
-	 * @see erjang.EPID#send_exit(erjang.EPID, erjang.EObject)
-	 */
-	@Override
-	public void exit_signal(EHandle from, EObject reason) throws Pausable {
-		proc.send_exit(from, reason);
-	}
 
 	/* (non-Javadoc)
 	 * @see erjang.EHandle#link_oneway(erjang.EHandle)
 	 */
 	@Override
 	public void link_oneway(EHandle other) {
-		proc.link_oneway(other);
+		drvTask.link_oneway(other);
 	}
 
 	/* (non-Javadoc)
@@ -82,7 +75,7 @@ public class EInternalPID extends EPID {
 	 */
 	@Override
 	public void set_group_leader(EPID group_leader) {
-		proc.set_group_leader(group_leader);
+		drvTask.set_group_leader(group_leader);
 	}
 
 	/**

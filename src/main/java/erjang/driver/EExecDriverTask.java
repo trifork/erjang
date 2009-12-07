@@ -169,13 +169,4 @@ public class EExecDriverTask extends EDriverTask {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see erjang.ETask#process_incoming_exit(erjang.EHandle, erjang.EObject)
-	 */
-	@Override
-	protected void process_incoming_exit(EHandle from, EObject reason)
-			throws Pausable {
-		// TODO Auto-generated method stub
-		
-	}
 }

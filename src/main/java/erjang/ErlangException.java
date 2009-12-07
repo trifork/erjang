@@ -106,9 +106,7 @@ public abstract class ErlangException extends RuntimeException {
 
 		@Override
 		public ETuple testTuple() {
-			ETuple2 t = new ETuple2();
-			t.elem1 = ERT.EXIT;
-			t.elem2 = e.reason();
+			ETuple2 t = new ETuple2(ERT.EXIT, e.reason);
 			return t;
 		}
 	}

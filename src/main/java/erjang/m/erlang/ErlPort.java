@@ -178,4 +178,26 @@ public class ErlPort {
 		throw ERT.badarg(portName, portSetting);
 	}
 
+	@BIF
+	static public EObject port_close(EProc proc, EObject port) throws Pausable
+	{
+		EPort p;
+		if ((p=port.testPort())==null) {
+			
+			EObject obj = ERT.whereis(port);
+			
+			if (obj == ERT.am_undefined || ((p=obj.testPort())== null)) {
+				throw ERT.badarg(port);
+			}
+		}
+		
+		if (!p.isOpen()) {
+			throw ERT.badarg(port);
+		}
+		
+		p.send(new ETuple2(proc.self(), EPort.am_close));
+		
+		return ERT.TRUE;
+	}
+	
 }
