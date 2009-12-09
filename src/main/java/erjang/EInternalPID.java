@@ -19,30 +19,35 @@
 
 package erjang;
 
+import erjang.ETask.State;
 import kilim.Pausable;
 
 /**
  * This is a PID on this node
  */
-public class EInternalPID extends EPID {
+public class EInternalPID extends EPID implements ELocalHandle {
 
-	private final EProc drvTask;
+	private final EProc task;
 
 	public EInternalPID(EProc self) {
-		this.drvTask = self;
+		this.task = self;
 	}
 	
+	public ELocalHandle testLocalHandle() {
+		return this;
+	}
+
 	/* (non-Javadoc)
 	 * @see erjang.EHandle#self()
 	 */
 	@Override
 	ETask<?> task() {
-		return drvTask;
+		return task;
 	}
 	
 	@Override
 	public void send(EObject msg) throws Pausable {
-		drvTask.mbox.put(msg);
+		task.mbox.put(msg);
 	}
 	
 	/* (non-Javadoc)
@@ -58,7 +63,7 @@ public class EInternalPID extends EPID {
 	 */
 	@Override
 	int r_compare_same(EInternalPID lhs) {
-		return drvTask.id - lhs.drvTask.id;
+		return task.id - lhs.task.id;
 	}
 	
 
@@ -66,8 +71,8 @@ public class EInternalPID extends EPID {
 	 * @see erjang.EHandle#link_oneway(erjang.EHandle)
 	 */
 	@Override
-	public void link_oneway(EHandle other) {
-		drvTask.link_oneway(other);
+	public void link_oneway(EHandle other) throws Pausable {
+		task.link_oneway(other);
 	}
 
 	/* (non-Javadoc)
@@ -75,7 +80,7 @@ public class EInternalPID extends EPID {
 	 */
 	@Override
 	public void set_group_leader(EPID group_leader) {
-		drvTask.set_group_leader(group_leader);
+		task.set_group_leader(group_leader);
 	}
 
 	/**
@@ -90,6 +95,6 @@ public class EInternalPID extends EPID {
 	 */
 	@Override
 	public String toString() {
-		return "PID<" + task() + ">";
+		return "PID<" + (name==null?"":name)  + ":" + task().id + ">";
 	}
 }

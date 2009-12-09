@@ -85,6 +85,25 @@ public abstract class ETuple extends EObject implements Cloneable /*, Indexed*/ 
 		}
 		return res;
 	}
+	
+	/* (non-Javadoc)
+	 * @see java.lang.Object#clone()
+	 */
+	@Override
+	protected ETuple clone() {
+		try {
+			return (ETuple) super.clone();
+		} catch (CloneNotSupportedException e) {
+			throw new Error();
+		}
+	}
+	
+	/** erlang:setelement - clone this and set element */
+	public ETuple setelement(int index, EObject term) {
+		ETuple t = clone();
+		t.set(index, term);
+		return t;
+	}
 
 	abstract void set(int index, EObject term);
 

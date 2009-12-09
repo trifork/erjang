@@ -141,8 +141,8 @@ start_it("inet", Id, Pid, Hosts) ->
     AL = ipv4_list(Hosts),
     ?dbg(addresses, AL),
     {ok,Tcp} = find_master(AL),
-    init_ack(Pid),
     PS = prim_init(),
+    init_ack(Pid),
     State = #state {loader = inet,
                     hosts = AL,
                     id = Id,
@@ -155,12 +155,12 @@ start_it("inet", Id, Pid, Hosts) ->
 start_it("efile", Id, Pid, _Hosts) ->
     process_flag(trap_exit, true),
     {ok, Port} = prim_file:open([binary]),
-    init_ack(Pid),
     MultiGet = case erlang:system_info(thread_pool_size) of
                    0 -> false;
                    _ -> true
                end,
     PS = prim_init(),
+    init_ack(Pid),
     State = #state {loader = efile,
                     id = Id,
                     data = Port,

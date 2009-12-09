@@ -77,6 +77,7 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 		this.owner = owner.self();
 		this.instance = driver;
 		this.port = new EInternalPort(this);
+		driver.task = this;
 	}
 
 	@Override
@@ -102,6 +103,7 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 	protected String[] cmd;
 	protected String cwd;
 	protected HashMap<String, String> env;
+	private long abs_timeout;
 
 	/**
 	 * @param es
@@ -287,7 +289,21 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 		EObject msg;
 
 		next_message: while (true) {
-			msg = mbox.get();
+
+			if (abs_timeout == 0) {
+				msg = mbox.get();
+			} else {
+				msg = null;
+				long timeout = abs_timeout - System.currentTimeMillis();
+				if (timeout > 0) {
+					msg = mbox.get(timeout);
+				} 
+				if (msg == null) {
+					abs_timeout = 0;
+					this.instance.timeout();
+					continue next_message;
+				}
+			}
 
 			ETuple2 t2;
 			EPortControl ctrl;
@@ -430,7 +446,13 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 			throw ERT.badarg();
 		}
 
-		return instance.call(op, data);
+		EObject result = instance.call(op, data);
+
+		if (result == null) {
+			return ERT.NIL;
+		} else {
+			return result;
+		}
 	}
 
 	/**
@@ -525,4 +547,24 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 		// TODO Auto-generated method stub
 
 	}
+
+	/**
+	 * @param howlong
+	 */
+	public void set_timer(long howlong) {
+		this.abs_timeout = System.currentTimeMillis() + howlong;
+	}
+
+	/**
+	 * @param job
+	 */
+	public void async_done(final EAsync job) {
+
+		mbox.putb(new EPortControl() {
+			@Override
+			public void execute() throws Pausable {
+				instance.readyAsync(job);
+			}
+		});
+		}
 }

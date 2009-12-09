@@ -17,30 +17,11 @@
  **/
 
 
-package erjang.driver;
-
-import erjang.EPort;
-import erjang.EString;
+package erjang;
 
 /**
- * Abstract class for drivers.
  * 
  */
-public interface EDriver {
+public interface ELocalHandle {
 
-	/* called when open_port/2 is invoked.
-	   return value null means failure. */
-	EDriverInstance start(EString command); 
-	
-	/* called before unloading the driver -
-	   DYNAMIC DRIVERS ONLY */
-	void finish();
-	
-	/* name supplied as command 
-	   in open_port XXX ? */
-	String driverName();
-	
-	/** override this to return true if you want driver-level locking */
-	boolean useDriverLevelLocking();
-	
 }

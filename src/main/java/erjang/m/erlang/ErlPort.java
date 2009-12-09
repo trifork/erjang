@@ -121,7 +121,7 @@ public class ErlPort {
 	}
 	
 	@BIF
-	static EPort open_port(EProc proc, EObject portName, EObject portSetting) {
+	static EPort open_port(EProc proc, EObject portName, EObject portSetting) throws Pausable {
 		
 		
 		ETuple t;
@@ -135,9 +135,9 @@ public class ErlPort {
 		EString command = EString.make(name.elem2);
 		
 		
+		ETask<? extends EPort> task = null;
 		
 		if (name.elem1 == am_spawn) {
-			ETask<? extends EPort> task;
 			EDriver drv = ERT.find_driver(command);
 
 			if (drv == null) {
@@ -145,36 +145,27 @@ public class ErlPort {
 			} else {
 				task = new ESpawnDriverTask(proc, drv, command, portSetting);
 			}
-		
-			// link this proc and the driver task
-			task.link_to(proc);
-			ERT.run(task);
-			
-			return task.self();
-			
+
 		} else if (name.elem1 == am_spawn_driver) {
 			EDriver drv = ERT.find_driver(command);
 			if (drv == null) {
 				throw ERT.badarg(portName, portSetting);
 			}
-			ETask<? extends EPort> task = new ESpawnDriverTask(proc, drv, command, portSetting);
+			task = new ESpawnDriverTask(proc, drv, command, portSetting);
 			
-			// link this proc and the driver task
-			task.link_to(proc);
-			ERT.run(task);
-			
-			return task.self();
 			
 		} else if (name.elem1 == am_spawn_executable) {
-			ETask<? extends EPort> task = new EExecDriverTask(proc, name, portSetting);
+			task = new EExecDriverTask(proc, name, portSetting);
+		}
 			
+		if (task != null) {
 			// link this proc and the driver task
 			task.link_to(proc);
 			ERT.run(task);
-
+			
 			return task.self();
 		}
-			
+		
 		throw ERT.badarg(portName, portSetting);
 	}
 

@@ -29,23 +29,28 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import kilim.Pausable;
+import kilim.Task;
 import erjang.beam.Compiler;
+import erjang.driver.EAsync;
 import erjang.driver.EDriver;
+import erjang.driver.EDriverTask;
+import erjang.driver.efile.Driver;
 
-
-@Module(value="erlang")
+@Module(value = "erlang")
 public class ERT {
-	
+
 	public static EAtom am_badsig = EAtom.intern("badsig");
 
 	@BIF
-	public static ErlangException raise(EObject kind, EObject value, EObject trace) throws ErlangException {
-		
+	public static ErlangException raise(EObject kind, EObject value,
+			EObject trace) throws ErlangException {
+
 		EAtom clazz = kind.testAtom();
 		ESeq traz = trace.testSeq();
-		
-		if (clazz == null || traz == null) throw badarg(kind,value,trace);
-		
+
+		if (clazz == null || traz == null)
+			throw badarg(kind, value, trace);
+
 		throw new ErlangRaise(clazz, value, traz);
 	}
 
@@ -157,7 +162,8 @@ public class ERT {
 		Class<? extends T> res;
 		try {
 			res = (Class<? extends T>) definer.invoke(ETuple.class
-					.getClassLoader(), name.replace('/', '.'), data, 0, data.length);
+					.getClassLoader(), name.replace('/', '.'), data, 0,
+					data.length);
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
@@ -180,11 +186,10 @@ public class ERT {
 		return (ETuple2) ETuple.make(AM_MODULE, mod);
 	}
 
-	
 	public static ESmall box(int i) {
 		return new ESmall(i);
 	}
-	
+
 	/**
 	 * Boxes a <code>long</code> value to an EInteger (EBig or ESmall)
 	 * 
@@ -192,24 +197,23 @@ public class ERT {
 	 * @return
 	 */
 	public static EInteger box2(long longVal) {
-		
+
 		// very simple: see if the longValue can be converted
 		// to an int and back again without loosing it's value
-		
+
 		int intVal = (int) longVal;
-		if (longVal == (long)intVal) {
+		if (longVal == (long) intVal) {
 			return new ESmall(intVal);
 		} else {
-			return new EBig(longVal);			
+			return new EBig(longVal);
 		}
 	}
-	
+
 	public static EInteger box(long longVal) {
-			
 
 		// compute l's offset from Integer.MIN_VALUE
 		long offset_from_int_min = longVal - (long) Integer.MIN_VALUE;
-		
+
 		// strip sign bit
 		long unsigned_offset = offset_from_int_min & Long.MAX_VALUE;
 
@@ -238,10 +242,10 @@ public class ERT {
 	 * @return
 	 */
 	public static EInteger box(BigInteger res) {
-		
-		if (res.compareTo(INT_MIN_AS_BIG) < 0) 
+
+		if (res.compareTo(INT_MIN_AS_BIG) < 0)
 			return new EBig(res);
-		
+
 		if (res.compareTo(INT_MAX_AS_BIG) > 0)
 			return new EBig(res);
 
@@ -270,14 +274,19 @@ public class ERT {
 	private static final EAtom am_badmatch = EAtom.intern("badmatch");
 	private static final EAtom am_case_clause = EAtom.intern("case_clause");
 	public static final EObject am_undefined = EAtom.intern("undefined");
-	public static final EObject am_receive_clause = EAtom.intern("receive_clause");
-	public static final EObject AM_NOT_IMPLEMENTED = EAtom.intern("not_implemented");
-	private static final EAtom AM_TIMEOUT = EAtom.intern("timeout");
-	private static final EAtom am_try_case_clause = EAtom.intern("try_case_clause");
-	private static final EAtom am_if_clause = EAtom.intern("if_clause");
-	public static final boolean DEBUG = false;
+	public static final EObject am_receive_clause = EAtom
+			.intern("receive_clause");
+	public static final EObject AM_NOT_IMPLEMENTED = EAtom
+			.intern("not_implemented");
+	public static final EAtom AM_TIMEOUT = EAtom.intern("timeout");
+	public static final EAtom am_try_case_clause = EAtom
+			.intern("try_case_clause");
+	public static final EAtom am_if_clause = EAtom.intern("if_clause");
+	public static final boolean DEBUG = true;
 	public static final EBinary EMPTY_BINARY = new EBinary(new byte[0]);
 	public static final ByteBuffer EMPTY_BYTEBUFFER = ByteBuffer.allocate(0);
+	public static final EAtom am_infinity = EAtom.intern("infinity");
+	public static final EAtom am_noproc = EAtom.intern("noproc");
 
 	public EBitStringBuilder bs_init(int size, int flags) {
 		return new EBitStringBuilder(size, flags);
@@ -300,7 +309,7 @@ public class ERT {
 	 * @return
 	 */
 	public static ESmall get_posix_code(IOException e) {
-		
+
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -308,26 +317,27 @@ public class ERT {
 	/**
 	 * @param owner
 	 * @param make
-	 * @throws Pausable 
+	 * @throws Pausable
 	 */
-	@BIF(name="!")
-	public static EObject send(EProc proc, EObject pid, EObject msg) throws Pausable {
+	@BIF(name = "!")
+	public static EObject send(EProc proc, EObject pid, EObject msg)
+			throws Pausable {
 		// TODO handle ports also?
 		proc.check_exit();
-		
-		EPID p;
-		if ((p=pid.testPID()) != null) {
+
+		EHandle p;
+		if ((p = pid.testHandle()) != null) {
 			p.send(msg);
 			return msg;
 		}
-		
+
 		EObject val = whereis(pid);
-		if ((p=pid.testPID()) != null) {
+		if ((p = val.testHandle()) != null) {
 			p.send(msg);
 			return msg;
 		}
-		
-		throw badarg(pid,msg);
+
+		throw badarg(pid, msg);
 	}
 
 	/**
@@ -338,7 +348,7 @@ public class ERT {
 	}
 
 	static EAtom am_undef = EAtom.intern("undef");
-	
+
 	/**
 	 * @param fun
 	 * @return
@@ -347,52 +357,54 @@ public class ERT {
 		throw new ErlangError(am_undef, args);
 	}
 
-
-	public static EObject apply(EProc proc, EObject arg1, EObject mod, EObject fun) throws Pausable
-	{
+	public static EObject apply(EProc proc, EObject arg1, EObject mod,
+			EObject fun) throws Pausable {
 		EAtom m = mod.testAtom();
 		EAtom f = fun.testAtom();
-		
-		if (m==null||f==null) throw ERT.badarg(mod, fun, arg1);
-		
-		EFun efun = EModule.resolve(new FunID(m,f,1));
+
+		if (m == null || f == null)
+			throw ERT.badarg(mod, fun, arg1);
+
+		EFun efun = EModule.resolve(new FunID(m, f, 1));
 		return efun.invoke(proc, new EObject[] { arg1 });
 	}
 
-
-	public static EObject apply(EProc proc, EObject mod, EObject fun) throws Pausable
-	{
+	public static EObject apply(EProc proc, EObject mod, EObject fun)
+			throws Pausable {
 		EAtom m = mod.testAtom();
 		EAtom f = fun.testAtom();
-		
-		if (m==null||f==null) throw ERT.badarg(mod, fun);
-		
-		EFun efun = EModule.resolve(new FunID(m,f,0));
+
+		if (m == null || f == null)
+			throw ERT.badarg(mod, fun);
+
+		EFun efun = EModule.resolve(new FunID(m, f, 0));
 		return efun.invoke(proc, new EObject[0]);
 	}
 
-	public static EObject apply$last(EProc proc, EObject arg1, EObject mod, EObject fun)
-	{
+	public static EObject apply$last(EProc proc, EObject arg1, EObject mod,
+			EObject fun) {
 		EAtom m = mod.testAtom();
 		EAtom f = fun.testAtom();
-		
-		if (m==null||f==null) throw ERT.badarg(mod, fun, arg1);
-		
+
+		if (m == null || f == null)
+			throw ERT.badarg(mod, fun, arg1);
+
 		proc.arg0 = arg1;
-		proc.tail = EModule.resolve(new FunID(m,f,1));
+		proc.tail = EModule.resolve(new FunID(m, f, 1));
 		return EProc.TAIL_MARKER;
-		
-//		.invoke(proc, NIL.cons(arg1).toArray());
+
+		// .invoke(proc, NIL.cons(arg1).toArray());
 	}
 
-	static Map<EAtom,EObject> register = new ConcurrentHashMap<EAtom, EObject>();
-	
+	static Map<EAtom, EHandle> register = new ConcurrentHashMap<EAtom, EHandle>();
+
 	/**
 	 * @param aname
-	 * @param eObject
+	 * @param handle
 	 */
-	public static void register(EAtom aname, EObject eObject) {
-		register.put(aname, eObject);
+	public static void register(EAtom aname, EHandle handle) {
+		register.put(aname, handle);
+		handle.setName(aname);
 	}
 
 	/**
@@ -401,59 +413,64 @@ public class ERT {
 	 */
 	public static EObject whereis(EObject regname) {
 		EObject result = register.get(regname);
-		if (result == null) return am_undefined;
-		return result;
+		if (result == null) {
+			System.out.println(regname + " => " + am_undefined);
+			return am_undefined;
+		} else {
+			System.out.println(regname + " => " + result);
+			return result;
+		}
 	}
 
 	public static EObject badmatch(EObject val) {
 		throw new ErlangError(am_badmatch, val);
 	}
-	
+
 	public static EObject decode_exception2(final ErlangException e) {
 		return e.getCatchValue();
 	}
-	
+
 	public static ETuple3 decode_exception3(final ErlangException e) {
 		return e.getTryValue();
 	}
-	
+
 	public static EObject case_end(EObject val) {
 		throw new ErlangError(ETuple.make(am_case_clause, val));
 	}
-	
+
 	public static EObject if_end() {
 		throw new ErlangError(am_if_clause);
 	}
-	
+
 	public static EObject try_case_end(EObject val) {
 		throw new ErlangError(ETuple.make(am_try_case_clause, val));
 	}
-	
+
 	static kilim.Scheduler scheduler = new kilim.Scheduler(4);
-	
-	public static void run(ETask<?> task) {
+
+	public static void run(Task task) {
 		task.setScheduler(scheduler);
 		task.start();
 	}
-	
+
 	/** peek mbox */
 	public static EObject receive_peek(EProc proc) {
 		return proc.mbox.peek();
 	}
-	
+
 	public static void remove_message(EProc proc) throws Pausable {
 		proc.mbox.get();
 	}
-	
+
 	public static void wait_forever(EProc proc) throws Pausable {
 		proc.mbox.untilHasMessage();
 	}
-	
+
 	public static EObject loop_rec_end(EProc proc) {
 		EObject msg = proc.mbox.peek();
-		throw new ErlangError(am_receive_clause, msg);
+		throw new ErlangError(am_receive_clause, proc.self(), msg);
 	}
-	
+
 	public static int unboxToInt(EInteger i) {
 		return i.intValue();
 	}
@@ -464,7 +481,8 @@ public class ERT {
 
 	public static double unboxToDouble(EObject i) {
 		ENumber num;
-		if ((num=i.testNumber()) == null) throw ERT.badarg(i);
+		if ((num = i.testNumber()) == null)
+			throw ERT.badarg(i);
 		return num.doubleValue();
 	}
 
@@ -475,21 +493,28 @@ public class ERT {
 	public static void check_exit(EProc p) {
 		p.check_exit();
 	}
-	
+
 	public static EObject func_info(EAtom mod, EAtom fun, int arity) {
 		throw new ErlangError(AM_BADMATCH);
 	}
-	
-	public static boolean wait_timeout(EProc proc, EObject howlong) throws Pausable {
+
+	public static boolean wait_timeout(EProc proc, EObject howlong)
+			throws Pausable {
+		if (howlong == am_infinity) {
+			proc.mbox.untilHasMessage();
+			return true;
+		} else {
 		EInteger ei;
-		if ((ei = howlong.testInteger()) == null) throw badarg(howlong);
+		if ((ei = howlong.testInteger()) == null)
+			throw badarg(howlong);
 		return proc.mbox.untilHasMessage(ei.longValue());
+		}
 	}
-	
+
 	public static void timeout() {
 		// skip //
 	}
-	
+
 	static void load(EAtom module) throws IOException {
 		File f = Compiler.find_and_compile(module.getName());
 		EModule.load_module(module, f.toURI().toURL());
@@ -500,7 +525,21 @@ public class ERT {
 	 * @return
 	 */
 	public static EDriver find_driver(EString command) {
-		// TODO Auto-generated method stub
+		if (command.equals(EString.fromString("efile"))) {
+			return new Driver();
+		}
 		return null;
+	}
+
+	/**
+	 * @param job
+	 */
+	public static void run_async(final EAsync job, final EDriverTask dt) {
+		run(new Task() { 
+		  @Override
+		  public void execute() throws Pausable, Exception {
+			job.async();
+			dt.async_done(job);
+	  	  }});
 	}
 }

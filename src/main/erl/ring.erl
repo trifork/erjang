@@ -1,8 +1,8 @@
 -module(ring).
 %%-import(lists, [last/1]).
 -export([startRing/2,main/0]).
--define(CYCLES, 10000).
--define(PROCS, 10000).
+-define(CYCLES, 1000).
+-define(PROCS, 20000).
 
 %%
 last([End|[]]) -> 
@@ -97,12 +97,17 @@ diff(Start, End) ->
     {_,EndSeconds,EndMicros} = End,
     ((EndSeconds*1000000) + EndMicros) - ((StartSeconds*1000000) + StartMicros).
 
+main()->
+    main2(),
+    main2(),
+    main2(),
+    main2(),
+    main2().
 
-
-main() ->
+main2() ->
     T = startTimer(self()),
     R = startRing(?PROCS, T),
     R ! start,
-    receive [Start,End] -> io:format("Start=~p Stop=~p Elapsed=~p~n", [Start,End,diff(Start,End)]) end.
+    receive [Start,End] -> io:format("Start=~p Stop=~p Elapsed=~pus~n", [Start,End,diff(Start,End)]) end.
    
 

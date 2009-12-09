@@ -23,7 +23,10 @@ import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.util.concurrent.locks.Lock;
 
+import kilim.ReentrantLock;
+
 import erjang.EObject;
+import erjang.EPort;
 import erjang.ERT;
 import erjang.ERef;
 
@@ -33,6 +36,7 @@ import erjang.ERef;
 public abstract class EDriverInstance {
 
 	EDriverTask task;
+	Lock pdl;
 
 	static final int ERL_DRV_READ = SelectionKey.OP_READ;
 	static final int ERL_DRV_WRITE = SelectionKey.OP_WRITE;
@@ -43,14 +47,85 @@ public abstract class EDriverInstance {
 	static private final int ALL_OPS = ERL_DRV_READ | ERL_DRV_WRITE
 			| ERL_DRV_ACCEPT | ERL_DRV_CONNECT;
 
-	public void select(SelectableChannel event, int mode, SelectMode onOff) {
+	/**
+	 * Register selector
+	 * 
+	 * @param ch
+	 *            {@link SelectableChannel} for which to perform select
+	 * @param mode
+	 *            bit-or of ERL_DRV_{READ,WRITE,ACCEPT,CONNECT}
+	 * @param onOff
+	 *            one of {@link SelectMode}.SET or {@link SelectMode}.CLEAR
+	 */
+	public void select(SelectableChannel ch, int mode, SelectMode onOff) {
 
 		int selectOps = mode & ALL_OPS;
 		if (onOff == SelectMode.SET) {
-			NIOSelector.setInterest(event, selectOps, task);
+			NIOSelector.setInterest(ch, selectOps, task);
 		} else if (onOff == SelectMode.CLEAR) {
 			boolean releaseNotify = (mode & ERL_DRV_USE) == ERL_DRV_USE;
-			NIOSelector.clearInterest(event, selectOps, releaseNotify, task);
+			NIOSelector.clearInterest(ch, selectOps, releaseNotify, task);
+		}
+	}
+
+	protected void driver_async(EAsync job) {
+		ERT.run_async(job, task);
+	}
+
+	protected void driver_output2(ByteBuffer header, ByteBuffer buf) {
+
+	}
+
+	/**
+	 * @param port2
+	 */
+	protected void driver_cancel_timer(EPort port2) {
+		// TODO Auto-generated method stub
+
+	}
+
+	protected void driver_set_timer(long howlong) {
+		task.set_timer(howlong);
+	}
+
+	/**
+	 * @return
+	 */
+	protected Lock driver_pdl_create() {
+		if (pdl == null) {
+			pdl = new ReentrantLock();
+		}
+		return pdl;
+	}
+
+	private ByteBuffer[] queue = null;
+
+	/**
+	 * @return
+	 */
+	protected ByteBuffer[] driver_peekq() {
+		return queue;
+	}
+
+	protected void driver_deq(long size) {
+
+		if (queue == null)
+			return;
+		
+		int p = 0;
+		for (p = 0; p < queue.length && !queue[p].hasRemaining(); p++) {
+			/* skip */
+		}
+
+		if (p == queue.length)
+			return;
+
+		for (int i = 0; i < p; i++) {
+			queue[i] = queue[p+i];
+		}
+		
+		for (int i = p; i < queue.length; i++) {
+			queue[i] = null;
 		}
 	}
 
@@ -116,8 +191,8 @@ public abstract class EDriverInstance {
 	 */
 	protected abstract void readyOutput(SelectableChannel evt);
 
-	/* called when "action" is possible */
-	protected abstract void readyAsync(SelectableChannel data);
+	/* called when "action" is possible, async job done */
+	protected abstract void readyAsync(EAsync data);
 
 	/*
 	 * "ioctl" for drivers - invoked by port_control/3)
@@ -152,15 +227,14 @@ public abstract class EDriverInstance {
 	 */
 	public void readyConnect(SelectableChannel evt) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	/**
 	 * @param ch
 	 */
 	public void readyAccept(SelectableChannel ch) {
-		// TODO Auto-generated method stub
-		
+
 	}
 
 }

@@ -21,9 +21,16 @@ package erjang.driver;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
+
+/**
+ * This class holds information per selectable channel in an IOSelector.  
+ * Instances of this class are stored inside the SelectionKey.attachment.
+ * 
+ * 
+ * 
+ */
 class NIOChannelInfo {
 
 	static class Interest {

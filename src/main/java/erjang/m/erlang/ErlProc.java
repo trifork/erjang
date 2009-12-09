@@ -27,10 +27,13 @@ import java.lang.management.MemoryType;
 import java.lang.management.MemoryUsage;
 import java.util.List;
 
+import kilim.Pausable;
+
 import erjang.BIF;
 import erjang.EAtom;
 import erjang.ECons;
 import erjang.EFun;
+import erjang.EHandle;
 import erjang.EModule;
 import erjang.EObject;
 import erjang.EPID;
@@ -42,6 +45,7 @@ import erjang.ESeq;
 import erjang.ESmall;
 import erjang.EString;
 import erjang.ETuple;
+import erjang.ErlFun;
 import erjang.ErlangException;
 import erjang.ErlangExit;
 import erjang.FunID;
@@ -81,20 +85,18 @@ public class ErlProc {
 	}
 
 	@BIF
-	public static EObject register(EProc proc, EObject name, EObject pid) {
+	public static EObject register(EObject name, EObject pid) {
 		EAtom aname;
 		if ((aname=name.testAtom()) == null) throw ERT.badarg(name, pid);
-		EPort pport = null;
-		EPID ppid;
-		if (((ppid=pid.testPID()) == null )
-				&& ((pport=pid.testPort()) == null)) 
+		EHandle handle = pid.testHandle();
+		if (handle == null) 
 			throw ERT.badarg(name, pid);
-		ERT.register(aname, pport==null?ppid:pport);
+		ERT.register(aname, handle);
 		return ERT.TRUE;
 	}
 
 	@BIF
-	public static EObject spawn_link(EProc proc, EObject mod, EObject fun, EObject args) {
+	public static EObject spawn_link(EProc proc, EObject mod, EObject fun, EObject args) throws Pausable {
 		
 		EAtom m = mod.testAtom();
 		EAtom f = fun.testAtom();
@@ -156,8 +158,21 @@ public class ErlProc {
 	}
 	
 	@BIF
-	public static EObject unlink(EProc proc, EObject pid) {
-		throw new NotImplemented();
+	public static EObject unlink(EProc self, EObject pid) {
+		EHandle h = EHandle.cast(pid);
+		if (h != null) {
+			self.unlink(h);
+		}
+		return pid;
+	}
+	
+	@BIF
+	@ErlFun(export = true)
+	static public EObject link(EProc self, EObject pid) throws Pausable {
+		EHandle h = EHandle.cast(pid);
+		if (h == null) throw ERT.badarg(pid);
+		self.link_to(h);
+		return ERT.TRUE;
 	}
 
 	@BIF

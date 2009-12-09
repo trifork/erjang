@@ -104,6 +104,14 @@ public final class EProc extends ETask<EInternalPID> {
 
 	private EAtom trap_exit = ERT.FALSE;
 
+	protected void link_failure(EHandle h) throws Pausable {
+		if (trap_exit == ERT.TRUE || h.testLocalHandle()==null) {
+			send_exit(h, ERT.am_noproc);
+		} else {
+			throw new ErlangError(ERT.am_noproc);
+		}
+	}
+
 
 	protected void process_incoming_exit(EHandle from, EObject reason) throws Pausable
 	{
@@ -214,15 +222,18 @@ public final class EProc extends ETask<EInternalPID> {
 				result = am_normal;
 
 			} catch (ErlangException e) {
-				e.printStackTrace();
+				System.err.print("exiting "+self()+" with: ");
+				e.printStackTrace(System.err);
 				result = e.reason();
 
 			} catch (ErlangExitSignal e) {
-				e.printStackTrace();
+				System.err.print("exiting "+self()+" with: ");
+				e.printStackTrace(System.err);
 				result = e.reason();
 
 			} catch (Throwable e) {
 
+				System.err.print("exiting "+self()+" with: ");
 				e.printStackTrace();
 
 				ESeq erl_trace = ErlangError.decodeTrace(e.getStackTrace());
@@ -248,7 +259,6 @@ public final class EProc extends ETask<EInternalPID> {
 		}
 
 	}
-
 
 
 }

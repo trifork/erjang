@@ -40,16 +40,40 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 
 	private Set<EHandle> links = new TreeSet<EHandle>();
 
+	public void unlink(EHandle handle) {
+		links.remove(handle);
+	}
+	
 	/**
 	 * @param task
+	 * @throws Pausable 
 	 */
-	public void link_to(ETask<?> task) {
+	public void link_to(ETask<?> task) throws Pausable {
 		link_oneway(task.self());
 		task.self().link_oneway((EHandle) self());
 	}
 
-	public void link_oneway(EHandle h) {
-		links.add(h);
+	public void link_to(EHandle handle) throws Pausable {
+		link_oneway(handle);
+		handle.link_oneway((EHandle) self());
+	}
+
+	public void link_oneway(EHandle h) throws Pausable {
+		// TODO: check if h is valid.
+		
+		if (h.exists()) {
+			links.add(h);
+		} else {
+			link_failure(h);
+		}
+	}
+
+	/**
+	 * @param h
+	 * @throws Pausable 
+	 */
+	protected void link_failure(EHandle h) throws Pausable {
+		throw new ErlangError(ERT.am_noproc);
 	}
 
 	protected void send_exit_to_all_linked(EObject result) throws Pausable {
@@ -160,7 +184,7 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 	 * will check if this process have received an exit signal (and we're not
 	 * trapping)
 	 */
-	public void check_exit() {
+	public final void check_exit() {
 		if (this.pstate == State.EXIT_SIG) {
 			throw new ErlangExitSignal(exit_reason);
 		}
@@ -171,6 +195,13 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 	 */
 	public Mailbox<EObject> mbox() {
 		return mbox;
+	}
+
+	/**
+	 * @return
+	 */
+	public boolean exists() {
+		return pstate == State.INIT || pstate == State.RUNNING;
 	}
 
 }

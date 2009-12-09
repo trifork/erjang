@@ -23,12 +23,13 @@ import java.nio.ByteBuffer;
 
 import kilim.Pausable;
 
+import erjang.ETask.State;
 import erjang.driver.EDriverTask;
 
 /**
  * 
  */
-public class EInternalPort extends EPort {
+public class EInternalPort extends EPort implements ELocalHandle {
 
 	private final EDriverTask task;
 
@@ -40,12 +41,23 @@ public class EInternalPort extends EPort {
 	public EInternalPort testInternalPort() {
 		return this;
 	}
+	
+	public ELocalHandle testLocalHandle() {
+		return this;
+	}
+
+	@Override
+	public boolean exists() {
+		return task.exists();
+	}
+	
+
 
 	/* (non-Javadoc)
 	 * @see erjang.EHandle#link_oneway(erjang.EHandle)
 	 */
 	@Override
-	public void link_oneway(EHandle other) {
+	public void link_oneway(EHandle other) throws Pausable {
 		task.link_oneway(other);
 	}
 

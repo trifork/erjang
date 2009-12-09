@@ -156,18 +156,19 @@ public class Compiler implements Opcodes {
 		public int getPausableStatus(String className, String methodName,
 				String desc) {
 
-			if (className.startsWith(CompilerVisitor.EFUN_NAME)) {
-				if (methodName.equals("invoke_tail"))
-					return Detector.METHOD_NOT_PAUSABLE;
-				if (methodName.equals("arity"))
-					return Detector.METHOD_NOT_PAUSABLE;
-				if (methodName.equals("cast"))
-					return Detector.METHOD_NOT_PAUSABLE;
+			// System.out.println("status? "+className+"#"+methodName+""+desc);
+			
+			if (className.startsWith(CompilerVisitor.ETUPLE_NAME)) {
+				return Detector.METHOD_NOT_PAUSABLE;
+			}
 
+			if (className.startsWith(CompilerVisitor.EFUN_NAME)) {
 				if (methodName.equals("go"))
 					return Detector.PAUSABLE_METHOD_FOUND;
 				if (methodName.equals("invoke"))
 					return Detector.PAUSABLE_METHOD_FOUND;
+
+				return Detector.METHOD_NOT_PAUSABLE;
 			}
 
 			if (className.equals(this.className)) {

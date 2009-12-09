@@ -113,16 +113,6 @@ class LockingDriverInstance extends EDriverInstance {
 	}
 
 	@Override
-	protected void readyAsync(SelectableChannel data) {
-		lock.lock();
-		try {
-			target.readyAsync(data);
-		} finally {
-			lock.unlock();
-		}
-	}
-
-	@Override
 	protected void readyInput(SelectableChannel evt) {
 		lock.lock();
 		try {
@@ -167,6 +157,19 @@ class LockingDriverInstance extends EDriverInstance {
 		lock.lock();
 		try {
 			target.timeout();
+		} finally {
+			lock.unlock();
+		}
+	}
+
+	/* (non-Javadoc)
+	 * @see erjang.driver.EDriverInstance#readyAsync(erjang.driver.EAsync)
+	 */
+	@Override
+	protected void readyAsync(EAsync data) {
+		lock.lock();
+		try {
+			target.readyAsync(data);
 		} finally {
 			lock.unlock();
 		}

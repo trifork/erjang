@@ -405,9 +405,13 @@ public class EString extends ESeq implements CharSequence {
 	 */
 	public static EString make(EObject eObject) {
 		ESeq str;
-		if ((str = eObject.testSeq()) == null)
-			throw ERT.badarg();
-		return make(str);
+		if ((str = eObject.testSeq()) != null)
+			return make(str);
+
+		EAtom am = eObject.testAtom();
+		if (am != null) { return fromString(am.toString()); }
+		
+		throw ERT.badarg();
 	}
 
 	/**

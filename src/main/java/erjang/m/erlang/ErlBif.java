@@ -25,6 +25,7 @@ import erjang.EBinary;
 import erjang.ECons;
 import erjang.EDouble;
 import erjang.EFun;
+import erjang.EHandle;
 import erjang.EInteger;
 import erjang.EList;
 import erjang.EModule;
@@ -101,12 +102,6 @@ public class ErlBif {
 	@ErlFun(export = true)
 	static public EPID self(EProc proc) {
 		return proc.self();
-	}
-
-	@BIF
-	@ErlFun(export = true)
-	static public EObject link(EObject other) {
-		throw new NotImplemented();
 	}
 
 	@BIF
@@ -191,13 +186,16 @@ public class ErlBif {
 	}
 
 	@BIF
-	static public EObject setelement(EObject a1, EObject a2, EObject a3) {
-		throw new NotImplemented();
+	static public EObject setelement(EObject a1, EObject a2, EObject term) {
+		ETuple t = a2.testTuple();
+		ESmall i = a1.testSmall();
+		if (t == null || i == null) throw ERT.badarg();
+		return t.setelement(i.value, term);
 	}
 
 	@BIF
-	static public EObject setelement(int a1, ETuple a2, EObject a3) {
-		throw new NotImplemented();
+	static public EObject setelement(int index, ETuple a2, EObject term) {
+		return a2.setelement(index, term);
 	}
 
 	@BIF(type = Type.GUARD, name = "element")

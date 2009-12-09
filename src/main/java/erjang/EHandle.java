@@ -26,10 +26,18 @@ import kilim.Pausable;
  */
 public abstract class EHandle extends EObject {
 
+	protected EAtom name;
+
+	public EHandle testHandle() { return this; }
+	
 	ETask<?> task() {
 		throw new Error("only local handles can provide task reference");
 	}
 
+	public boolean exists() {
+		return task().exists();
+	}
+	
 	/**
 	 * @param msg
 	 * @throws Pausable 
@@ -51,7 +59,37 @@ public abstract class EHandle extends EObject {
 	 * A one-way link message.  (other is already linked to this handle).
 	 * 
 	 * @param other
+	 * @throws Pausable 
 	 */
-	public abstract void link_oneway(EHandle other);
+	public abstract void link_oneway(EHandle other) throws Pausable;
+
+	/**
+	 * @param other
+	 * @return
+	 */
+	public static EHandle cast(EObject other) {
+		
+		EHandle h = other.testHandle();
+		
+		if (h == null) {
+			h = ERT.whereis(other).testHandle();
+		}
+
+		return h;
+	}
+
+	/**
+	 * @param aname
+	 */
+	public void setName(EAtom aname) {
+		this.name = aname;
+	}
+
+	/**
+	 * @return
+	 */
+	public ELocalHandle testLocalHandle() {
+		return null;
+	}
 	
 }

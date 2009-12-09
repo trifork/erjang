@@ -70,6 +70,7 @@
       <fileset defaultexcludes="no" dir="." includes="*~,#*,foo,bar,x,y" />
     </delete>
     <delete dir="./target" />
+    <delete dir="./.erj" />
   </target>
   
   

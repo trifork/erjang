@@ -304,5 +304,12 @@ public abstract class EObject implements Comparable<EObject> {
 		return null;
 	}
 
+	/**
+	 * @return
+	 */
+	public EHandle testHandle() {
+		return null;
+	}
+
 
 }
