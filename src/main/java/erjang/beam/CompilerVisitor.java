@@ -194,7 +194,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 		this.module_name = name;
 
-		this.self_type = Type.getType("L"+getInternalClassName()+";");
+		this.self_type = Type.getType("L" + getInternalClassName() + ";");
 
 		cv.visit(V1_6, ACC_PUBLIC, self_type.getInternalName(), null,
 				EMODULE_NAME, null);
@@ -448,10 +448,11 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				FieldVisitor fv = cv.visitField(ACC_STATIC | ACC_FINAL, mname,
 						"L" + EFUN_NAME + arity + ";", null, null);
 				EFun.ensure(arity);
-				
+
 				if (isExported(fun_name, arity)) {
-					if (ERT.DEBUG) System.err.println("export " + module_name + ":" + fun_name
-							+ "/" + arity);
+					if (ERT.DEBUG)
+						System.err.println("export " + module_name + ":"
+								+ fun_name + "/" + arity);
 					AnnotationVisitor an = fv.visitAnnotation(EXPORT_ANN_TYPE
 							.getDescriptor(), true);
 					an.visit("module", module_name.getName());
@@ -473,10 +474,11 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			byte[] data = CompilerVisitor.make_invoker(self_type, mname, mname,
 					arity, true, freevars, EOBJECT_TYPE);
 
-			ClassWeaver w = new ClassWeaver(data, new Compiler.ErjangDetector(self_type.getInternalName()));
+			ClassWeaver w = new ClassWeaver(data, new Compiler.ErjangDetector(
+					self_type.getInternalName()));
 			for (ClassInfo ci : w.getClassInfos()) {
 				try {
-					//System.out.println("> storing "+ci.className);
+					// System.out.println("> storing "+ci.className);
 					classRepo.store(ci.className, ci.bytes);
 				} catch (IOException e) {
 					e.printStackTrace();
@@ -1331,8 +1333,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					String funtype = EFUN_NAME + nargs;
 
 					mv.visitMethodInsn(INVOKESTATIC, funtype, "cast", "("
-							+ EOBJECT_DESC + ")L" + funtype
-							+ ";");
+							+ EOBJECT_DESC + ")L" + funtype + ";");
 
 					mv.visitVarInsn(ALOAD, 0); // load proc
 					for (int i = 0; i < nargs; i++) {
@@ -2288,21 +2289,54 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					}
 
 				} else if (isExternal) {
-					String field = CompilerVisitor.this
-							.getExternalFunction(fun);
 
-					String funTypeName = EFUN_NAME + args.length;
-					EFun.ensure(args.length);
-					mv.visitFieldInsn(GETSTATIC, self_type.getInternalName(),
-							field, "L" + funTypeName + ";");
-					mv.visitVarInsn(ALOAD, 0);
-					for (int i = 0; i < args.length; i++) {
-						push(args[i], EOBJECT_TYPE);
+					BuiltInFunction bif = null;
+
+					try {
+						bif = BIFUtil.getMethod(fun.toString(), args, false);
+					} catch (Error e) {
+						// ignore //
 					}
 
-					mv.visitMethodInsn(INVOKEVIRTUAL, funTypeName,
-							is_tail ? "invoke_tail" : "invoke", EUtil
-									.getSignature(args.length, true));
+					if (bif == null) {
+
+						String field = CompilerVisitor.this
+								.getExternalFunction(fun);
+
+						String funTypeName = EFUN_NAME + args.length;
+						EFun.ensure(args.length);
+						mv.visitFieldInsn(GETSTATIC, self_type
+								.getInternalName(), field, "L" + funTypeName
+								+ ";");
+						mv.visitVarInsn(ALOAD, 0);
+						for (int i = 0; i < args.length; i++) {
+							push(args[i], EOBJECT_TYPE);
+						}
+
+						mv.visitMethodInsn(INVOKEVIRTUAL, funTypeName,
+								is_tail ? "invoke_tail" : "invoke", EUtil
+										.getSignature(args.length, true));
+
+					} else {
+
+						System.err.println("DIRECT "+bif);
+						
+						int off = 0;
+						if (bif.getArgumentTypes().length > 0
+								&& bif.getArgumentTypes()[0].equals(EPROC_TYPE)) {
+
+							mv.visitVarInsn(ALOAD, 0);
+							off = 1;
+						}
+						for (int i = 0; i < args.length; i++) {
+							push(args[i], bif.getArgumentTypes()[off + i]);
+						}
+
+						mv.visitMethodInsn(INVOKESTATIC, bif.owner
+								.getInternalName(), bif.getName(), bif
+								.getDescriptor());
+
+					}
 
 					if (is_tail || isExitFunc(fun)) {
 						mv.visitInsn(ARETURN);
@@ -2434,7 +2468,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 		ClassWriter cw = new ClassWriter(true);
 		String super_class_name = EFUN_NAME + (arity - freevars);
-		EFun.ensure(arity-freevars);
+		EFun.ensure(arity - freevars);
 		cw.visit(V1_6, ACC_FINAL | ACC_PUBLIC, full_inner_name, null,
 				super_class_name, null);
 

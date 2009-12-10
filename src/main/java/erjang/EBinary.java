@@ -21,6 +21,7 @@ package erjang;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
 import java.util.zip.Adler32;
 import java.util.zip.CRC32;
 
@@ -29,6 +30,8 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
 public class EBinary extends EBitString {
+
+	public static final EBinary EMPTY = new EBinary(new byte[0]);
 
 	public EBinary(byte[] data, int byteOff, int byteLength) {
 		super(data, byteOff * 8, byteLength * 8);
@@ -46,7 +49,7 @@ public class EBinary extends EBitString {
 
 	@Override
 	public Type emit_const(MethodVisitor fa) {
-		char[] chs = new char[bits / 8];
+		char[] chs = new char[(int) (bits / 8)];
 		for (int i = 0; i < bits / 8; i++) {
 			chs[i] = (char) (0xff & octetAt(i));
 		}
@@ -75,10 +78,11 @@ public class EBinary extends EBitString {
 	}
 
 	public void updateAdler32(Adler32 a) {
-		a.update(data, bitOff / 8, bits / 8);
+		a.update(data, bitOff / 8, (int) (bits / 8));
 	}
 
 	static final int MOD_ADLER = 65521;
+	
 	long adler32() {
 		return adler32(1);
 	}
@@ -108,7 +112,7 @@ public class EBinary extends EBitString {
 	 * @return
 	 */
 	public byte[] getByteArray() {
-		int octets = bitCount() / 8;
+		int octets = (int) (bitCount() / 8);
 		byte[] res = new byte[octets];
 		if ((bitOff % 8) == 0) {
 			System.arraycopy(data, bitOff / 8, res, 0, octets);
@@ -123,7 +127,7 @@ public class EBinary extends EBitString {
 	public long crc() {
 		CRC32 crc = new CRC32();
 		
-		int octets = bitCount() / 8;
+		int octets = (int) (bitCount() / 8);
 		if ((bitOff % 8) == 0) {
 			crc.update(data, bitOff / 8, octets);
 		} else {
@@ -138,7 +142,7 @@ public class EBinary extends EBitString {
 	 * @return
 	 */
 	public int byteSize() {
-		return bitCount() / 8;
+		return (int) (bitCount() / 8);
 	}
 
 	/**
@@ -147,10 +151,33 @@ public class EBinary extends EBitString {
 	 */
 	public void appendTo(OutputStream barr) {
 		try {
-			barr.write(data, bitOff/8, bits/8);
+			barr.write(data, bitOff/8, byteSize());
 		} catch (IOException e) {
 			throw new Error(e);
 		}
+	}
+
+	/**
+	 * @param barr
+	 * @throws IOException 
+	 */
+	public void writeTo(ByteArrayOutputStream o) {
+		int octets = byteSize();
+		if ((bitOff % 8) == 0) {
+			o.write(data, bitOff / 8, octets);
+		} else {
+			for (int i = 0; i < octets; i++) {
+				o.write( octetAt(i) );
+			}
+		}
+	}
+
+	/**
+	 * @param data
+	 * @return
+	 */
+	public static EBinary make(ByteBuffer data) {
+		return new EBinary(data.array(), data.arrayOffset()+data.position(), data.remaining());
 	}
 
 }

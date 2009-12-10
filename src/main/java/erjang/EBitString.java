@@ -35,7 +35,7 @@ public class EBitString extends EObject {
 			.getInternalName();
 
 	protected final byte[] data;
-	protected final int bits;
+	protected final long bits;
 	protected final int bitOff;
 
 	public EBitString(byte[] data) {
@@ -60,11 +60,11 @@ public class EBitString extends EObject {
 
 	@Override
 	public Type emit_const(MethodVisitor fa) {
-		char[] chs = new char[bits / 8 + 1];
+		char[] chs = new char[(int) (bits / 8 + 1)];
 
 		for (int pos = 0; pos < bits; pos += 8) {
 
-			int rest = Math.min(8, bits - pos);
+			int rest = (int) (bits-pos > 8 ? 8 : bits-pos);
 
 			int oc = 0xff & intBitsAt(pos, rest);
 
@@ -78,7 +78,7 @@ public class EBitString extends EObject {
 		String str = new String(chs);
 
 		fa.visitLdcInsn(str);
-		fa.visitLdcInsn(new Integer(bits % 8));
+		fa.visitLdcInsn(new Integer((int) (bits % 8)));
 		fa.visitMethodInsn(Opcodes.INVOKESTATIC, EBITSTRING_NAME, "fromString",
 				"(Ljava/lang/String;I)L" + EBITSTRING_NAME + ";");
 
@@ -104,13 +104,13 @@ public class EBitString extends EObject {
 		if (bitCount() != ebs.bitCount())
 			return false;
 
-		int bc1 = bitCount();
-		int bc2 = ebs.bitCount();
-		int limit = Math.min(bc1, bc2);
+		long bc1 = bitCount();
+		long bc2 = ebs.bitCount();
+		long limit = Math.min(bc1, bc2);
 
 		for (int pos = 0; pos < limit; pos += 8) {
 
-			int rest = Math.min(8, limit - pos);
+			int rest = (int) (limit-pos>8 ? 8 : limit-pos);
 
 			int oc1 = 0xff & intBitsAt(pos, rest);
 			int oc2 = 0xff & ebs.intBitsAt(pos, rest);
@@ -126,13 +126,13 @@ public class EBitString extends EObject {
 	int compare_same(EObject rhs) {
 		EBitString ebs = (EBitString) rhs;
 
-		int bc1 = bitCount();
-		int bc2 = ebs.bitCount();
-		int limit = Math.min(bc1, bc2);
+		long bc1 = bitCount();
+		long bc2 = ebs.bitCount();
+		long limit = Math.min(bc1, bc2);
 
 		for (int pos = 0; pos < limit; pos += 8) {
 
-			int rest = Math.min(8, limit - pos);
+			int rest = limit-pos>8 ? 8 : (int)(limit-pos);
 
 			int oc1 = 0xff & intBitsAt(pos, rest);
 			int oc2 = 0xff & ebs.intBitsAt(pos, rest);
@@ -155,7 +155,7 @@ public class EBitString extends EObject {
 			return 1;
 	}
 
-	public EBitString(byte[] data, int offset, int bits) {
+	public EBitString(byte[] data, int offset, long bits) {
 		this.data = data;
 		this.bitOff = offset;
 		this.bits = bits;
@@ -173,7 +173,7 @@ public class EBitString extends EObject {
 		return intBitsAt(idx * 8, 8);
 	}
 
-	public int bitCount() {
+	public long bitCount() {
 		return bits;
 	}
 
@@ -181,14 +181,14 @@ public class EBitString extends EObject {
 		if (bitOff < 0 || bitOff > bitCount()) {
 			throw new IllegalArgumentException("offset out of range");
 		}
-		return new EBitString(data, bitOff + bitOff, bitCount() - bitOff);
+		return new EBitString(data, this.bitOff + bitOff, bitCount() - bitOff);
 	}
 
-	public EBitString substring(int bitOff, int len) {
+	public EBitString substring(int bitOff, long len) {
 		if (bitOff < 0 || bitOff + len > bitCount()) {
 			throw new IllegalArgumentException("offset out of range");
 		}
-		return new EBitString(data, bitOff + bitOff, len);
+		return new EBitString(data, this.bitOff + bitOff, len);
 	}
 
 	public int bitAt(int bitPos) {
@@ -205,7 +205,7 @@ public class EBitString extends EObject {
 
 	public int intBitsAt(int bitPos, int bitLength) {
 
-		if (bitOff + bitPos + bitLength > this.bits) {
+		if (bitPos + bitLength > this.bits) {
 			throw new IllegalArgumentException(
 					"reading beyond end of BitString");
 		}
@@ -379,7 +379,7 @@ public class EBitString extends EObject {
 			sb.append(',');
 		}
 
-		int lastBitLength = bits - i;
+		int lastBitLength = (int) (bits - i);
 		sb.append(0xff & intBitsAt(i, lastBitLength));
 		if (lastBitLength != 8) {
 			sb.append(':').append(lastBitLength);
@@ -395,7 +395,7 @@ public class EBitString extends EObject {
 		if (!isBinary())
 			throw ERT.badarg();
 
-		byte[] result = new byte[bits / 8];
+		byte[] result = new byte[(int) (bits / 8)];
 		for (int i = 0; i < result.length; i++) {
 			result[i] = this.byteAt(i * 8);
 		}
@@ -412,7 +412,7 @@ public class EBitString extends EObject {
 		
 		if (bits != 0) {
 			if ((bitOff % 8) == 0) {
-				out.add(ByteBuffer.wrap(data, bitOff / 8, bits / 8));
+				out.add(ByteBuffer.wrap(data, bitOff / 8, (int) (bits / 8)));
 			} else {
 				out.add(ByteBuffer.wrap(toByteArray()));
 			}

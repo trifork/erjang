@@ -31,7 +31,12 @@ public abstract class EObject implements Comparable<EObject> {
 
 	public ECons cons(EObject h)
 	{
-		return new EPair(h, this);
+		ESmall sm;
+		if ((sm=h.testSmall()) != null && ((sm.value&0xff)==sm.value)) {
+			return new EBinList((byte) sm.value, this);
+		} else {
+			return new EPair(h, this);
+		}
 	}
 	
 	public ERef testReference() {

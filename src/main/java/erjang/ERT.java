@@ -282,13 +282,13 @@ public class ERT {
 	public static final EAtom am_try_case_clause = EAtom
 			.intern("try_case_clause");
 	public static final EAtom am_if_clause = EAtom.intern("if_clause");
-	public static final boolean DEBUG = true;
+	public static final boolean DEBUG = false;
 	public static final EBinary EMPTY_BINARY = new EBinary(new byte[0]);
 	public static final ByteBuffer EMPTY_BYTEBUFFER = ByteBuffer.allocate(0);
 	public static final EAtom am_infinity = EAtom.intern("infinity");
 	public static final EAtom am_noproc = EAtom.intern("noproc");
 
-	public EBitStringBuilder bs_init(int size, int flags) {
+	public static EBitStringBuilder bs_init(int size, int flags) {
 		return new EBitStringBuilder(size, flags);
 	}
 
@@ -414,10 +414,10 @@ public class ERT {
 	public static EObject whereis(EObject regname) {
 		EObject result = register.get(regname);
 		if (result == null) {
-			System.out.println(regname + " => " + am_undefined);
+			//System.out.println(regname + " => " + am_undefined);
 			return am_undefined;
 		} else {
-			System.out.println(regname + " => " + result);
+			//System.out.println(regname + " => " + result);
 			return result;
 		}
 	}

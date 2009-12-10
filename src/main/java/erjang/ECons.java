@@ -22,8 +22,6 @@ import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.util.List;
 
-import erjang.m.erlang.ErlBif;
-
 public abstract class ECons extends EObject {
 
 	@Override

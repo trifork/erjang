@@ -26,7 +26,7 @@ import kilim.Pausable;
  */
 public abstract class EHandle extends EObject {
 
-	protected EAtom name;
+	protected EObject name = null;
 
 	public EHandle testHandle() { return this; }
 	

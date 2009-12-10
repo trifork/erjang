@@ -41,7 +41,7 @@ public class EInternalPID extends EPID implements ELocalHandle {
 	 * @see erjang.EHandle#self()
 	 */
 	@Override
-	ETask<?> task() {
+	EProc task() {
 		return task;
 	}
 	
@@ -97,4 +97,22 @@ public class EInternalPID extends EPID implements ELocalHandle {
 	public String toString() {
 		return "PID<" + (name==null?"":name)  + ":" + task().id + ">";
 	}
+	
+	/* (non-Javadoc)
+	 * @see erjang.EPID#process_info()
+	 */
+	@Override
+	public EObject process_info() {
+		return task.process_info();
+	}
+	
+	/* (non-Javadoc)
+	 * @see erjang.EPID#process_info(erjang.EObject)
+	 */
+	@Override
+	public EObject process_info(EObject spec) {
+		return task.process_info(spec);
+	}
+	
+	
 }

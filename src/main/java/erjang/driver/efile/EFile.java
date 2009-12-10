@@ -27,11 +27,15 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.locks.Lock;
 
+import sun.security.util.Cache.EqualByteArray;
+
+import erjang.EBinary;
 import erjang.EObject;
 import erjang.EPort;
 import erjang.ERT;
 import erjang.ERef;
 import erjang.EString;
+import erjang.NotImplemented;
 import erjang.driver.EAsync;
 import erjang.driver.EDriverEvent;
 import erjang.driver.EDriverInstance;
@@ -452,6 +456,14 @@ public class EFile extends EDriverInstance {
 
 	}
 
+	/* (non-Javadoc)
+	 * @see erjang.driver.EDriverInstance#outputv(java.nio.ByteBuffer[])
+	 */
+	@Override
+	protected void outputv(ByteBuffer[] ev) {
+		super.outputv(ev);
+	}
+	
 	@Override
 	protected void output(ByteBuffer data) {
 
@@ -516,10 +528,11 @@ public class EFile extends EDriverInstance {
 			};
 			break;
 		}
-
+		
 		default:
+			throw new NotImplemented("file_output cmd:"+((int)cmd)+" "+EBinary.make(data));
 			/** ignore everything else - let the caller hang */
-			return;
+			// return;
 		}
 		
 		

@@ -69,6 +69,8 @@ public class ErlPort {
 		ByteBuffer[] out = new ByteBuffer[ovec.size()];
 		ovec.toArray(out);
 
+		System.err.println("packing "+data+"::"+data.getClass().getName()+" -> "+ovec);
+		
 		p.command(out);
 		
 		return ERT.TRUE;

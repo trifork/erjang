@@ -33,6 +33,13 @@ public final class EProc extends ETask<EInternalPID> {
 	public static final EObject TAIL_MARKER = new ETailMarker();
 
 	private static final EAtom am_trap_exit = EAtom.intern("trap_exit");
+	private static final EAtom am_messages = EAtom.intern("messages");
+	private static final EAtom am_message_queue_len = EAtom.intern("message_queue_len");
+	private static final EAtom am_dictionary = EAtom.intern("dictionary");
+	private static final EAtom am_group_leader = EAtom.intern("group_leader");
+	private static final EAtom am_links = EAtom.intern("links");
+
+	private static final EAtom am_registered_name = EAtom.intern("registered_name");
 
 	public EFun tail;
 	public EObject arg0, arg1, arg2, arg3, arg4, arg5, arg6;
@@ -146,7 +153,7 @@ public final class EProc extends ETask<EInternalPID> {
 	/**
 	 * @return list of the process dictionary
 	 */
-	public ECons get() {
+	public ESeq get() {
 		ESeq res = ERT.NIL;
 		for (Map.Entry<EObject, EObject> ent : pdict.entrySet()) {
 			res.cons(ETuple.make(ent.getKey(), ent.getValue()));
@@ -258,6 +265,61 @@ public final class EProc extends ETask<EInternalPID> {
 			e.printStackTrace();
 		}
 
+	}
+
+	/**
+	 * @return
+	 */
+	public EObject process_info() {
+		
+		ESeq res = ERT.NIL;
+		
+		res = res.cons(new ETuple2(am_trap_exit, trap_exit));
+		
+		// get messages
+		ESeq messages = EList.make((Object[])mbox.messages());
+		res = res.cons(new ETuple2(am_messages, messages));
+		res = res.cons(new ETuple2(am_message_queue_len, new ESmall(messages.length())));
+		
+		res = res.cons(new ETuple2(am_dictionary, get()));
+		
+		res = res.cons(new ETuple2(am_group_leader, group_leader));
+
+		res = res.cons(new ETuple2(am_registered_name, self().name));
+
+		ESeq links = links();
+		res = res.cons(new ETuple2(am_links, group_leader));
+		
+		
+		if (res == ERT.NIL) return ERT.am_undefined;
+		return res;
+	}
+
+	/**
+	 * @return
+	 */
+	private ESeq links() {
+		ESeq res = ERT.NIL;
+		for (EHandle h : super.links) {
+			res = res.cons(h);
+		}
+		return res;
+	}
+
+	/**
+	 * @param spec
+	 * @return
+	 */
+	public EObject process_info(EObject spec) {
+		
+		if (spec == am_registered_name) {
+			return self().name == null 
+				? ERT.NIL 
+				: new ETuple2(am_registered_name, self().name);
+		}
+		
+		System.err.println(spec);
+		throw new NotImplemented();
 	}
 
 

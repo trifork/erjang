@@ -40,16 +40,20 @@ public abstract class ErlangException extends RuntimeException {
 	
 	public ErlangException(EObject reason) {
 		this.reason = reason;
+		//System.err.println(this.getClass().getName() + ": " + getMessage());
 	}
 
 	public ErlangException(EObject reason, Throwable cause) {
 		super(cause);
 		this.reason = reason;
+		//System.err.println(this.getClass().getName() + ": " + getMessage());
 	}
 
 	public ErlangException(Throwable cause) {
 		super(cause);
 		this.reason = am_java_exception;
+		
+		//System.err.println(this.getClass().getName() + ": " + getMessage());
 	}
 
 	public EObject reason() {
@@ -193,6 +197,7 @@ public abstract class ErlangException extends RuntimeException {
 		}
 
 		Method m = find_method(clazz, mname);
+		if (m == null) return null;
 		BIF bif = m.getAnnotation(BIF.class);
 		if (bif == null)
 			return null;

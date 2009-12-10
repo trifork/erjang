@@ -87,11 +87,25 @@ public abstract class EModule {
 								throws Pausable
 							{
 								EFun found = null;
-								try {
-									ERT.load(fun.module);
-									found = EModule.resolve(fun);
-								} catch (Throwable ex) {
-									System.out.println("unable to load module for "+fun);
+								boolean has_loaded_module =
+									EModule.get_module_info(fun.module).module != null;
+								
+								if (!has_loaded_module) {
+									try {
+										ERT.load(fun.module);
+										has_loaded_module = true;
+									} catch (Throwable ex) {
+										System.out.println("unable to load module for "+fun);
+									}
+								}
+								
+								if (has_loaded_module)
+								{
+									try {
+										found = EModule.resolve(fun);
+									} catch (Throwable ex) {
+										System.out.println("unable to resolve function "+fun);
+									}
 								}
 								
 								if (found == null) {

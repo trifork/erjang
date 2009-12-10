@@ -38,6 +38,8 @@ public class ErlangUndefined extends ErlangError {
 		this.module = module;
 		this.function = function;
 		this.arity = arity;
+		
+		System.err.println("UNDEFINED "+module+":"+function+"/"+arity);
 	}
 
 	/* (non-Javadoc)

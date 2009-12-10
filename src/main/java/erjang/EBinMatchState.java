@@ -25,7 +25,7 @@ public class EBinMatchState {
 	public final EBitString bin;
 	int bit_pos;
 
-	public int bitsLeft() {
+	public long bitsLeft() {
 		return bin.bitCount() - bit_pos;
 	}
 
@@ -90,18 +90,18 @@ public class EBinMatchState {
 	}
 
 	public EBitString bs_match_string(int bits, EBitString ebs) {
-		int size = ebs.bitCount();
+		long size = ebs.bitCount();
 
 		// do we have bits enough in the input
 		if (size > bitsLeft()) {
 			return null;
 		}
 
-		int limit = size;
+		long limit = size;
 
 		for (int pos = 0; pos < limit; pos += 8) {
 
-			int rest = Math.min(8, limit - pos);
+			int rest = (int) Math.min(8, limit - pos);
 
 			int oc1 = 0xff & bin.intBitsAt(pos, rest);
 			int oc2 = 0xff & ebs.intBitsAt(pos, rest);

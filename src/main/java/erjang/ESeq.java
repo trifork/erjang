@@ -77,7 +77,11 @@ public abstract class ESeq extends ECons {
 	 * @return
 	 */
 	public ESeq cons(int o1) {
-		return cons(ERT.box(o1));
+		if ((o1&0xff)==o1) {
+			return new EBinList((byte)o1, this).testSeq();
+		} else {
+			return cons(ERT.box(o1));
+		}
 	}
 
 	/**

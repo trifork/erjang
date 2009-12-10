@@ -47,4 +47,14 @@ public abstract class EPID extends EHandle {
 	 */
 	public abstract void set_group_leader(EPID gl);
 
+	/**
+	 * erlang:process_info/0
+	 */
+	public abstract EObject process_info();
+	
+	/**
+	 * erlang:process_info/1
+	 */
+	public abstract EObject process_info(EObject spec);
+
 }

@@ -62,6 +62,14 @@ public final class EList extends ESeq {
 	
 	@Override
 	public String toString() {
+		
+		try {
+			EString str = EString.make(this);
+			return str.toString();
+		} catch (ErlangException e) {
+			// ignor e//
+		}
+		
 		StringBuffer sb = new StringBuffer("[");
 
 		assert (this instanceof EList);
@@ -97,6 +105,18 @@ public final class EList extends ESeq {
 				type.getInternalName(), "<init>", CONSTRUCTOR_DESC);
 		
 		return type;
+	}
+
+	/**
+	 * @param messages
+	 * @return
+	 */
+	public static ESeq make(Object... messages) {
+		ESeq result = ERT.NIL;
+		for (int i = messages.length-1; i >= 0; i--) {
+			result = result.cons((EObject)messages[i]);
+		}
+		return result;
 	}
 
 	

@@ -38,7 +38,7 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 	 */
 	public abstract H self();
 
-	private Set<EHandle> links = new TreeSet<EHandle>();
+	protected Set<EHandle> links = new TreeSet<EHandle>();
 
 	public void unlink(EHandle handle) {
 		links.remove(handle);

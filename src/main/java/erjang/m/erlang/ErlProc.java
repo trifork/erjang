@@ -73,6 +73,23 @@ public class ErlProc {
 	private static final EObject am_otp_version = EAtom.intern("am_otp_version");
 	private static final EObject am_machine = EAtom.intern("am_machine");
 
+
+	@BIF
+	public static EObject process_info(EObject pid, EObject what) {
+		EPID p = pid.testPID();
+		if (p == null) throw ERT.badarg(pid,what);
+		// TODO: validate WHAT locally before going remote?
+		return p.process_info(what);
+	}
+
+	@BIF
+	public static EObject process_info(EObject pid) {
+		EPID p = pid.testPID();
+		if (p == null) throw ERT.badarg(pid);
+		// TODO: validate WHAT locally before going remote?
+		return p.process_info();
+	}
+
 	@BIF
 	public static EObject display(EProc proc, EObject obj) {
 		System.out.println(obj);

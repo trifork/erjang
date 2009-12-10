@@ -19,6 +19,7 @@
 package erjang.m.erlang;
 
 import kilim.Pausable;
+import kilim.Task;
 import erjang.BIF;
 import erjang.EAtom;
 import erjang.EBinary;
@@ -860,16 +861,6 @@ public class ErlBif {
 	}
 
 	@BIF
-	public static EObject process_info(EObject pid, EObject what) {
-		throw new NotImplemented();
-	}
-
-	@BIF
-	public static EObject process_info(EObject pid) {
-		throw new NotImplemented();
-	}
-
-	@BIF
 	public static EList nodes() {
 		throw new NotImplemented();
 	}
@@ -975,7 +966,7 @@ public class ErlBif {
 	}
 
 	@BIF
-	public static ESmall bit_size(EObject tup) {
+	public static EInteger bit_size(EObject tup) {
 		EBinary bin = tup.testBinary();
 		if (bin == null)
 			throw ERT.badarg();
@@ -984,7 +975,7 @@ public class ErlBif {
 
 
 	@BIF(type=Type.GUARD, name="bit_size")
-	public static ESmall bit_size$g(EObject tup) {
+	public static EInteger bit_size$g(EObject tup) {
 		EBinary bin = tup.testBinary();
 		if (bin == null)
 			return null;
@@ -1113,5 +1104,27 @@ public class ErlBif {
 			return null;
 		return i1.bsr(i2);
 	}
+	
+	@BIF(name="lists:reverse/2")
+	public static ESeq reverse(EObject hd, EObject tl) {
+		ESeq res = tl.testSeq();
+		ESeq front = hd.testSeq();
+		
+		if (res == null) throw ERT.badarg(hd, tl);
+		
+		while (!front.isNil()) {
+			res = res.cons(front.head());
+			front = front.tail();
+		}
+		
+		return res;
+	}
 
+	@BIF(name="erlang:bump_reductions/1")
+	public static EObject bump_reductions(EProc self, EObject howmuch) throws Pausable {
+		// yield?
+		Task.yield();
+		return ERT.box(1);
+	}
+	
 }

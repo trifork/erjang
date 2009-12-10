@@ -286,6 +286,7 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 	 */
 	protected void main_loop() throws Pausable {
 
+		List<ByteBuffer> out = new ArrayList<ByteBuffer>();
 		EObject msg;
 
 		next_message: while (true) {
@@ -320,7 +321,8 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 
 					if (cmd.elem1 == EPort.am_command) {
 
-						List<ByteBuffer> out = new ArrayList<ByteBuffer>();
+						System.err.println("CLS:"+cmd.elem2.getClass());
+						
 						if (cmd.elem2.collectIOList(out)) {
 							if (out.size() == 0) {
 								// nothing to do?
@@ -334,6 +336,8 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 										.size()]));
 							}
 						}
+						
+						out.clear();
 
 						continue next_message;
 
