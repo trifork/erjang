@@ -197,7 +197,7 @@ public abstract class EDriverInstance {
 	/*
 	 * "ioctl" for drivers - invoked by port_control/3)
 	 */
-	protected ByteBuffer control(int command, ByteBuffer buf) {
+	protected ByteBuffer control(int command, ByteBuffer[] out) {
 		throw ERT.badarg();
 	}
 

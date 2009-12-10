@@ -320,21 +320,18 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 					// {connect, PID}
 
 					if (cmd.elem1 == EPort.am_command) {
-
-						System.err.println("CLS:"+cmd.elem2.getClass());
 						
 						if (cmd.elem2.collectIOList(out)) {
 							if (out.size() == 0) {
-								// nothing to do?
-								instance.output(ERT.EMPTY_BYTEBUFFER);
-
-							} else if (out.size() == 1) {
-								instance.output(out.get(0));
-
+								instance.outputv(ERT.EMPTY_BYTEBUFFER_ARR);
 							} else {
 								instance.outputv(out.toArray(new ByteBuffer[out
 										.size()]));
 							}
+						} else {
+							// if collectIOList fails, do the port task die?
+							// and how?
+							throw new ErlangError(ERT.AM_BADARG, cmd);
 						}
 						
 						out.clear();
@@ -394,9 +391,7 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 			throw ERT.badarg();
 		}
 
-		ByteBuffer odata = flatten(out);
-
-		ByteBuffer bb = instance.control(op, odata);
+		ByteBuffer bb = instance.control(op, out);
 
 		if (bb == null || bb.position() == 0) {
 			if (this.send_binary_data) {
@@ -427,12 +422,15 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 		} else if (out.length == 1) {
 			return out[0];
 		} else {
-			int size = 0;
+			long size = 0;
 			for (int i = 0; i < out.length; i++) {
 				size += out[i].position();
 				out[i].flip();
 			}
-			ByteBuffer res = ByteBuffer.allocate(size);
+			if (size > Integer.MAX_VALUE)
+				throw new IllegalArgumentException("buffer too large to flatten "+size);
+			
+			ByteBuffer res = ByteBuffer.allocate((int)size);
 			for (int i = 0; i < out.length; i++) {
 				res.put(out[i]);
 			}
@@ -475,16 +473,9 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 		}
 
 		mbox.put(new EPortControl() {
-
 			@Override
 			public void execute() throws Pausable {
-				if (out.length == 0) {
-					instance.output(ERT.EMPTY_BYTEBUFFER);
-				} else if (out.length == 1) {
-					instance.output(out[0]);
-				} else {
-					instance.outputv(out);
-				}
+				instance.outputv(out);
 			}
 		});
 	}

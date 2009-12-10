@@ -284,6 +284,7 @@ public class ERT {
 	public static final EAtom am_if_clause = EAtom.intern("if_clause");
 	public static final boolean DEBUG = false;
 	public static final EBinary EMPTY_BINARY = new EBinary(new byte[0]);
+	public static final ByteBuffer[] EMPTY_BYTEBUFFER_ARR = new ByteBuffer[0];
 	public static final ByteBuffer EMPTY_BYTEBUFFER = ByteBuffer.allocate(0);
 	public static final EAtom am_infinity = EAtom.intern("infinity");
 	public static final EAtom am_noproc = EAtom.intern("noproc");

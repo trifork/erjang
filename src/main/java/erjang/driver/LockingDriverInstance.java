@@ -52,7 +52,7 @@ class LockingDriverInstance extends EDriverInstance {
 	}
 
 	@Override
-	protected ByteBuffer control(int command, ByteBuffer buf) {
+	protected ByteBuffer control(int command, ByteBuffer[] buf) {
 		lock.lock();
 		try {
 			return target.control(command, buf);
