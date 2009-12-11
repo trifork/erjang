@@ -19,29 +19,33 @@
 
 package erjang;
 
-import java.math.BigInteger;
-
+import java.nio.ByteBuffer;
 
 /**
- * 
+ * Can grow a byte-string backwards
  */
-public abstract class EInteger extends ENumber {
+public class IOListBuilder {
 
-	abstract BigInteger bigintValue();
+	byte[] data = new byte[10];
+	int pos = 10;
+	int len = 0;
 	
-	public EInteger asInteger() {
-		return this;
+	ByteBuffer toByteBuffer() {
+		return ByteBuffer.wrap(data, pos, len);
 	}
-
-	/**
-	 * @return
-	 */
-	public long longValue() {
-		return bigintValue().longValue();
+	
+	void prepend(byte value) {
+		if (pos == 0) {
+			byte[] new_data = new byte[len*2];
+			System.arraycopy(data, 0, new_data, len, len);
+			data = new_data;
+			pos = len;
+		}
+		
+		data[--pos] = value;
+		len += 1;
 	}
-
-	public static EInteger read(EInputStream ei) {
-		throw new NotImplemented();
-	}
-
+	
+	
+	
 }

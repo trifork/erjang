@@ -19,6 +19,7 @@
 package erjang;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Arrays;
@@ -59,7 +60,7 @@ public class EString extends ESeq implements CharSequence {
 	 * @param len
 	 */
 	public static EString make(byte[] array, int arrayOffset, int len) {
-		if (len == array.length-arrayOffset) {
+		if (len == array.length - arrayOffset) {
 			return new EString(array, arrayOffset);
 		} else {
 			byte[] copy = new byte[len];
@@ -315,12 +316,10 @@ public class EString extends ESeq implements CharSequence {
 	 */
 	@Override
 	int compare_same(EObject rhs) {
+		if (rhs.isNil())
+			return 1;
 
 		int length = length();
-
-		if ((rhs.testNil()) != null) {
-			return length == 0 ? 0 : 1;
-		}
 
 		EString str;
 		if ((str = rhs.testString()) != null) {
@@ -409,8 +408,10 @@ public class EString extends ESeq implements CharSequence {
 			return make(str);
 
 		EAtom am = eObject.testAtom();
-		if (am != null) { return fromString(am.toString()); }
-		
+		if (am != null) {
+			return fromString(am.toString());
+		}
+
 		throw ERT.badarg();
 	}
 
@@ -420,7 +421,8 @@ public class EString extends ESeq implements CharSequence {
 	 */
 	public static EString fromBinary(EBinary bin) {
 		if ((bin.bitOff % 8) == 0) {
-			// TODO: bin also has a bitlength, which may differ from bin.data.length*8
+			// TODO: bin also has a bitlength, which may differ from
+			// bin.data.length*8
 			return new EString(bin.data, bin.bitOff / 8);
 		}
 
@@ -435,5 +437,38 @@ public class EString extends ESeq implements CharSequence {
 			out.add(ByteBuffer.wrap(data, off, data.length - off));
 		}
 		return true;
+	}
+
+	/**
+	 * @param buf
+	 * @return
+	 */
+	public static ESeq make(ByteBuffer data) {
+		if (data == null || data.remaining() == 0)
+			return ERT.NIL;
+		return EString.make(data.array(), data.arrayOffset() + data.position(),
+				data.remaining());
+	}
+
+	/**
+	 * @param strbuf
+	 * @return
+	 */
+	public static EString make(byte[] strbuf) {
+		return make(strbuf, 0, strbuf.length);
+	}
+
+	/**
+	 * @param i
+	 * @return
+	 */
+	public static boolean isValidCodePoint(int cp) {
+		return (cp >>> 16) <= 0x10 // in 0..10FFFF; Unicode range
+				&& (cp & ~0x7FF) != 0xD800 // not in D800..DFFF; surrogate range
+				&& (cp & ~1) != 0xFFFE; // not in FFFE..FFFF; non-characters
+	}
+
+	public static ESeq read(EInputStream ei) throws IOException {
+		return ei.read_string();
 	}
 }

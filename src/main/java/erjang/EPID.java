@@ -57,4 +57,19 @@ public abstract class EPID extends EHandle {
 	 */
 	public abstract EObject process_info(EObject spec);
 
+	public static EPID read(EInputStream ei) {
+		throw new NotImplemented();
+	}
+
+	/**
+	 * @param node
+	 * @param id
+	 * @param serial
+	 * @param creation
+	 * @return
+	 */
+	public static EPID make(EAtom node, int id, int serial, int creation) {
+		throw new NotImplemented();
+	}
+
 }

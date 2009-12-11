@@ -72,4 +72,17 @@ public abstract class EPort extends EHandle {
 	 * @return
 	 */
 	public abstract boolean isOpen();
+	
+	public static EPort read(EInputStream ei) {
+		throw new NotImplemented();
+	}
+	/**
+	 * @param node
+	 * @param id
+	 * @param creation
+	 * @return
+	 */
+	public static EPort make(EAtom node, int id, int creation) {
+		throw new NotImplemented();
+	}
 }

@@ -77,6 +77,7 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 	}
 
 	protected void send_exit_to_all_linked(EObject result) throws Pausable {
+		this.exit_reason = null;
 		H me = self();
 		for (EHandle handle : links) {
 			handle.exit_signal(me, result);
@@ -89,20 +90,13 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 		INIT, // has not started yet
 		RUNNING, // is live
 		EXIT_SIG, // received exit signal
+		SENDING_EXIT,
 		DONE
 		// done
 	};
 
 	protected State pstate = State.INIT;
 	protected EObject exit_reason;
-
-	/**
-	 * @return
-	 */
-	public EObject mbox_peek() {
-		check_exit();
-		return mbox.peek();
-	}
 
 	/**
 	 * @throws Pausable
@@ -147,6 +141,9 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 		if (from == self()) {
 			return;
 		}
+		
+		// make sure we don't also send him an exit signal
+		links.remove(from);
 
 		synchronized (this) {
 			switch (pstate) {
@@ -186,9 +183,24 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 	 */
 	public final void check_exit() {
 		if (this.pstate == State.EXIT_SIG) {
-			throw new ErlangExitSignal(exit_reason);
+			if (exit_reason != null) {
+				this.pstate = State.SENDING_EXIT;
+				EObject reason = exit_reason;
+				throw new ErlangExitSignal(reason);
+			}
 		}
 	}
+	
+
+	/* (non-Javadoc)
+	 * @see kilim.Task#checkKill()
+	 */
+	@Override
+	public void checkKill() {
+		check_exit();
+	}
+
+	
 
 	/**
 	 * @return

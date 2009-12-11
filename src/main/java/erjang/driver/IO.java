@@ -28,6 +28,7 @@ import java.nio.charset.Charset;
 import java.util.zip.GZIPOutputStream;
 
 import erjang.ERT;
+import erjang.driver.efile.Posix;
 
 /**
  * 
@@ -37,7 +38,7 @@ public class IO {
 	/**
 	 * 
 	 */
-	private static final Charset ISO_LATIN_1 = Charset.forName("ISO-8859-1");
+	public static final Charset ISO_LATIN_1 = Charset.forName("ISO-8859-1");
 
 	static private class BARR extends ByteArrayOutputStream {
 		ByteBuffer wrap() {
@@ -65,8 +66,8 @@ public class IO {
 	 * @return
 	 * @throws InterruptedException
 	 */
-	public static long gzwrite(WritableByteChannel fd,
-			ByteBuffer src) throws IOException {
+	public static long gzwrite(WritableByteChannel fd, ByteBuffer src)
+			throws IOException {
 
 		long result = src.remaining();
 		BARR barr = new BARR();
@@ -76,19 +77,19 @@ public class IO {
 		src = barr.wrap();
 
 		writeFully(fd, src);
-		
+
 		if (src.hasRemaining()) {
 			throw new Error("should not happen");
 		}
-		
+
 		return result;
 	}
 
-	public static long writeFully(WritableByteChannel fd,
-			ByteBuffer src) throws IOException {
+	public static long writeFully(WritableByteChannel fd, ByteBuffer src)
+			throws IOException {
 
 		long written = 0;
-		
+
 		written += fd.write(src);
 		if (src.hasRemaining()) {
 			while (src.hasRemaining()) {
@@ -97,7 +98,7 @@ public class IO {
 				written += fd.write(src);
 			}
 		}
-		
+
 		return written;
 	}
 
@@ -106,11 +107,12 @@ public class IO {
 	 * @return
 	 */
 	public static int exception_to_posix_code(IOException e) {
-		// TODO Auto-generated method stub
-		return 0;
+		// TODO: implement some more error codes here
+		return Posix.EUNKNOWN;
 	}
 
-	public static long writev(GatheringByteChannel fd, ByteBuffer[] iov) throws IOException {
+	public static long writev(GatheringByteChannel fd, ByteBuffer[] iov)
+			throws IOException {
 		int cnt = 0;
 		long written = 0;
 		while (cnt < iov.length) {
@@ -129,22 +131,22 @@ public class IO {
 	}
 
 	/**
-	 * Do a strcpy on ByteBuffer.  Assuming
+	 * Do a strcpy on ByteBuffer. Assuming
 	 * 
 	 * @param data
 	 * @return
 	 */
 	public static String strcpy(ByteBuffer data) {
-		
+
 		int end_pos;
 		for (end_pos = data.position(); end_pos < data.limit(); end_pos++) {
 			if (data.get(end_pos) == 0) {
 				byte[] bb = data.array();
 				int arr_off = data.arrayOffset() + data.position();
 				int len = end_pos - data.position();
-				
+
 				String result = new String(bb, arr_off, len, ISO_LATIN_1);
-				data.position(end_pos+1);
+				data.position(end_pos + 1);
 				return result;
 			}
 		}
@@ -158,10 +160,27 @@ public class IO {
 	 */
 	public static void putstr(ByteBuffer buf, String err, boolean term) {
 		for (int i = 0; i < err.length(); i++) {
-			buf.put((byte)err.charAt(i));
+			buf.put((byte) err.charAt(i));
 		}
 		if (term) {
-			buf.put((byte)0);
+			buf.put((byte) 0);
+		}
+	}
+
+	public static String getstr(ByteBuffer buf, boolean term) {
+		if (term) {
+			StringBuilder sb = new StringBuilder();
+			byte b;
+			while ((b=buf.get()) != 0) {
+				sb.append((char)(0xff & b));
+			}
+			return sb.toString();
+			
+		} else {
+			String str = new String(buf.array(), buf.arrayOffset()+buf.position(), buf
+					.remaining(), ISO_LATIN_1);
+			buf.position(buf.limit());
+			return str;
 		}
 	}
 

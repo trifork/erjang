@@ -175,16 +175,6 @@ public class ERT {
 		return res;
 	}
 
-	/**
-	 * @param mod
-	 * @param bin
-	 */
-	public static ETuple2 load_module(EAtom mod, EBinary bin) {
-
-		EModule.load_module(mod, bin);
-
-		return (ETuple2) ETuple.make(AM_MODULE, mod);
-	}
 
 	public static ESmall box(int i) {
 		return new ESmall(i);
@@ -235,7 +225,7 @@ public class ERT {
 
 	static BigInteger INT_MIN_AS_BIG = BigInteger.valueOf(Integer.MIN_VALUE);
 	static BigInteger INT_MAX_AS_BIG = BigInteger.valueOf(Integer.MAX_VALUE);
-	private static ENode localNode;
+	private static ENode localNode = new ENode();
 
 	/**
 	 * @param add
@@ -288,6 +278,7 @@ public class ERT {
 	public static final ByteBuffer EMPTY_BYTEBUFFER = ByteBuffer.allocate(0);
 	public static final EAtom am_infinity = EAtom.intern("infinity");
 	public static final EAtom am_noproc = EAtom.intern("noproc");
+	public static final EAtom am_error = EAtom.intern("error");
 
 	public static EBitStringBuilder bs_init(int size, int flags) {
 		return new EBitStringBuilder(size, flags);
@@ -331,9 +322,9 @@ public class ERT {
 			p.send(msg);
 			return msg;
 		}
-
-		EObject val = whereis(pid);
-		if ((p = val.testHandle()) != null) {
+		
+		p = register.get(pid);
+		if (p != null) {
 			p.send(msg);
 			return msg;
 		}
@@ -397,6 +388,23 @@ public class ERT {
 		// .invoke(proc, NIL.cons(arg1).toArray());
 	}
 
+	public static EObject apply$last(EProc proc, EObject arg2, EObject arg1, EObject arg0, EObject mod,
+			EObject fun) {
+		EAtom m = mod.testAtom();
+		EAtom f = fun.testAtom();
+
+		if (m == null || f == null)
+			throw ERT.badarg(mod, fun, arg0, arg1, arg2);
+
+		proc.arg0 = arg0;
+		proc.arg1 = arg1;
+		proc.arg2 = arg2;
+		proc.tail = EModule.resolve(new FunID(m, f, 3));
+		return EProc.TAIL_MARKER;
+
+		// .invoke(proc, NIL.cons(arg1).toArray());
+	}
+
 	static Map<EAtom, EHandle> register = new ConcurrentHashMap<EAtom, EHandle>();
 
 	/**
@@ -415,10 +423,10 @@ public class ERT {
 	public static EObject whereis(EObject regname) {
 		EObject result = register.get(regname);
 		if (result == null) {
-			//System.out.println(regname + " => " + am_undefined);
+			// System.out.println(regname + " => " + am_undefined);
 			return am_undefined;
 		} else {
-			//System.out.println(regname + " => " + result);
+			// System.out.println(regname + " => " + result);
 			return result;
 		}
 	}
@@ -448,6 +456,7 @@ public class ERT {
 	}
 
 	static kilim.Scheduler scheduler = new kilim.Scheduler(4);
+	public static EAtom am_io = EAtom.intern("io");
 
 	public static void run(Task task) {
 		task.setScheduler(scheduler);
@@ -456,23 +465,65 @@ public class ERT {
 
 	/** peek mbox */
 	public static EObject receive_peek(EProc proc) {
-		return proc.mbox.peek();
+		if (proc.midx == -1024) { proc.midx = 0; }
+		return proc.mbox.peek(proc.midx);
 	}
 
 	public static void remove_message(EProc proc) throws Pausable {
-		proc.mbox.get();
+		proc.mbox.remove(proc.midx);
+		proc.midx = -1024;
+	}
+
+	public static boolean wait_timeout(EProc proc, EObject howlong)
+			throws Pausable {
+		if (proc.midx == -1024) {
+			if (howlong == am_infinity) {
+				proc.mbox.untilHasMessage();
+				return false;
+			} else {
+				EInteger ei;
+				if ((ei = howlong.testInteger()) == null)
+					throw badarg(howlong);
+				
+				proc.mbox.untilHasMessage(ei.longValue());
+				return false;
+			}
+		} else {
+		if (howlong == am_infinity) {
+			proc.mbox.untilHasMessages(proc.midx+1);
+			return true;
+		} else {
+			EInteger ei;
+			if ((ei = howlong.testInteger()) == null)
+				throw badarg(howlong);
+			
+			return proc.mbox.untilHasMessages(proc.midx+1, ei.longValue());
+		}
+		}
 	}
 
 	public static void wait_forever(EProc proc) throws Pausable {
-		proc.mbox.untilHasMessage();
+		if (proc.midx == -1024) {
+			proc.mbox.untilHasMessage();
+		} else {
+			proc.mbox.untilHasMessages(proc.midx + 1);
+		}
 	}
 
-	public static EObject loop_rec_end(EProc proc) {
-		EObject msg = proc.mbox.peek();
-		throw new ErlangError(am_receive_clause, proc.self(), msg);
+	// this will be followed by a goto the receive
+	public static void loop_rec_end(EProc proc) {
+		proc.midx += 1;
+	}
+
+
+	public static void timeout() {
 	}
 
 	public static int unboxToInt(EInteger i) {
+		return i.intValue();
+	}
+
+	public static int unboxToInt(ENumber i) {
 		return i.intValue();
 	}
 
@@ -499,25 +550,13 @@ public class ERT {
 		throw new ErlangError(AM_BADMATCH);
 	}
 
-	public static boolean wait_timeout(EProc proc, EObject howlong)
-			throws Pausable {
-		if (howlong == am_infinity) {
-			proc.mbox.untilHasMessage();
-			return true;
-		} else {
-		EInteger ei;
-		if ((ei = howlong.testInteger()) == null)
-			throw badarg(howlong);
-		return proc.mbox.untilHasMessage(ei.longValue());
-		}
-	}
-
-	public static void timeout() {
-		// skip //
-	}
-
-	static void load(EAtom module) throws IOException {
+	static void load_module(EAtom module) throws IOException {
 		File f = Compiler.find_and_compile(module.getName());
+		EModule.load_module(module, f.toURI().toURL());
+	}
+
+	public static void load_module(EAtom module, EBinary bin) throws IOException {
+		File f = Compiler.compile(module.getName(), bin);
 		EModule.load_module(module, f.toURI().toURL());
 	}
 
@@ -536,11 +575,12 @@ public class ERT {
 	 * @param job
 	 */
 	public static void run_async(final EAsync job, final EDriverTask dt) {
-		run(new Task() { 
-		  @Override
-		  public void execute() throws Pausable, Exception {
-			job.async();
-			dt.async_done(job);
-	  	  }});
+		run(new Task() {
+			@Override
+			public void execute() throws Pausable, Exception {
+				job.async();
+				dt.async_done(job);
+			}
+		});
 	}
 }

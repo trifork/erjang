@@ -32,27 +32,30 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.util.CheckClassAdapter;
 
-public abstract class ETuple extends EObject implements Cloneable /*, Indexed*/ {
+public abstract class ETuple extends EObject implements Cloneable /* , Indexed */{
 
 	@Override
 	int cmp_order() {
 		return 6;
 	}
-	
+
 	@Override
 	int compare_same(EObject rhs) {
 		ETuple other = (ETuple) rhs;
-		if (arity() < other.arity()) return -1;
-		if (arity() > other.arity()) return 1;
-		
+		if (arity() < other.arity())
+			return -1;
+		if (arity() > other.arity())
+			return 1;
+
 		for (int i = 1; i <= arity(); i++) {
 			int cmp = elm(i).compareTo(other.elm(i));
-			if (cmp != 0) return cmp;
+			if (cmp != 0)
+				return cmp;
 		}
-		
+
 		return 0;
 	}
-	
+
 	public ETuple testTuple() {
 		return this;
 	}
@@ -85,8 +88,10 @@ public abstract class ETuple extends EObject implements Cloneable /*, Indexed*/ 
 		}
 		return res;
 	}
-	
-	/* (non-Javadoc)
+
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see java.lang.Object#clone()
 	 */
 	@Override
@@ -97,7 +102,7 @@ public abstract class ETuple extends EObject implements Cloneable /*, Indexed*/ 
 			throw new Error();
 		}
 	}
-	
+
 	/** erlang:setelement - clone this and set element */
 	public ETuple setelement(int index, EObject term) {
 		ETuple t = clone();
@@ -154,7 +159,7 @@ public abstract class ETuple extends EObject implements Cloneable /*, Indexed*/ 
 		byte[] data = make_tuple_class_data(num_cells);
 
 		dump(ETUPLE_NAME + num_cells, data);
-		
+
 		String name = (ETUPLE_NAME + num_cells).replace('/', '.');
 
 		return ERT.defineClass(ETuple.class.getClassLoader(), name, data, 0,
@@ -180,7 +185,7 @@ public abstract class ETuple extends EObject implements Cloneable /*, Indexed*/ 
 
 		// create count method
 		create_count(cw, num_cells);
-		
+
 		// create cast method
 		create_cast(cw, num_cells);
 
@@ -338,33 +343,32 @@ public abstract class ETuple extends EObject implements Cloneable /*, Indexed*/ 
 		mv.visitEnd();
 	}
 
-
 	private static void create_cast(ClassAdapter cw, int n) {
-		MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PUBLIC|Opcodes.ACC_STATIC, "cast", 
-				"(L" + ETUPLE_NAME + ";)L" + ETUPLE_NAME + n + ";",
-				null, null);
+		MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PUBLIC
+				| Opcodes.ACC_STATIC, "cast", "(L" + ETUPLE_NAME + ";)L"
+				+ ETUPLE_NAME + n + ";", null, null);
 		mv.visitCode();
 
 		mv.visitVarInsn(Opcodes.ALOAD, 0);
 		mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, ETUPLE_NAME, "arity", "()I");
-		
+
 		if (n <= 5) {
 			mv.visitInsn(Opcodes.ICONST_0 + n);
 		} else {
 			mv.visitLdcInsn(new Integer(n));
 		}
-		
+
 		Label fail = new Label();
-		
+
 		mv.visitJumpInsn(Opcodes.IF_ICMPNE, fail);
 		mv.visitVarInsn(Opcodes.ALOAD, 0);
-		mv.visitTypeInsn(Opcodes.CHECKCAST, ETUPLE_NAME+n);
+		mv.visitTypeInsn(Opcodes.CHECKCAST, ETUPLE_NAME + n);
 		mv.visitInsn(Opcodes.ARETURN);
-		
+
 		mv.visitLabel(fail);
 		mv.visitInsn(Opcodes.ACONST_NULL);
 		mv.visitInsn(Opcodes.ARETURN);
-		
+
 		mv.visitMaxs(2, 2);
 		mv.visitEnd();
 	}
@@ -383,13 +387,13 @@ public abstract class ETuple extends EObject implements Cloneable /*, Indexed*/ 
 	}
 
 	static void dump(String name, byte[] data) {
-		
+
 		String pkg = name.substring(0, name.lastIndexOf('/'));
-		
-		File out_dir = new File( new File("target/woven"), pkg);
+
+		File out_dir = new File(new File("target/woven"), pkg);
 
 		out_dir.mkdirs();
-		
+
 		FileOutputStream fo;
 		try {
 			String fname = "target/woven/" + name + ".class";
@@ -402,7 +406,6 @@ public abstract class ETuple extends EObject implements Cloneable /*, Indexed*/ 
 			e.printStackTrace();
 		}
 	}
-
 
 	@Override
 	public String toString() {
@@ -427,27 +430,31 @@ public abstract class ETuple extends EObject implements Cloneable /*, Indexed*/ 
 		int result = arity;
 		for (int i = 0; i < arity; i++) {
 			result *= 3;
-			result += elm(i+1).hashCode();
+			result += elm(i + 1).hashCode();
 		}
 		return result;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override
 	public boolean equals(Object obj) {
 		if (obj instanceof ETuple) {
 			ETuple ot = (ETuple) obj;
-			if (arity() != ot.arity()) return false;
+			if (arity() != ot.arity())
+				return false;
 			for (int i = 0; i < arity(); i++) {
-				if (!elm(i+1).equals(ot.elm(i+1))) return false;
+				if (!elm(i + 1).equals(ot.elm(i + 1)))
+					return false;
 			}
 			return true;
 		}
 		return false;
 	}
-	
+
 	@Override
 	public Type emit_const(MethodVisitor fa) {
 
@@ -468,6 +475,21 @@ public abstract class ETuple extends EObject implements Cloneable /*, Indexed*/ 
 		}
 
 		return type;
+	}
+
+	/**
+	 * @param eInputStream
+	 * @return
+	 * @throws IOException 
+	 */
+	public static ETuple read(EInputStream buf) throws IOException {
+		final int arity = buf.read_tuple_head();
+
+		ETuple res = ETuple.make(arity);
+		for (int i = 0; i < arity; i++) {
+			res.set(i+1, buf.read_any());
+		}
+		return res;
 	}
 
 }

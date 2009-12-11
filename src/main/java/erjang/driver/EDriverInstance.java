@@ -25,10 +25,13 @@ import java.util.concurrent.locks.Lock;
 
 import kilim.ReentrantLock;
 
+import erjang.EBinList;
+import erjang.EBinary;
 import erjang.EObject;
 import erjang.EPort;
 import erjang.ERT;
 import erjang.ERef;
+import erjang.EString;
 
 /**
  * 
@@ -73,7 +76,31 @@ public abstract class EDriverInstance {
 	}
 
 	protected void driver_output2(ByteBuffer header, ByteBuffer buf) {
+		header.flip();
+		
+		EObject tail = null;
+		if (task.send_binary_data) {
+			tail = EBinary.make(buf);
+		} else {
+			tail = EString.make(buf);
+		}
+		
+		EBinList out = new EBinList(header, tail);
+		task.output_from_driver(out);
+	}
+	
 
+	/**
+	 * @param fileRespOkHeader
+	 * @param binp
+	 */
+	protected void driver_output_binary(byte[] header, ByteBuffer binp) {
+		EObject out = EBinary.make(binp);
+		if (header.length > 0) {
+			out = new EBinList(header, out);
+		}
+		
+		task.output_from_driver(out);
 	}
 
 	/**

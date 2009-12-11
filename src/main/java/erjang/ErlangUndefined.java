@@ -46,7 +46,7 @@ public class ErlangUndefined extends ErlangError {
 	 * @see erjang.ErlangError#getTrace()
 	 */
 	@Override
-	ESeq getTrace() {
+	public ESeq getTrace() {
 		return super.getTrace().cons(ETuple.make(module, function, arity));
 	}
 }

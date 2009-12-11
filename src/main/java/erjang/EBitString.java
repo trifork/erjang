@@ -42,7 +42,7 @@ public class EBitString extends EObject {
 		this(data.clone(), 0, data.length * 8);
 	}
 
-	public EBitString testBinString() {
+	public EBitString testBitString() {
 		return this;
 	}
 
@@ -374,10 +374,12 @@ public class EBitString extends EObject {
 
 		StringBuilder sb = new StringBuilder("<<");
 		int i = 0;
-		for (; i < bits - 8; i += 8) {
+		long max = Math.min(bits-8, 20*8);
+		for (; i < max; i += 8) {
 			sb.append(0xff & intBitsAt(i, 8));
 			sb.append(',');
 		}
+		if (max != bits-8) { sb.append("...,"); i = (int) (bits-8); }
 
 		int lastBitLength = (int) (bits - i);
 		sb.append(0xff & intBitsAt(i, lastBitLength));
@@ -419,6 +421,14 @@ public class EBitString extends EObject {
 		}
 		
 		return true;
+	}
+
+	/**
+	 * @param eInputStream
+	 * @return
+	 */
+	public static EBitString read(EInputStream eInputStream) {
+		throw new NotImplemented();
 	}
 
 }

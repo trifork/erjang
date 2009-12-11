@@ -34,16 +34,16 @@ public class EBinList extends ECons {
 	// synchronized access
 	private boolean shared;
 
-	private EBinList(byte[] data, int off, int len, EObject tail) {
+	private EBinList(byte[] data, int off, int len, EObject tail, boolean shared) {
 		this.data = data;
 		this.off = off;
 		this.len = len;
 		this.tail = tail;
+		this.shared = shared;
 
 		if (len < 1 || off + len > data.length)
 			throw ERT.badarg();
 		
-		System.err.println("MADE: "+this);
 	}
 
 	public EBinList(byte value, EObject tail) {
@@ -51,8 +51,38 @@ public class EBinList extends ECons {
 		this.off = 9;
 		this.len = 1;
 		this.tail = tail;
+		this.shared = false;
 
 		data[off] = value;
+	}
+	
+	public ECons testNonEmptyList() {
+		return this;
+	}
+	
+	public ESeq testWellformedList() {
+		if (tail.testWellformedList() != null) {
+			return this.seq();
+		} else {
+			return null;
+		}
+	}
+
+
+	/**
+	 * @param header
+	 * @param out
+	 */
+	public EBinList(byte[] header, EObject out) {
+		this(header, 0, header.length, out, true);
+	}
+
+	/**
+	 * @param header
+	 * @param tail2
+	 */
+	public EBinList(ByteBuffer buf, EObject tail) {
+		this(buf.array(), buf.arrayOffset()+buf.position(), buf.remaining(), tail, true);
 	}
 
 	@Override
@@ -75,7 +105,7 @@ public class EBinList extends ECons {
 			}
 
 			res_data[--res_off] = (byte) sm.value;
-			return new EBinList(res_data, res_off, res_len, tail);
+			return new EBinList(res_data, res_off, res_len, tail, res_data==data);
 
 		} else {
 			return new EPair(h, this);
@@ -98,8 +128,7 @@ public class EBinList extends ECons {
 		if (len == 1)
 			return tail;
 
-		shared = true;
-		return new EBinList(data, off + 1, len - 1, tail);
+		return new EBinList(data, off + 1, len - 1, tail, true);
 	}
 
 	@Override
@@ -152,7 +181,8 @@ public class EBinList extends ECons {
 	public String toString() {
 		StringBuilder sb = new StringBuilder("[");
 		
-		for (int i = 0; i < len; i++) {
+		int max = Math.min(len, 40);
+		for (int i = 0; i < max; i++) {
 			if (i != 0) { sb.append(","); }
 			byte val = data[off+i];
 			if (val > ' ' && val < 127) {
@@ -161,6 +191,10 @@ public class EBinList extends ECons {
 			} else {
 				sb.append((int)val);
 			}
+		}
+		
+		if (max!=len) {
+			sb.append("...");
 		}
 		
 		if (!tail.isNil()) {

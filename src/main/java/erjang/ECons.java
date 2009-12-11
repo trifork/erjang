@@ -31,6 +31,7 @@ public abstract class ECons extends EObject {
 
 	@Override
 	int compare_same(EObject rhs) {
+		if (rhs.isNil()) return 1;
 		ECons other = rhs.testCons();
 		int cmp1 = head().compareTo(other.head());
 		if (cmp1 != 0)

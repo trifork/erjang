@@ -19,12 +19,14 @@
 package erjang.m.erlang;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import erjang.BIF;
 import erjang.EBinary;
 import erjang.EBitString;
 import erjang.ECons;
+import erjang.EInputStream;
 import erjang.EObject;
 import erjang.EProc;
 import erjang.ERT;
@@ -32,6 +34,7 @@ import erjang.ESeq;
 import erjang.ESmall;
 import erjang.EString;
 import erjang.ETuple;
+import erjang.ErlangError;
 import erjang.NotImplemented;
 
 /**
@@ -40,8 +43,15 @@ import erjang.NotImplemented;
 public class ErlConvert {
 
 	@BIF
-	public static EObject binary_to_term(EObject bin) {
-		throw new NotImplemented();
+	public static EObject binary_to_term(EObject arg) {
+		EBinary bin;
+		if ((bin=arg.testBinary()) == null) throw ERT.badarg(arg);
+		EInputStream in = bin.getInputStream();
+		try {
+			return in.read_any();
+		} catch (IOException e) {
+			throw new ErlangError(ERT.AM_BADARG, e, arg);
+		}
 	}
 
 	@BIF

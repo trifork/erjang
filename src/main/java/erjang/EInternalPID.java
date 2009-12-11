@@ -114,5 +114,11 @@ public class EInternalPID extends EPID implements ELocalHandle {
 		return task.process_info(spec);
 	}
 	
-	
+	/* (non-Javadoc)
+	 * @see erjang.EObject#equalsExactly(erjang.EObject)
+	 */
+	@Override
+	public boolean equalsExactly(EObject rhs) {
+		return rhs==this;
+	}
 }

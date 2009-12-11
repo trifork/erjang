@@ -18,6 +18,8 @@
 
 package erjang.m.erlang;
 
+import java.io.IOException;
+
 import kilim.Pausable;
 import kilim.Task;
 import erjang.BIF;
@@ -44,6 +46,7 @@ import erjang.ETuple2;
 import erjang.ETuple3;
 import erjang.ErlFun;
 import erjang.ErlangError;
+import erjang.ErlangException;
 import erjang.FunID;
 import erjang.Module;
 import erjang.NotImplemented;
@@ -919,7 +922,19 @@ public class ErlBif {
 		if (mod == null || bin == null)
 			throw ERT.badarg();
 
-		return ERT.load_module(mod, bin);
+		try {
+			ERT.load_module(mod, bin);
+		} catch (ErlangException e) {
+			return new ETuple2(ERT.am_error, e.reason());
+		} catch (ThreadDeath e) {
+			throw e;
+		} catch (Throwable e) {
+			
+			ErlangError ee = new ErlangError(ERT.am_io, e, mod, bin);
+			return new ETuple2(ERT.am_error, ee.reason());
+		} 
+		
+		return new ETuple2(ERT.AM_MODULE, mod);
 	}
 
 	@BIF

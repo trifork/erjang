@@ -437,4 +437,53 @@ public abstract class EFun extends EObject implements Opcodes {
 		get_fun_class(arity);
 	}
 
+	/**
+	 * Create external function
+	 * 
+	 * @param module
+	 * @param function
+	 * @param arity
+	 * @return
+	 */
+	public static EFun make(EAtom module, EAtom function, int arity) {
+		throw new NotImplemented();
+	}
+
+	/**
+	 * @param pid
+	 * @param module
+	 * @param index
+	 * @param uniq
+	 * @param freeVars
+	 * @return
+	 */
+	public static EFun make(EPID pid, EAtom module, long index, long uniq,
+			EObject[] freeVars) {
+		throw new NotImplemented();
+	}
+
+	/**
+	 * @param pid
+	 * @param module
+	 * @param arity
+	 * @param md5
+	 * @param index
+	 * @param oldIndex
+	 * @param uniq
+	 * @param freeVars
+	 * @return
+	 */
+	public static EFun make(EPID pid, EAtom module, int arity, byte[] md5,
+			int index, long oldIndex, long uniq, EObject[] freeVars) {
+		throw new NotImplemented();
+	}
+
+	/**
+	 * @param eInputStream
+	 * @return
+	 */
+	public static EFun read(EInputStream eInputStream) {
+		throw new NotImplemented();
+	}
+
 }

@@ -31,9 +31,11 @@ public class Posix {
 	public static final int ENOENT = 3;
 	public static final int EPERM = 4;
 	public static final int EUNKNOWN = 5;
+	public static final int EIO = 5;
 
-	private static final String[] err_id = { "invalid", "no memory",
-			"file exists", "no entry", "permission", "unknown" };
+	private static final String[] err_id = { "Invalid argument",
+			"Not enough space", "File exists", "No such file or directory",
+			"Operation not permitted", "Input/output error" };
 
 	/**
 	 * @param posixErrno
@@ -57,9 +59,11 @@ public class Posix {
 		if (name.equals("."))
 			return true;
 		if (file.isAbsolute()) {
-			if (file.equals(getCWD())) return true;
+			if (file.equals(getCWD()))
+				return true;
 		} else {
-			if (file.getAbsoluteFile().equals(getCWD())) return true;
+			if (file.getAbsoluteFile().equals(getCWD()))
+				return true;
 		}
 		return false;
 	}

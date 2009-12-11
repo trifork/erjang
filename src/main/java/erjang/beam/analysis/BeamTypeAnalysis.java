@@ -714,8 +714,11 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						break;
 
 					case timeout:
-					case loop_rec_end:
 						vis.visitInsn(opcode);
+						break;
+
+					case loop_rec_end:
+						vis.visitInsn(opcode, decode_labelref(insn.elm(2)), null);
 						break;
 
 					case wait:
@@ -761,6 +764,18 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					
 
 					case bs_init2: {
+						Arg size = decode_arg(insn_idx, insn.elm(3));
+						Arg flags = decode_arg(insn_idx, insn.elm(6));
+						Arg out = decode_out_arg(insn_idx, insn.elm(7));
+						
+						vis.visitInitBitString(size, flags, out);
+						
+						break;
+					}
+					
+
+					// TODO: we don't use all args here, why?
+					case bs_init_bits: {
 						Arg size = decode_arg(insn_idx, insn.elm(3));
 						Arg flags = decode_arg(insn_idx, insn.elm(6));
 						Arg out = decode_out_arg(insn_idx, insn.elm(7));
@@ -860,6 +875,10 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 				case is_number:
 					vis.visitTest(test, failLabel, args[0], ENUMBER_TYPE);
+					break;
+
+				case is_bitstr:
+					vis.visitTest(test, failLabel, args[0], EBITSTRING_TYPE);
 					break;
 
 				case is_pid:
@@ -1467,6 +1486,12 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						continue next_insn;
 					}
 
+					case bs_init_bits: {
+						// int size = insn.elm(3).asInt();
+						current = setType(current, insn.elm(7), EBITSTRING_TYPE);
+						continue next_insn;
+					}
+
 					case bs_put_string: {
 						continue next_insn;
 					}
@@ -1640,6 +1665,11 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 				case is_integer: {
 					checkArgs(current, insn.elm(4), insn);
 					return setType(current, arg1, EINTEGER_TYPE);
+				}
+
+				case is_bitstr: {
+					checkArgs(current, insn.elm(4), insn);
+					return setType(current, arg1, EBITSTRING_TYPE);
 				}
 
 				case is_number: {

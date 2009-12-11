@@ -54,6 +54,8 @@ public class EExecDriverTask extends EDriverTask {
 	private DataInputStream in;
 
 	private DataInputStream err;
+
+	private ETuple2 name;
 	
 	/**
 	 * @param owner
@@ -63,6 +65,8 @@ public class EExecDriverTask extends EDriverTask {
 	public EExecDriverTask(EProc owner, ETuple2 name, EObject portSetting) {
 			super(owner, null);
 
+			this.name = name;
+			
 		// argument can be any list, ... turn it into a string
 		ECons cons;
 		if ((cons = name.elem2.testCons()) == null)
@@ -109,7 +113,7 @@ public class EExecDriverTask extends EDriverTask {
 			EString str = EString.make(cons);
 			// buf = str.collectIOList(null);
 			
-		} else if ((bin=val.testBinString()) != null) {
+		} else if ((bin=val.testBitString()) != null) {
 			if (!bin.isBinary()) throw ERT.badarg(val);
 			// buf = bin.collectIOList(null);
 		} else {
@@ -167,6 +171,14 @@ public class EExecDriverTask extends EDriverTask {
 			
 			
 		}
+	}
+	
+	/* (non-Javadoc)
+	 * @see kilim.Task#toString()
+	 */
+	@Override
+	public String toString() {
+		return String.valueOf(name) + "::" + super.toString();
 	}
 
 }

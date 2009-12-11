@@ -42,7 +42,7 @@ public final class EProc extends ETask<EInternalPID> {
 	private static final EAtom am_registered_name = EAtom.intern("registered_name");
 
 	public EFun tail;
-	public EObject arg0, arg1, arg2, arg3, arg4, arg5, arg6;
+	public EObject arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8;
 
 	private EInternalPID self;
 
@@ -111,6 +111,8 @@ public final class EProc extends ETask<EInternalPID> {
 
 	private EAtom trap_exit = ERT.FALSE;
 
+	public int midx;
+
 	protected void link_failure(EHandle h) throws Pausable {
 		if (trap_exit == ERT.TRUE || h.testLocalHandle()==null) {
 			send_exit(h, ERT.am_noproc);
@@ -125,17 +127,17 @@ public final class EProc extends ETask<EInternalPID> {
 		if (trap_exit == ERT.TRUE) {
 			// we're trapping exits, so we in stead send an {'EXIT', from,
 			// reason} to self
-			System.err.println("kill message");
-			mbox_send(ETuple.make(ERT.EXIT, from, reason));
+			ETuple msg = ETuple.make(ERT.EXIT, from, reason);
+			System.err.println("kill message to self: "+msg);
+			mbox_send(msg);
 		} else {
-			System.err.println("kill signal");
+			System.err.println("kill signal: " +reason);
 			// try to kill this thread
 			this.exit_reason = reason;
 			this.pstate = State.EXIT_SIG;
-			this.kill(new ErlangExitSignal(reason));
 		}
 	}
-
+	
 	// private Thread runner;
 
 	public EObject put(EObject key, EObject value) {
@@ -322,7 +324,13 @@ public final class EProc extends ETask<EInternalPID> {
 		throw new NotImplemented();
 	}
 
-
+	/* (non-Javadoc)
+	 * @see kilim.Task#toString()
+	 */
+	@Override
+	public String toString() {
+		return self.toString() + super.toString(); 
+	}
 }
 
 class ETailMarker extends EObject {

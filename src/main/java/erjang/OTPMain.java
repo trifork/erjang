@@ -37,12 +37,12 @@ public class OTPMain {
 	public static void main(String[] args) throws ClassNotFoundException, InstantiationException, IllegalAccessException, IOException {
 		
 		for (int i = 0; i < MODULES.length; i++) {
-			ERT.load(EAtom.intern(MODULES[i]));
+			ERT.load_module(EAtom.intern(MODULES[i]));
 		}
 
 		EErrorLogger.start();
 		
-		args=new String[] {"-boot", "/releases/R13B02/start_clean", "-root", "/sw/lib/erlang"};
+		args=new String[] {"-boot", "start_clean", "-root", "/sw/lib/erlang"};
 		
 		
 		EAtom ring = EAtom.intern("otp_ring0");

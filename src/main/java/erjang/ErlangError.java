@@ -75,7 +75,7 @@ public class ErlangError extends ErlangException {
 	}
 
 
-	ESeq getTrace() {
+	public ESeq getTrace() {
 		ESeq trace = super.getTrace();
 		
 		if (args != null && !trace.isNil()) {

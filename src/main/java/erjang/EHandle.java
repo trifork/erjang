@@ -46,6 +46,10 @@ public abstract class EHandle extends EObject {
 		task().mbox_send(msg);
 	}
 
+	public void sendb(EObject msg) {
+		task().mbox().putb(msg);
+	}
+
 	/**
 	 * @param self
 	 * @param result

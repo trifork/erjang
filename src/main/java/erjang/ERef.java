@@ -56,6 +56,18 @@ public class ERef extends EObject {
         this.ids[0] &= 0x3ffff; // only 18 significant bits in first number
 	}
 
+	/**
+	 * @param node
+	 * @param id
+	 * @param creation
+	 */
+	public ERef(EAtom node, int id, int creation) {
+        this.node = node;
+        ids = new int[1];
+        ids[0] = id & 0x3ffff; // 18 bits
+        this.creation = creation & 0x03; // 2 bits
+	}
+
 	@Override
 	int compare_same(EObject rhs) {
 		if (this.equals(rhs)) return 0;
@@ -170,6 +182,10 @@ public class ERef extends EObject {
 	 * @return
 	 */
 	public int[] internal_ref_numbers() {
+		throw new NotImplemented();
+	}
+
+	public static ERef read(EInputStream ei) {
 		throw new NotImplemented();
 	}
 

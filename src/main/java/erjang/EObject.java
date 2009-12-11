@@ -291,7 +291,7 @@ public abstract class EObject implements Comparable<EObject> {
 	/**
 	 * @return
 	 */
-	public EBitString testBinString() {
+	public EBitString testBitString() {
 		return null;
 	}
 

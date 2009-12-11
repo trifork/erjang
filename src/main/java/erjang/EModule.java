@@ -88,11 +88,11 @@ public abstract class EModule {
 							{
 								EFun found = null;
 								boolean has_loaded_module =
-									EModule.get_module_info(fun.module).module != null;
+									EModule.get_module_info(fun.module).resident != null;
 								
 								if (!has_loaded_module) {
 									try {
-										ERT.load(fun.module);
+										ERT.load_module(fun.module);
 										has_loaded_module = true;
 									} catch (Throwable ex) {
 										System.out.println("unable to load module for "+fun);
@@ -154,7 +154,7 @@ public abstract class EModule {
 	static class ModuleInfo {
 
 		private final EAtom name;
-		private EModule module;
+		private EModule resident;
 
 		/**
 		 * @param module
@@ -198,7 +198,7 @@ public abstract class EModule {
 		 * @param eModule
 		 */
 		public void setModule(EModule eModule) {
-			this.module = eModule;
+			this.resident = eModule;
 		}
 
 		/**
@@ -215,6 +215,13 @@ public abstract class EModule {
 		 */
 		public boolean exports(FunID fun) {
 			return get_function_info(fun).exported();
+		}
+
+		/**
+		 * @return
+		 */
+		public boolean is_loaded() {
+			return resident != null;
 		}
 
 	}
@@ -399,45 +406,6 @@ public abstract class EModule {
 	 */
 	public abstract String module_name();
 
-	/**
-	 * @param mod
-	 * @param classData
-	 */
-	@SuppressWarnings("unchecked")
-	public static void load_module(EAtom mod, EBinary bin) {
-
-		File dir = new File("out");
-		ClassRepo repo = new DirClassRepo(dir);
-
-		URL url;
-		try {
-			Compiler.compile(bin, repo);
-			repo.close();
-			url = dir.toURI().toURL();
-		} catch (IOException e) {
-			throw new ErlangError(e);
-		}
-
-		String internalName = erjang.beam.Compiler.moduleClassName(mod
-				.getName());
-		String java_name = internalName.replace('/', '.');
-		EModuleLoader loader = new EModuleLoader(url);
-		Class<? extends EModule> clazz;
-		try {
-			clazz = (Class<? extends EModule>) loader.loadClass(java_name);
-		} catch (ClassNotFoundException e1) {
-			throw new Error(e1);
-		}
-		EModule mi;
-		try {
-			mi = clazz.newInstance();
-		} catch (Exception e) {
-			throw new ErlangError(AM_BADARG, mod, bin);
-		}
-
-		// mi.read_annotations();
-
-	}
 
 	public static EModule load_module(EAtom mod, URL url) {
 		String internalName = erjang.beam.Compiler.moduleClassName(mod
@@ -479,6 +447,15 @@ public abstract class EModule {
 	public static boolean function_exported(EAtom m, EAtom f, int a) {
 		FunID fun = new FunID(m,f,a);
 		return get_module_info(m).exports(fun);
+	}
+
+	/**
+	 * @param m
+	 * @return
+	 */
+	public static boolean module_loaded(EAtom m) {
+		ModuleInfo mi = get_module_info(m);
+		return mi.is_loaded();
 	}
 
 }

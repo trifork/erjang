@@ -48,7 +48,7 @@ public class Erj {
 		EModule.load_module(EAtom.intern("io"), new File("target/classes").toURL());
 		EModule.load_module(EAtom.intern("timer"), new File("target/classes").toURL());
 		
-		ERT.load(EAtom.intern(m));
+		ERT.load_module(EAtom.intern(m));
 		
 		ESeq env = ERT.NIL;
 		ESeq argv = ERT.NIL;

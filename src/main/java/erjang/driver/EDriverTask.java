@@ -43,6 +43,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import kilim.Pausable;
+import erjang.EAtom;
 import erjang.EBinary;
 import erjang.ECons;
 import erjang.EHandle;
@@ -69,6 +70,7 @@ import erjang.NotImplemented;
 public abstract class EDriverTask extends ETask<EInternalPort> implements
 		NIOHandler {
 
+	private static final EAtom am_data = EAtom.intern("data");
 	private final EInternalPort port;
 	protected EPID owner;
 	private final EDriverInstance instance;
@@ -291,6 +293,7 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 
 		next_message: while (true) {
 
+			/** if the driver has a registered timeout ... handle that */
 			if (abs_timeout == 0) {
 				msg = mbox.get();
 			} else {
@@ -328,10 +331,8 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 								instance.outputv(out.toArray(new ByteBuffer[out
 										.size()]));
 							}
-						} else {
 							// if collectIOList fails, do the port task die?
 							// and how?
-							throw new ErlangError(ERT.AM_BADARG, cmd);
 						}
 						
 						out.clear();
@@ -484,6 +485,7 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 	@Override
 	protected void process_incoming_exit(EHandle from, EObject reason)
 			throws Pausable {
+		System.err.println("sending exit msg to self "+this);
 		mbox.put(ETuple.make(ERT.EXIT, from, reason));
 	}
 
@@ -562,4 +564,11 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 			}
 		});
 		}
+
+	/**
+	 * @param out
+	 */
+	public void output_from_driver(EObject out) {
+		owner.sendb(new ETuple2(port, new ETuple2(am_data, out)));
+	}
 }

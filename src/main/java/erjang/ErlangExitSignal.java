@@ -40,5 +40,11 @@ public class ErlangExitSignal extends ThreadDeath {
 		return exitReason;
 	}
 
-	
+	/* (non-Javadoc)
+	 * @see java.lang.Throwable#getMessage()
+	 */
+	@Override
+	public String getMessage() {
+		return exitReason.toString();
+	}
 }

@@ -18,12 +18,15 @@
 
 package erjang;
 
+import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
+
+import erjang.driver.IO;
 
 public class EAtom extends EObject implements CharSequence {
 
@@ -175,6 +178,26 @@ public class EAtom extends EObject implements CharSequence {
 	 */
 	public int compareTo(EAtom other) {
 		return value.compareTo(other.value);
+	}
+	
+	/* (non-Javadoc)
+	 * @see erjang.EObject#equalsExactly(erjang.EObject)
+	 */
+	@Override
+	public boolean equalsExactly(EObject rhs) {
+		return rhs == this;
+	}
+
+	/**
+	 * @param strbuf
+	 * @return
+	 */
+	public static EAtom intern(byte[] strbuf) {
+		return intern(new String(strbuf, IO.ISO_LATIN_1));
+	}
+
+	public static EAtom read(EInputStream ei) throws IOException {
+		return ei.read_atom();
 	}
 
 }

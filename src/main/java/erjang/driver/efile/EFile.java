@@ -19,10 +19,13 @@
 package erjang.driver.efile;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.SelectableChannel;
+import java.nio.charset.Charset;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.locks.Lock;
@@ -47,6 +50,10 @@ import erjang.driver.IO;
  */
 public class EFile extends EDriverInstance {
 
+	/**
+	 * 
+	 */
+	private static final Charset ISO_8859_1 = Charset.forName("ISO_8859_1");
 	private final EString command;
 	private FileChannel fd;
 	private EPort port;
@@ -140,8 +147,7 @@ public class EFile extends EDriverInstance {
 							free_size += IO.writev(fd, iov);
 							result_ok = true;
 						} catch (IOException e) {
-							posix_errno = IO
-									.exception_to_posix_code(e);
+							posix_errno = IO.exception_to_posix_code(e);
 							super.result_ok = false;
 
 						}
@@ -302,6 +308,10 @@ public class EFile extends EDriverInstance {
 	/* Return codes */
 
 	public static final byte FILE_RESP_OK = 0;
+	/**
+	 * 
+	 */
+	private static final byte[] FILE_RESP_OK_HEADER = new byte[]{ FILE_RESP_OK };
 	public static final byte FILE_RESP_ERROR = 1;
 	public static final byte FILE_RESP_DATA = 2;
 	public static final byte FILE_RESP_NUMBER = 3;
@@ -360,13 +370,13 @@ public class EFile extends EDriverInstance {
 		this.invoke = null;
 		this.cq = new LinkedList<FileAsync>();
 		this.timer_state = TimerState.IDLE;
-		//this.read_bufsize = 0;
-		//this.read_binp = (ByteBuffer) null;
-		//this.read_offset = 0;
-		//this.read_size = 0;
+		// this.read_bufsize = 0;
+		// this.read_binp = (ByteBuffer) null;
+		// this.read_offset = 0;
+		// this.read_size = 0;
 		this.write_delay = 0L;
 		this.write_bufsize = 0;
-		//this.write_error = 0;
+		// this.write_error = 0;
 		this.q_mtx = driver_pdl_create();
 		this.write_buffered = 0;
 
@@ -456,14 +466,142 @@ public class EFile extends EDriverInstance {
 
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see erjang.driver.EDriverInstance#outputv(java.nio.ByteBuffer[])
 	 */
 	@Override
 	protected void outputv(ByteBuffer[] ev) {
-		super.outputv(ev);
+
+		if (ev.length == 0 || ev[0].remaining() == 0) {
+			reply_posix_error(Posix.EINVAL);
+			return;
+		}
+
+		int command = ev[0].get();
+		switch (command) {
+		case FILE_READ_FILE: {
+			if (ev.length > 1 && ev[0].hasRemaining()) {
+				reply_posix_error(Posix.EINVAL);
+				return;
+			}
+
+			ByteBuffer last = ev[ev.length - 1];
+			final String name = IO.getstr(last, false);
+
+			if (name.length() == 0) {
+				reply_posix_error(Posix.ENOENT);
+				return;
+			}
+
+			FileAsync d = new FileAsync() {
+				private ByteBuffer binp = null;
+				private long size = 0;
+				{
+					super.level = 2;
+					super.again = true;
+				}
+
+				@Override
+				public void async() {
+
+					// first time only, initialize binp
+					if (binp == null) {
+						File file = new File(name);
+						try {
+							this.fd = new FileInputStream(file).getChannel();
+						} catch (FileNotFoundException e) {
+							this.again = false;
+							result_ok = false;
+
+							if (!file.exists() || !file.isFile())
+								posix_errno = Posix.ENOENT;
+							else if (!file.canRead())
+								posix_errno = Posix.EPERM;
+							else
+								posix_errno = Posix.EUNKNOWN;
+
+							this.again = false;
+							return;
+						}
+						this.size = file.length();
+
+						if (size > Integer.MAX_VALUE || size < 0) {
+							result_ok = false;
+							posix_errno = Posix.ENOMEM;
+						} else {
+							try {
+								binp = ByteBuffer.allocate((int) size);
+							} catch (OutOfMemoryError e) {
+								result_ok = false;
+								posix_errno = Posix.ENOMEM;
+							}
+						}
+					}
+
+					if (binp != null && binp.hasRemaining()) {
+
+						try {
+							int bytes = fd.read(binp);
+							if (bytes == -1 && binp.hasRemaining()) {
+								// urgh, file change size under our feet!
+								result_ok = false;
+								posix_errno = Posix.EIO;
+							}
+
+							if (binp.hasRemaining()) {
+								again = true;
+								return;
+							} else {
+								result_ok = true;
+							}
+						} catch (IOException e) {
+							result_ok = false;
+							posix_errno = IO.exception_to_posix_code(e);
+						}
+
+					}
+
+					try {
+						fd.close();
+					} catch (IOException e) {
+						result_ok = false;
+						posix_errno = IO.exception_to_posix_code(e);
+					}
+					again = false;
+
+				}
+
+				@Override
+				public void ready() {
+					
+					if (!result_ok) {
+						reply_posix_error(posix_errno);
+						return;
+					}
+					
+					binp.flip();
+					driver_output_binary(FILE_RESP_OK_HEADER, binp);
+				}
+
+			};
+
+			cq_enq(d);
+			break;
+		}
+
+		default:
+			// undo the get() we did to find command
+			ev[0].position(ev[0].position() - 1);
+			output(flatten(ev));
+		}
+
+		cq_execute();
+
 	}
-	
+
+
 	@Override
 	protected void output(ByteBuffer data) {
 
@@ -528,14 +666,57 @@ public class EFile extends EDriverInstance {
 			};
 			break;
 		}
-		
+
+
+		case FILE_PWD: {
+			int drive = data.get();
+			char dr = drive==0 ? '?' : (char)('A'+drive);
+			
+			d = new FileAsync() {
+
+				private String pwd;
+
+				{
+					this.command = FILE_PWD;
+					super.level = 2;
+				}
+				
+				@Override
+				public void async() {
+					File pwd = Posix.getCWD();
+					if (pwd.exists() && pwd.isDirectory()) {
+						this.pwd = pwd.getAbsolutePath();
+						result_ok = true;
+					} else {
+						result_ok = false;
+						posix_errno = Posix.ENOENT;
+					}
+					again = false;
+				}
+
+				@Override
+				public void ready() {
+					if (!result_ok) {
+						reply_posix_error(posix_errno);
+					} else {
+						ByteBuffer reply = ByteBuffer.allocate(1+pwd.length());
+						reply.put(FILE_RESP_OK);
+						IO.putstr(reply, pwd, false);
+						driver_output2(reply, null);
+					}
+				}
+
+			};
+			break;
+		}
+
 		default:
-			throw new NotImplemented("file_output cmd:"+((int)cmd)+" "+EBinary.make(data));
+			throw new NotImplemented("file_output cmd:" + ((int) cmd) + " "
+					+ EBinary.make(data));
 			/** ignore everything else - let the caller hang */
 			// return;
 		}
-		
-		
+
 		if (d != null) {
 			cq_enq(d);
 		}

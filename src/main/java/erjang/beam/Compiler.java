@@ -303,7 +303,7 @@ public class Compiler implements Opcodes {
 		}
 	}
 
-	static File compile(String name, EBinary beam_data) throws IOException {
+	public static File compile(String name, EBinary beam_data) throws IOException {
 
 		long crc = beam_data.crc();
 

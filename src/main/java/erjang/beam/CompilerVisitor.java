@@ -1377,13 +1377,6 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 									+ ")V");
 					return;
 
-				case loop_rec_end:
-					mv.visitVarInsn(ALOAD, 0);
-					mv.visitMethodInsn(INVOKESTATIC, ERT_NAME, "loop_rec_end",
-							EUtil.getSignature(0, true));
-					mv.visitInsn(ARETURN);
-					return;
-
 				}
 
 				throw new Error();
@@ -1504,6 +1497,14 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					mv.visitJumpInsn(IFNE, getLabel(val));
 					return;
 				}
+
+				case loop_rec_end:
+					mv.visitVarInsn(ALOAD, 0);
+					mv.visitMethodInsn(INVOKESTATIC, ERT_NAME, "loop_rec_end",
+							"(" + EPROC_TYPE.getDescriptor() + ")V");
+					mv.visitJumpInsn(GOTO, getLabel(val));
+					return;
+
 
 				case wait: {
 					mv.visitVarInsn(ALOAD, 0);
@@ -1893,6 +1894,8 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					return IS_INTEGER_TEST;
 				case is_binary:
 					return IS_BINARY_TEST;
+				case is_bitstr:
+					return IS_BITSTRING_TEST;
 				case is_pid:
 					return IS_PID_TEST;
 				case is_port:
@@ -2416,7 +2419,9 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 	static Method IS_NUMBER_TEST = Method
 			.getMethod("erjang.ENumber testNumber()");
 	static Method IS_BINARY_TEST = Method
-			.getMethod("erjang.EBinary testBinary()");
+	.getMethod("erjang.EBinary testBinary()");
+	static Method IS_BITSTRING_TEST = Method
+	.getMethod("erjang.EBitString testBitString()");
 	static Method IS_PID_TEST = Method.getMethod("erjang.EPID testPID()");
 	static Method IS_PORT_TEST = Method.getMethod("erjang.EPort testPort()");
 	static Method IS_REFERENCE_TEST = Method.getMethod(ERef.class.getName()

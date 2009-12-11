@@ -35,7 +35,7 @@ public class EBinMatchState {
 
 	public static EBinMatchState bs_start_match2(EObject obj) {
 		EBitString bs;
-		if ((bs = obj.testBinString()) == null)
+		if ((bs = obj.testBitString()) == null)
 			return null;
 		return new EBinMatchState(bs);
 	}

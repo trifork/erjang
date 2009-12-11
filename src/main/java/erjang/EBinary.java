@@ -177,7 +177,39 @@ public class EBinary extends EBitString {
 	 * @return
 	 */
 	public static EBinary make(ByteBuffer data) {
+		if (data == null || data.remaining()==0) return EMPTY;
 		return new EBinary(data.array(), data.arrayOffset()+data.position(), data.remaining());
+	}
+
+	/**
+	 * @return
+	 */
+	public ByteBuffer toByteBuffer() {
+		return ByteBuffer.wrap(this.data, this.bitOff/8, (int)(this.bits/8));
+	}
+
+	/**
+	 * @param eInputStream
+	 * @return
+	 */
+	public static EBinary read(EInputStream eInputStream) {
+		throw new NotImplemented();
+	}
+
+	/**
+	 * @return
+	 */
+	public EInputStream getInputStream() {
+		int octets = (int) (bitCount() / 8);
+		if ((bitOff % 8) == 0) {
+			return new EInputStream(data, bitOff / 8, octets, EInputStream.DECODE_INT_LISTS_AS_STRINGS);
+		} else {
+			byte[] res = new byte[octets];
+			for (int i = 0; i < octets; i++) {
+				res[i] = (byte) octetAt(i);
+			}
+			return new EInputStream(res);
+		}
 	}
 
 }

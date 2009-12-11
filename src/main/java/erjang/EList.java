@@ -18,6 +18,8 @@
 
 package erjang;
 
+import java.io.IOException;
+
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -117,6 +119,42 @@ public final class EList extends ESeq {
 			result = result.cons((EObject)messages[i]);
 		}
 		return result;
+	}
+
+	public static ESeq make(int... messages) {
+		ESeq result = ERT.NIL;
+		for (int i = messages.length-1; i >= 0; i--) {
+			result = result.cons(ERT.box( messages[i] ));
+		}
+		return result;
+	}
+
+	public static EObject read(EInputStream buf) throws IOException {
+        final int arity = buf.read_list_head();
+        EObject[] elems;
+        EObject tail;
+		if (arity > 0) {
+            elems = new EObject[arity];
+            for (int i = 0; i < arity; i++) {
+                elems[i] = buf.read_any();
+            }
+            /* discard the terminating nil (empty list) or read tail */
+            if (buf.peek1() == EExternal.nilTag) {
+                buf.read_nil();
+                tail = ERT.NIL;
+            } else {
+            	tail = buf.read_any();
+            }
+            
+            EObject res = tail;
+            for (int i = arity-1; i >= 0; i--) {
+            	res = res.cons(elems[i]);
+            }
+            
+            return res;
+        } else {
+        	return ERT.NIL;
+        }
 	}
 
 	

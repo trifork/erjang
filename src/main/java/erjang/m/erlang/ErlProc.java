@@ -46,6 +46,7 @@ import erjang.ESmall;
 import erjang.EString;
 import erjang.ETuple;
 import erjang.ErlFun;
+import erjang.ErlangError;
 import erjang.ErlangException;
 import erjang.ErlangExit;
 import erjang.FunID;
@@ -96,6 +97,11 @@ public class ErlProc {
 		return obj;
 	}
 
+	@BIF
+	public static ESeq get_stacktrace() {
+		return new ErlangError(ERT.NIL).getTrace();
+	}
+	
 	@BIF
 	public static EObject erase(EProc proc, EObject key) {
 		return proc.erase(key);
@@ -329,5 +335,12 @@ public class ErlProc {
 		if (m==null||f==null||a==null) throw ERT.badarg(mod,fun,arity);
 		
 		return ERT.box( EModule.function_exported (m,f,a.value) );
+	}
+	
+	@BIF
+	static EAtom module_loaded(EObject mod) {
+		EAtom m;
+		if ((m=mod.testAtom()) == null) throw ERT.badarg(mod);
+		return EModule.module_loaded(m) ? ERT.TRUE : ERT.FALSE;
 	}
 }
