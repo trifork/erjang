@@ -42,7 +42,7 @@ public class OTPMain {
 
 		EErrorLogger.start();
 		
-		args=new String[] {"-boot", "start_clean", "-root", "/sw/lib/erlang"};
+		// args=new String[] {"-boot", "start", "-root", "/sw/lib/erlang"};
 		
 		
 		EAtom ring = EAtom.intern("otp_ring0");

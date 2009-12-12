@@ -48,7 +48,9 @@ public class ErlConvert {
 		if ((bin=arg.testBinary()) == null) throw ERT.badarg(arg);
 		EInputStream in = bin.getInputStream();
 		try {
-			return in.read_any();
+			EObject val = in.read_any();
+			//System.out.println("DECODED:"+val);
+			return val;
 		} catch (IOException e) {
 			throw new ErlangError(ERT.AM_BADARG, e, arg);
 		}
