@@ -70,6 +70,11 @@ import erjang.NotImplemented;
 public abstract class EDriverTask extends ETask<EInternalPort> implements
 		NIOHandler {
 
+	@Override
+	public String toString() {
+		return "<driver_task:" + id + ">";
+	}
+
 	private static final EAtom am_data = EAtom.intern("data");
 	private final EInternalPort port;
 	protected EPID owner;
@@ -489,6 +494,17 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 		mbox.put(ETuple.make(ERT.EXIT, from, reason));
 	}
 
+	/* (non-Javadoc)
+	 * @see erjang.ETask#send_exit_to_all_linked(erjang.EObject)
+	 */
+	@Override
+	protected void send_exit_to_all_linked(EObject result) throws Pausable {
+		super.send_exit_to_all_linked(result);
+		if (result != am_normal) {
+			owner.send(ETuple.make(ERT.EXIT, self(), result));
+		}
+	}
+	
 	/*
 	 * (non-Javadoc)
 	 * 

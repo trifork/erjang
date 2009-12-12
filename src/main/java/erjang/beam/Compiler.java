@@ -67,6 +67,8 @@ public class Compiler implements Opcodes {
 	}
 
 	public static void compile(EBinary data, ClassRepo repo) throws IOException {
+		
+		
 		// class writer, phase 4
 		ClassWriter cw = new ClassWriter(true);
 
@@ -239,6 +241,7 @@ public class Compiler implements Opcodes {
 	}
 
 	public static File find_and_compile(String module) throws IOException {
+		
 		File input = findBeamFile(module);
 		if (input == null)
 			throw new FileNotFoundException(module);
@@ -260,6 +263,8 @@ public class Compiler implements Opcodes {
 
 		EBinary eb = new EBinary(data);
 
+		
+		
 		return compile(module, eb);
 
 	}
@@ -313,6 +318,10 @@ public class Compiler implements Opcodes {
 		if (!jarFile.exists()) {
 			JarClassRepo repo = new JarClassRepo(jarFile);
 
+			System.out.print("[compiling "); 
+			System.out.print(name);
+			long before = System.currentTimeMillis();
+
 			try {
 				compile(beam_data, repo);
 
@@ -324,6 +333,8 @@ public class Compiler implements Opcodes {
 					jarFile.delete();
 				}
 			}
+			
+			System.out.print(":"+(System.currentTimeMillis()-before)+"ms]");
 		}
 
 		return jarFile;

@@ -1392,6 +1392,16 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				}
 			}
 
+			void test_ex_end() {
+				if (ex_handlers.size() > 0) {
+					EXHandler ex = ex_handlers.peek();
+					if (!ex.is_end_visited) {
+						mv.visitLabel(ex.end);
+						ex.is_end_visited = true;
+					}
+				}
+			}
+
 			/*
 			 * (non-Javadoc)
 			 * 
@@ -1429,6 +1439,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					test_ex_start();
 					EXHandler ex = ex_handlers.peek();
 					mv.visitLabel(ex.end);
+					ex.is_end_visited = true;
 					return;
 
 				case try_case: {
@@ -1436,6 +1447,9 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					test_ex_start();
 
 					EXHandler h = ex_handlers.pop();
+
+					if (!h.is_end_visited)
+						mv.visitLabel(h.end);
 
 					mv.visitLabel(h.target);
 
@@ -2322,7 +2336,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 					} else {
 
-						System.err.println("DIRECT "+bif);
+						// System.err.println("DIRECT "+bif);
 						
 						int off = 0;
 						if (bif.getArgumentTypes().length > 0
@@ -2620,6 +2634,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 }
 
 class EXHandler {
+	public boolean is_end_visited;
 	public boolean is_start_visited;
 	Arg reg;
 	Label begin, end, target;

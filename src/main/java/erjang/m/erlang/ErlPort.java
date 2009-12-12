@@ -69,7 +69,7 @@ public class ErlPort {
 		ByteBuffer[] out = new ByteBuffer[ovec.size()];
 		ovec.toArray(out);
 
-		System.err.println("packing "+data+"::"+data.getClass().getName()+" -> "+ovec);
+		// System.err.println("packing "+data+"::"+data.getClass().getName()+" -> "+ovec);
 		
 		p.command(out);
 		
@@ -162,7 +162,7 @@ public class ErlPort {
 			
 		if (task != null) {
 			// link this proc and the driver task
-			task.link_to(proc);
+			//task.link_to(proc);
 			ERT.run(task);
 			
 			return task.self();
@@ -187,6 +187,9 @@ public class ErlPort {
 		if (!p.isOpen()) {
 			throw ERT.badarg(port);
 		}
+		
+		
+		proc.unlink(p);
 		
 		p.send(new ETuple2(proc.self(), EPort.am_close));
 		

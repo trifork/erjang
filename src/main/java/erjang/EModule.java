@@ -268,8 +268,6 @@ public abstract class EModule {
 		Class<? extends EModule> module = getClass();
 		Field[] fields = module.getDeclaredFields();
 
-		System.out.println("loading " + module_name());
-
 		for (Field field : fields) {
 			if (!Modifier.isStatic(field.getModifiers()))
 				continue;

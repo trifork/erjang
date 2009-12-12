@@ -31,6 +31,14 @@ import erjang.driver.EDriverTask;
  */
 public class EInternalPort extends EPort implements ELocalHandle {
 
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "<port:" + task.id + ">";
+	}
+	
 	private final EDriverTask task;
 
 	public EInternalPort(EDriverTask task) {

@@ -19,6 +19,8 @@
 package erjang.m.erlang;
 
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import kilim.Pausable;
 import kilim.Task;
@@ -47,6 +49,7 @@ import erjang.ETuple3;
 import erjang.ErlFun;
 import erjang.ErlangError;
 import erjang.ErlangException;
+import erjang.ErlangUndefined;
 import erjang.FunID;
 import erjang.Module;
 import erjang.NotImplemented;
@@ -55,6 +58,8 @@ import erjang.BIF.Type;
 /** bifs for the module erlang */
 @Module("erlang")
 public class ErlBif {
+
+    private static Logger log = Logger.getLogger("erlang");
 
 	@BIF
 	static EObject apply(EProc proc, EObject fun, EObject args) throws Pausable {
@@ -99,7 +104,19 @@ public class ErlBif {
 	
 	@BIF
 	static EObject apply(EProc proc, EObject one, EObject two, EObject three) throws Pausable {
-		throw new NotImplemented();		
+		EAtom mod = one.testAtom();
+		EAtom fun = two.testAtom();
+		ESeq  args = three.testSeq();
+		
+		if (mod==null||fun==null||args==null) throw ERT.badarg(one, two, three);
+		
+		EFun f = EModule.resolve(new FunID(mod, fun, args.length()));
+		
+		if (f == null) {
+			throw new ErlangUndefined(mod, fun, args.length());
+		}
+		
+		return f.apply(proc, args);
 	}
 	
 	@BIF
@@ -910,28 +927,32 @@ public class ErlBif {
 
 	@BIF
 	@ErlFun(export = true)
-	public static ETuple2 load_module(EObject mod, EObject bin) {
+	public static ETuple2 load_module(EProc proc, EObject mod, EObject bin) throws Pausable {
 		EAtom name = mod.testAtom();
 		EBinary binary = bin.testBinary();
-		return load_module(name, binary);
+		return load_module(proc, name, binary);
 	}
 
 	@BIF
 	@ErlFun(export = true)
-	public static ETuple2 load_module(EAtom mod, EBinary bin) {
+	public static ETuple2 load_module(EProc proc, EAtom mod, EBinary bin) throws Pausable {
 		if (mod == null || bin == null)
 			throw ERT.badarg();
 
 		try {
 			ERT.load_module(mod, bin);
 		} catch (ErlangException e) {
+			log.log(Level.FINE, "cannot load module", e);
 			return new ETuple2(ERT.am_error, e.reason());
 		} catch (ThreadDeath e) {
 			throw e;
 		} catch (Throwable e) {
-			
 			ErlangError ee = new ErlangError(ERT.am_io, e, mod, bin);
-			return new ETuple2(ERT.am_error, ee.reason());
+			ETuple2 result = new ETuple2(ERT.am_error, ee.reason());
+			
+			log.log(Level.SEVERE, "cannot load module", e);
+			
+			return result;
 		} 
 		
 		return new ETuple2(ERT.AM_MODULE, mod);

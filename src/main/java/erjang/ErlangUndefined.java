@@ -42,6 +42,15 @@ public class ErlangUndefined extends ErlangError {
 		System.err.println("UNDEFINED "+module+":"+function+"/"+arity);
 	}
 
+	/**
+	 * @param mod
+	 * @param fun
+	 * @param length
+	 */
+	public ErlangUndefined(EAtom mod, EAtom fun, int length) {
+		this(mod, fun, new ESmall(length));
+	}
+
 	/* (non-Javadoc)
 	 * @see erjang.ErlangError#getTrace()
 	 */

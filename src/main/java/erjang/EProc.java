@@ -48,6 +48,12 @@ public final class EProc extends ETask<EInternalPID> {
 
 	private EPID group_leader;
 
+	private EAtom spawn_mod;
+
+	private EAtom spawn_fun;
+
+	private int spawn_args;
+
 	/**
 	 * @param m
 	 * @param f
@@ -58,11 +64,11 @@ public final class EProc extends ETask<EInternalPID> {
 
 		// if no group leader is given, we're our own group leader
 		this.group_leader = group_leader == null ? self : group_leader;
-		//this.run_mod = m;
-		//this.run_fun = f;
-		//this.run_args = a;
+		this.spawn_mod = m;
+		this.spawn_fun = f;
+		this.spawn_args = a.length();
 		
-		int arity = a.length();
+		int arity = spawn_args;
 		EFun target = EModule.resolve(new FunID(m,f,arity));
 		
 		if (target == null) {
@@ -131,7 +137,7 @@ public final class EProc extends ETask<EInternalPID> {
 			System.err.println("kill message to self: "+msg);
 			mbox_send(msg);
 		} else {
-			System.err.println("kill signal: " +reason);
+			System.err.println("kill signal: " +reason + " from "+from);
 			// try to kill this thread
 			this.exit_reason = reason;
 			this.pstate = State.EXIT_SIG;
@@ -329,7 +335,7 @@ public final class EProc extends ETask<EInternalPID> {
 	 */
 	@Override
 	public String toString() {
-		return self.toString() + super.toString(); 
+		return self.toString() + super.toString() + "::" + spawn_mod + ":" + spawn_fun + "/" + spawn_args; 
 	}
 }
 
