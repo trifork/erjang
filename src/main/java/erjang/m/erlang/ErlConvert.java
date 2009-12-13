@@ -95,11 +95,18 @@ public class ErlConvert {
 		
 		BARR barr = new BARR();
 
+		iol = collectList(list, iol, barr);
+		
+		return barr.asBinary();
+	}
+
+	private static ECons collectList(EObject list, ECons iol, BARR barr) {
 		while (true) {
 			EObject hd = iol.head();
 
 			ESmall sm;
 			EBinary bi;
+			ECons co;
 			if ((sm = hd.testSmall()) != null) {
 				if (sm.value < 0 || sm.value > 255)
 					throw ERT.badarg(list);
@@ -108,6 +115,9 @@ public class ErlConvert {
 			} else if ((bi = hd.testBinary()) != null) {
 				bi.writeTo(barr);
 
+			} else if ((co = hd.testNonEmptyList()) != null) {
+				collectList(list, co, barr);
+				
 			} else {
 				throw ERT.badarg(list);
 			}
@@ -116,6 +126,10 @@ public class ErlConvert {
 
 			if (next.isNil()) {
 				break;
+				
+			}   else if ((sm = next.testSmall()) != null && sm.value==(sm.value&0xff)) {
+				barr.write(sm.value);
+				
 			} else if ((iol = next.testCons()) != null) {
 				continue;
 			} else if ((bi = next.testBinary()) != null) {
@@ -125,8 +139,7 @@ public class ErlConvert {
 				throw ERT.badarg(list);
 			}
 		}
-		
-		return barr.asBinary();
+		return iol;
 	}
 
 }

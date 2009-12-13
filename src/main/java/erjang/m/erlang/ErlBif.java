@@ -34,6 +34,7 @@ import erjang.EHandle;
 import erjang.EInteger;
 import erjang.EList;
 import erjang.EModule;
+import erjang.EModuleManager;
 import erjang.ENumber;
 import erjang.EObject;
 import erjang.EPID;
@@ -49,6 +50,7 @@ import erjang.ETuple3;
 import erjang.ErlFun;
 import erjang.ErlangError;
 import erjang.ErlangException;
+import erjang.ErlangThrow;
 import erjang.ErlangUndefined;
 import erjang.FunID;
 import erjang.Module;
@@ -85,7 +87,7 @@ public class ErlBif {
 		EAtom fn = t2.elem2.testAtom();
 		
 		FunID funspec;
-		f = EModule.resolve(funspec=new FunID(mn,fn,a.length()));
+		f = EModuleManager.resolve(funspec=new FunID(mn,fn,a.length()));
 		
 		if (f == null) {
 			throw ERT.undef(funspec, a.toArray());
@@ -110,7 +112,7 @@ public class ErlBif {
 		
 		if (mod==null||fun==null||args==null) throw ERT.badarg(one, two, three);
 		
-		EFun f = EModule.resolve(new FunID(mod, fun, args.length()));
+		EFun f = EModuleManager.resolve(new FunID(mod, fun, args.length()));
 		
 		if (f == null) {
 			throw new ErlangUndefined(mod, fun, args.length());
@@ -121,7 +123,10 @@ public class ErlBif {
 	
 	@BIF
 	@ErlFun(export = true)
-	static public EPID self(EProc proc) {
+	static public EPID self(EProc proc) throws Pausable {
+		if (proc == null) {
+			System.out.println("Houston, we have a problem.");
+		}
 		return proc.self();
 	}
 
@@ -190,20 +195,41 @@ public class ErlBif {
 
 	@BIF
 	@ErlFun(export = true)
-	static public EObject error(EObject err) {
-		throw new NotImplemented();
+	static public EObject error(EObject reason) {
+		throw new ErlangError(reason);
+	}
+
+	@BIF(name="throw")
+	@ErlFun(export = true)
+	static public EObject throw_ex(EObject reason) {
+		throw new ErlangThrow(reason);
 	}
 
 	@BIF
 	@ErlFun(export = true)
-	static public EObject get_module_info(EObject mod) {
-		throw new NotImplemented();
+	static public ESeq get_module_info(EObject mod) {
+		// TODO: get all the attributes from the beam code
+		ESeq res = ERT.NIL;
+		res = res.cons(new ETuple2(ERT.am_attributes, 
+								   get_module_info(mod, ERT.am_attributes)));
+		return res;
 	}
 
 	@BIF
 	@ErlFun(export = true)
-	static public EObject get_module_info(EObject mod, EObject fun) {
-		throw new NotImplemented();
+	static public EObject get_module_info(EObject mod, EObject key) {
+		EAtom m = mod.testAtom();
+		EAtom k = key.testAtom();
+		
+		if (m == null || k == null) {
+			throw ERT.badarg(mod, key);
+		}
+
+		if (k == ERT.am_attributes) {
+			return EModuleManager.get_attributes(m);
+		}
+		
+		throw ERT.badarg(mod, key);
 	}
 
 	@BIF
@@ -876,7 +902,7 @@ public class ErlBif {
 	}
 
 	@BIF
-	public static EObject process_flag(EProc proc, EObject a1, EObject a2) {
+	public static EObject process_flag(EProc proc, EObject a1, EObject a2) throws Pausable {
 		return proc.process_flag(a1.testAtom(), a2);
 	}
 
@@ -918,6 +944,16 @@ public class ErlBif {
 	@BIF
 	public static EAtom is_binary(EObject obj) {
 		return ERT.box(obj.testBinary() != null);
+	}
+
+	@BIF
+	public static EAtom is_boolean(EObject obj) {
+		return ERT.box(obj==ERT.TRUE || obj==ERT.FALSE);
+	}
+
+	@BIF(type=Type.GUARD, name="is_boolean")
+	public static EAtom is_boolean$g(EObject obj) {
+		return ERT.guard(obj==ERT.TRUE || obj==ERT.FALSE);
 	}
 
 	@BIF(name = "is_integer", type = Type.GUARD)
@@ -1154,6 +1190,41 @@ public class ErlBif {
 		}
 		
 		return res;
+	}
+
+	/**
+	 * @see http://www.erlang.org/doc/man/lists.html#keysearch-3
+	 * @param hd
+	 * @param tl
+	 * @return
+	 */
+	@BIF(name="lists:keysearch/3")
+	public static EObject keysearch(EObject key, EObject n, EObject list) {
+		EAtom k = key.testAtom();
+		ESmall idx = n.testSmall();
+		ESeq src = list.testSeq();
+		
+		if (k==null||idx==null||src==null||idx.value<1)
+			throw ERT.badarg(key, n, list);
+		
+		int index = idx.value;
+
+		while (!src.isNil()) {
+			EObject elm = src.head();
+			
+			ETuple tup;
+			if ((tup = elm.testTuple()) != null) {
+				if (tup.arity() >= index) {
+					if (tup.elm(index) == k) {
+						return new ETuple2(ERT.am_value, tup);
+					}
+				}
+			}
+			
+			src = src.tail();
+		}
+		
+		return ERT.FALSE;
 	}
 
 	@BIF(name="erlang:bump_reductions/1")

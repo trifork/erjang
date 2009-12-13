@@ -300,6 +300,14 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 							.getDescriptor());
 		}
 
+		cv.visitField(ACC_STATIC|ACC_PRIVATE, 
+				"attributes", ESEQ_TYPE.getDescriptor(), null, null);
+		
+		atts.emit_const(mv);
+		mv.visitFieldInsn(Opcodes.PUTSTATIC, self_type.getInternalName(),
+				"attributes", ESEQ_TYPE.getDescriptor());
+		
+		
 		mv.visitInsn(RETURN);
 		mv.visitMaxs(200, 10);
 		mv.visitEnd();
@@ -309,6 +317,16 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				"()Ljava/lang/String;", null, null);
 		mv.visitCode();
 		mv.visitLdcInsn(this.module_name.getName());
+		mv.visitInsn(ARETURN);
+		mv.visitMaxs(1, 1);
+		mv.visitEnd();
+
+		// make the method module_name
+		mv = cv.visitMethod(ACC_PROTECTED, "attributes",
+				"()" + ESEQ_TYPE.getDescriptor(), null, null);
+		mv.visitCode();
+		mv.visitFieldInsn(Opcodes.GETSTATIC, self_type.getInternalName(), "attributes", 
+				ESEQ_TYPE.getDescriptor());
 		mv.visitInsn(ARETURN);
 		mv.visitMaxs(1, 1);
 		mv.visitEnd();

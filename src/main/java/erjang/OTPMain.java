@@ -40,7 +40,7 @@ public class OTPMain {
 			ERT.load_module(EAtom.intern(MODULES[i]));
 		}
 
-		EErrorLogger.start();
+		// EErrorLogger.start();
 		
 		// args=new String[] {"-boot", "start", "-root", "/sw/lib/erlang"};
 		

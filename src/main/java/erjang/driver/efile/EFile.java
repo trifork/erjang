@@ -26,6 +26,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.SelectableChannel;
 import java.nio.charset.Charset;
+import java.util.Calendar;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.locks.Lock;
@@ -274,6 +275,7 @@ public class EFile extends EDriverInstance {
 	public static final int FA_NONE = 0;
 	public static final int FA_WRITE = 1;
 	public static final int FA_READ = 2;
+	public static final int FA_EXECUTE = 4;
 
 	/* commands sent via efile_output(v) */
 
@@ -710,6 +712,104 @@ public class EFile extends EDriverInstance {
 			break;
 		}
 
+		
+		case FILE_FSTAT: 
+		case FILE_LSTAT: {
+			
+			final String file_name = IO.strcpy(data);
+			final File file = new File(file_name);
+			
+			d = new FileAsync() {
+				
+				long file_size;
+				int  file_type;
+				
+				long file_access_time;
+				long file_modify_time;
+				long file_create_time;
+				
+				int file_access;
+				int file_mode;
+				
+				/** emulate fstat as close as possible */
+				@Override
+				public void async() {
+					if (!file.exists()) {
+						result_ok = false;
+						posix_errno = Posix.ENOENT;
+						return;
+					}
+					
+					file_size = file.length();
+					if (file.isDirectory()) {
+						file_type = FT_DIRECTORY;
+					} else if (file.isFile()) {
+						file_type = FT_REGULAR;
+					} else {
+						file_type = FT_OTHER;
+					}
+
+					// this is as good as it gets...
+					file_access_time = file_create_time = 
+						file_modify_time = file.lastModified();
+
+					file_mode   |= file.canExecute() ? 0000100 : 0;
+					file_mode   |= file.canWrite() ? 0000200 : 0;
+					file_mode   |= file.canRead() ? 0000400 : 0;
+					
+					file_access |= file.canRead() ? FA_READ : 0;
+					file_access |= file.canWrite() ? FA_WRITE : 0;
+					
+					result_ok = true;
+				}
+				
+				@Override
+				public void ready() {
+					if (!this.result_ok) {
+						reply_posix_error(posix_errno);
+						return;
+					}
+					
+					final int RESULT_SIZE = (1 + (29 * 4));
+					
+					ByteBuffer res = ByteBuffer.allocate(RESULT_SIZE);
+					
+					res.put(FILE_RESP_INFO);
+					res.putLong(file_size);
+					res.putInt(file_type);
+					
+					put_time(res, file_access_time);
+					put_time(res, file_modify_time);
+					put_time(res, file_create_time);
+					
+					res.putInt(file_mode);
+					res.putInt(1 /*file_links*/);
+					res.putInt(0 /*file_major_device*/);
+					res.putInt(0 /*file_minor_device*/);
+					res.putInt(file_name.hashCode() /*file_inode*/);
+					res.putInt(0 /*file_uid*/);
+					res.putInt(0 /*file_gid*/);
+					res.putInt(file_access);
+					
+					driver_output2(res, null);
+				}
+
+				private void put_time(ByteBuffer res, long time) {
+					Calendar c = Calendar.getInstance();
+					c.setTimeInMillis(time);
+					
+					res.putInt(c.get(Calendar.YEAR));
+					res.putInt(c.get(Calendar.MONTH) - Calendar.JANUARY + 1);
+					res.putInt(c.get(Calendar.DAY_OF_MONTH));
+					res.putInt(c.get(Calendar.HOUR_OF_DAY));
+					res.putInt(c.get(Calendar.MINUTE));
+					res.putInt(c.get(Calendar.SECOND));
+				}
+			};
+			
+			break;
+		}
+		
 		default:
 			throw new NotImplemented("file_output cmd:" + ((int) cmd) + " "
 					+ EBinary.make(data));

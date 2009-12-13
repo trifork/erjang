@@ -31,7 +31,7 @@ public class EErrorLogger {
 	public static void start()
 	{
 		try {
-			EModule.load_module(EAtom.intern("erjang"), new File("target/classes").toURI().toURL());
+			EModuleManager.load_module(EAtom.intern("erjang"), new File("target/classes").toURI().toURL());
 		} catch (MalformedURLException e) {
 			throw new Error(e);
 		}

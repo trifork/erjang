@@ -56,7 +56,7 @@ class NIOChannelInfo {
 		 * @return
 		 */
 		public Interest combine(Interest old) {
-			// TODO Auto-generated method stub
+			// TODO implement
 			return null;
 		}
 

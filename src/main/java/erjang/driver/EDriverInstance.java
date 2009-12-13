@@ -77,18 +77,21 @@ public abstract class EDriverInstance {
 
 	protected void driver_output2(ByteBuffer header, ByteBuffer buf) {
 		header.flip();
-		
+		if (buf != null)
+			buf.flip();
+
 		EObject tail = null;
-		if (task.send_binary_data) {
+		if (buf == null || !buf.hasRemaining()) {
+			tail = ERT.NIL;
+		} else if (task.send_binary_data) {
 			tail = EBinary.make(buf);
 		} else {
 			tail = EString.make(buf);
 		}
-		
+
 		EBinList out = new EBinList(header, tail);
 		task.output_from_driver(out);
 	}
-	
 
 	/**
 	 * @param fileRespOkHeader
@@ -99,7 +102,7 @@ public abstract class EDriverInstance {
 		if (header.length > 0) {
 			out = new EBinList(header, out);
 		}
-		
+
 		task.output_from_driver(out);
 	}
 
@@ -138,7 +141,7 @@ public abstract class EDriverInstance {
 
 		if (queue == null)
 			return;
-		
+
 		int p = 0;
 		for (p = 0; p < queue.length && !queue[p].hasRemaining(); p++) {
 			/* skip */
@@ -148,9 +151,9 @@ public abstract class EDriverInstance {
 			return;
 
 		for (int i = 0; i < p; i++) {
-			queue[i] = queue[p+i];
+			queue[i] = queue[p + i];
 		}
-		
+
 		for (int i = p; i < queue.length; i++) {
 			queue[i] = null;
 		}

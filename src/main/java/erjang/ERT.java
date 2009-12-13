@@ -279,6 +279,7 @@ public class ERT {
 	public static final EAtom am_infinity = EAtom.intern("infinity");
 	public static final EAtom am_noproc = EAtom.intern("noproc");
 	public static final EAtom am_error = EAtom.intern("error");
+	public static final EAtom am_value = EAtom.intern("value");
 
 	public static EBitStringBuilder bs_init(int size, int flags) {
 		return new EBitStringBuilder(size, flags);
@@ -328,8 +329,12 @@ public class ERT {
 			p.send(msg);
 			return msg;
 		}
-
-		throw badarg(pid, msg);
+		
+		if (pid.testAtom() == null) {
+			throw badarg(pid, msg);
+		}
+		
+		return msg;
 	}
 
 	/**
@@ -357,8 +362,33 @@ public class ERT {
 		if (m == null || f == null)
 			throw ERT.badarg(mod, fun, arg1);
 
-		EFun efun = EModule.resolve(new FunID(m, f, 1));
+		EFun efun = EModuleManager.resolve(new FunID(m, f, 1));
 		return efun.invoke(proc, new EObject[] { arg1 });
+	}
+
+
+	public static EObject apply(EProc proc, EObject arg2, EObject arg1, EObject mod,
+			EObject fun) throws Pausable {
+		EAtom m = mod.testAtom();
+		EAtom f = fun.testAtom();
+
+		if (m == null || f == null)
+			throw ERT.badarg(mod, fun, arg1, arg2);
+
+		EFun efun = EModuleManager.resolve(new FunID(m, f, 1));
+		return efun.invoke(proc, new EObject[] { arg1, arg2 });
+	}
+
+	public static EObject apply(EProc proc, EObject arg3, EObject arg2, EObject arg1, EObject mod,
+			EObject fun) throws Pausable {
+		EAtom m = mod.testAtom();
+		EAtom f = fun.testAtom();
+
+		if (m == null || f == null)
+			throw ERT.badarg(mod, fun, arg1, arg2);
+
+		EFun efun = EModuleManager.resolve(new FunID(m, f, 1));
+		return efun.invoke(proc, new EObject[] { arg1, arg2, arg3 });
 	}
 
 	public static EObject apply(EProc proc, EObject mod, EObject fun)
@@ -369,7 +399,7 @@ public class ERT {
 		if (m == null || f == null)
 			throw ERT.badarg(mod, fun);
 
-		EFun efun = EModule.resolve(new FunID(m, f, 0));
+		EFun efun = EModuleManager.resolve(new FunID(m, f, 0));
 		return efun.invoke(proc, new EObject[0]);
 	}
 
@@ -382,7 +412,7 @@ public class ERT {
 			throw ERT.badarg(mod, fun, arg1);
 
 		proc.arg0 = arg1;
-		proc.tail = EModule.resolve(new FunID(m, f, 1));
+		proc.tail = EModuleManager.resolve(new FunID(m, f, 1));
 		return EProc.TAIL_MARKER;
 
 		// .invoke(proc, NIL.cons(arg1).toArray());
@@ -399,7 +429,7 @@ public class ERT {
 		proc.arg0 = arg0;
 		proc.arg1 = arg1;
 		proc.arg2 = arg2;
-		proc.tail = EModule.resolve(new FunID(m, f, 3));
+		proc.tail = EModuleManager.resolve(new FunID(m, f, 3));
 		return EProc.TAIL_MARKER;
 
 		// .invoke(proc, NIL.cons(arg1).toArray());
@@ -457,6 +487,7 @@ public class ERT {
 
 	static kilim.Scheduler scheduler = new kilim.Scheduler(4);
 	public static EAtom am_io = EAtom.intern("io");
+	public static EAtom am_attributes = EAtom.intern("attributes");
 
 	public static void run(Task task) {
 		task.setScheduler(scheduler);
@@ -552,12 +583,12 @@ public class ERT {
 
 	static void load_module(EAtom module) throws IOException {
 		File f = Compiler.find_and_compile(module.getName());
-		EModule.load_module(module, f.toURI().toURL());
+		EModuleManager.load_module(module, f.toURI().toURL());
 	}
 
 	public static void load_module(EAtom module, EBinary bin) throws IOException {
 		File f = Compiler.compile(module.getName(), bin);
-		EModule.load_module(module, f.toURI().toURL());
+		EModuleManager.load_module(module, f.toURI().toURL());
 	}
 
 	/**

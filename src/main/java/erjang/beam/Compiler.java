@@ -43,17 +43,21 @@ import erjang.beam.analysis.BeamTypeAnalysis;
 
 public class Compiler implements Opcodes {
 
-	static ErlangBeamDisLoader loader;
+	static BeamLoader xloader;
 	private ClassRepo classRepo;
 
-	static {
-		try {
-			loader = new ErlangBeamDisLoader();
-		} catch (OtpAuthException e) {
-			throw new Error(e);
-		} catch (IOException e) {
-			throw new Error(e);
+	static BeamLoader getLoader() {
+		if (xloader == null) {
+			try {
+				xloader = new ErlangBeamDisLoader();
+			} catch (OtpAuthException e) {
+				throw new Error(e);
+			} catch (IOException e) {
+				throw new Error(e);
+			}
 		}
+		
+		return xloader;
 	}
 
 	/**
@@ -82,7 +86,7 @@ public class Compiler implements Opcodes {
 		BeamTypeAnalysis analysis = new BeamTypeAnalysis(cv);
 
 		// the beam file reader, phase 1
-		BeamFileData reader = loader.load(data.getByteArray());
+		BeamFileData reader = getLoader().load(data.getByteArray());
 
 		try {
 			// go!
@@ -121,7 +125,7 @@ public class Compiler implements Opcodes {
 		BeamTypeAnalysis analysis = new BeamTypeAnalysis(cv);
 
 		// the beam file reader, phase 1
-		BeamFileData reader = loader.load(file);
+		BeamFileData reader = getLoader().load(file);
 
 		// go!
 		reader.accept(analysis);
@@ -329,8 +333,9 @@ public class Compiler implements Opcodes {
 				repo = null;
 			} finally {
 				if (repo != null) {
-					repo.close();
+					try {repo.close();
 					jarFile.delete();
+					} catch (Exception e) {}
 				}
 			}
 			

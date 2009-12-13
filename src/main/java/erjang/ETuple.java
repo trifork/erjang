@@ -400,9 +400,7 @@ public abstract class ETuple extends EObject implements Cloneable /* , Indexed *
 			fo = new FileOutputStream(fname);
 			fo.write(data);
 			fo.close();
-			// System.out.println("wrote "+fname);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}

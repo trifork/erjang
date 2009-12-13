@@ -35,6 +35,7 @@ import erjang.ECons;
 import erjang.EFun;
 import erjang.EHandle;
 import erjang.EModule;
+import erjang.EModuleManager;
 import erjang.EObject;
 import erjang.EPID;
 import erjang.EPort;
@@ -334,13 +335,13 @@ public class ErlProc {
 		
 		if (m==null||f==null||a==null) throw ERT.badarg(mod,fun,arity);
 		
-		return ERT.box( EModule.function_exported (m,f,a.value) );
+		return EModuleManager.function_exported (m,f,a.value) ? ERT.TRUE : ERT.FALSE;
 	}
 	
 	@BIF
 	static EAtom module_loaded(EObject mod) {
 		EAtom m;
 		if ((m=mod.testAtom()) == null) throw ERT.badarg(mod);
-		return EModule.module_loaded(m) ? ERT.TRUE : ERT.FALSE;
+		return EModuleManager.module_loaded(m) ? ERT.TRUE : ERT.FALSE;
 	}
 }

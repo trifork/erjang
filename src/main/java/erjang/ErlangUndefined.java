@@ -28,6 +28,15 @@ public class ErlangUndefined extends ErlangError {
 	private final EAtom function;
 	private final ESmall arity;
 
+	/* (non-Javadoc)
+	 * @see erjang.ErlangException#getMessage()
+	 */
+	@Override
+	public String getMessage() {
+		return "undefined: " +
+			module + ":" + function + "/" + arity;
+	}
+	
 	/**
 	 * @param module
 	 * @param function
@@ -39,7 +48,7 @@ public class ErlangUndefined extends ErlangError {
 		this.function = function;
 		this.arity = arity;
 		
-		System.err.println("UNDEFINED "+module+":"+function+"/"+arity);
+		this.printStackTrace();
 	}
 
 	/**

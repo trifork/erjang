@@ -42,7 +42,7 @@ public interface BlockVisitor2 extends BlockVisitor {
 	 * @param test one of is_nil, is_nonempty_list
 	 * @param failLabel
 	 * @param arg1
-	 * @param out TODO
+	 * @param out 
 	 */
 	void visitTest(BeamOpcode test, int failLabel, Arg arg1, Type out);
 

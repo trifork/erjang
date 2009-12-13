@@ -142,6 +142,18 @@ public class EBinList extends ECons {
 			return ERT.NIL;
 		return null;
 	}
+	
+	public EString testString() {
+		EString st = tail.testString();
+		if (st == null) {
+			return null;
+		}
+		
+		byte[] all = new byte[len + st.length()];
+		System.arraycopy(data, 0, all, 0, len);
+		System.arraycopy(st.data, st.off, all, len, st.length());
+		return new EString(all, 0);
+	}
 
 	/** An EBinList is an ESeq iff the tail is an ESeq */
 	@Override

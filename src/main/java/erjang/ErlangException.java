@@ -27,6 +27,7 @@ import java.util.regex.Pattern;
 
 import erjang.beam.EUtil;
 
+// TODO: set proc.execption on catch to last known
 public abstract class ErlangException extends RuntimeException {
 
 	private static final EAtom am_java_exception = EAtom

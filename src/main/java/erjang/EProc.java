@@ -38,7 +38,7 @@ public final class EProc extends ETask<EInternalPID> {
 	private static final EAtom am_dictionary = EAtom.intern("dictionary");
 	private static final EAtom am_group_leader = EAtom.intern("group_leader");
 	private static final EAtom am_links = EAtom.intern("links");
-
+	private static final EAtom am_priority = EAtom.intern("priority");
 	private static final EAtom am_registered_name = EAtom.intern("registered_name");
 
 	public EFun tail;
@@ -69,7 +69,7 @@ public final class EProc extends ETask<EInternalPID> {
 		this.spawn_args = a.length();
 		
 		int arity = spawn_args;
-		EFun target = EModule.resolve(new FunID(m,f,arity));
+		EFun target = EModuleManager.resolve(new FunID(m,f,arity));
 		
 		if (target == null) {
 			throw new ErlangUndefined(m, f, new ESmall(arity));
@@ -203,12 +203,20 @@ public final class EProc extends ETask<EInternalPID> {
 		return ERT.getLocalNode();
 	}
 
+	static final EAtom[] priorities = new EAtom[] {
+		EAtom.intern("max"),
+		EAtom.intern("high"),
+		EAtom.intern("normal"),
+		EAtom.intern("low"),
+	};
+
 	/**
 	 * @param testAtom
 	 * @param a2
 	 * @return
+	 * @throws Pausable 
 	 */
-	public EObject process_flag(EAtom flag, EObject value) {
+	public EObject process_flag(EAtom flag, EObject value) throws Pausable {
 
 		if (flag == am_trap_exit) {
 			EAtom old = this.trap_exit;
@@ -216,7 +224,18 @@ public final class EProc extends ETask<EInternalPID> {
 			return old;
 		}
 
-		throw new NotImplemented();
+		if (flag == am_priority) {
+			EAtom old = priorities[getPriority()];
+			for (int i = 0; i < priorities.length; i++) {
+				if (value == priorities[i]) {
+					setPriority(i);
+					break;
+				}
+			}
+			return old;
+		}
+		
+		throw new NotImplemented("process_flag flag="+flag+", value="+value);
 	}
 
 	@Override

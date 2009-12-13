@@ -26,6 +26,7 @@ import erjang.BIF;
 import erjang.EAtom;
 import erjang.EFun;
 import erjang.EModule;
+import erjang.EModuleManager;
 import erjang.ENative;
 import erjang.EObject;
 import erjang.EProc;
@@ -58,7 +59,7 @@ public class Native extends ENative {
 		
 		if (m==null||f==null||a==null) throw ERT.badarg(mod, fun);
 		
-		EFun efun = EModule.resolve(new FunID(m,f,a.length()));
+		EFun efun = EModuleManager.resolve(new FunID(m,f,a.length()));
 
 		EObject result = efun.apply(proc, a);
 		

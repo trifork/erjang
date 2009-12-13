@@ -45,8 +45,8 @@ public class Erj {
 		EAtom fun = EAtom.intern(f);
 		
 		// TODO: remove this hack, it prevents loading real modules for these
-		EModule.load_module(EAtom.intern("io"), new File("target/classes").toURL());
-		EModule.load_module(EAtom.intern("timer"), new File("target/classes").toURL());
+		EModuleManager.load_module(EAtom.intern("io"), new File("target/classes").toURL());
+		EModuleManager.load_module(EAtom.intern("timer"), new File("target/classes").toURL());
 		
 		ERT.load_module(EAtom.intern(m));
 		
@@ -72,7 +72,7 @@ public class Erj {
 			throw new Error("no path to: "+path);
 		}
 					
-		EModule.load_module(EAtom.intern(mod), 
+		EModuleManager.load_module(EAtom.intern(mod), 
 					path.toURI().toURL());
 	}
 }
