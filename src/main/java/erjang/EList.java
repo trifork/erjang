@@ -32,6 +32,9 @@ public final class EList extends ESeq {
 	public EList(EObject h, ESeq tail) {
 		if (tail == null) tail = ERT.NIL;
 		
+		if (h == null)
+			throw new NullPointerException();
+		
 		this.head = h;
 		this.tail = tail;
 	}

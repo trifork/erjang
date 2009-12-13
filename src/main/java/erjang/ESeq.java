@@ -109,6 +109,12 @@ public abstract class ESeq extends ECons {
 			
 			EObject head = list.head();
 			
+			if (head == null) {
+				// BAD!
+				
+				System.err.println("null head in "+list.getClass());
+			}
+			
 			ESmall intval;
 			if ((intval = head.testSmall()) == null) {
 				return null;

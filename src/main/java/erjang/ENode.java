@@ -32,4 +32,11 @@ public class ENode extends ELocalNode {
 		return false;
 	}
 
+	/**
+	 * @return
+	 */
+	public boolean isALive() {
+		return node() != am_nonode_at_nohost;
+	}
+
 }

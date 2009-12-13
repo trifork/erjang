@@ -32,8 +32,12 @@ import java.net.UnknownHostException;
  */
 public abstract class EAbstractNode {
 
-    static String localHost = null;
-    EAtom node;
+    /**
+	 * 
+	 */
+	public static final EAtom am_nonode_at_nohost = EAtom.intern("nonode@nohost");
+	static String localHost = null;
+    EAtom node = am_nonode_at_nohost;
     String host;
     String alive;
     EAtom cookie;
@@ -117,7 +121,7 @@ public abstract class EAbstractNode {
 	 * 
 	 */
 	public EAbstractNode() {
-		this(EAtom.intern("nonode@nohost"));
+		this(am_nonode_at_nohost);
 	}
 
 	/**

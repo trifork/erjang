@@ -81,14 +81,14 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 	private final EDriverInstance instance;
 
 	protected EDriverTask(EProc owner, EDriverInstance driver) {
-		this.owner = owner.self();
+		this.owner = owner.self_handle();
 		this.instance = driver;
 		this.port = new EInternalPort(this);
 		driver.task = this;
 	}
 
 	@Override
-	public EInternalPort self() {
+	public EInternalPort self_handle() {
 		return port;
 	}
 
@@ -352,7 +352,7 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 						EPID old_owner = this.owner;
 						this.owner = new_owner;
 
-						old_owner.send(ETuple.make(this.self(),
+						old_owner.send(ETuple.make(this.self_handle(),
 								EPort.am_connected));
 
 						continue next_message;
@@ -501,7 +501,7 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 	protected void send_exit_to_all_linked(EObject result) throws Pausable {
 		super.send_exit_to_all_linked(result);
 		if (result != am_normal) {
-			owner.send(ETuple.make(ERT.EXIT, self(), result));
+			owner.send(ETuple.make(ERT.EXIT, self_handle(), result));
 		}
 	}
 	

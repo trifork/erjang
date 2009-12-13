@@ -41,6 +41,7 @@ import erjang.EPID;
 import erjang.EPort;
 import erjang.EProc;
 import erjang.ERT;
+import erjang.ERef;
 import erjang.ESeq;
 import erjang.ESmall;
 import erjang.EString;
@@ -127,7 +128,7 @@ public class ErlBif {
 		if (proc == null) {
 			System.out.println("Houston, we have a problem.");
 		}
-		return proc.self();
+		return proc.self_handle();
 	}
 
 	@BIF
@@ -197,6 +198,14 @@ public class ErlBif {
 	@ErlFun(export = true)
 	static public EObject error(EObject reason) {
 		throw new ErlangError(reason);
+	}
+
+	@BIF
+	@ErlFun(export = true)
+	static public EObject error(EObject reason, EObject args) {
+		ESeq aseq = args.testSeq();
+		if (aseq == null) throw ERT.badarg(reason, args);
+		throw new ErlangError(reason, aseq.toArray());
 	}
 
 	@BIF(name="throw")
@@ -401,13 +410,27 @@ public class ErlBif {
 	@BIF
 	@ErlFun(export = true)
 	static public EAtom node() {
-		return null;
+		EAtom val = ERT.getLocalNode().node();
+		return val;
 	}
 
 	@BIF
 	@ErlFun(export = true)
 	static public EAtom node(EObject name) {
-		return null;
+		
+		if (!ERT.getLocalNode().isALive()) {
+			
+		}
+		
+		ERef ref;
+		if ((ref=name.testReference()) != null) 
+			return ref.node();
+		
+		EHandle handle;
+		if ((handle=name.testHandle()) != null) 
+			return handle.node();
+		
+		throw ERT.badarg(name);
 	}
 
 	@BIF(type = Type.GUARD, name = "node")
@@ -456,6 +479,13 @@ public class ErlBif {
 	@BIF(type = Type.ARITHBIF)
 	static public double fmul(double v1, double v2) {
 		return v1 * v2;
+	}
+
+	@BIF(type = Type.ARITHBIF)
+	static public double fmul(double v1, EObject v2) {
+		EDouble d2;
+		if ((d2=v2.testFloat()) == null) throw ERT.badarg(new EDouble(v1), v2);
+		return v1 * d2.value;
 	}
 
 	// arithmetic
@@ -907,8 +937,8 @@ public class ErlBif {
 	}
 
 	@BIF
-	public static EList nodes() {
-		throw new NotImplemented();
+	public static ESeq nodes() {
+		return ERT.getRemoteNodes();
 	}
 
 	@BIF(name = "is_atom", type = Type.GUARD)
@@ -1176,7 +1206,7 @@ public class ErlBif {
 			return null;
 		return i1.bsr(i2);
 	}
-	
+
 	@BIF(name="lists:reverse/2")
 	public static ESeq reverse(EObject hd, EObject tl) {
 		ESeq res = tl.testSeq();
@@ -1190,6 +1220,20 @@ public class ErlBif {
 		}
 		
 		return res;
+	}
+
+	@BIF(name="lists:member/2")
+	public static EAtom member(EObject e, EObject l) {
+		ESeq list = l.testSeq();
+		
+		if (l == null) throw ERT.badarg(e, l);
+
+		while (!list.isNil()) {
+			if (e.equals(list.head())) return ERT.TRUE;
+			list = list.tail();
+		}
+
+		return ERT.FALSE;
 	}
 
 	/**

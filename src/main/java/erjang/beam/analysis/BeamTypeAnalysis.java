@@ -300,7 +300,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 		}
 
 		private void dump() {
-			if (ERT.DEBUG) {
+			if (ERT.DEBUG2) {
 			System.err.println("DUMPING " + name + "/" + arity);
 
 			for (Map.Entry<Integer, LabeledBlock> ent : lbs.entrySet()) {
@@ -1067,7 +1067,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 			}
 
 			private void dump() {
-				if (ERT.DEBUG == false) return;
+				if (ERT.DEBUG2 == true) return;
 				next_insn: for (int i = 0; i < insns.size(); i++) {
 					System.err.println(name + "(" + block_label + "):" + i
 							+ " :: " + (map == null ? "?" : map[i]));
@@ -1213,7 +1213,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					}
 
 					case init: {
-						current = setType(current, insn.elm(2), null);
+						current = setType(current, insn.elm(2), ENIL_TYPE);
 						continue next_insn;
 					}
 

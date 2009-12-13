@@ -32,14 +32,19 @@ import kilim.Pausable;
 public final class EProc extends ETask<EInternalPID> {
 	public static final EObject TAIL_MARKER = new ETailMarker();
 
-	private static final EAtom am_trap_exit = EAtom.intern("trap_exit");
-	private static final EAtom am_messages = EAtom.intern("messages");
-	private static final EAtom am_message_queue_len = EAtom.intern("message_queue_len");
-	private static final EAtom am_dictionary = EAtom.intern("dictionary");
-	private static final EAtom am_group_leader = EAtom.intern("group_leader");
-	private static final EAtom am_links = EAtom.intern("links");
-	private static final EAtom am_priority = EAtom.intern("priority");
-	private static final EAtom am_registered_name = EAtom.intern("registered_name");
+	public static final EAtom am_trap_exit = EAtom.intern("trap_exit");
+	public static final EAtom am_messages = EAtom.intern("messages");
+	public static final EAtom am_message_queue_len = EAtom.intern("message_queue_len");
+	public static final EAtom am_dictionary = EAtom.intern("dictionary");
+	public static final EAtom am_group_leader = EAtom.intern("group_leader");
+	public static final EAtom am_links = EAtom.intern("links");
+	public static final EAtom am_priority = EAtom.intern("priority");
+	public static final EAtom am_registered_name = EAtom.intern("registered_name");
+
+	public static final EAtom am_max = EAtom.intern("max");
+	public static final EAtom am_normal = EAtom.intern("normal");
+	public static final EAtom am_low = EAtom.intern("low");
+	public static final EAtom am_high = EAtom.intern("high");
 
 	public EFun tail;
 	public EObject arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8;
@@ -103,7 +108,7 @@ public final class EProc extends ETask<EInternalPID> {
 	/**
 	 * @return
 	 */
-	public EInternalPID self() {
+	public EInternalPID self_handle() {
 		return self;
 	}
 
@@ -229,10 +234,10 @@ public final class EProc extends ETask<EInternalPID> {
 			for (int i = 0; i < priorities.length; i++) {
 				if (value == priorities[i]) {
 					setPriority(i);
-					break;
+					return old;
 				}
 			}
-			return old;
+			throw ERT.badarg(flag, value);
 		}
 		
 		throw new NotImplemented("process_flag flag="+flag+", value="+value);
@@ -256,18 +261,18 @@ public final class EProc extends ETask<EInternalPID> {
 				result = am_normal;
 
 			} catch (ErlangException e) {
-				System.err.print("exiting "+self()+" with: ");
+				System.err.print("exiting "+self_handle()+" with: ");
 				e.printStackTrace(System.err);
 				result = e.reason();
 
 			} catch (ErlangExitSignal e) {
-				System.err.print("exiting "+self()+" with: ");
+				System.err.print("exiting "+self_handle()+" with: ");
 				e.printStackTrace(System.err);
 				result = e.reason();
 
 			} catch (Throwable e) {
 
-				System.err.print("exiting "+self()+" with: ");
+				System.err.print("exiting "+self_handle()+" with: ");
 				e.printStackTrace();
 
 				ESeq erl_trace = ErlangError.decodeTrace(e.getStackTrace());
@@ -312,7 +317,7 @@ public final class EProc extends ETask<EInternalPID> {
 		
 		res = res.cons(new ETuple2(am_group_leader, group_leader));
 
-		res = res.cons(new ETuple2(am_registered_name, self().name));
+		res = res.cons(new ETuple2(am_registered_name, self_handle().name));
 
 		ESeq links = links();
 		res = res.cons(new ETuple2(am_links, group_leader));
@@ -340,9 +345,9 @@ public final class EProc extends ETask<EInternalPID> {
 	public EObject process_info(EObject spec) {
 		
 		if (spec == am_registered_name) {
-			return self().name == null 
+			return self_handle().name == null 
 				? ERT.NIL 
-				: new ETuple2(am_registered_name, self().name);
+				: new ETuple2(am_registered_name, self_handle().name);
 		}
 		
 		System.err.println(spec);
@@ -356,6 +361,7 @@ public final class EProc extends ETask<EInternalPID> {
 	public String toString() {
 		return self.toString() + super.toString() + "::" + spawn_mod + ":" + spawn_fun + "/" + spawn_args; 
 	}
+
 }
 
 class ETailMarker extends EObject {

@@ -302,7 +302,7 @@ public abstract class ErlangException extends RuntimeException {
 	public ETuple3 getTryValue() {
 		ETuple3 result = new ETuple3();
 		result.elem1 = getExClass();
-		result.elem2 = reason();
+		result.elem2 = reason;
 		result.elem3 = getTrace();
 		return result;
 	}

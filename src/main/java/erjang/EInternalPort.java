@@ -42,6 +42,7 @@ public class EInternalPort extends EPort implements ELocalHandle {
 	private final EDriverTask task;
 
 	public EInternalPort(EDriverTask task) {
+		super(ERT.getLocalNode());
 		this.task = task;
 	}
 	
@@ -68,6 +69,13 @@ public class EInternalPort extends EPort implements ELocalHandle {
 	public void link_oneway(EHandle other) throws Pausable {
 		task.link_oneway(other);
 	}
+	
+	public ERef add_monitor(EPID target, EObject object) {
+		// todo: check if task is alive!
+		return task.add_monitor(target, object);
+	}
+
+
 
 	/* (non-Javadoc)
 	 * @see erjang.EHandle#self()

@@ -18,8 +18,11 @@
 
 package erjang;
 
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 import kilim.Mailbox;
 import kilim.Pausable;
@@ -29,16 +32,19 @@ import kilim.Pausable;
  */
 public abstract class ETask<H extends EHandle> extends kilim.Task {
 
-	protected static final EObject am_normal = EAtom.intern("normal");
-	protected static final EObject am_java_exception = EAtom
+	protected static final EAtom am_normal = EAtom.intern("normal");
+	protected static final EAtom am_java_exception = EAtom
 			.intern("java_exception");
+	private static final EAtom am_DOWN = EAtom.intern("DOWN");
+	private static final EAtom am_process = EAtom.intern("process");
 
 	/**
 	 * @return
 	 */
-	public abstract H self();
+	public abstract H self_handle();
 
-	protected Set<EHandle> links = new TreeSet<EHandle>();
+	protected Set<EHandle> links = new ConcurrentSkipListSet<EHandle>();
+	protected Map<ERef,ETuple2> monitors = new ConcurrentHashMap<ERef, ETuple2>();
 
 	public void unlink(EHandle handle) {
 		links.remove(handle);
@@ -49,13 +55,13 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 	 * @throws Pausable 
 	 */
 	public void link_to(ETask<?> task) throws Pausable {
-		link_oneway(task.self());
-		task.self().link_oneway((EHandle) self());
+		link_oneway(task.self_handle());
+		task.self_handle().link_oneway((EHandle) self_handle());
 	}
 
 	public void link_to(EHandle handle) throws Pausable {
 		link_oneway(handle);
-		handle.link_oneway((EHandle) self());
+		handle.link_oneway((EHandle) self_handle());
 	}
 
 	public void link_oneway(EHandle h) throws Pausable {
@@ -71,6 +77,7 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 	/**
 	 * @param h
 	 * @throws Pausable 
+	 * @throws Pausable 
 	 */
 	protected void link_failure(EHandle h) throws Pausable {
 		throw new ErlangError(ERT.am_noproc);
@@ -78,10 +85,34 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 
 	protected void send_exit_to_all_linked(EObject result) throws Pausable {
 		this.exit_reason = null;
-		H me = self();
+		H me = self_handle();
 		for (EHandle handle : links) {
 			handle.exit_signal(me, result);
 		}
+		for (Map.Entry<ERef, ETuple2> ent : monitors.entrySet()) {
+			ETuple2 pid_object = ent.getValue();
+			ERef ref = ent.getKey();
+			
+			EPID pid = (EPID) pid_object.elem1;
+			EObject object = pid_object.elem2;
+			
+			if (object == null) {
+				object = me;
+			}
+			
+			pid.send(ETuple.make(am_DOWN, ref, am_process, object, result));
+		}
+	}
+	
+
+	/**
+	 * @param self2
+	 * @return
+	 */
+	public ERef add_monitor(EPID target, EObject object) {
+		ERef ref = ERT.getLocalNode().createRef();
+		monitors.put(ref, new ETuple2(target, object));
+		return ref;
 	}
 
 	protected Mailbox<EObject> mbox = new Mailbox<EObject>();
@@ -138,7 +169,7 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 		System.err.println("exit " + from.task() + " -> " + this);
 
 		// ignore exit signals from myself
-		if (from == self()) {
+		if (from == self_handle()) {
 			return;
 		}
 		

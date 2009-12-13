@@ -37,7 +37,7 @@ public class EErrorLogger {
 		}
 		
 		EProc proc = new EProc(null, EAtom.intern("erjang"), EAtom.intern("error_loop"), ERT.NIL);
-		ERT.register(EAtom.intern("error_logger"), proc.self());
+		ERT.register(EAtom.intern("error_logger"), proc.self_handle());
 		ERT.run(proc);		
 	}
 

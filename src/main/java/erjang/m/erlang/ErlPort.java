@@ -165,7 +165,7 @@ public class ErlPort {
 			//task.link_to(proc);
 			ERT.run(task);
 			
-			return task.self();
+			return task.self_handle();
 		}
 		
 		throw ERT.badarg(portName, portSetting);
@@ -191,7 +191,7 @@ public class ErlPort {
 		
 		proc.unlink(p);
 		
-		p.send(new ETuple2(proc.self(), EPort.am_close));
+		p.send(new ETuple2(proc.self_handle(), EPort.am_close));
 		
 		return ERT.TRUE;
 	}

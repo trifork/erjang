@@ -372,7 +372,8 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 	class ASMFunctionAdapter implements FunctionVisitor2 {
 
-		Stack<EXHandler> ex_handlers = new Stack<EXHandler>();
+		Stack<EXHandler> ex_try_catch_handlers = new Stack<EXHandler>();
+		Stack<EXHandler> ex_catch_handlers = new Stack<EXHandler>();
 
 		private final EAtom fun_name;
 		private final int arity;
@@ -468,7 +469,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				EFun.ensure(arity);
 
 				if (isExported(fun_name, arity)) {
-					if (ERT.DEBUG)
+					if (ERT.DEBUG2)
 						System.err.println("export " + module_name + ":"
 								+ fun_name + "/" + arity);
 					AnnotationVisitor an = fv.visitAnnotation(EXPORT_ANN_TYPE
@@ -1311,6 +1312,8 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			public void visitReceive(BeamOpcode opcode, int blockLabel, Arg out) {
 				switch (opcode) {
 				case loop_rec:
+					test_ex_start();
+					
 					mv.visitVarInsn(ALOAD, 0);
 					mv.visitMethodInsn(INVOKESTATIC, ERT_NAME, "receive_peek",
 							"(" + EPROC_TYPE.getDescriptor() + ")"
@@ -1345,6 +1348,8 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					pop(out, ECONS_TYPE);
 					return;
 				case call_fun: {
+					test_ex_start();
+					
 					int nargs = in.length - 1;
 					push(in[nargs], EOBJECT_TYPE);
 
@@ -1401,21 +1406,18 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			}
 
 			void test_ex_start() {
-				if (ex_handlers.size() > 0) {
-					EXHandler ex = ex_handlers.peek();
+				if (ex_catch_handlers.size() > 0) {
+					for (EXHandler ex : ex_catch_handlers)
 					if (!ex.is_start_visited) {
 						mv.visitLabel(ex.begin);
 						ex.is_start_visited = true;
 					}
 				}
-			}
-
-			void test_ex_end() {
-				if (ex_handlers.size() > 0) {
-					EXHandler ex = ex_handlers.peek();
-					if (!ex.is_end_visited) {
-						mv.visitLabel(ex.end);
-						ex.is_end_visited = true;
+				if (ex_try_catch_handlers.size() > 0) {
+					for (EXHandler ex : ex_try_catch_handlers)
+					if (!ex.is_start_visited) {
+						mv.visitLabel(ex.begin);
+						ex.is_start_visited = true;
 					}
 				}
 			}
@@ -1449,13 +1451,17 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					mv.visitTryCatchBlock(h.begin, h.end, h.target, Type
 							.getType(ErlangException.class).getInternalName());
 
-					ex_handlers.push(h);
+					if (opcode==BeamOpcode.K_catch) {
+						ex_catch_handlers.push(h);						
+					} else {
+						ex_try_catch_handlers.push(h);						
+					}
 					return;
 				}
 
 				case try_end:
 					test_ex_start();
-					EXHandler ex = ex_handlers.peek();
+					EXHandler ex = ex_try_catch_handlers.peek();
 					mv.visitLabel(ex.end);
 					ex.is_end_visited = true;
 					return;
@@ -1464,10 +1470,12 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 					test_ex_start();
 
-					EXHandler h = ex_handlers.pop();
+					EXHandler h = ex_try_catch_handlers.pop();
 
-					if (!h.is_end_visited)
+					if (!h.is_end_visited) {
 						mv.visitLabel(h.end);
+						h.is_end_visited = true;
+					}
 
 					mv.visitLabel(h.target);
 
@@ -1501,9 +1509,12 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 					mv.visitJumpInsn(GOTO, after);
 
-					while (!ex_handlers.isEmpty()) {
-						EXHandler h = ex_handlers.pop();
-						mv.visitLabel(h.end);
+					while (!ex_catch_handlers.isEmpty()) {
+						EXHandler h = ex_catch_handlers.pop();
+						if (!h.is_end_visited) {
+							mv.visitLabel(h.end);
+							h.is_end_visited = true;
+						}
 						mv.visitLabel(h.target);
 					}
 
@@ -1977,29 +1988,40 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					pop(ys[2], EOBJECT_TYPE);
 					return;
 
-				} else if (opcode == BeamOpcode.apply) {
+				} 
+
+				test_ex_start();
+
+				if (opcode == BeamOpcode.apply || opcode == BeamOpcode.apply_last) {
 
 					mv.visitVarInsn(ALOAD, 0);
-					for (int i = 0; i < ys.length; i++) {
+					push(ys[ys.length-2], EOBJECT_TYPE); // push mod
+					push(ys[ys.length-1], EOBJECT_TYPE); // push fun
+					
+					mv.visitFieldInsn(GETSTATIC, ERT_NAME, "NIL", "L"+ENIL_NAME+";");
+					for (int i = ys.length-3; i >= 0; i--) {
 						push(ys[i], EOBJECT_TYPE);
+						mv.visitMethodInsn(INVOKEVIRTUAL, ESEQ_TYPE.getInternalName(), "cons", 
+									"(" + EOBJECT_DESC + ")" + ESEQ_TYPE.getDescriptor() );
 					}
-					mv.visitMethodInsn(INVOKESTATIC, ERT_NAME, "apply", EUtil
-							.getSignature(ys.length, true));
-					mv.visitVarInsn(ASTORE, xregs[0]);
-
+					push_int(ys.length-2);
+					mv.visitMethodInsn(INVOKESTATIC, ERT_NAME, 
+							(opcode == BeamOpcode.apply) ? "apply_list" : "apply_list_last", 
+							"(" + EPROC_TYPE.getDescriptor()
+							    + EOBJECT_TYPE.getDescriptor()
+							    + EOBJECT_TYPE.getDescriptor()
+							    + ESEQ_TYPE.getDescriptor()
+							    + "I)" + EOBJECT_DESC
+					);
+					
+					if (opcode == BeamOpcode.apply) {
+						mv.visitVarInsn(ASTORE, xregs[0]);
+					} else {
+						mv.visitInsn(ARETURN);						
+					}
+						
 					return;
 
-				} else if (opcode == BeamOpcode.apply_last) {
-					mv.visitVarInsn(ALOAD, 0);
-					for (int i = 0; i < ys.length; i++) {
-						push(ys[i], EOBJECT_TYPE);
-					}
-					mv.visitMethodInsn(INVOKESTATIC, ERT_NAME, "apply$last",
-							EUtil.getSignature(ys.length, true));
-
-					mv.visitInsn(ARETURN);
-
-					return;
 
 				} else if (opcode == BeamOpcode.send) {
 					mv.visitVarInsn(ALOAD, 0);
@@ -2025,6 +2047,9 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			@Override
 			public void visitInsn(BeamOpcode opcode, ExtFunc efun,
 					Arg[] freevars) {
+				
+				test_ex_start();
+				
 				if (opcode == BeamOpcode.make_fun2) {
 
 					CompilerVisitor.this.register_lambda(efun.fun, efun.no,

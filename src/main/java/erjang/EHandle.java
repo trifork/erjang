@@ -26,7 +26,12 @@ import kilim.Pausable;
  */
 public abstract class EHandle extends EObject {
 
+	protected ENode node;
 	protected EObject name = null;
+	
+	protected EHandle(ENode node) {
+		this.node = node;
+	}
 
 	public EHandle testHandle() { return this; }
 	
@@ -68,6 +73,13 @@ public abstract class EHandle extends EObject {
 	public abstract void link_oneway(EHandle other) throws Pausable;
 
 	/**
+	 * @param selfHandle
+	 * @param object
+	 */
+	public abstract ERef add_monitor(EPID selfHandle, EObject object);
+
+
+	/**
 	 * @param other
 	 * @return
 	 */
@@ -94,6 +106,13 @@ public abstract class EHandle extends EObject {
 	 */
 	public ELocalHandle testLocalHandle() {
 		return null;
+	}
+
+	/**
+	 * @return
+	 */
+	public EAtom node() {
+		return node.node();
 	}
 	
 }

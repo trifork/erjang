@@ -41,10 +41,17 @@ public class ERT {
 
 	public static EAtom am_badsig = EAtom.intern("badsig");
 
-	@BIF
+	@BIF(name="erlang:raise/3")
+	public static EObject do_raise(EObject kind, EObject value,
+			EObject trace) throws ErlangException {
+		throw raise(kind,value,trace);
+	}
+	
 	public static ErlangException raise(EObject kind, EObject value,
 			EObject trace) throws ErlangException {
 
+		System.err.println("raise "+trace);
+		
 		EAtom clazz = kind.testAtom();
 		ESeq traz = trace.testSeq();
 
@@ -272,7 +279,8 @@ public class ERT {
 	public static final EAtom am_try_case_clause = EAtom
 			.intern("try_case_clause");
 	public static final EAtom am_if_clause = EAtom.intern("if_clause");
-	public static final boolean DEBUG = false;
+	public static final boolean DEBUG = true;
+	public static final boolean DEBUG2 = false;
 	public static final EBinary EMPTY_BINARY = new EBinary(new byte[0]);
 	public static final ByteBuffer[] EMPTY_BYTEBUFFER_ARR = new ByteBuffer[0];
 	public static final ByteBuffer EMPTY_BYTEBUFFER = ByteBuffer.allocate(0);
@@ -280,6 +288,9 @@ public class ERT {
 	public static final EAtom am_noproc = EAtom.intern("noproc");
 	public static final EAtom am_error = EAtom.intern("error");
 	public static final EAtom am_value = EAtom.intern("value");
+	public static final EAtom am_function_clause = EAtom.intern("function_clause");
+	private static final EObject am_ok = EAtom.intern("ok");
+	private static final EObject am_noconnect = EAtom.intern("noconnect");
 
 	public static EBitStringBuilder bs_init(int size, int flags) {
 		return new EBitStringBuilder(size, flags);
@@ -307,6 +318,8 @@ public class ERT {
 		return null;
 	}
 
+	
+	
 	/**
 	 * @param owner
 	 * @param make
@@ -337,6 +350,34 @@ public class ERT {
 		return msg;
 	}
 
+	@BIF(name = "erlang:send/3")
+	public static EObject send(EProc proc, EObject pid, EObject msg, EObject options)
+			throws Pausable {
+		// TODO handle ports also?
+		proc.check_exit();
+
+		System.err.println("ignored options to send: "+options);
+		
+		EHandle p;
+		if ((p = pid.testHandle()) != null) {
+			p.send(msg);
+			return am_ok;
+		}
+		
+		p = register.get(pid);
+		if (p != null) {
+			p.send(msg);
+			return am_ok;
+		}
+		
+		if (pid.testAtom() == null) {
+			throw badarg(pid, msg);
+		}
+		
+		return am_noconnect;
+	}
+
+
 	/**
 	 * @return
 	 */
@@ -353,87 +394,68 @@ public class ERT {
 	public static ErlangException undef(FunID fun, EObject... args) {
 		throw new ErlangError(am_undef, args);
 	}
-
-	public static EObject apply(EProc proc, EObject arg1, EObject mod,
-			EObject fun) throws Pausable {
+	
+	public static EObject apply_list(EProc proc, EObject mod,
+			EObject fun, ESeq seq, int len) throws Pausable {
 		EAtom m = mod.testAtom();
 		EAtom f = fun.testAtom();
+		ESeq a = seq.testSeq();
 
-		if (m == null || f == null)
-			throw ERT.badarg(mod, fun, arg1);
+		if (m == null || f == null || a==null)
+			throw ERT.badarg(mod, fun, seq);
 
-		EFun efun = EModuleManager.resolve(new FunID(m, f, 1));
-		return efun.invoke(proc, new EObject[] { arg1 });
+		EFun efun = EModuleManager.resolve(new FunID(m, f, len));
+		return efun.apply(proc, a);
 	}
 
-
-	public static EObject apply(EProc proc, EObject arg2, EObject arg1, EObject mod,
-			EObject fun) throws Pausable {
+	public static EObject apply_list_last(EProc proc, EObject mod,
+			EObject fun, ESeq seq, int len) throws Pausable {
 		EAtom m = mod.testAtom();
 		EAtom f = fun.testAtom();
+		ESeq a = seq.testSeq();
 
-		if (m == null || f == null)
-			throw ERT.badarg(mod, fun, arg1, arg2);
+		if (m == null || f == null || a==null)
+			throw ERT.badarg(mod, fun, seq);
 
-		EFun efun = EModuleManager.resolve(new FunID(m, f, 1));
-		return efun.invoke(proc, new EObject[] { arg1, arg2 });
-	}
+		EFun found = EModuleManager.resolve(new FunID(m, f, len));
 
-	public static EObject apply(EProc proc, EObject arg3, EObject arg2, EObject arg1, EObject mod,
-			EObject fun) throws Pausable {
-		EAtom m = mod.testAtom();
-		EAtom f = fun.testAtom();
-
-		if (m == null || f == null)
-			throw ERT.badarg(mod, fun, arg1, arg2);
-
-		EFun efun = EModuleManager.resolve(new FunID(m, f, 1));
-		return efun.invoke(proc, new EObject[] { arg1, arg2, arg3 });
-	}
-
-	public static EObject apply(EProc proc, EObject mod, EObject fun)
-			throws Pausable {
-		EAtom m = mod.testAtom();
-		EAtom f = fun.testAtom();
-
-		if (m == null || f == null)
-			throw ERT.badarg(mod, fun);
-
-		EFun efun = EModuleManager.resolve(new FunID(m, f, 0));
-		return efun.invoke(proc, new EObject[0]);
-	}
-
-	public static EObject apply$last(EProc proc, EObject arg1, EObject mod,
-			EObject fun) {
-		EAtom m = mod.testAtom();
-		EAtom f = fun.testAtom();
-
-		if (m == null || f == null)
-			throw ERT.badarg(mod, fun, arg1);
-
-		proc.arg0 = arg1;
-		proc.tail = EModuleManager.resolve(new FunID(m, f, 1));
+		
+		if (len > 9) {
+			// TODO: make it real tail recursion in stead
+			return found.invoke(proc, a.toArray());
+		}
+		
+		proc.tail = found;
+		a = a.reverse();
+		
+		switch (len) {
+		default:
+			throw new NotImplemented();
+		case 9:
+			proc.arg8 = a.head(); a = a.tail();
+		case 8:
+			proc.arg7 = a.head(); a = a.tail();
+		case 7:
+			proc.arg6 = a.head(); a = a.tail();
+		case 6:
+			proc.arg5 = a.head(); a = a.tail();
+		case 5:
+			proc.arg4 = a.head(); a = a.tail();
+		case 4:
+			proc.arg3 = a.head(); a = a.tail();
+		case 3:
+			proc.arg2 = a.head(); a = a.tail();
+		case 2:
+			proc.arg1 = a.head(); a = a.tail();
+		case 1:
+			proc.arg0 = a.head(); a = a.tail();
+		case 0:
+		}
+		
 		return EProc.TAIL_MARKER;
-
-		// .invoke(proc, NIL.cons(arg1).toArray());
 	}
 
-	public static EObject apply$last(EProc proc, EObject arg2, EObject arg1, EObject arg0, EObject mod,
-			EObject fun) {
-		EAtom m = mod.testAtom();
-		EAtom f = fun.testAtom();
 
-		if (m == null || f == null)
-			throw ERT.badarg(mod, fun, arg0, arg1, arg2);
-
-		proc.arg0 = arg0;
-		proc.arg1 = arg1;
-		proc.arg2 = arg2;
-		proc.tail = EModuleManager.resolve(new FunID(m, f, 3));
-		return EProc.TAIL_MARKER;
-
-		// .invoke(proc, NIL.cons(arg1).toArray());
-	}
 
 	static Map<EAtom, EHandle> register = new ConcurrentHashMap<EAtom, EHandle>();
 
@@ -554,6 +576,12 @@ public class ERT {
 		return i.intValue();
 	}
 
+	public static int unboxToInt(EObject i) {
+		ESmall ii;
+		if ((ii=i.testSmall()) == null) throw ERT.badarg(i);
+		return ii.value;
+	}
+
 	public static int unboxToInt(ENumber i) {
 		return i.intValue();
 	}
@@ -578,7 +606,7 @@ public class ERT {
 	}
 
 	public static EObject func_info(EAtom mod, EAtom fun, int arity) {
-		throw new ErlangError(AM_BADMATCH);
+		throw new ErlangError(am_function_clause);
 	}
 
 	static void load_module(EAtom module) throws IOException {
@@ -613,5 +641,13 @@ public class ERT {
 				dt.async_done(job);
 			}
 		});
+	}
+
+	/**
+	 * @return
+	 */
+	public static ESeq getRemoteNodes() {
+		// TODO: implement
+		return ERT.NIL;
 	}
 }

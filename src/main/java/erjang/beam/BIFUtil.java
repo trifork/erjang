@@ -19,6 +19,7 @@
 package erjang.beam;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -29,10 +30,10 @@ import org.objectweb.asm.Type;
 import erjang.EAtom;
 import erjang.EBig;
 import erjang.EDouble;
-import erjang.ERT;
-import erjang.ESmall;
 import erjang.EObject;
 import erjang.EProc;
+import erjang.ERT;
+import erjang.ESmall;
 import erjang.m.erlang.BinOps;
 import erjang.m.erlang.ErlBif;
 
@@ -52,6 +53,7 @@ public class BIFUtil {
 	static {
 		registerBifs(ErlBif.class);
 		registerBifs(BinOps.class);
+		registerBifs(ERT.class);
 	}
 
 	static class Args {
@@ -273,7 +275,7 @@ public class BIFUtil {
 			for (Args a : args.generalize()) {
 				m = found.get(a);
 				if (m != null) {
-					if (ERT.DEBUG)
+					if (ERT.DEBUG2)
 						System.err.println("missed opportunity erlang:"
 							+ EAtom.intern(name) + "/" + parmTypes.length + " "
 							+ args + ", \n\tusing " + m);
@@ -306,6 +308,7 @@ public class BIFUtil {
 		Method[] m = clazz.getMethods();
 		for (int i = 0; i < m.length; i++) {
 			Method method = m[i];
+			if ((method.getModifiers() & Modifier.STATIC) != Modifier.STATIC) continue;
 			erjang.BIF ann = method.getAnnotation(erjang.BIF.class);
 			if (ann != null) {
 				Map<String, BIFHandler> tab = ann.type() == erjang.BIF.Type.GUARD ? guard_bifs

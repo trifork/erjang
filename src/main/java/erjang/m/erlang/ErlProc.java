@@ -46,6 +46,8 @@ import erjang.ESeq;
 import erjang.ESmall;
 import erjang.EString;
 import erjang.ETuple;
+import erjang.ETuple2;
+import erjang.ETuple4;
 import erjang.ErlFun;
 import erjang.ErlangError;
 import erjang.ErlangException;
@@ -72,8 +74,11 @@ public class ErlProc {
 	private static final EAtom am_non_heap = EAtom.intern("non_heap");
 	private static final EAtom am_jvm = EAtom.intern("jvm");
 	private static final EAtom am_allocated_areas = EAtom.intern("allocated_areas");
-	private static final EObject am_otp_version = EAtom.intern("am_otp_version");
-	private static final EObject am_machine = EAtom.intern("am_machine");
+	private static final EAtom am_otp_version = EAtom.intern("am_otp_version");
+	private static final EAtom am_machine = EAtom.intern("am_machine");
+	private static final EAtom am_link = EAtom.intern("link");
+	private static final EAtom am_monitor = EAtom.intern("monitor");
+	private static final EAtom am_priority = EAtom.intern("priority");
 
 
 	@BIF
@@ -100,7 +105,7 @@ public class ErlProc {
 
 	@BIF
 	public static ESeq get_stacktrace() {
-		return new ErlangError(ERT.NIL).getTrace();
+		return new ErlangError(ERT.NIL).getTrace().tail();
 	}
 	
 	@BIF
@@ -135,9 +140,76 @@ public class ErlProc {
 		
 		ERT.run(p2);
 		
-		return p2.self();
+		return p2.self_handle();
 	}
-	
+
+	@BIF
+	public static EObject spawn_opt(EProc self, EObject tup) throws Pausable {
+		ETuple t;
+		EAtom m;
+		EAtom f;
+		ESeq a;
+		ESeq o;
+		if ((t=tup.testTuple()) == null 
+				|| t.arity() != 4
+				|| (m=t.elm(1).testAtom()) == null
+				|| (f=t.elm(2).testAtom()) == null
+				|| (a=t.elm(3).testSeq()) == null
+				|| (o=t.elm(4).testSeq()) == null
+				) throw ERT.badarg(tup); 
+		
+		boolean link = false;
+		boolean monitor = false;
+		EAtom priority = null;
+		
+		for (; !o.isNil(); o = o.tail() ) {
+			EObject val = o.head();
+			
+			ETuple2 t2;
+			if (val == am_link) {
+				link = true;
+			} else if (val == am_monitor) {
+				monitor = true;
+			} else if ((t2 = ETuple2.cast(val)) != null) {
+				
+				if (t2.elm(1) == am_priority) {
+					EAtom am = t2.elm(2).testAtom();
+					if (am != null)
+						priority = am;
+				}
+				
+				// ignore full_sweep_after and min_heap_size
+			}
+			
+		}
+		
+
+		EProc p2 = new EProc(self.group_leader(), m, f, a);
+		
+		if (link) {
+			p2.link_to(self);
+		}
+		
+		if (priority != null) {
+			// may throw badarg!
+			p2.process_flag(am_priority, priority);
+		}
+		
+		ERef ref = null;
+		if (monitor) {
+			ref = p2.add_monitor(self.self_handle(), null);
+		}
+		
+		ERT.run(p2);
+		
+		if (monitor) {
+			return new ETuple2(p2.self_handle(), ref);
+		} else {
+			return p2.self_handle();
+		}
+
+	}
+
 	@BIF
 	public static EObject spawn(EProc proc, EObject mod, EObject fun, EObject args) {
 		
@@ -152,7 +224,7 @@ public class ErlProc {
 				
 		ERT.run(p2);
 		
-		return p2.self();
+		return p2.self_handle();
 	}
 	
 	@BIF
@@ -197,6 +269,16 @@ public class ErlProc {
 		if (h == null) throw ERT.badarg(pid);
 		self.link_to(h);
 		return ERT.TRUE;
+	}
+
+	@BIF
+	@ErlFun(export = true)
+	static public EObject monitor(EProc self, EObject how, EObject pid) throws Pausable {
+		EHandle h = EHandle.cast(pid);
+		if (h != null) 
+			return h.add_monitor(self.self_handle(), null);
+
+		throw new NotImplemented();
 	}
 
 	@BIF

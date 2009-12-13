@@ -27,6 +27,7 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.SelectableChannel;
 import java.nio.charset.Charset;
 import java.util.Calendar;
+import java.util.GregorianCalendar;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.locks.Lock;
@@ -795,7 +796,7 @@ public class EFile extends EDriverInstance {
 				}
 
 				private void put_time(ByteBuffer res, long time) {
-					Calendar c = Calendar.getInstance();
+					Calendar c = GregorianCalendar.getInstance();
 					c.setTimeInMillis(time);
 					
 					res.putInt(c.get(Calendar.YEAR));

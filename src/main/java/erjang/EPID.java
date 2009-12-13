@@ -20,6 +20,13 @@ package erjang;
 
 public abstract class EPID extends EHandle {
 
+	/**
+	 * 
+	 */
+	public EPID(ENode node) {
+		super(node);
+	}
+	
 	@Override
 	int cmp_order() {
 		return 5;

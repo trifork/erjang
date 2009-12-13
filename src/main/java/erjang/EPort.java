@@ -20,6 +20,11 @@ package erjang;
 
 public abstract class EPort extends EHandle {
 
+	public EPort(ENode node) {
+		super(node);
+	}
+	
+
 	/* (non-Javadoc)
 	 * @see erjang.EObject#cmpOrder()
 	 */

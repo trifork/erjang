@@ -27,9 +27,7 @@ import java.util.Map;
 import kilim.Pausable;
 import kilim.analysis.ClassInfo;
 import kilim.analysis.ClassWeaver;
-import kilim.tools.Weaver;
 
-import org.objectweb.asm.ClassAdapter;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.Label;

@@ -30,6 +30,7 @@ public class EInternalPID extends EPID implements ELocalHandle {
 	private final EProc task;
 
 	public EInternalPID(EProc self) {
+		super(ERT.getLocalNode());
 		this.task = self;
 	}
 	
@@ -74,6 +75,12 @@ public class EInternalPID extends EPID implements ELocalHandle {
 	public void link_oneway(EHandle other) throws Pausable {
 		task.link_oneway(other);
 	}
+	
+	public ERef add_monitor(EPID target, EObject object) {
+		// todo: check if task is alive!
+		return task.add_monitor(target, object);
+	}
+
 
 	/* (non-Javadoc)
 	 * @see erjang.EPID#set_group_leader(erjang.EPID)
