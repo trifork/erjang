@@ -110,8 +110,8 @@ public abstract class EDriverInstance {
 	 * @param port2
 	 */
 	protected void driver_cancel_timer(EPort port2) {
-		// TODO Auto-generated method stub
-
+		// TODO 
+		task.cancel_timer(port2);
 	}
 
 	protected void driver_set_timer(long howlong) {

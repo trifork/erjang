@@ -36,12 +36,8 @@ public abstract class EPID extends EHandle {
 		return this;
 	}
 
-	/**
-	 * @return
-	 */
 	public EString getName() {
-		// TODO Auto-generated method stub
-		return null;
+		return EString.fromString(toString());
 	}
 	
 	@Override

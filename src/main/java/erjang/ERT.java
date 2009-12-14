@@ -50,7 +50,7 @@ public class ERT {
 	public static ErlangException raise(EObject kind, EObject value,
 			EObject trace) throws ErlangException {
 
-		System.err.println("raise "+trace);
+	//	System.err.println("raise "+trace);
 		
 		EAtom clazz = kind.testAtom();
 		ESeq traz = trace.testSeq();
@@ -507,7 +507,7 @@ public class ERT {
 		throw new ErlangError(ETuple.make(am_try_case_clause, val));
 	}
 
-	static kilim.Scheduler scheduler = new kilim.Scheduler(4);
+	static kilim.Scheduler scheduler = new kilim.Scheduler(threadPoolSize());
 	public static EAtom am_io = EAtom.intern("io");
 	public static EAtom am_attributes = EAtom.intern("attributes");
 
@@ -649,5 +649,12 @@ public class ERT {
 	public static ESeq getRemoteNodes() {
 		// TODO: implement
 		return ERT.NIL;
+	}
+
+	/**
+	 * @return
+	 */
+	public static int threadPoolSize() {
+		return 4;
 	}
 }

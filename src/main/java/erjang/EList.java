@@ -50,7 +50,6 @@ public final class EList extends ESeq {
 
 	@Override
 	public EList cons(EObject h) {
-		// TODO Auto-generated method stub
 		return new EList(h, this);
 	}
 
@@ -61,7 +60,6 @@ public final class EList extends ESeq {
 
 	@Override
 	public ESeq tail() {
-		// TODO Auto-generated method stub
 		return tail;
 	}
 	

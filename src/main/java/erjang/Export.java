@@ -23,15 +23,18 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/** 
- * In a module, exports are declared using this annotation on static fields of type EFun
- * 
+/**
+ * In an {@link EModule} subclass, exports are declared using this annotation on
+ * static fields of type {@link EFun}. The static initializer supposed to have
+ * initialized the field to be an EFun object. 
  */
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
 public @interface Export {
 	String module();
+
 	String fun();
+
 	int arity();
 }

@@ -46,15 +46,16 @@ import erjang.beam.DirClassRepo;
 public abstract class EModule {
 
 
+	/** Base constructor for modules.  Will register <code>this</code> in the system. */
 	public EModule() {
 		// TODO: handle if there is a module of this name already!
-		// modules.put(EAtom.intern(this.module_name()), this);
 
 		EModuleManager.setup_module(this);
 	}
 
 	/**
-	 * @return
+	 * This method is code-generated in subclasses
+	 * @return module name, as a Java string
 	 */
 	public abstract String module_name();
 

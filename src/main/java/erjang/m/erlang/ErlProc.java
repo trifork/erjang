@@ -94,7 +94,6 @@ public class ErlProc {
 	public static EObject process_info(EObject pid) {
 		EPID p = pid.testPID();
 		if (p == null) throw ERT.badarg(pid);
-		// TODO: validate WHAT locally before going remote?
 		return p.process_info();
 	}
 
@@ -397,7 +396,7 @@ public class ErlProc {
 		} else if (type == am_thread_pool_size) {
 			
 			// TODO: hook up to thread pool
-			return new ESmall(8);
+			return new ESmall(ERT.threadPoolSize());
 			
 		} else if (type == am_os_type) {
 			String os = System.getProperty("os.name");

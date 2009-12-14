@@ -23,7 +23,6 @@ public class NotImplemented extends Error {
 	 * 
 	 */
 	public NotImplemented() {
-		// TODO Auto-generated constructor stub
 	}
 	
 	public NotImplemented(String message) {

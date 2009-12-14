@@ -24,10 +24,6 @@ public abstract class EPort extends EHandle {
 		super(node);
 	}
 	
-
-	/* (non-Javadoc)
-	 * @see erjang.EObject#cmpOrder()
-	 */
 	@Override
 	int cmp_order() {
 		return CMP_ORDER_PORT;

@@ -567,6 +567,15 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 	public void set_timer(long howlong) {
 		this.abs_timeout = System.currentTimeMillis() + howlong;
 	}
+	
+	/**
+	 * @param port2
+	 */
+	public void cancel_timer(EPort port2) {
+		assert port2 == this.port : "can only cancel timer on self" ;
+		this.abs_timeout = 0;
+	}
+
 
 	/**
 	 * @param job
@@ -587,4 +596,5 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 	public void output_from_driver(EObject out) {
 		owner.sendb(new ETuple2(port, new ETuple2(am_data, out)));
 	}
+
 }

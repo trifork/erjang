@@ -19,17 +19,9 @@
 
 package erjang.driver;
 
-import kilim.Pausable;
-import erjang.EHandle;
 import erjang.EObject;
-import erjang.EPID;
-import erjang.EPort;
 import erjang.EProc;
-import erjang.ERT;
 import erjang.EString;
-import erjang.ETask;
-import erjang.ETuple;
-import erjang.ETuple2;
 
 /**
  * 
