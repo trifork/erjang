@@ -24,12 +24,15 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.CRC32;
 import java.util.zip.CheckedInputStream;
 
 import kilim.analysis.ClassInfo;
 import kilim.analysis.ClassWeaver;
 import kilim.analysis.Detector;
+import kilim.mirrors.ClassMirrorNotFoundException;
 import kilim.mirrors.Mirrors;
 
 import org.objectweb.asm.ClassWriter;
@@ -39,6 +42,8 @@ import org.objectweb.asm.util.CheckClassAdapter;
 import com.ericsson.otp.erlang.OtpAuthException;
 
 import erjang.EBinary;
+import erjang.EFun;
+import erjang.EObject;
 import erjang.beam.analysis.BeamTypeAnalysis;
 
 public class Compiler implements Opcodes {
@@ -158,6 +163,31 @@ public class Compiler implements Opcodes {
 			this.className = className;
 		}
 
+		
+		static Pattern FUN = Pattern.compile("^erjang\\.m\\..*\\$FN_.*__([0-9])+$");
+		
+		/* (non-Javadoc)
+		 * @see kilim.analysis.Detector#getSuperClasses(java.lang.String)
+		 */
+		@Override
+		public ArrayList<String> getSuperClasses(String cc)
+				throws ClassMirrorNotFoundException {
+			
+			Matcher m = FUN.matcher(cc);
+			if (m.matches()) {
+				int arity = Integer.parseInt(m.group(1));
+				
+				ArrayList<String> result = new ArrayList<String>();
+				result.add(EFun.class.getName()+arity);
+				result.add(EFun.class.getName());
+				result.add(EObject.class.getName());
+				result.add(Object.class.getName());
+				return result;
+			}
+			
+			return super.getSuperClasses(cc);
+		}
+		
 		@Override
 		public int getPausableStatus(String className, String methodName,
 				String desc) {
