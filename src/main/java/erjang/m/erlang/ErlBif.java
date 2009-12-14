@@ -242,15 +242,20 @@ public class ErlBif {
 	}
 
 	@BIF
-	static public EObject setelement(EObject a1, EObject a2, EObject term) {
+	static public ETuple setelement(EObject a1, EObject a2, EObject term) {
 		ETuple t = a2.testTuple();
 		ESmall i = a1.testSmall();
-		if (t == null || i == null) throw ERT.badarg();
+		if (t == null || i == null) throw ERT.badarg(a1,a2,term);
 		return t.setelement(i.value, term);
 	}
 
+	/** 
+	 * Optimized version which does not test the types of arguments.
+	 * Used in case the type-analysis can infer the exact argument types
+	 * (which is the case for BEAM code generated for record-update). 
+	 * */
 	@BIF
-	static public EObject setelement(int index, ETuple a2, EObject term) {
+	static public ETuple setelement(int index, ETuple a2, EObject term) {
 		return a2.setelement(index, term);
 	}
 

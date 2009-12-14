@@ -402,7 +402,7 @@ class ETailMarker extends EObject {
 
 	@Override
 	int cmp_order() {
-		return -1;
+		return CMP_ORDER_ERJANG_INTERNAL;
 	}
 
 	/*

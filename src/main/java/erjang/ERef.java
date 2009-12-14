@@ -108,7 +108,7 @@ public class ERef extends EObject {
 	
 	@Override
 	int cmp_order() {
-		return 2;
+		return CMP_ORDER_REFERENCE;
 	}
 
     /**

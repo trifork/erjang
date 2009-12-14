@@ -56,7 +56,7 @@ public class EAtom extends EObject implements CharSequence {
 
 	@Override
 	int cmp_order() {
-		return 1;
+		return CMP_ORDER_ATOM;
 	}
 	
 	static Pattern ATOM = Pattern.compile("[a-z_]([a-z]|[A-Z]|@|_|[0-9])*");

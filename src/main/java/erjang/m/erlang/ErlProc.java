@@ -444,4 +444,9 @@ public class ErlProc {
 		if ((m=mod.testAtom()) == null) throw ERT.badarg(mod);
 		return EModuleManager.module_loaded(m) ? ERT.TRUE : ERT.FALSE;
 	}
+	
+	@BIF
+	static ESeq processes() {
+		throw new NotImplemented();
+	}
 }

@@ -24,7 +24,7 @@ public abstract class ENumber extends EObject {
 
 	@Override
 	int cmp_order() {
-		return 0;
+		return CMP_ORDER_NUMBER;
 	}
 	
 	public abstract double doubleValue();

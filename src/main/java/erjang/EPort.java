@@ -30,14 +30,13 @@ public abstract class EPort extends EHandle {
 	 */
 	@Override
 	int cmp_order() {
-		return 4;
+		return CMP_ORDER_PORT;
 	}
 	/**
 	 * @return
 	 */
 	public EString getName() {
-		// TODO Auto-generated method stub
-		return null;
+		return EString.fromString(toString());
 	}
 	
 	@Override

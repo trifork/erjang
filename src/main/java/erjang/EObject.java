@@ -246,6 +246,7 @@ public abstract class EObject implements Comparable<EObject> {
 		}
 	}
 
+	/** Compare two objects that have same cmp_order */
 	int compare_same(EObject rhs) { throw new Error("cannot compare"); }
 	
 	int r_compare_same(ESmall lhs) { throw new NotImplemented(); }
@@ -262,6 +263,9 @@ public abstract class EObject implements Comparable<EObject> {
 	boolean r_compare_same_exactly(EDouble lhs) { return false; }
 	
 	
+	/** used as compare-order for "non-erlang terms", such as 
+	 *  compiled ets queries and the tail marker */
+	public static final int CMP_ORDER_ERJANG_INTERNAL = -1;
 	public static final int CMP_ORDER_NUMBER = 0;
 	public static final int CMP_ORDER_ATOM = 1;
 	public static final int CMP_ORDER_REFERENCE = 2;

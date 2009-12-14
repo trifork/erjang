@@ -36,7 +36,7 @@ public abstract class ETuple extends EObject implements Cloneable /* , Indexed *
 
 	@Override
 	int cmp_order() {
-		return 6;
+		return CMP_ORDER_TUPLE;
 	}
 
 	@Override
@@ -89,13 +89,8 @@ public abstract class ETuple extends EObject implements Cloneable /* , Indexed *
 		return res;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see java.lang.Object#clone()
-	 */
 	@Override
-	protected ETuple clone() {
+	public ETuple clone() {
 		try {
 			return (ETuple) super.clone();
 		} catch (CloneNotSupportedException e) {
@@ -103,7 +98,20 @@ public abstract class ETuple extends EObject implements Cloneable /* , Indexed *
 		}
 	}
 
-	/** erlang:setelement - clone this and set element */
+	/** Basis for erlang:setelement - clone this and set element.
+	 * 
+	 * Equivalent to 
+	 * 
+	 * <pre> ETuple res = x.clone();
+	 * res.set(index, term);</pre>
+	 * TODO: it may make sense (for performance) to code generate this
+	 * specifically for each subclass.  Lets do that when it pops
+	 * up in a profiler one day.
+	 * 
+	 * @param index 1-based index to set
+	 * @param term value to put at index 
+	 * @return copy of this, with index position set to term.
+	 */
 	public ETuple setelement(int index, EObject term) {
 		ETuple t = clone();
 		t.set(index, term);

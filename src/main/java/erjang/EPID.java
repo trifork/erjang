@@ -29,7 +29,7 @@ public abstract class EPID extends EHandle {
 	
 	@Override
 	int cmp_order() {
-		return 5;
+		return CMP_ORDER_PID;
 	}
 	
 	public EPID testPID() {

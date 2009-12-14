@@ -55,7 +55,7 @@ public abstract class EFun extends EObject implements Opcodes {
 
 	@Override
 	int cmp_order() {
-		return 3;
+		return CMP_ORDER_FUN;
 	}
 	
 	/* (non-Javadoc)

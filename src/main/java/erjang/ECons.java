@@ -26,7 +26,7 @@ public abstract class ECons extends EObject {
 
 	@Override
 	int cmp_order() {
-		return 7;
+		return CMP_ORDER_LIST;
 	}
 
 	@Override
