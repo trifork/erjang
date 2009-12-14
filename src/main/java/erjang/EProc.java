@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import erjang.ETask.State;
+import erjang.m.erlang.ErlProc;
 
 import kilim.Mailbox;
 import kilim.Pausable;
@@ -360,6 +361,39 @@ public final class EProc extends ETask<EInternalPID> {
 	@Override
 	public String toString() {
 		return self.toString() + super.toString() + "::" + spawn_mod + ":" + spawn_fun + "/" + spawn_args; 
+	}
+	
+	// this is not synchronized, as we only mess with it from this proc
+	Map<ERef,EHandle> is_monitoring = new HashMap<ERef, EHandle>();
+
+	/**
+	 * @param selfHandle
+	 * @param object
+	 * @return
+	 */
+	public ERef monitor(EHandle handle, EObject object) {
+		ERef ref = handle.add_monitor(self_handle(), object);
+		this.is_monitoring.put(ref, handle);
+		return ref;
+	}
+
+	/**
+	 * @param r
+	 * @param flush
+	 * @return
+	 */
+	public void demonitor(ERef r, boolean flush) {
+		EHandle h = is_monitoring.get(r);
+		if (h == null) {
+			throw ERT.badarg(r, flush ? ERT.NIL.cons(ErlProc.am_flush) : ERT.NIL);
+		}
+
+		h.remove_monitor(r, flush);
+		
+		if (flush) {
+			// TODO: wait for flush ack?
+		}
+		
 	}
 
 }

@@ -114,6 +114,18 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 		monitors.put(ref, new ETuple2(target, object));
 		return ref;
 	}
+	
+	/**
+	 * @param r
+	 */
+	public void remove_monitor(ERef r, boolean flush) {
+		monitors.remove(r);
+		if (flush) {
+			System.err.println("option [flush] ignored");
+		}
+	}
+
+
 
 	protected Mailbox<EObject> mbox = new Mailbox<EObject>();
 

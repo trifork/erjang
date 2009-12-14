@@ -114,5 +114,10 @@ public abstract class EHandle extends EObject {
 	public EAtom node() {
 		return node.node();
 	}
+
+	/**
+	 * @param r
+	 */
+	public abstract void remove_monitor(ERef r, boolean flush);
 	
 }

@@ -33,9 +33,9 @@ public class Posix {
 	public static final int EUNKNOWN = 5;
 	public static final int EIO = 5;
 
-	private static final String[] err_id = { "Invalid argument",
-			"Not enough space", "File exists", "No such file or directory",
-			"Operation not permitted", "Input/output error" };
+	private static final String[] err_id = { "einval",
+			"enomem", "eexist", "enoent",
+			"eperm", "eunknown" };
 
 	/**
 	 * @param posixErrno

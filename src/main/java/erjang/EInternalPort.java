@@ -71,8 +71,13 @@ public class EInternalPort extends EPort implements ELocalHandle {
 	}
 	
 	public ERef add_monitor(EPID target, EObject object) {
-		// todo: check if task is alive!
+		// TODO: check if task is alive!
 		return task.add_monitor(target, object);
+	}
+
+	@Override
+	public void remove_monitor(ERef r, boolean flush) {
+		task.remove_monitor(r, flush);
 	}
 
 

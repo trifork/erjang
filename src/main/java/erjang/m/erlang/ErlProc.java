@@ -79,6 +79,7 @@ public class ErlProc {
 	private static final EAtom am_link = EAtom.intern("link");
 	private static final EAtom am_monitor = EAtom.intern("monitor");
 	private static final EAtom am_priority = EAtom.intern("priority");
+	public static final EAtom am_flush = EAtom.intern("flush");
 
 
 	@BIF
@@ -197,7 +198,7 @@ public class ErlProc {
 		
 		ERef ref = null;
 		if (monitor) {
-			ref = p2.add_monitor(self.self_handle(), null);
+			ref = self.monitor(p2.self_handle(), null);
 		}
 		
 		ERT.run(p2);
@@ -276,9 +277,26 @@ public class ErlProc {
 	static public EObject monitor(EProc self, EObject how, EObject pid) throws Pausable {
 		EHandle h = EHandle.cast(pid);
 		if (h != null) 
-			return h.add_monitor(self.self_handle(), null);
+			return self.monitor(h, h);
 
 		throw new NotImplemented();
+	}
+
+	@BIF
+	@ErlFun(export = true)
+	static public EObject demonitor(EProc self, EObject ref, EObject options) throws Pausable {
+		ERef r = ref.testReference();
+		
+		ESeq o = options.testSeq();
+		
+		if (r==null||o==null)
+			throw ERT.badarg(ref, options);
+
+		boolean flush = (!o.isNil() && o.head()==am_flush);
+
+		self.demonitor(r, flush);
+
+		return ERT.TRUE;
 	}
 
 	@BIF

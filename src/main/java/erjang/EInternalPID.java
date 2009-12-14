@@ -80,6 +80,11 @@ public class EInternalPID extends EPID implements ELocalHandle {
 		// todo: check if task is alive!
 		return task.add_monitor(target, object);
 	}
+	
+	@Override
+	public void remove_monitor(ERef r, boolean flush) {
+		task.remove_monitor(r, flush);
+	}
 
 
 	/* (non-Javadoc)

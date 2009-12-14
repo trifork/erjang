@@ -142,4 +142,16 @@ public class ErlConvert {
 		return iol;
 	}
 
+	@BIF
+	public static EObject tuple_to_list(EObject tup) {
+		ETuple t;
+		if ((t=tup.testTuple()) == null) { throw ERT.badarg(tup); }
+
+		ESeq res = ERT.NIL;
+		for (int i = t.arity(); i > 0; i--) {
+			res = res.cons(t.elm(i));
+		}
+		
+		return res;
+	}
 }
