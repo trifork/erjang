@@ -1212,7 +1212,6 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			/**
 			 * @param value
 			 * @param stack_type
-			 *            TODO
 			 */
 			private Type push_immediate(EObject value, Type stack_type) {
 
@@ -2254,7 +2253,29 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				return res;
 
 			}
+			
+			/** class that we use to sort the labels for select_arity switch */
+			class TupleArityLabel implements Comparable<TupleArityLabel> {
+				Label cast_label = new Label();
+				Label target;
+				int arity;
+				
+				public TupleArityLabel(int arity, Label target) {
+					this.arity = arity;
+					this.target = target;					
+				}
+				
+				@Override
+				public int compareTo(TupleArityLabel o) {
+					if (this.arity < o.arity)
+						return -1;
+					if (this.arity == o.arity)
+						return 0;
+					return 1;
+				}
+			}
 
+			/** Switch based on arity of incoming <code>in</code> tuple value.  */
 			@Override
 			public void visitSelectTuple(Arg in, int failLabel, int[] arities,
 					int[] targets) {
@@ -2262,23 +2283,34 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				push(in, ETUPLE_TYPE);
 
 				mv.visitMethodInsn(INVOKEVIRTUAL, ETUPLE_NAME, "arity", "()I");
-
-				Label[] targetLabels = new Label[targets.length];
+				
+				TupleArityLabel[] cases = new TupleArityLabel[targets.length];
 				for (int i = 0; i < targets.length; i++) {
-					targetLabels[i] = new Label();
+					cases[i] = new TupleArityLabel(arities[i], getLabel(targets[i]));
 				}
 
-				int[] map = sort(arities, targetLabels);
+				Arrays.sort(cases);
+				
+				Label[] casts = new Label[cases.length];
+				int[] values = new int[cases.length];
+				
+				for (int i = 0; i < cases.length; i++) {
+					values[i] = cases[i].arity;
+					casts[i] = cases[i].cast_label;
+				}
 
-				mv.visitLookupSwitchInsn(getLabel(failLabel), arities,
-						targetLabels);
-				for (int i = 0; i < targetLabels.length; i++) {
-					mv.visitLabel(targetLabels[i]);
+				mv.visitLookupSwitchInsn(getLabel(failLabel), values, casts);
+				for (int i = 0; i < cases.length; i++) {
+					mv.visitLabel(cases[i].cast_label);
+					
+					// NOTE: unfortunately, we have to use a cast here.  There
+					// is no real way around it, except maybe make some 
+					// special ETuple methods for small tuple sizes?
+					// that is an option for future optimization of pattern match.
 					push(in, ETUPLE_TYPE);
-					mv.visitTypeInsn(CHECKCAST, getTubleType(arities[i])
-							.getInternalName());
-					pop(in, getTubleType(arities[i]));
-					mv.visitJumpInsn(GOTO, getLabel(targets[map[i]]));
+					mv.visitTypeInsn(CHECKCAST, getTubleType(cases[i].arity).getInternalName());
+					pop(in, getTubleType(cases[i].arity));
+					mv.visitJumpInsn(GOTO, cases[i].target);
 				}
 
 			}
