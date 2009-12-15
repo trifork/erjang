@@ -34,6 +34,14 @@ public class EInternalPID extends EPID implements ELocalHandle {
 		this.task = self;
 	}
 	
+	/* (non-Javadoc)
+	 * @see erjang.EPID#is_alive()
+	 */
+	@Override
+	public boolean is_alive() {
+		return task.is_alive();
+	}
+	
 	public ELocalHandle testLocalHandle() {
 		return this;
 	}

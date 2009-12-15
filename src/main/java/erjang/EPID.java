@@ -18,6 +18,8 @@
 
 package erjang;
 
+import java.math.BigInteger;
+
 public abstract class EPID extends EHandle {
 
 	/**
@@ -74,5 +76,10 @@ public abstract class EPID extends EHandle {
 	public static EPID make(EAtom node, int id, int serial, int creation) {
 		throw new NotImplemented();
 	}
+
+	/**
+	 * @return
+	 */
+	public abstract boolean is_alive();
 
 }

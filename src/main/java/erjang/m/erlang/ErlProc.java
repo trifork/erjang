@@ -299,8 +299,11 @@ public class ErlProc {
 	}
 
 	@BIF
-	public static EObject exit(EProc proc, EObject a1, EObject a2) {
-		throw new NotImplemented();
+	public static EAtom exit(EProc proc, EObject p, EObject reason) throws Pausable {
+		EPID pid = p.testPID();
+		if (pid == null) throw ERT.badarg(p, reason);
+		pid.exit_signal(proc.self_handle(), reason);
+		return ERT.TRUE;
 	}
 
 	@BIF
@@ -446,6 +449,12 @@ public class ErlProc {
 	
 	@BIF
 	static ESeq processes() {
-		throw new NotImplemented();
+		return EProc.processes();
+	}
+	
+	@BIF
+	public static EAtom is_process_alive(EObject p) {
+		EPID pid = p.testPID();
+		return ERT.box(pid.is_alive());
 	}
 }

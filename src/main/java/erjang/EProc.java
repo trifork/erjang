@@ -23,6 +23,7 @@ import java.util.Map;
 
 import erjang.ETask.State;
 import erjang.m.erlang.ErlProc;
+import erjang.util.WeakHashSet;
 
 import kilim.Mailbox;
 import kilim.Pausable;
@@ -46,6 +47,9 @@ public final class EProc extends ETask<EInternalPID> {
 	public static final EAtom am_normal = EAtom.intern("normal");
 	public static final EAtom am_low = EAtom.intern("low");
 	public static final EAtom am_high = EAtom.intern("high");
+
+	private static final EObject am_kill = EAtom.intern("kill");
+	private static final EObject am_init = EAtom.intern("init");
 
 	public EFun tail;
 	public EObject arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8;
@@ -103,7 +107,7 @@ public final class EProc extends ETask<EInternalPID> {
 		case 0:
 		}
 		
-
+		all_tasks.add(this);
 	}
 
 	/**
@@ -141,8 +145,14 @@ public final class EProc extends ETask<EInternalPID> {
 			// reason} to self
 			ETuple msg = ETuple.make(ERT.EXIT, from, reason);
 			System.err.println("kill message to self: "+msg);
+			if (reason == am_kill && ERT.whereis(am_init)==from) {
+				this.exit_reason = reason;
+				this.pstate = State.EXIT_SIG;			
+				return;
+			}
 			mbox_send(msg);
-		} else {
+			resume(); // why did we not wake to life?
+		} else if (reason != am_normal) {
 			System.err.println("kill signal: " +reason + " from "+from);
 			// try to kill this thread
 			this.exit_reason = reason;
@@ -395,6 +405,32 @@ public final class EProc extends ETask<EInternalPID> {
 		}
 		
 	}
+	
+	
+	private	static WeakHashSet<EProc> all_tasks = new WeakHashSet<EProc>();
+	
+	/**
+	 * @return
+	 */
+	public static ESeq processes() {
+		ESeq res = ERT.NIL;
+		for (EProc proc : all_tasks) {
+			if (proc.is_alive()) {
+				res = res.cons(proc.self_handle());
+			}
+		}
+		return res;
+	}
+
+	/**
+	 * @return
+	 */
+	public boolean is_alive() {
+		State ps = pstate;
+		return ps == State.INIT || ps == State.RUNNING;
+	}
+
+
 
 }
 
@@ -416,5 +452,4 @@ class ETailMarker extends EObject {
 			return 0;
 		return -1;
 	}
-
 }
