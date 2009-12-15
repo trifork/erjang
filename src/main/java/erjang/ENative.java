@@ -20,8 +20,25 @@
 package erjang;
 
 /**
+ * Base class for native code.  
+ * 
+ * To implement a native (BIF) for module named <code>foo</code>, create a subclass 
+ * of this named <code>erjang.m.foo.Native</code>.  
+ * 
+ * See {@link erjang.m.ets.Native} (the BIFs for <code>ets</code>), which is 
+ * the appointed "good style to copy" for coding conventions.  
  * 
  */
 public abstract class ENative {
-	protected abstract Class<?>[] getNativeClasses();
+		
+	/**
+	 * if you want to put the BIFs in multiple class files, you can tell which
+	 * class files here.  Normally that is not needed, but the module <code>erlang</code>
+	 * has so many BIFs that it is very inconvenient to have them in one large 
+	 * file.
+	 */
+	
+	protected Class<?>[] getNativeClasses() {
+		return new Class[] { getClass() };
+	}
 }
