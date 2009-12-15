@@ -52,7 +52,7 @@ public class ErlConvert {
 			//System.out.println("DECODED:"+val);
 			return val;
 		} catch (IOException e) {
-			throw new ErlangError(ERT.AM_BADARG, e, arg);
+			throw new ErlangError(ERT.am_badarg, e, arg);
 		}
 	}
 
