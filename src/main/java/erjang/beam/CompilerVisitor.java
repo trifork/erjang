@@ -1748,9 +1748,9 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				switch (test) {
 				case test_arity: {
 					Type tt = getTubleType(arity);
-					push(arg, ETUPLE_TYPE);
+					push(arg, EOBJECT_TYPE);
 					mv.visitMethodInsn(INVOKESTATIC, tt.getInternalName(),
-							"cast", "(" + ETUPLE_DESC + ")"
+							"cast", "(" + arg.type.getDescriptor() + ")"
 									+ tt.getDescriptor());
 					mv.visitInsn(DUP);
 
