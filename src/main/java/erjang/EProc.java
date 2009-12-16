@@ -49,7 +49,7 @@ public final class EProc extends ETask<EInternalPID> {
 	public static final EAtom am_high = EAtom.intern("high");
 
 	private static final EObject am_kill = EAtom.intern("kill");
-	private static final EObject am_init = EAtom.intern("init");
+	private static final EObject am_killed = EAtom.intern("killed");
 
 	public EFun tail;
 	public EObject arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8;
@@ -140,23 +140,27 @@ public final class EProc extends ETask<EInternalPID> {
 
 	protected void process_incoming_exit(EHandle from, EObject reason) throws Pausable
 	{
-		if (trap_exit == ERT.TRUE) {
+		if (from == self_handle()) {
+			return;
+			
+		} else if (reason == am_kill) {
+			this.exit_reason = am_killed;
+			this.pstate = State.EXIT_SIG;
+			this.resume();
+
+		} else if (trap_exit == ERT.TRUE) {
 			// we're trapping exits, so we in stead send an {'EXIT', from,
 			// reason} to self
 			ETuple msg = ETuple.make(ERT.EXIT, from, reason);
-			System.err.println("kill message to self: "+msg);
-			if (reason == am_kill && ERT.whereis(am_init)==from) {
-				this.exit_reason = reason;
-				this.pstate = State.EXIT_SIG;			
-				return;
-			}
+			// System.err.println("kill message to self: "+msg);
 			mbox_send(msg);
-			resume(); // why did we not wake to life?
+			
 		} else if (reason != am_normal) {
-			System.err.println("kill signal: " +reason + " from "+from);
+			// System.err.println("kill signal: " +reason + " from "+from);
 			// try to kill this thread
 			this.exit_reason = reason;
 			this.pstate = State.EXIT_SIG;
+			this.resume();
 		}
 	}
 	

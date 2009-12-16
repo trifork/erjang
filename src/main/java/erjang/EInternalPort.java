@@ -22,8 +22,6 @@ package erjang;
 import java.nio.ByteBuffer;
 
 import kilim.Pausable;
-
-import erjang.ETask.State;
 import erjang.driver.EDriverTask;
 
 /**
@@ -39,8 +37,9 @@ public class EInternalPort extends EPort implements ELocalHandle {
 		return "<port:" + task.id + ">";
 	}
 	
+	// TODO: private final WeakReference<EDriverTask> task;
 	private final EDriverTask task;
-
+	
 	public EInternalPort(EDriverTask task) {
 		super(ERT.getLocalNode());
 		this.task = task;
