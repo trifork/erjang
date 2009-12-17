@@ -204,7 +204,7 @@ public class Native extends ENative {
 
 	/*
 	 * [from ets.erl]: The following functions used to be found in this module,
-	 * but are now BIFs (i.e. implemented in C).
+	 * but are now BIFs (i.e. implemented in C). [THUS NEED TO BE IMPLEMENTED HERE]
 	 * 
 	 * all/0 new/2 delete/1 delete/2 first/1 info/1 info/2 safe_fixtable/2
 	 * lookup/2 lookup_element/3 insert/2 is_compiled_ms/1 last/1 next/2 prev/2

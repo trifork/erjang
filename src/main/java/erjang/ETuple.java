@@ -132,7 +132,7 @@ public abstract class ETuple extends EObject implements Cloneable /* , Indexed *
 		return t;
 	}
 
-	abstract void set(int index, EObject term);
+	public abstract void set(int index, EObject term);
 
 	public abstract ETuple blank();
 
