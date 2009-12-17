@@ -42,6 +42,20 @@ public abstract class ETuple extends EObject implements Cloneable /* , Indexed *
 	@Override
 	int compare_same(EObject rhs) {
 		ETuple other = (ETuple) rhs;
+		
+		// TODO: is this the correct ordering? .. it seems so:
+		//
+		// 1> {1,2} < {3}.
+		// false
+		// 2> {2} < {1,1}.
+		// true
+		// 3> {2,2} < {1,1}.
+		// false
+		// 4> {1,1} > {2,2}.
+		// false
+		// 5> {1,1} < {2,2}.
+		// true
+
 		if (arity() < other.arity())
 			return -1;
 		if (arity() > other.arity())
@@ -333,7 +347,7 @@ public abstract class ETuple extends EObject implements Cloneable /* , Indexed *
 	}
 
 	protected final EObject bad_nth(int i) {
-		throw new IllegalArgumentException();
+		throw ERT.badarg(this);
 	}
 
 	private static void create_count(ClassAdapter cw, int n) {
@@ -415,7 +429,7 @@ public abstract class ETuple extends EObject implements Cloneable /* , Indexed *
 
 	@Override
 	public String toString() {
-		StringBuffer sb = new StringBuffer("{");
+		StringBuilder sb = new StringBuilder("{");
 		for (int i = 1; i <= this.arity(); i++) {
 			if (i != 1)
 				sb.append(',');
@@ -426,9 +440,7 @@ public abstract class ETuple extends EObject implements Cloneable /* , Indexed *
 	}
 
 	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see java.lang.Object#hashCode()
+	 * TODO: Make compatible with Erlang
 	 */
 	@Override
 	public int hashCode() {
