@@ -320,5 +320,12 @@ public abstract class EObject implements Comparable<EObject> {
 		return null;
 	}
 
+	/**
+	 * @return
+	 */
+	public EInternalPID testInternalPID() {
+		return null;
+	}
+
 
 }

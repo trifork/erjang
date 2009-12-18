@@ -18,7 +18,9 @@
 
 package erjang;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import erjang.ETask.State;
@@ -137,13 +139,36 @@ public final class EProc extends ETask<EInternalPID> {
 		}
 	}
 
+	static ExitHook[] NO_HOOKS = new ExitHook[0];
+	
+	@Override
+	protected void do_proc_termination(EObject result) throws Pausable {
+		super.do_proc_termination(result);
+		
+		ExitHook[] hooks = NO_HOOKS;
+		synchronized (exit_hooks) {
+			if (exit_hooks == null || exit_hooks.isEmpty()) {
+				// do nothing //
+			} else {
+				hooks = exit_hooks.toArray(new ExitHook[exit_hooks.size()]);
+			}
+		}
+		
+		for (int i = 0; i < hooks.length; i++) {
+			hooks[i].on_exit(self);
+		}
+		
 
+	}
+	
 	protected void process_incoming_exit(EHandle from, EObject reason) throws Pausable
 	{
 		if (from == self_handle()) {
 			return;
 			
-		} else if (reason == am_kill) {
+		} 
+
+		if (reason == am_kill) {
 			this.exit_reason = am_killed;
 			this.pstate = State.EXIT_SIG;
 			this.resume();
@@ -303,7 +328,7 @@ public final class EProc extends ETask<EInternalPID> {
 
 			//System.err.println("task "+this+" exited with "+result);
 			
-			send_exit_to_all_linked(result);
+			do_proc_termination(result);
 
 		} catch (ThreadDeath e) {
 			throw e;
@@ -433,6 +458,28 @@ public final class EProc extends ETask<EInternalPID> {
 		State ps = pstate;
 		return ps == State.INIT || ps == State.RUNNING;
 	}
+
+	List<ExitHook> exit_hooks = new ArrayList<ExitHook>();
+	
+	/**
+	 * @param hook
+	 */
+	public void add_exit_hook(ExitHook hook) {
+		synchronized(exit_hooks) {
+			exit_hooks.add(hook);
+		}
+	}
+
+	/**
+	 * @param hook
+	 */
+	public void remove_exit_hook(ExitHook hook) {
+		synchronized(exit_hooks) {
+			exit_hooks.remove(hook);
+		}
+	}
+	
+	
 
 
 

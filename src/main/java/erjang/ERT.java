@@ -26,6 +26,8 @@ import java.lang.reflect.Method;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -290,6 +292,7 @@ public class ERT {
 	public static final EAtom am_noproc = EAtom.intern("noproc");
 	public static final EAtom am_error = EAtom.intern("error");
 	public static final EAtom am_value = EAtom.intern("value");
+	public static final EAtom am_timeout = EAtom.intern("timeout");
 	public static final EAtom am_function_clause = EAtom
 			.intern("function_clause");
 	private static final EObject am_ok = EAtom.intern("ok");
@@ -311,16 +314,132 @@ public class ERT {
 		return sw.toString();
 	}
 
-	/**
-	 * @param e
-	 * @return
-	 */
-	public static ESmall get_posix_code(IOException e) {
+	
+	static EInteger max_send_time = ERT.box(4294967295L);
+	static ESmall zero = ERT.box(0);
+	
+	public static final <T> boolean gt(Comparable<T> v1, T v2) {
+		return v1.compareTo(v2) > 0;
+	}
+	
+	public static final <T> boolean lt(Comparable<T> v1, T v2) {
+		return v1.compareTo(v2) < 0;
+	}
+	
+	public static final <T> boolean le(Comparable<T> v1, T v2) {
+		return v1.compareTo(v2) <= 0;
+	}
+	
+	@BIF(name = "erlang:cancel_timer/1")
+	public static EObject cancel_timer(EObject ref)
+	{
+		// check arguments 
+		ERef timer_ref = ref.testReference();
+		if (timer_ref == null) throw ERT.badarg();
+		
+		long time_left = ETimerTask.cancel(timer_ref);
+		
+		if (time_left > 0) {
+			return ERT.box(time_left);
+		} else {
+			return ERT.FALSE;
+		}
+	}
+	
+	@BIF(name = "erlang:read_timer/1")
+	public static EObject read_timer(EObject ref)
+	{
+		// check arguments 
+		ERef timer_ref = ref.testReference();
+		if (timer_ref == null) throw ERT.badarg();
+		
+		long time_left = ETimerTask.read_timer(timer_ref);
+		
+		if (time_left > 0) {
+			return ERT.box(time_left);
+		} else {
+			return ERT.FALSE;
+		}
+	}
+	
+	@BIF(name = "erlang:send_after/3")
+	public static EObject send_after(EObject time, final EObject rcv, final EObject msg)
+	{
+		// check arguments 
+		EInteger when = time.testInteger();
+		final EInternalPID rcv_pid = rcv.testInternalPID();
+		EAtom rcv_atom = rcv.testAtom();
+		
+		if (when == null 
+			|| gt(when, max_send_time)
+			|| lt(when, zero)
+			|| (rcv_pid == null && rcv_atom == null)) {
+			throw ERT.badarg(time, rcv, msg);
+		}
+			
+		ETimerTask send_task = new ETimerTask(rcv_pid) {
+			@Override
+			public void on_timeout() {
+				
+				EHandle p;
+				if ((p = rcv.testHandle()) != null) {
+					p.sendb(msg);
+					return;
+				}
 
-		// TODO Auto-generated method stub
-		return null;
+				p = register.get(rcv);
+				if (p != null) {
+					p.sendb(msg);
+				}
+			}
+		};
+		
+		send_task.schedule(when.longValue());
+
+		return send_task.ref;
 	}
 
+	@BIF(name = "erlang:start_timer/3")
+	public static EObject start_timer(EObject time, final EObject rcv, final EObject msg)
+	{
+		// check arguments 
+		EInteger when = time.testInteger();
+		final EInternalPID rcv_pid = rcv.testInternalPID();
+		EAtom rcv_atom = rcv.testAtom();
+		
+		if (when == null 
+			|| gt(when, max_send_time)
+			|| lt(when, zero)
+			|| (rcv_pid == null && rcv_atom == null)) {
+			throw ERT.badarg(time, rcv, msg);
+		}
+			
+		ETimerTask send_task = new ETimerTask(rcv_pid) {
+			@Override
+			public void on_timeout() {
+				
+				ETuple3 timeout_msg = new ETuple3();
+				timeout_msg.elem1 = am_timeout;
+				timeout_msg.elem2 = this.ref;
+				timeout_msg.elem3 = msg;
+				
+				EHandle p;
+				if ((p = rcv.testHandle()) != null) {
+					p.sendb(timeout_msg);
+					return;
+				}
+
+				p = register.get(rcv);
+				if (p != null) {
+					p.sendb(timeout_msg);
+				}
+			}
+		};
+		
+		send_task.schedule(when.longValue());
+
+		return send_task.ref;
+	}
 	/**
 	 * @param owner
 	 * @param make

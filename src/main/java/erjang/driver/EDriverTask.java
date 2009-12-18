@@ -274,7 +274,7 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 			}
 
 			// System.err.println("task "+this+" exited with "+result);
-			send_exit_to_all_linked(result);
+			do_proc_termination(result);
 
 			instance.stop();
 
@@ -501,8 +501,8 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 	 * @see erjang.ETask#send_exit_to_all_linked(erjang.EObject)
 	 */
 	@Override
-	protected void send_exit_to_all_linked(EObject result) throws Pausable {
-		super.send_exit_to_all_linked(result);
+	protected void do_proc_termination(EObject result) throws Pausable {
+		super.do_proc_termination(result);
 		if (result != am_normal) {
 			owner.send(ETuple.make(ERT.EXIT, self_handle(), result));
 		}

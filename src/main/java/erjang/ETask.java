@@ -83,24 +83,24 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 		throw new ErlangError(ERT.am_noproc);
 	}
 
-	protected void send_exit_to_all_linked(EObject result) throws Pausable {
+	protected void do_proc_termination(EObject exit_reason) throws Pausable {
 		this.exit_reason = null;
 		H me = self_handle();
 		for (EHandle handle : links) {
-			handle.exit_signal(me, result);
+			handle.exit_signal(me, exit_reason);
 		}
 		for (Map.Entry<ERef, ETuple2> ent : monitors.entrySet()) {
 			ETuple2 pid_object = ent.getValue();
 			ERef ref = ent.getKey();
 			
-			EPID pid = (EPID) pid_object.elem1;
-			EObject object = pid_object.elem2;
+			EPID pid = (EPID) pid_object.elm(1);
+			EObject object = pid_object.elm(2);
 			
 			if (object == null) {
 				object = me;
 			}
 			
-			pid.send(ETuple.make(am_DOWN, ref, am_process, object, result));
+			pid.send(ETuple.make(am_DOWN, ref, am_process, object, exit_reason));
 		}
 	}
 	

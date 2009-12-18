@@ -28,6 +28,10 @@ import kilim.Pausable;
 public class EInternalPID extends EPID implements ELocalHandle {
 
 	private final EProc task;
+	
+	public EInternalPID testInternalPID() {
+		return this;
+	}
 
 	public EInternalPID(EProc self) {
 		super(ERT.getLocalNode());
@@ -110,35 +114,38 @@ public class EInternalPID extends EPID implements ELocalHandle {
 		throw new NotImplemented();
 	}
 	
-	/* (non-Javadoc)
-	 * @see java.lang.Object#toString()
-	 */
 	@Override
 	public String toString() {
 		return "PID<" + (name==null?"":name)  + ":" + task().id + ">";
 	}
 	
-	/* (non-Javadoc)
-	 * @see erjang.EPID#process_info()
-	 */
 	@Override
 	public EObject process_info() {
 		return task.process_info();
 	}
 	
-	/* (non-Javadoc)
-	 * @see erjang.EPID#process_info(erjang.EObject)
-	 */
 	@Override
 	public EObject process_info(EObject spec) {
 		return task.process_info(spec);
 	}
 	
-	/* (non-Javadoc)
-	 * @see erjang.EObject#equalsExactly(erjang.EObject)
-	 */
 	@Override
 	public boolean equalsExactly(EObject rhs) {
 		return rhs==this;
+	}
+
+	/**
+	 * @param eTimerTask
+	 */
+	public void add_exit_hook(ExitHook hook) {
+		if (is_alive())
+			task.add_exit_hook(hook);
+	}
+
+	/**
+	 * @param eTimerTask
+	 */
+	public void remove_exit_hook(ExitHook hook) {
+		task.remove_exit_hook(hook);
 	}
 }
