@@ -32,12 +32,9 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.locks.Lock;
 
-import sun.security.util.Cache.EqualByteArray;
-
 import erjang.EBinary;
 import erjang.EObject;
 import erjang.EPort;
-import erjang.ERT;
 import erjang.ERef;
 import erjang.EString;
 import erjang.NotImplemented;

@@ -20,7 +20,6 @@ package erjang.m.ets;
 
 import clojure.lang.IPersistentCollection;
 import clojure.lang.IPersistentMap;
-import clojure.lang.IPersistentSet;
 import clojure.lang.ISeq;
 import clojure.lang.PersistentHashMap;
 import clojure.lang.PersistentHashSet;

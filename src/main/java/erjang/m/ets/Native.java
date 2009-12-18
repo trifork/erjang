@@ -35,7 +35,6 @@ import erjang.ESmall;
 import erjang.ETuple;
 import erjang.ETuple2;
 import erjang.ETuple3;
-import erjang.NotImplemented;
 
 /**
  * This class implements the BIFs in ets.

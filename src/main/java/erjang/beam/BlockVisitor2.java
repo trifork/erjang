@@ -23,8 +23,6 @@ package erjang.beam;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
-import erjang.EObject;
-
 /**
  * 
  */

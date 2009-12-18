@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import kilim.Pausable;
-
 import erjang.BIF;
 import erjang.EAtom;
 import erjang.EInternalPort;
@@ -36,7 +35,6 @@ import erjang.EString;
 import erjang.ETask;
 import erjang.ETuple;
 import erjang.ETuple2;
-import erjang.NotImplemented;
 import erjang.driver.EDriver;
 import erjang.driver.EExecDriverTask;
 import erjang.driver.ESpawnDriverTask;

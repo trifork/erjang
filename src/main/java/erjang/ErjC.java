@@ -25,7 +25,6 @@ import java.io.IOException;
 import com.ericsson.otp.erlang.OtpAuthException;
 
 import erjang.beam.Compiler;
-import erjang.beam.DirClassRepo;
 import erjang.beam.JarClassRepo;
 
 /**

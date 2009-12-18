@@ -32,11 +32,8 @@ import com.ericsson.otp.erlang.OtpErlangString;
 import com.ericsson.otp.erlang.OtpErlangTuple;
 
 import erjang.EAtom;
-import erjang.EBig;
 import erjang.EBinary;
 import erjang.EBitString;
-import erjang.EDouble;
-import erjang.ESmall;
 import erjang.EObject;
 import erjang.ERT;
 import erjang.EString;

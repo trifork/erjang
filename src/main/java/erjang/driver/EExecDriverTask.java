@@ -25,19 +25,15 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Map;
 
-import kilim.Pausable;
-
 import erjang.EAtom;
 import erjang.EBitString;
 import erjang.ECons;
-import erjang.EHandle;
 import erjang.EObject;
 import erjang.EProc;
 import erjang.ERT;
 import erjang.EString;
 import erjang.ETuple2;
 import erjang.ErlangError;
-import erjang.ErlangExit;
 import erjang.NotImplemented;
 
 

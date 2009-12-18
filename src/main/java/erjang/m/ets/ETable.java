@@ -25,7 +25,6 @@ import clojure.lang.APersistentMap;
 import clojure.lang.IPersistentMap;
 import clojure.lang.LockingTransaction;
 import clojure.lang.Ref;
-
 import erjang.EAtom;
 import erjang.EInteger;
 import erjang.EObject;

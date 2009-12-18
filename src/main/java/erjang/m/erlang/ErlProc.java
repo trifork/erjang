@@ -18,27 +18,21 @@
 
 package erjang.m.erlang;
 
-import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
-import java.lang.management.MemoryManagerMXBean;
 import java.lang.management.MemoryPoolMXBean;
 import java.lang.management.MemoryType;
 import java.lang.management.MemoryUsage;
 import java.util.List;
 
 import kilim.Pausable;
-
 import erjang.BIF;
 import erjang.EAtom;
 import erjang.ECons;
-import erjang.EFun;
 import erjang.EHandle;
-import erjang.EModule;
 import erjang.EModuleManager;
 import erjang.EObject;
 import erjang.EPID;
-import erjang.EPort;
 import erjang.EProc;
 import erjang.ERT;
 import erjang.ERef;
@@ -47,12 +41,9 @@ import erjang.ESmall;
 import erjang.EString;
 import erjang.ETuple;
 import erjang.ETuple2;
-import erjang.ETuple4;
 import erjang.ErlFun;
 import erjang.ErlangError;
-import erjang.ErlangException;
 import erjang.ErlangExit;
-import erjang.FunID;
 import erjang.NotImplemented;
 
 /**

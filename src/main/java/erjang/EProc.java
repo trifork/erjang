@@ -23,12 +23,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import erjang.ETask.State;
+import kilim.Pausable;
 import erjang.m.erlang.ErlProc;
 import erjang.util.WeakHashSet;
-
-import kilim.Mailbox;
-import kilim.Pausable;
 
 /**
  * An erlang process

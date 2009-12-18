@@ -19,13 +19,9 @@
 
 package erjang.m.ets;
 
-import java.util.concurrent.Callable;
-
 import clojure.lang.IPersistentMap;
-import clojure.lang.LockingTransaction;
 import clojure.lang.PersistentHashMap;
 import clojure.lang.PersistentTreeMap;
-import clojure.lang.Ref;
 import erjang.EAtom;
 import erjang.EInteger;
 import erjang.EObject;
@@ -34,7 +30,6 @@ import erjang.EProc;
 import erjang.ERT;
 import erjang.ESeq;
 import erjang.ETuple;
-import erjang.ErlangError;
 
 /**
  * 

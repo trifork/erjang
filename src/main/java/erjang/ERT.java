@@ -26,9 +26,6 @@ import java.lang.reflect.Method;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 import kilim.Pausable;
@@ -38,7 +35,6 @@ import erjang.driver.EAsync;
 import erjang.driver.EDriver;
 import erjang.driver.EDriverTask;
 import erjang.driver.efile.Driver;
-import erjang.util.WeakHashSet;
 
 @Module(value = "erlang")
 public class ERT {

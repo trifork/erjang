@@ -18,7 +18,6 @@
 
 package erjang;
 
-import java.math.BigInteger;
 
 public abstract class EPID extends EHandle {
 

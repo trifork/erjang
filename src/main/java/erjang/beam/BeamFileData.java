@@ -19,13 +19,12 @@
 package erjang.beam;
 
 import erjang.EAtom;
-import erjang.ERT;
-import erjang.ESmall;
 import erjang.EList;
 import erjang.EObject;
+import erjang.ERT;
 import erjang.ESeq;
+import erjang.ESmall;
 import erjang.ETuple;
-import erjang.ETuple0;
 
 public class BeamFileData {
 

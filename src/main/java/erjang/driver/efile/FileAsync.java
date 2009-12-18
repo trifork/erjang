@@ -21,8 +21,6 @@ package erjang.driver.efile;
 
 import java.nio.channels.FileChannel;
 
-import kilim.Pausable;
-
 import erjang.driver.EAsync;
 
 /**

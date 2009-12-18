@@ -18,7 +18,6 @@
 
 package erjang.m.erlang;
 
-import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -32,8 +31,6 @@ import erjang.EDouble;
 import erjang.EFun;
 import erjang.EHandle;
 import erjang.EInteger;
-import erjang.EList;
-import erjang.EModule;
 import erjang.EModuleManager;
 import erjang.ENumber;
 import erjang.EObject;

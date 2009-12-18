@@ -19,7 +19,6 @@
 
 package erjang;
 
-import erjang.ETask.State;
 import kilim.Pausable;
 
 /**

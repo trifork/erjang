@@ -18,30 +18,6 @@
 
 package erjang;
 
-import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.math.BigInteger;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeSet;
-import java.util.concurrent.ConcurrentHashMap;
-
-import kilim.Pausable;
-
-import sun.tools.java.Imports;
-
-import erjang.beam.ClassRepo;
-import erjang.beam.Compiler;
-import erjang.beam.DirClassRepo;
 
 public abstract class EModule {
 

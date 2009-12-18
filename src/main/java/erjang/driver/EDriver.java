@@ -19,7 +19,6 @@
 
 package erjang.driver;
 
-import erjang.EPort;
 import erjang.EString;
 
 /**

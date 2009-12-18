@@ -22,8 +22,6 @@ import java.util.Comparator;
 import java.util.Set;
 import java.util.TreeSet;
 
-import erjang.ETuple2;
-
 class BasicBlock {
 
 	final int label;

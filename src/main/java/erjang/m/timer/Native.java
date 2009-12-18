@@ -25,7 +25,6 @@ import kilim.Pausable;
 import erjang.BIF;
 import erjang.EAtom;
 import erjang.EFun;
-import erjang.EModule;
 import erjang.EModuleManager;
 import erjang.ENative;
 import erjang.EObject;

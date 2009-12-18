@@ -24,7 +24,6 @@ import java.nio.channels.SelectionKey;
 import java.util.concurrent.locks.Lock;
 
 import kilim.ReentrantLock;
-
 import erjang.EBinList;
 import erjang.EBinary;
 import erjang.EObject;
