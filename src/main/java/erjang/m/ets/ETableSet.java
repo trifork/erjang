@@ -19,9 +19,13 @@
 
 package erjang.m.ets;
 
+import java.util.concurrent.Callable;
+
 import clojure.lang.IPersistentMap;
+import clojure.lang.LockingTransaction;
 import clojure.lang.PersistentHashMap;
 import clojure.lang.PersistentTreeMap;
+import clojure.lang.Ref;
 import erjang.EAtom;
 import erjang.EInteger;
 import erjang.EObject;
@@ -30,61 +34,61 @@ import erjang.EProc;
 import erjang.ERT;
 import erjang.ESeq;
 import erjang.ETuple;
-import erjang.NotImplemented;
+import erjang.ErlangError;
 
 /**
  * 
  */
 public class ETableSet extends ETable {
 
-	IPersistentMap map;
-	EAtom type;
-	
 	ETableSet(EProc owner, EAtom type, EInteger tid, EAtom aname, EAtom access, int keypos,
 			boolean write_concurrency, boolean is_named, EPID heirPID, EObject heirData) {
-		super(owner, tid, aname, access, keypos, is_named, heirPID, heirData);
+		super(owner, type, tid, aname, access, keypos, 
+				is_named, heirPID, heirData, 
+				type == Native.am_set 
+						? PersistentHashMap.EMPTY 
+						: PersistentTreeMap.EMPTY);
 		
-		this.type = type;
-		if (type == Native.am_set) {
-			map = PersistentHashMap.EMPTY;
-		} else if (type == Native.am_ordered_set) {
-			map = PersistentTreeMap.EMPTY;
-		}
+		
 	}
 	
-	@Override
-	EAtom type() {
-		return type;
-	}
-
 	@Override
 	int size() {
-		return map.count();
-	}
-	
-	@Override
-	protected void insert_one(ETuple value) {
-		map = map.assoc(get_key(value), value);
+		return deref().count();
 	}
 
 	@Override
-	protected void insert_many(ESeq values) {
-		IPersistentMap res = map;
-		
-		while (!values.isNil()) {
-			EObject value = values.head();
-			res = res.assoc(get_key(value), value);
-			values = values.tail();
-		}
-		
-		map = res;
+	protected void insert_one(final ETuple value) {
+		in_tx(new WithMap<Object>() {
+			@Override
+			protected Object run(IPersistentMap map) {
+				set(map.assoc(get_key(value), value));
+				return null;
+			}
+		});
+	}
+
+
+	@Override
+	protected void insert_many(final ESeq values) {
+		in_tx(new WithMap<Object>() {
+			@Override
+			protected Object run(IPersistentMap map) {		
+				for (ESeq seq = values; !seq.isNil(); seq = seq.tail()) {
+					EObject value = values.head();
+					map = map.assoc(get_key(value), value);
+				}
+				set(map);
+				return null;
+			}});
 	}
 	
 	@Override
 	protected EObject lookup(EObject key) {
 		ESeq res = ERT.NIL;
 		
-		EObject val = (EObject) map.valAt(key);
+		// no need to run in_tx if we're only reading
+		EObject val = (EObject) deref().valAt(key);
 		if (val != null) {
 			return res.cons(val);
 		} else {
@@ -93,13 +97,38 @@ public class ETableSet extends ETable {
 	}
 
 	@Override
-	protected void insert_new_many(ESeq values) {
-		throw new NotImplemented();
-	}
+	protected void insert_new_many(final ESeq values) {	
+		in_tx(new WithMap<Object>() {
+			@Override
+			protected Object run(IPersistentMap map) {
+				for (ESeq seq = values; !seq.isNil(); seq = seq.tail()) {
+					EObject value = values.head();
+					EObject key = get_key(value);
+					if (!map.containsKey(key)) {
+						map = map.assoc(key, value);
+					}
+				}
+	
+				set(map);
+				return null;
+			}
+	});
+}
 
 	@Override
-	protected void insert_new_one(ETuple value) {
-		throw new NotImplemented();
+	protected void insert_new_one(final ETuple value) {
+		final EObject key = get_key(value);
+		if (!deref().containsKey(key)) {
+			in_tx(new WithMap<Object>() {
+				@Override
+				protected Object run(IPersistentMap map) {
+					if (!map.containsKey(key)) {
+						set(map.assoc(key, value));
+					}
+					return null;
+				}
+			});
+		}
 	}
 
 }

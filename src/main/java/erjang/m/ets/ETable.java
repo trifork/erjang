@@ -19,6 +19,12 @@
 package erjang.m.ets;
 
 import java.lang.ref.WeakReference;
+import java.util.concurrent.Callable;
+
+import clojure.lang.APersistentMap;
+import clojure.lang.IPersistentMap;
+import clojure.lang.LockingTransaction;
+import clojure.lang.Ref;
 
 import erjang.EAtom;
 import erjang.EInteger;
@@ -29,6 +35,7 @@ import erjang.ERT;
 import erjang.ESeq;
 import erjang.ETuple;
 import erjang.ETuple2;
+import erjang.ErlangError;
 import erjang.NotImplemented;
 
 /**
@@ -36,17 +43,22 @@ import erjang.NotImplemented;
  */
 abstract class ETable {
 
+	public static final EAtom am_stm = EAtom.intern("stm");
+	
 	protected final WeakReference<EProc> owner;
 	protected final EAtom access;
 	protected final int keypos;
 	protected final EPID heirPID;
 	protected final EObject heirData;
-	private final EInteger tid;
-	private final EAtom aname;
-	private final boolean is_named;
+	protected final EInteger tid;
+	protected final EAtom aname;
+	protected final boolean is_named;
+	protected final EAtom type;
+	private Ref mapRef;
 
-	ETable(EProc owner, EInteger tid, EAtom aname, EAtom access, int keypos,
-			boolean is_named, EPID heir_pid, EObject heir_data) {
+	ETable(EProc owner, EAtom type, EInteger tid, EAtom aname, EAtom access, int keypos,
+			boolean is_named, EPID heir_pid, EObject heir_data, APersistentMap map) {
+		this.type = type;
 		this.is_named = is_named;
 		this.owner = new WeakReference<EProc>(owner);
 		this.tid = tid;
@@ -55,6 +67,11 @@ abstract class ETable {
 		this.keypos = keypos;
 		this.heirPID = heir_pid;
 		this.heirData = heir_data;
+		try {
+			this.mapRef = new Ref(map);
+		} catch (Exception e) {
+			throw new ErlangError(am_stm);
+		}
 	}
 
 	/**
@@ -66,6 +83,11 @@ abstract class ETable {
 
 		if (type == Native.am_set || type == Native.am_ordered_set) {
 			return new ETableSet(proc, type, tid, aname, access, keypos,
+					write_concurrency, is_named, heir_pid, heir_data);
+		}
+
+		if (type == Native.am_bag || type == Native.am_duplicate_bag) {
+			return new ETableBag(proc, type, tid, aname, access, keypos,
 					write_concurrency, is_named, heir_pid, heir_data);
 		}
 
@@ -111,7 +133,7 @@ abstract class ETable {
 		res = res.cons(new ETuple2(Native.am_size, ERT.box(size())));
 		res = res.cons(new ETuple2(Native.am_node, ERT.getLocalNode().node()));
 		res = res.cons(new ETuple2(Native.am_named_table, ERT.box(is_named)));
-		res = res.cons(new ETuple2(Native.am_type, type()));
+		res = res.cons(new ETuple2(Native.am_type, type));
 		res = res.cons(new ETuple2(Native.am_keypos, ERT.box(keypos)));
 		res = res.cons(new ETuple2(Native.am_protection, access));
 
@@ -119,8 +141,6 @@ abstract class ETable {
 	}
 
 	abstract int size();
-
-	abstract EAtom type();
 
 	/** utility for subclasses */
 	EObject get_key(ETuple value) {
@@ -134,6 +154,39 @@ abstract class ETable {
 			throw ERT.badarg();
 		return tuple.elm(keypos);
 	}
+	
+	IPersistentMap deref() {
+		return (IPersistentMap) mapRef.deref();
+	}
+	
+
+	abstract class WithMap<T> implements Callable<T> {
+		
+		@Override
+		public final T call() throws Exception {
+			return run((IPersistentMap)mapRef.deref());
+		}
+
+		protected abstract T run(IPersistentMap map);
+
+		protected void set(IPersistentMap map) {
+			mapRef.set(map);
+		}
+		
+	}
+	
+	@SuppressWarnings("unchecked")
+	<X> X in_tx(WithMap<X> run) {
+		try {
+			return (X) LockingTransaction.runInTransaction(run);
+		} catch (Exception e) {
+			// STM Failure
+			throw new ErlangError(am_stm);
+		}
+	}
+	
+	
+
 
 	protected abstract void insert_one(ETuple value);
 
