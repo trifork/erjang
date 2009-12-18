@@ -98,17 +98,27 @@ public class EModuleManager {
 		}
 
 		private EFun getFunErrorHandler() {
-			if (this.error_handler != null) {
-				return this.error_handler;
+			if (error_handler != null) {
+				return error_handler;
 			}
-			this.error_handler = EFun.get_fun_with_handler(fun.arity,
+			
+			error_handler = makeErrorHandler();
+			return error_handler;
+		}
+
+		private EFun makeErrorHandler() {
+			return EFun.get_fun_with_handler(fun.arity,
 					new EFunHandler() {
 						public EObject invoke(EProc proc, EObject[] args)
 								throws Pausable {
 							EFun uf = undefined_function.resolved_value;
 
-							System.err.println("resolving "+fun);
-							
+							if (get_module_info(fun.module).is_loaded()) {
+								System.err.println("MISSING "+fun);
+							} else {
+								System.err.println("resolving "+fun);
+							}
+								
 							if (uf == null) {
 								throw new ErlangUndefined(fun.module,
 										fun.function, fun.arity);
@@ -120,7 +130,6 @@ public class EModuleManager {
 							}
 						}
 					});
-			return this.error_handler;
 		}
 
 		/**
