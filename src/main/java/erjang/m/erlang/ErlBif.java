@@ -833,6 +833,11 @@ public class ErlBif {
 		return a1.compareTo(a2) >= 0 ? ERT.TRUE : null;
 	}
 
+	@BIF(name = ">", type = Type.GUARD)
+	public static final EAtom is_gt$g(EObject a1, EObject a2) {
+		return a1.compareTo(a2) > 0 ? ERT.TRUE : null;
+	}
+
 	@BIF(name = "is_ge", type = Type.GUARD)
 	public static final EAtom is_ge$g(EObject a1, EObject a2) {
 		return a1.compareTo(a2) >= 0 ? ERT.TRUE : null;

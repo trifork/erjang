@@ -474,6 +474,16 @@ public class ERT {
 		handle.setName(aname);
 	}
 
+	public static boolean unregister(EAtom aname) {
+		EHandle val = register.remove(aname);
+		if (val != null) {
+			val.setName(null);
+			return true;
+		} else {
+			return false;
+		}		
+	}
+
 	/**
 	 * @param regname
 	 * @return

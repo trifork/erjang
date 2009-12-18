@@ -116,14 +116,24 @@ public class ErlProc {
 	@BIF
 	public static EObject register(EObject name, EObject pid) {
 		EAtom aname;
-		if ((aname=name.testAtom()) == null) throw ERT.badarg(name, pid);
 		EHandle handle = pid.testHandle();
-		if (handle == null) 
-			throw ERT.badarg(name, pid);
+		if ((aname=name.testAtom()) == null
+				|| handle == null) throw ERT.badarg(name, pid);
 		ERT.register(aname, handle);
 		return ERT.TRUE;
 	}
 
+	
+	@BIF
+	public static EObject unregister(EObject name) {
+		EAtom aname;
+		if ((aname=name.testAtom()) == null
+			|| !ERT.unregister(aname)) throw ERT.badarg(name);
+		return ERT.TRUE;
+	}
+
+	
+	
 	@BIF
 	public static EObject spawn_link(EProc proc, EObject mod, EObject fun, EObject args) throws Pausable {
 		
