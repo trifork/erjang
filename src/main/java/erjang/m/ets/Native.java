@@ -267,4 +267,14 @@ public class Native extends ENative {
 		return ERT.TRUE;
 	}
 
+	@BIF
+	public static EAtom delete(EProc caller, EObject nameOrTid)
+	{
+		ETable table = resolve(caller, nameOrTid, true);
+		if (table == null) { throw ERT.badarg(); }
+		
+		table.on_exit(caller.self_handle());
+
+		return ERT.TRUE;
+	}
 }

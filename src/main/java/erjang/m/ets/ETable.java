@@ -27,6 +27,7 @@ import clojure.lang.LockingTransaction;
 import clojure.lang.Ref;
 import erjang.EAtom;
 import erjang.EInteger;
+import erjang.EInternalPID;
 import erjang.EObject;
 import erjang.EPID;
 import erjang.EProc;
@@ -35,6 +36,7 @@ import erjang.ESeq;
 import erjang.ETuple;
 import erjang.ETuple2;
 import erjang.ErlangError;
+import erjang.ExitHook;
 import erjang.NotImplemented;
 
 /**
@@ -47,7 +49,7 @@ import erjang.NotImplemented;
  * duplicate_bag: PersistentHashMap [key, PersistentList [value]]
  * 
  */
-abstract class ETable {
+abstract class ETable implements ExitHook {
 
 	public static final EAtom am_stm = EAtom.intern("stm");
 	
@@ -78,6 +80,8 @@ abstract class ETable {
 		} catch (Exception e) {
 			throw new ErlangError(am_stm);
 		}
+		
+		owner.add_exit_hook(this);
 	}
 
 	/**
@@ -123,7 +127,7 @@ abstract class ETable {
 		}
 	}
 
-	EPID owner_pid() {
+	EInternalPID owner_pid() {
 		EProc o = owner.get();
 		if (o == null)
 			throw ERT.badarg();
@@ -146,6 +150,24 @@ abstract class ETable {
 		return res;
 	}
 
+	
+	@Override
+	public void on_exit(EInternalPID pid) {
+		if (pid == owner_pid()) {
+			delete();
+		}
+	}
+
+	private void delete() {
+		EInternalPID p = owner_pid();
+		if (p != null) p.remove_exit_hook(this);
+		
+		Native.tid_to_table.remove(tid);
+		if (is_named) {
+			Native.name_to_tid.remove(aname);
+		}
+	}
+	
 	abstract int size();
 
 	/** utility for subclasses */
