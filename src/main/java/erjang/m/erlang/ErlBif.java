@@ -18,6 +18,8 @@
 
 package erjang.m.erlang;
 
+import java.util.Calendar;
+import java.util.GregorianCalendar;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -1283,6 +1285,24 @@ public class ErlBif {
 		// yield?
 		Task.yield();
 		return ERT.box(1);
+	}
+	
+	@BIF
+	public static ETuple2 localtime()
+	{
+		Calendar c = GregorianCalendar.getInstance();
+		
+		ETuple3 date = new ETuple3();
+		date.set(1, ERT.box(c.get(Calendar.YEAR)));
+		date.set(2, ERT.box(c.get(Calendar.MONTH)+1));
+		date.set(3, ERT.box(c.get(Calendar.DAY_OF_MONTH)));
+		
+		ETuple3 time = new ETuple3();
+		time.set(1, ERT.box(c.get(Calendar.HOUR_OF_DAY)));
+		time.set(2, ERT.box(c.get(Calendar.MINUTE)));
+		time.set(3, ERT.box(c.get(Calendar.SECOND)));
+		
+		return new ETuple2(date, time);
 	}
 	
 }
