@@ -39,7 +39,14 @@ import erjang.ErlangError;
 import erjang.NotImplemented;
 
 /**
- * Abstract super class for an ETS table
+ * Abstract super class for an ETS table.  We implement ETS by using
+ * Clojure's persistent data types.  
+ * 
+ * set:           PersistentHashMap [key, value]
+ * ordered_set:   PersistentTreeMap [key, value]
+ * bag			  PersistentHashMap [key, PersistentSet [value]]
+ * duplicate_bag: PersistentHashMap [key, PersistentList [value]]
+ * 
  */
 abstract class ETable {
 
