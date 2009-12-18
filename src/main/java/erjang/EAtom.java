@@ -28,7 +28,7 @@ import org.objectweb.asm.Type;
 
 import erjang.driver.IO;
 
-public class EAtom extends EObject implements CharSequence {
+public final class EAtom extends EObject implements CharSequence {
 
 	public EAtom testAtom() {
 		return this;
