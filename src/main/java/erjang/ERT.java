@@ -291,7 +291,7 @@ public class ERT {
 	public static final EAtom am_timeout = EAtom.intern("timeout");
 	public static final EAtom am_function_clause = EAtom
 			.intern("function_clause");
-	private static final EObject am_ok = EAtom.intern("ok");
+	public static final EObject am_ok = EAtom.intern("ok");
 	private static final EObject am_noconnect = EAtom.intern("noconnect");
 
 	public static EBitStringBuilder bs_init(int size, int flags) {

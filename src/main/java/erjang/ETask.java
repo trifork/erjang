@@ -118,9 +118,9 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 	 * @param r
 	 */
 	public void remove_monitor(ERef r, boolean flush) {
-		monitors.remove(r);
+		ETuple2 val = monitors.remove(r);
 		if (flush) {
-			System.err.println("option [flush] ignored");
+			// TODO: do we need to represent flush somehow?
 		}
 	}
 

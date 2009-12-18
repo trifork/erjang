@@ -425,11 +425,6 @@ public final class EProc extends ETask<EInternalPID> {
 		}
 
 		h.remove_monitor(r, flush);
-		
-		if (flush) {
-			// TODO: wait for flush ack?
-		}
-		
 	}
 	
 	

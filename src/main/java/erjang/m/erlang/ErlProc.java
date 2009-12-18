@@ -29,6 +29,7 @@ import kilim.Pausable;
 import erjang.BIF;
 import erjang.EAtom;
 import erjang.ECons;
+import erjang.EFun;
 import erjang.EHandle;
 import erjang.EModuleManager;
 import erjang.EObject;
@@ -44,6 +45,7 @@ import erjang.ETuple2;
 import erjang.ErlFun;
 import erjang.ErlangError;
 import erjang.ErlangExit;
+import erjang.Import;
 import erjang.NotImplemented;
 
 /**
@@ -282,6 +284,9 @@ public class ErlProc {
 		throw new NotImplemented();
 	}
 
+	@Import(module="erlang", fun="flush_monitor_message", arity=2)
+	static EFun flush_monitor_message = null;
+	
 	@BIF
 	@ErlFun(export = true)
 	static public EObject demonitor(EProc self, EObject ref, EObject options) throws Pausable {
@@ -296,6 +301,10 @@ public class ErlProc {
 
 		self.demonitor(r, flush);
 
+		if (flush) {
+			flush_monitor_message.invoke(self, new EObject[] {ref, ERT.am_ok});
+		}
+		
 		return ERT.TRUE;
 	}
 
