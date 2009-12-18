@@ -89,7 +89,8 @@ public class ETableBag extends ETable {
 			protected Object run(IPersistentMap map) {
 				int count = 0;
 				for (ESeq seq = values; !seq.isNil(); seq = seq.tail()) {
-					EObject value = seq.head();
+					ETuple value = seq.head().testTuple();
+					if (value == null) throw ERT.badarg(values);
 					EObject key = get_key(value);
 					IPersistentCollection c = 
 						(IPersistentCollection) map.valAt(key, empty());

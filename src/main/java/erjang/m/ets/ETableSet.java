@@ -70,7 +70,8 @@ public class ETableSet extends ETable {
 			@Override
 			protected Object run(IPersistentMap map) {		
 				for (ESeq seq = values; !seq.isNil(); seq = seq.tail()) {
-					EObject value = values.head();
+					ETuple value = values.head().testTuple();
+					if (value == null) throw ERT.badarg(values);
 					map = map.assoc(get_key(value), value);
 				}
 				set(map);
@@ -97,7 +98,8 @@ public class ETableSet extends ETable {
 			@Override
 			protected Object run(IPersistentMap map) {
 				for (ESeq seq = values; !seq.isNil(); seq = seq.tail()) {
-					EObject value = values.head();
+					ETuple value = values.head().testTuple();
+					if (value == null) throw ERT.badarg(values);
 					EObject key = get_key(value);
 					if (!map.containsKey(key)) {
 						map = map.assoc(key, value);

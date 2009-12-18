@@ -152,14 +152,6 @@ abstract class ETable {
 	EObject get_key(ETuple value) {
 		return value.elm(keypos);
 	}
-
-	/** utility for subclasses */
-	EObject get_key(EObject value) {
-		ETuple tuple;
-		if ((tuple = value.testTuple()) == null)
-			throw ERT.badarg();
-		return tuple.elm(keypos);
-	}
 	
 	IPersistentMap deref() {
 		return (IPersistentMap) mapRef.deref();
