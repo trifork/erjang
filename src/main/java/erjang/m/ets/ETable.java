@@ -158,7 +158,7 @@ abstract class ETable implements ExitHook {
 		}
 	}
 
-	private void delete() {
+	void delete() {
 		EInternalPID p = owner_pid();
 		if (p != null) p.remove_exit_hook(this);
 		

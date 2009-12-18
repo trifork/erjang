@@ -273,7 +273,7 @@ public class Native extends ENative {
 		ETable table = resolve(caller, nameOrTid, true);
 		if (table == null) { throw ERT.badarg(); }
 		
-		table.on_exit(caller.self_handle());
+		table.delete();
 
 		return ERT.TRUE;
 	}
