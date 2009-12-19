@@ -18,6 +18,11 @@
 
 package erjang;
 
+import java.util.Set;
+
+import erjang.m.ets.ECompiledMatchSpec;
+import erjang.m.ets.ETermMatcher;
+
 
 public abstract class EPID extends EHandle {
 
@@ -35,6 +40,15 @@ public abstract class EPID extends EHandle {
 	
 	public EPID testPID() {
 		return this;
+	}
+
+	public boolean match(ETermMatcher matcher, EObject[] r) {
+		return matcher.match(this, r);
+	}
+	
+	@Override
+	public ETermMatcher compileMatch(Set<Integer> out) {
+		return ECompiledMatchSpec.compileMatch(this, out);
 	}
 
 	public EString getName() {

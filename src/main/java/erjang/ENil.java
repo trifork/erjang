@@ -36,6 +36,11 @@ public class ENil extends ESeq {
 		super();
 	}
 
+	public boolean isNil() {
+		return true;
+	}
+
+
 	@Override
 	public EObject head() {
 		throw new UnsupportedOperationException();

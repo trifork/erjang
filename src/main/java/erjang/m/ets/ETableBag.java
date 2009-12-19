@@ -149,5 +149,10 @@ public class ETableBag extends ETable {
 		return (Integer)sizeRef.deref();
 	}
 
+	@Override
+	public ESeq match(ECompiledMatchSpec matcher) {		
+		throw new NotImplemented();
+	}
+
 
 }

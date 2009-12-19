@@ -21,6 +21,10 @@ package erjang;
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.util.List;
+import java.util.Set;
+
+import erjang.m.ets.ECompiledMatchSpec;
+import erjang.m.ets.ETermMatcher;
 
 public abstract class ECons extends EObject {
 
@@ -28,6 +32,16 @@ public abstract class ECons extends EObject {
 	int cmp_order() {
 		return CMP_ORDER_LIST;
 	}
+
+	public boolean match(ETermMatcher matcher, EObject[] r) {
+		return matcher.match(this, r);
+	}
+
+	@Override
+	public ETermMatcher compileMatch(Set<Integer> out) {
+		return ECompiledMatchSpec.compileMatch(this, out);
+	}
+
 
 	@Override
 	int compare_same(EObject rhs) {

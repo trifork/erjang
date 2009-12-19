@@ -271,10 +271,21 @@ public class Native extends ENative {
 	public static EAtom delete(EProc caller, EObject nameOrTid)
 	{
 		ETable table = resolve(caller, nameOrTid, true);
-		if (table == null) { throw ERT.badarg(); }
+		if (table == null) { throw ERT.badarg(nameOrTid); }
 		
 		table.delete();
 
 		return ERT.TRUE;
+	}
+	
+	@BIF static ESeq match(EProc caller, EObject nameOrTid, EObject spec)
+	{
+		ETuple ts = spec.testTuple();
+		ETable table = resolve(caller, nameOrTid, false);
+		if (ts == null || table == null) throw ERT.badarg(nameOrTid, spec);
+		
+		ECompiledMatchSpec matcher = new ECompiledMatchSpec(table.keypos1, ts);
+		
+		return table.match(matcher);
 	}
 }

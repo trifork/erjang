@@ -19,6 +19,8 @@
 
 package erjang.m.ets;
 
+import java.util.Map;
+
 import clojure.lang.IPersistentMap;
 import clojure.lang.PersistentHashMap;
 import clojure.lang.PersistentTreeMap;
@@ -30,6 +32,7 @@ import erjang.EProc;
 import erjang.ERT;
 import erjang.ESeq;
 import erjang.ETuple;
+import erjang.NotImplemented;
 
 /**
  * 
@@ -126,6 +129,24 @@ public class ETableSet extends ETable {
 				}
 			});
 		}
+	}
+	
+	@Override
+	public ESeq match(ECompiledMatchSpec matcher) {		
+		IPersistentMap map = deref();
+		ESeq res = ERT.NIL;
+		
+		EObject key = matcher.getKey(keypos1);
+		if (key == null) {
+			res = matcher.match(res, (Map<EObject, ETuple>) map);
+		} else {
+			ETuple candidate = (ETuple) map.valAt(key);
+			if (candidate != null) {
+				res =  matcher.match(res, candidate);
+			}
+		}
+		
+		return res;
 	}
 
 }

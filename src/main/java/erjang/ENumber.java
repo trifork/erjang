@@ -20,6 +20,8 @@ package erjang;
 
 import java.math.BigInteger;
 
+import erjang.m.ets.ETermMatcher;
+
 public abstract class ENumber extends EObject {
 
 	@Override
@@ -27,6 +29,10 @@ public abstract class ENumber extends EObject {
 		return CMP_ORDER_NUMBER;
 	}
 	
+	public boolean match(ETermMatcher matcher, EObject[] r) {
+		return matcher.match(this, r);
+	}
+
 	public abstract double doubleValue();
 	public abstract int intValue();
 

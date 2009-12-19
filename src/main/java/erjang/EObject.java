@@ -21,11 +21,13 @@ package erjang;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.List;
+import java.util.Set;
 
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
 import erjang.driver.EPortControl;
+import erjang.m.ets.ETermMatcher;
 
 public abstract class EObject implements Comparable<EObject> {
 
@@ -325,6 +327,23 @@ public abstract class EObject implements Comparable<EObject> {
 	 */
 	public EInternalPID testInternalPID() {
 		return null;
+	}
+
+	/**
+	 * @return true if this term matches the given matcher
+	 */
+	public boolean match(ETermMatcher matcher, EObject[] r) {
+		return false;
+	}
+
+	/**
+	 * @param out
+	 * @return
+	 */
+	public ETermMatcher compileMatch(Set<Integer> out) {
+		// this should continue to be "not implemented".  
+		// subclasses should provide an implementation.
+		throw new NotImplemented();
 	}
 
 

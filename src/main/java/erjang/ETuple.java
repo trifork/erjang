@@ -23,6 +23,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import org.objectweb.asm.ClassAdapter;
 import org.objectweb.asm.ClassWriter;
@@ -31,6 +32,9 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.util.CheckClassAdapter;
+
+import erjang.m.ets.ECompiledMatchSpec;
+import erjang.m.ets.ETermMatcher;
 
 public abstract class ETuple extends EObject implements Cloneable /* , Indexed */{
 
@@ -73,6 +77,17 @@ public abstract class ETuple extends EObject implements Cloneable /* , Indexed *
 	public ETuple testTuple() {
 		return this;
 	}
+	
+	public boolean match(ETermMatcher matcher, EObject[] r) {
+		return matcher.match(this, r);
+	}
+
+	@Override
+	public ETermMatcher compileMatch(Set<Integer> out) {
+		return ECompiledMatchSpec.compileMatch(this, out);
+	}
+
+
 
 	public abstract int arity();
 

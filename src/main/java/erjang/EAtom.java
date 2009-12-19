@@ -19,6 +19,7 @@
 package erjang;
 
 import java.io.IOException;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
@@ -27,12 +28,26 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
 import erjang.driver.IO;
+import erjang.m.ets.ECompiledMatchSpec;
+import erjang.m.ets.ETermMatcher;
 
 public final class EAtom extends EObject implements CharSequence {
 
 	public EAtom testAtom() {
 		return this;
 	}
+
+	@Override
+	public boolean match(ETermMatcher matcher, EObject[] r) {
+		return matcher.match(this, r);
+	}
+
+	@Override
+	public ETermMatcher compileMatch(Set<Integer> out) {
+		return ECompiledMatchSpec.compileMatch(this, out);
+	}
+
+
 
 	public EAtom testBoolean() {
 		if ( this==ERT.TRUE || this == ERT.FALSE) return this;

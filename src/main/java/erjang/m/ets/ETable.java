@@ -55,7 +55,7 @@ abstract class ETable implements ExitHook {
 	
 	protected final WeakReference<EProc> owner;
 	protected final EAtom access;
-	protected final int keypos;
+	protected final int keypos1;
 	protected final EPID heirPID;
 	protected final EObject heirData;
 	protected final EInteger tid;
@@ -72,7 +72,7 @@ abstract class ETable implements ExitHook {
 		this.tid = tid;
 		this.aname = aname;
 		this.access = access;
-		this.keypos = keypos;
+		this.keypos1 = keypos;
 		this.heirPID = heir_pid;
 		this.heirData = heir_data;
 		try {
@@ -144,7 +144,7 @@ abstract class ETable implements ExitHook {
 		res = res.cons(new ETuple2(Native.am_node, ERT.getLocalNode().node()));
 		res = res.cons(new ETuple2(Native.am_named_table, ERT.box(is_named)));
 		res = res.cons(new ETuple2(Native.am_type, type));
-		res = res.cons(new ETuple2(Native.am_keypos, ERT.box(keypos)));
+		res = res.cons(new ETuple2(Native.am_keypos, ERT.box(keypos1)));
 		res = res.cons(new ETuple2(Native.am_protection, access));
 
 		return res;
@@ -172,7 +172,7 @@ abstract class ETable implements ExitHook {
 
 	/** utility for subclasses */
 	EObject get_key(ETuple value) {
-		return value.elm(keypos);
+		return value.elm(keypos1);
 	}
 	
 	IPersistentMap deref() {
@@ -217,5 +217,7 @@ abstract class ETable implements ExitHook {
 	protected abstract void insert_new_many(ESeq values);
 
 	protected abstract EObject lookup(EObject key);
+
+	public abstract ESeq match(ECompiledMatchSpec matcher);
 
 }
