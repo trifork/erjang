@@ -149,10 +149,10 @@ public class EBinList extends ECons {
 			return null;
 		}
 		
-		byte[] all = new byte[len + st.length()];
-		System.arraycopy(data, 0, all, 0, len);
-		System.arraycopy(st.data, st.off, all, len, st.length());
-		return new EString(all, 0);
+		byte[] out_bin = new byte[len + st.length()];
+		System.arraycopy(this.data, this.off, out_bin, 0, this.len);
+		System.arraycopy(st.data, st.off, out_bin, len, st.length());
+		return new EString(out_bin, 0);
 	}
 
 	/** An EBinList is an ESeq iff the tail is an ESeq */
