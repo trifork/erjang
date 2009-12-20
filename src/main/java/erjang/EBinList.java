@@ -198,7 +198,7 @@ public class EBinList extends ECons {
 			if (i != 0) { sb.append(","); }
 			byte val = data[off+i];
 			if (val > ' ' && val < 127) {
-				sb.append('\\');
+				sb.append('$');
 				sb.append((char)val);
 			} else {
 				sb.append((int)val);
