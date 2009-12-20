@@ -149,4 +149,41 @@ public class ETableSet extends ETable {
 		return res;
 	}
 
+	@Override
+	public EInteger select_delete(final ECompiledMatchSpec matcher) {		
+		int delete_count = in_tx(new WithMap<Integer>() {
+
+			@Override
+			protected Integer run(IPersistentMap map) {
+				// TODO Auto-generated method stub
+				ESeq res = ERT.NIL;
+				
+				EObject key = matcher.getKey(keypos1);
+				
+				if (key == null) {
+					res = matcher.match_members(res, (Map<EObject, ETuple>) map);
+				} else {
+					ETuple candidate = (ETuple) map.valAt(key);
+					if (candidate != null && matcher.match(candidate)) {
+						res = res.cons(candidate);
+					}
+				}
+				
+				int count = 0;
+				for (; !res.isNil(); res = res.tail()) {
+					try {
+						map = map.without(res.head());
+					} catch (Exception e) {
+						// should not happen!
+						throw new Error(e);
+					}
+					count += 1;
+				}
+				
+				set(map);
+				return count;
+			}});
+		
+		return ERT.box(delete_count);
+	}
 }

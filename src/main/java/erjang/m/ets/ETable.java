@@ -218,6 +218,8 @@ abstract class ETable implements ExitHook {
 
 	protected abstract EObject lookup(EObject key);
 
-	public abstract ESeq match(ECompiledMatchSpec matcher);
+	protected abstract ESeq match(ECompiledMatchSpec matcher);
+
+	protected abstract EInteger select_delete(ECompiledMatchSpec matcher);
 
 }

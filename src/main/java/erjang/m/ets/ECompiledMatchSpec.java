@@ -79,7 +79,23 @@ public class ECompiledMatchSpec extends EObject {
 		{
 			ETuple val = elm.testTuple();
 			if (matcher.match(val, res)) {
-				out = out.cons(EList.make(res));
+				out = out.cons(EList.make((Object[])res));
+			}
+		}
+		
+		return out;
+	}
+	
+	/** return list of matching members */
+	ESeq match_members(ESeq out, Map<EObject, ETuple> in) {
+		
+		EObject[] res = new EObject[out_length];
+		
+		for (ETuple elm : in.values())
+		{
+			ETuple val = elm.testTuple();
+			if (matcher.match(val, res)) {
+				out = out.cons(val);
 			}
 		}
 		
@@ -344,6 +360,11 @@ public class ECompiledMatchSpec extends EObject {
 		}
 		
 		return out;	
+	}
+
+	boolean match(ETuple val) {
+		EObject[] res = new EObject[out_length];
+		return matcher.match(val, res);
 	}
 
 	

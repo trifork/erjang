@@ -154,5 +154,9 @@ public class ETableBag extends ETable {
 		throw new NotImplemented();
 	}
 
+	@Override
+	protected EInteger select_delete(ECompiledMatchSpec matcher) {
+		throw new NotImplemented();
+	}
 
 }

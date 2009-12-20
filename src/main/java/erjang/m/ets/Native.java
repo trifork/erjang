@@ -288,4 +288,17 @@ public class Native extends ENative {
 		
 		return table.match(matcher);
 	}
+	
+	@BIF static EInteger select_delete(EProc caller, EObject nameOrTid, EObject spec)
+	{
+		ETuple ts = spec.testTuple();
+		ETable table = resolve(caller, nameOrTid, false);
+		if (ts == null || table == null) throw ERT.badarg(nameOrTid, spec);
+		
+		ECompiledMatchSpec matcher = new ECompiledMatchSpec(table.keypos1, ts);
+		
+		return table.select_delete(matcher);
+	}
+	
+	
 }
