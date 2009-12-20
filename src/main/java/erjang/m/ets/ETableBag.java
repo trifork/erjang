@@ -150,12 +150,12 @@ public class ETableBag extends ETable {
 	}
 
 	@Override
-	public ESeq match(ECompiledMatchSpec matcher) {		
+	public ESeq match(EPattern matcher) {		
 		throw new NotImplemented();
 	}
 
 	@Override
-	protected EInteger select_delete(ECompiledMatchSpec matcher) {
+	protected EInteger select_delete(EMatchSpec matcher) {
 		throw new NotImplemented();
 	}
 

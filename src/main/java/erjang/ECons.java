@@ -23,8 +23,8 @@ import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Set;
 
-import erjang.m.ets.ECompiledMatchSpec;
-import erjang.m.ets.ETermMatcher;
+import erjang.m.ets.EPattern;
+import erjang.m.ets.ETermPattern;
 
 public abstract class ECons extends EObject {
 
@@ -33,13 +33,13 @@ public abstract class ECons extends EObject {
 		return CMP_ORDER_LIST;
 	}
 
-	public boolean match(ETermMatcher matcher, EObject[] r) {
+	public boolean match(ETermPattern matcher, EObject[] r) {
 		return matcher.match(this, r);
 	}
 
 	@Override
-	public ETermMatcher compileMatch(Set<Integer> out) {
-		return ECompiledMatchSpec.compileMatch(this, out);
+	public ETermPattern compileMatch(Set<Integer> out) {
+		return EPattern.compilePattern(this, out);
 	}
 
 

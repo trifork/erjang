@@ -27,7 +27,7 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
 import erjang.driver.EPortControl;
-import erjang.m.ets.ETermMatcher;
+import erjang.m.ets.ETermPattern;
 
 public abstract class EObject implements Comparable<EObject> {
 
@@ -332,7 +332,7 @@ public abstract class EObject implements Comparable<EObject> {
 	/**
 	 * @return true if this term matches the given matcher
 	 */
-	public boolean match(ETermMatcher matcher, EObject[] r) {
+	public boolean match(ETermPattern matcher, EObject[] r) {
 		return false;
 	}
 
@@ -340,7 +340,7 @@ public abstract class EObject implements Comparable<EObject> {
 	 * @param out
 	 * @return
 	 */
-	public ETermMatcher compileMatch(Set<Integer> out) {
+	public ETermPattern compileMatch(Set<Integer> out) {
 		// this should continue to be "not implemented".  
 		// subclasses should provide an implementation.
 		throw new NotImplemented();

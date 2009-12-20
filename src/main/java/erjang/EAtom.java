@@ -28,8 +28,8 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
 import erjang.driver.IO;
-import erjang.m.ets.ECompiledMatchSpec;
-import erjang.m.ets.ETermMatcher;
+import erjang.m.ets.EPattern;
+import erjang.m.ets.ETermPattern;
 
 public final class EAtom extends EObject implements CharSequence {
 
@@ -38,13 +38,13 @@ public final class EAtom extends EObject implements CharSequence {
 	}
 
 	@Override
-	public boolean match(ETermMatcher matcher, EObject[] r) {
+	public boolean match(ETermPattern matcher, EObject[] r) {
 		return matcher.match(this, r);
 	}
 
 	@Override
-	public ETermMatcher compileMatch(Set<Integer> out) {
-		return ECompiledMatchSpec.compileMatch(this, out);
+	public ETermPattern compileMatch(Set<Integer> out) {
+		return EPattern.compilePattern(this, out);
 	}
 
 

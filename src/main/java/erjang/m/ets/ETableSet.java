@@ -132,7 +132,7 @@ public class ETableSet extends ETable {
 	}
 	
 	@Override
-	public ESeq match(ECompiledMatchSpec matcher) {		
+	public ESeq match(EPattern matcher) {		
 		IPersistentMap map = deref();
 		ESeq res = ERT.NIL;
 		
@@ -150,12 +150,11 @@ public class ETableSet extends ETable {
 	}
 
 	@Override
-	public EInteger select_delete(final ECompiledMatchSpec matcher) {		
+	public EInteger select_delete(final EMatchSpec matcher) {		
 		int delete_count = in_tx(new WithMap<Integer>() {
 
 			@Override
 			protected Integer run(IPersistentMap map) {
-				// TODO Auto-generated method stub
 				ESeq res = ERT.NIL;
 				
 				EObject key = matcher.getKey(keypos1);

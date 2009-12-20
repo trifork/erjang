@@ -20,7 +20,7 @@ package erjang;
 
 import java.math.BigInteger;
 
-import erjang.m.ets.ETermMatcher;
+import erjang.m.ets.ETermPattern;
 
 public abstract class ENumber extends EObject {
 
@@ -29,7 +29,7 @@ public abstract class ENumber extends EObject {
 		return CMP_ORDER_NUMBER;
 	}
 	
-	public boolean match(ETermMatcher matcher, EObject[] r) {
+	public boolean match(ETermPattern matcher, EObject[] r) {
 		return matcher.match(this, r);
 	}
 

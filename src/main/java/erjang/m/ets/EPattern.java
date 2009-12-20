@@ -23,8 +23,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import clojure.lang.ISeq;
-
 import erjang.EAtom;
 import erjang.EBitString;
 import erjang.ECons;
@@ -41,20 +39,25 @@ import erjang.ETuple;
 /**
  * 
  */
-public class ECompiledMatchSpec extends EObject {
+public class EPattern {
 
-	TupleMatcher matcher;
-	private final ETuple spec;
+	TuplePattern matcher;
+	private final ETuple spec; 
 	private int out_length;
+	
+	@Override
+	public String toString() {
+		return "#Pattern<" + spec.toString() + ">";
+	}
 	
 	/**
 	 * @param spec
 	 */
-	public ECompiledMatchSpec(int keyidx, ETuple spec) {
+	public EPattern(int keyidx, ETuple spec) {
 		this.spec = spec;
 		Set<Integer> out = new HashSet<Integer>();
 		
-		matcher = new TupleMatcher(spec, out);
+		matcher = new TuplePattern(spec, out);
 		
 		// find max element index
 		int max = 0;
@@ -102,13 +105,13 @@ public class ECompiledMatchSpec extends EObject {
 		return out;
 	}
 	
-	public static ECompiledMatchSpec compile(int keyidx, ETuple spec)
+	public static EPattern compile(int keyidx, ETuple spec)
 	{
-		return new ECompiledMatchSpec(keyidx, spec);
+		return new EPattern(keyidx, spec);
 	}
 	
 	/** matcher for '_' */
-	static class AnyMatcher extends ETermMatcher {
+	static class AnyPattern extends ETermPattern {
 		public boolean match(ETuple t, EObject[] r) {
 			return true;
 		}
@@ -140,14 +143,14 @@ public class ECompiledMatchSpec extends EObject {
 	}
 	
 	/** matcher for '$N' */
-	static class VarMatcher extends ETermMatcher {
+	static class VarPattern extends ETermPattern {
 		int idx0;
 
 		/**
 		 * @param idx2
 		 * @param out
 		 */
-		public VarMatcher(int idx1, Set<Integer> out) {
+		public VarPattern(int idx1, Set<Integer> out) {
 			this.idx0 = idx1-1;
 			if (out.contains(idx1)) {
 				// the match expression contains "$<idx>" twice!
@@ -192,17 +195,17 @@ public class ECompiledMatchSpec extends EObject {
 		}
 	}
 
-	static class TupleMatcher extends ETermMatcher {
+	static class TuplePattern extends ETermPattern {
 		int arity;
-		ETermMatcher[] elems;
+		ETermPattern[] elems;
 
 		/**
 		 * @param tup
 		 * @param out
 		 */
-		public TupleMatcher(ETuple tup, Set<Integer> out) {
+		public TuplePattern(ETuple tup, Set<Integer> out) {
 			arity = tup.arity();
-			elems = new ETermMatcher[arity];
+			elems = new ETermPattern[arity];
 			for (int idx1 = 1; idx1 <= arity; idx1++) {
 				elems[idx1-1] = tup.elm(idx1).compileMatch(out);
 			}
@@ -219,22 +222,22 @@ public class ECompiledMatchSpec extends EObject {
 		}
 	}
 
-	static class NilMatcher extends ETermMatcher {
+	static class NilPattern extends ETermPattern {
 		@Override
 		public boolean match(ECons c, EObject[] r) {
 			return c.isNil();
 		}
 	}
 	
-	static class ConsMatcher extends ETermMatcher {
+	static class ConsPattern extends ETermPattern {
 		
-		ETermMatcher head, tail;
+		ETermPattern head, tail;
 
 		/**
 		 * @param cons
 		 * @param out
 		 */
-		public ConsMatcher(ECons cons, Set<Integer> out) {
+		public ConsPattern(ECons cons, Set<Integer> out) {
 			head = cons.head().compileMatch(out);
 			tail = cons.tail().compileMatch(out);
 		}
@@ -246,13 +249,13 @@ public class ECompiledMatchSpec extends EObject {
 	}
 
 	/** matcher for all the non-recursive types */
-	static class ValueMatcher extends ETermMatcher {
+	static class ValuePattern extends ETermPattern {
 		final EObject value;
 
 		/**
 		 * @param epid
 		 */
-		public ValueMatcher(EObject val) {
+		public ValuePattern(EObject val) {
 			this.value = val;
 		}
 
@@ -287,13 +290,13 @@ public class ECompiledMatchSpec extends EObject {
 	 * @param out
 	 * @return
 	 */
-	public static ETermMatcher compileMatch(ETuple tup, Set<Integer> out) {
-		return new TupleMatcher(tup, out);
+	public static ETermPattern compilePattern(ETuple tup, Set<Integer> out) {
+		return new TuplePattern(tup, out);
 	}
 
 	/** generic compare-equals matcher */
-	public static ETermMatcher compileMatch(EObject epid, Set<Integer> out) {
-		return new ValueMatcher(epid);
+	public static ETermPattern compilePattern(EObject epid, Set<Integer> out) {
+		return new ValuePattern(epid);
 	}
 
 	/**
@@ -301,11 +304,11 @@ public class ECompiledMatchSpec extends EObject {
 	 * @param out
 	 * @return
 	 */
-	public static ETermMatcher compileMatch(ECons cons, Set<Integer> out) {
+	public static ETermPattern compilePattern(ECons cons, Set<Integer> out) {
 		if (cons.isNil()) {
-			return new NilMatcher();
+			return new NilPattern();
 		} else {
-			return new ConsMatcher(cons, out);
+			return new ConsPattern(cons, out);
 		}
 	}
 
@@ -317,16 +320,16 @@ public class ECompiledMatchSpec extends EObject {
 	 * @param out
 	 * @return
 	 */
-	public static ETermMatcher compileMatch(EAtom am, Set<Integer> out) {
+	public static ETermPattern compilePattern(EAtom am, Set<Integer> out) {
 		String name = am.getName();
 		
 		if (VAR.matcher(name).matches()) {
 			int idx1 = Integer.parseInt(name.substring(1));
-			return new VarMatcher(idx1, out);
+			return new VarPattern(idx1, out);
 		} else if (am == am_ANY) {
-			return new AnyMatcher();
+			return new AnyPattern();
 		} else {
-			return new ValueMatcher(am);
+			return new ValuePattern(am);
 		}
 	}
 
@@ -338,9 +341,9 @@ public class ECompiledMatchSpec extends EObject {
 		if (keypos1 < 1 || keypos1 > matcher.elems.length) {
 			throw new IllegalStateException();
 		}
-		ETermMatcher m = matcher.elems[keypos1-1];
-		if (m instanceof ValueMatcher) {
-			ValueMatcher vm = (ValueMatcher) m;
+		ETermPattern m = matcher.elems[keypos1-1];
+		if (m instanceof ValuePattern) {
+			ValuePattern vm = (ValuePattern) m;
 			return vm.value;
 		} else {
 			return null;

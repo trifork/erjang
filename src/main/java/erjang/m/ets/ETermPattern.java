@@ -28,7 +28,7 @@ import erjang.EPID;
 import erjang.EPort;
 import erjang.ETuple;
 
-public abstract class ETermMatcher {
+public abstract class ETermPattern {
 	public boolean match(ETuple t, EObject[] r) {
 		return false;
 	}

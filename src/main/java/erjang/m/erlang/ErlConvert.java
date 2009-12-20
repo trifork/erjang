@@ -20,12 +20,14 @@ package erjang.m.erlang;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.math.BigInteger;
 
 import erjang.BIF;
 import erjang.EBinary;
 import erjang.EBitString;
 import erjang.ECons;
 import erjang.EInputStream;
+import erjang.EInteger;
 import erjang.EObject;
 import erjang.ERT;
 import erjang.ESeq;
@@ -58,6 +60,24 @@ public class ErlConvert {
 	public static EBitString term_to_binary(EObject bin) {
 		throw new NotImplemented();
 	}
+
+	@BIF
+	public static EInteger list_to_integer(EObject obj) {
+		EString seq;
+		if ((seq = obj.testString()) == null)
+			throw ERT.badarg(obj);
+		
+		try {
+			
+			BigInteger val = new BigInteger(seq.stringValue());
+			return ERT.box(val);
+			
+		} catch (NumberFormatException e) {
+			throw ERT.badarg(obj);
+		}
+		
+	}
+
 
 	@BIF
 	public static ETuple list_to_tuple(EObject obj) {
