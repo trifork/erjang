@@ -20,29 +20,36 @@
 package erjang.m.os;
 
 import erjang.BIF;
+import erjang.EAtom;
 import erjang.ENative;
 import erjang.EObject;
 import erjang.ERT;
 import erjang.ESeq;
 import erjang.EString;
+import erjang.ETuple2;
 
 /**
  * 
  */
 public class Native extends ENative {
 
+	/** os:getenv(string()) -> string() | false */
 	@BIF
-	public static ESeq getenv(EObject o) {
+	public static EObject getenv(EObject o) {
 		EString str = o.testString();
 		if (str == null) throw ERT.badarg(o);
 		
 		String value = System.getenv(str.stringValue());
 		
 		if (value == null) {
-			return ERT.NIL;
+			return ERT.FALSE;
 		} else {
 			return EString.fromString(value);
 		}
 	}
 	
+	@BIF
+	public static ETuple2 type() {
+		return new ETuple2(EAtom.intern("unix"), EAtom.intern("macosx"));
+	}
 }
