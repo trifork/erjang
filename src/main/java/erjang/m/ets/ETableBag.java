@@ -224,4 +224,17 @@ public class ETableBag extends ETable {
 		return ERT.box(delete_count);
 	}
 
+	protected void delete_all_objects() {
+		in_tx(new WithMap<Object>() {
+
+			@Override
+			protected Object run(IPersistentMap map) {
+				set(empty);
+				sizeRef.set(new Integer(0));
+				return null;
+			}
+		});
+	}
+
+
 }

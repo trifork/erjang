@@ -62,6 +62,7 @@ abstract class ETable implements ExitHook {
 	protected final EAtom aname;
 	protected final boolean is_named;
 	protected final EAtom type;
+	protected final APersistentMap empty;
 	private Ref mapRef;
 
 	ETable(EProc owner, EAtom type, EInteger tid, EAtom aname, EAtom access, int keypos,
@@ -80,7 +81,7 @@ abstract class ETable implements ExitHook {
 		} catch (Exception e) {
 			throw new ErlangError(am_stm);
 		}
-		
+		empty = map;
 		owner.add_exit_hook(this);
 	}
 
@@ -221,5 +222,16 @@ abstract class ETable implements ExitHook {
 	protected abstract ESeq match(EPattern matcher);
 
 	protected abstract EInteger select_delete(EMatchSpec matcher);
+
+	protected void delete_all_objects() {
+		in_tx(new WithMap<Object>() {
+
+			@Override
+			protected Object run(IPersistentMap map) {
+				set(empty);
+				return null;
+			}
+		});
+	}
 
 }

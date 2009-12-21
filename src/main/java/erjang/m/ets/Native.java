@@ -293,7 +293,7 @@ public class Native extends ENative {
 	@BIF static EInteger select_delete(EProc caller, EObject nameOrTid, EObject spec)
 	{
 		ESeq lspec = spec.testSeq();
-		ETable table = resolve(caller, nameOrTid, false);
+		ETable table = resolve(caller, nameOrTid, true);
 		if (lspec == null || table == null) throw ERT.badarg(nameOrTid, spec);
 		
 		EMatchSpec matcher = EMatchSpec.compile(lspec);
@@ -301,5 +301,10 @@ public class Native extends ENative {
 		return table.select_delete(matcher);
 	}
 	
-	
+	@BIF static EAtom delete_all_objects(EProc caller, EObject nameOrTid) {
+		ETable table = resolve(caller, nameOrTid, true);
+		if (table == null) throw ERT.badarg(nameOrTid);
+		table.delete_all_objects();
+		return ERT.TRUE;
+	}
 }
