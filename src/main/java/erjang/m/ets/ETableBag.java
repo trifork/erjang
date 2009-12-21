@@ -18,8 +18,11 @@
 
 package erjang.m.ets;
 
+import java.util.Map;
+
 import clojure.lang.IPersistentCollection;
 import clojure.lang.IPersistentMap;
+import clojure.lang.IPersistentSet;
 import clojure.lang.ISeq;
 import clojure.lang.PersistentHashMap;
 import clojure.lang.PersistentHashSet;
@@ -34,6 +37,7 @@ import erjang.ERT;
 import erjang.ESeq;
 import erjang.ETuple;
 import erjang.NotImplemented;
+import erjang.m.ets.ETable.WithMap;
 
 /**
  * 
@@ -79,7 +83,7 @@ public class ETableBag extends ETable {
 					
 			// duplicate bag, allows duplicate elements with the
 			// same key; just hold values as a list
-			: PersistentList.EMPTY;
+			: PersistentBag.EMPTY;
 	}
 
 	@Override
@@ -155,8 +159,69 @@ public class ETableBag extends ETable {
 	}
 
 	@Override
-	protected EInteger select_delete(EMatchSpec matcher) {
-		throw new NotImplemented();
+	protected EInteger select_delete(final EMatchSpec matcher) {
+
+		int delete_count = in_tx(new WithMap<Integer>() {
+
+			@Override
+			protected Integer run(IPersistentMap map) {
+				ESeq vals = ERT.NIL;
+				int initial_count = (Integer) sizeRef.deref();
+				
+				EObject key = matcher.getTupleKey(keypos1);
+				
+				if (key == null) {
+					vals = matcher.matching_values_bag(vals, (Map<EObject, java.util.Collection <ETuple>>) map);
+				} else {
+					ETuple candidate = (ETuple) map.valAt(key);
+					if (candidate != null && matcher.match(candidate)) {
+						vals = vals.cons(key);
+					}
+				}
+				
+				int count = 0;
+				for (; !vals.isNil(); vals = vals.tail()) {
+					try {
+						ETuple val = (ETuple) vals.head();
+						key = val.elm(keypos1);
+						IPersistentCollection coll = (IPersistentCollection) map.valAt(key);
+
+						if (coll instanceof IPersistentSet) {
+							IPersistentSet set = (IPersistentSet) coll;
+							set = set.disjoin(val);
+							if (set != coll) {
+								count += 1;
+							if (set.count() == 0) {
+								map = map.without(key);
+							} else {
+								map = map.assoc(key, set);
+							}
+							}
+						} else if (coll instanceof IPersistentBag) {
+							IPersistentBag bag = (IPersistentBag)coll;
+							bag = bag.disjoin(val);
+							if (bag != coll) {
+								count += 1;
+								if (bag.count() == 0) {
+								map = map.without(key);
+							} else {
+								map = map.assoc(key, bag);
+							}
+							}
+							
+						}
+					} catch (Exception e) {
+						// should not happen!
+						throw new Error(e);
+					}
+				}
+				
+				set(map);
+				sizeRef.set(new Integer(initial_count-count));
+				return count;
+			}});
+		
+		return ERT.box(delete_count);
 	}
 
 }

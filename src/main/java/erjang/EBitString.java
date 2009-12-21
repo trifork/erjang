@@ -25,6 +25,7 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
+import erjang.m.ets.EMatchContext;
 import erjang.m.ets.ETermPattern;
 
 /**
@@ -48,7 +49,7 @@ public class EBitString extends EObject {
 		return this;
 	}
 
-	public boolean match(ETermPattern matcher, EObject[] r) {
+	public boolean match(ETermPattern matcher, EMatchContext r) {
 		return matcher.match(this, r);
 	}
 

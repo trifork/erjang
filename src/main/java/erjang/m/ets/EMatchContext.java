@@ -19,41 +19,14 @@
 
 package erjang.m.ets;
 
-import erjang.EAtom;
-import erjang.EBitString;
-import erjang.ECons;
-import erjang.ENumber;
 import erjang.EObject;
-import erjang.EPID;
-import erjang.EPort;
-import erjang.ETuple;
 
-public abstract class ETermPattern {
-	public boolean match(ETuple t, EMatchContext r) {
-		return false;
-	}
-
-	public boolean match(ENumber n, EMatchContext r) {
-		return false;
-	}
-
-	public boolean match(EAtom a, EMatchContext r) {
-		return false;
-	}
-
-	public boolean match(ECons c, EMatchContext r) {
-		return false;
-	}
-
-	public boolean match(EPID p, EMatchContext r) {
-		return false;
-	}
-
-	public boolean match(EPort p, EMatchContext r) {
-		return false;
-	}
-
-	public boolean match(EBitString bs, EMatchContext r) {
-		return false;
+public class EMatchContext {
+	final EObject[] vars;
+	final EObject value;
+	
+	EMatchContext (int nvars, EObject value) {
+		this.vars = new EObject[nvars];
+		this.value = value;
 	}
 }

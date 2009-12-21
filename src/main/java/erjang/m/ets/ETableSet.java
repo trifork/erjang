@@ -32,7 +32,6 @@ import erjang.EProc;
 import erjang.ERT;
 import erjang.ESeq;
 import erjang.ETuple;
-import erjang.NotImplemented;
 
 /**
  * 
@@ -155,23 +154,25 @@ public class ETableSet extends ETable {
 
 			@Override
 			protected Integer run(IPersistentMap map) {
-				ESeq res = ERT.NIL;
+				ESeq vals = ERT.NIL;
 				
-				EObject key = matcher.getKey(keypos1);
+				EObject key = matcher.getTupleKey(keypos1);
 				
 				if (key == null) {
-					res = matcher.match_members(res, (Map<EObject, ETuple>) map);
+					vals = matcher.matching_values_set(vals, (Map<EObject, ETuple>) map);
 				} else {
 					ETuple candidate = (ETuple) map.valAt(key);
 					if (candidate != null && matcher.match(candidate)) {
-						res = res.cons(candidate);
+						vals = vals.cons(key);
 					}
 				}
 				
 				int count = 0;
-				for (; !res.isNil(); res = res.tail()) {
+				for (; !vals.isNil(); vals = vals.tail()) {
 					try {
-						map = map.without(res.head());
+						ETuple val = (ETuple) vals.head();
+						key = val.elm(keypos1);
+						map = map.without(key);
 					} catch (Exception e) {
 						// should not happen!
 						throw new Error(e);

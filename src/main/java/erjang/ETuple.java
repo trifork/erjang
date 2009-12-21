@@ -33,6 +33,7 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.util.CheckClassAdapter;
 
+import erjang.m.ets.EMatchContext;
 import erjang.m.ets.EPattern;
 import erjang.m.ets.ETermPattern;
 
@@ -78,7 +79,7 @@ public abstract class ETuple extends EObject implements Cloneable /* , Indexed *
 		return this;
 	}
 	
-	public boolean match(ETermPattern matcher, EObject[] r) {
+	public boolean match(ETermPattern matcher, EMatchContext r) {
 		return matcher.match(this, r);
 	}
 

@@ -23,6 +23,7 @@ import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Set;
 
+import erjang.m.ets.EMatchContext;
 import erjang.m.ets.EPattern;
 import erjang.m.ets.ETermPattern;
 
@@ -33,7 +34,7 @@ public abstract class ECons extends EObject {
 		return CMP_ORDER_LIST;
 	}
 
-	public boolean match(ETermPattern matcher, EObject[] r) {
+	public boolean match(ETermPattern matcher, EMatchContext r) {
 		return matcher.match(this, r);
 	}
 

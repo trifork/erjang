@@ -27,6 +27,7 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
 import erjang.driver.EPortControl;
+import erjang.m.ets.EMatchContext;
 import erjang.m.ets.ETermPattern;
 
 public abstract class EObject implements Comparable<EObject> {
@@ -332,7 +333,7 @@ public abstract class EObject implements Comparable<EObject> {
 	/**
 	 * @return true if this term matches the given matcher
 	 */
-	public boolean match(ETermPattern matcher, EObject[] r) {
+	public boolean match(ETermPattern matcher, EMatchContext r) {
 		return false;
 	}
 

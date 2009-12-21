@@ -75,14 +75,13 @@ public class EPattern {
 	}
 
 	ESeq match(ESeq out, Map<EObject, ETuple> in) {
-		
-		EObject[] res = new EObject[out_length];
-		
+				
 		for (ETuple elm : in.values())
 		{
 			ETuple val = elm.testTuple();
+			EMatchContext res = new EMatchContext(out_length, val);
 			if (matcher.match(val, res)) {
-				out = out.cons(EList.make((Object[])res));
+				out = out.cons(EList.make((Object[])res.vars));
 			}
 		}
 		
@@ -91,12 +90,11 @@ public class EPattern {
 	
 	/** return list of matching members */
 	ESeq match_members(ESeq out, Map<EObject, ETuple> in) {
-		
-		EObject[] res = new EObject[out_length];
-		
+				
 		for (ETuple elm : in.values())
 		{
 			ETuple val = elm.testTuple();
+			EMatchContext res = new EMatchContext(out_length, val);
 			if (matcher.match(val, res)) {
 				out = out.cons(val);
 			}
@@ -112,31 +110,31 @@ public class EPattern {
 	
 	/** matcher for '_' */
 	static class AnyPattern extends ETermPattern {
-		public boolean match(ETuple t, EObject[] r) {
+		public boolean match(ETuple t, EMatchContext r) {
 			return true;
 		}
 
-		public boolean match(ENumber n, EObject[] r) {
+		public boolean match(ENumber n, EMatchContext r) {
 			return true;
 		}
 
-		public boolean match(EAtom a, EObject[] r) {
+		public boolean match(EAtom a, EMatchContext r) {
 			return true;
 		}
 
-		public boolean match(ECons c, EObject[] r) {
+		public boolean match(ECons c, EMatchContext r) {
 			return true;
 		}
 
-		public boolean match(EPID p, EObject[] r) {
+		public boolean match(EPID p, EMatchContext r) {
 			return true;
 		}
 
-		public boolean match(EPort p, EObject[] r) {
+		public boolean match(EPort p, EMatchContext r) {
 			return true;
 		}
 
-		public boolean match(EBitString bs, EObject[] r) {
+		public boolean match(EBitString bs, EMatchContext r) {
 			return true;
 		}
 
@@ -159,38 +157,38 @@ public class EPattern {
 			out.add(idx1);
 		}
 
-		public boolean match(ETuple t, EObject[] r) {
-			r[idx0] = t;
+		public boolean match(ETuple t, EMatchContext r) {
+			r.vars[idx0] = t;
 			return true;
 		}
 
-		public boolean match(ENumber n, EObject[] r) {
-			r[idx0] = n;
+		public boolean match(ENumber n, EMatchContext r) {
+			r.vars[idx0] = n;
 			return true;
 		}
 
-		public boolean match(EAtom a, EObject[] r) {
-			r[idx0] = a;
+		public boolean match(EAtom a, EMatchContext r) {
+			r.vars[idx0] = a;
 			return true;
 		}
 
-		public boolean match(ECons c, EObject[] r) {
-			r[idx0] = c;
+		public boolean match(ECons c, EMatchContext r) {
+			r.vars[idx0] = c;
 			return true;
 		}
 
-		public boolean match(EPID p, EObject[] r) {
-			r[idx0] = p;
+		public boolean match(EPID p, EMatchContext r) {
+			r.vars[idx0] = p;
 			return true;
 		}
 
-		public boolean match(EPort p, EObject[] r) {
-			r[idx0] = p;
+		public boolean match(EPort p, EMatchContext r) {
+			r.vars[idx0] = p;
 			return true;
 		}
 
-		public boolean match(EBitString bs, EObject[] r) {
-			r[idx0] = bs;
+		public boolean match(EBitString bs, EMatchContext r) {
+			r.vars[idx0] = bs;
 			return true;
 		}
 	}
@@ -211,7 +209,7 @@ public class EPattern {
 			}
 		}
 
-		public boolean match(ETuple t, EObject[] r) {
+		public boolean match(ETuple t, EMatchContext r) {
 			if (t.arity() != arity)
 				return false;
 			for (int idx1 = 1; idx1 < elems.length + 1; idx1++) {
@@ -224,7 +222,7 @@ public class EPattern {
 
 	static class NilPattern extends ETermPattern {
 		@Override
-		public boolean match(ECons c, EObject[] r) {
+		public boolean match(ECons c, EMatchContext r) {
 			return c.isNil();
 		}
 	}
@@ -242,7 +240,7 @@ public class EPattern {
 			tail = cons.tail().compileMatch(out);
 		}
 
-		public boolean match(ECons c, EObject[] r) {
+		public boolean match(ECons c, EMatchContext r) {
 			return c.head().match(head, r) 
 				&& c.tail().match(tail, r);
 		}
@@ -259,27 +257,27 @@ public class EPattern {
 			this.value = val;
 		}
 
-		public boolean match(EPID pid, EObject[] r) {
+		public boolean match(EPID pid, EMatchContext r) {
 			return pid.compareTo(value) == 0;
 		}
 		
-		public boolean match(ERef ref, EObject[] r) {
+		public boolean match(ERef ref, EMatchContext r) {
 			return ref.compareTo(value) == 0;
 		}
 
-		public boolean match(EPort port, EObject[] r) {
+		public boolean match(EPort port, EMatchContext r) {
 			return port.compareTo(value) == 0;
 		}
 
-		public boolean match(EAtom port, EObject[] r) {
+		public boolean match(EAtom port, EMatchContext r) {
 			return port.compareTo(value) == 0;
 		}
 
-		public boolean match(EBitString port, EObject[] r) {
+		public boolean match(EBitString port, EMatchContext r) {
 			return port.compareTo(value) == 0;
 		}
 
-		public boolean match(ENumber num, EObject[] r) {
+		public boolean match(ENumber num, EMatchContext r) {
 			return num.compareTo(value) == 0;
 		}
 
@@ -356,17 +354,17 @@ public class EPattern {
 	 * @return
 	 */
 	ESeq match(ESeq out, ETuple val) {
-		EObject[] res = new EObject[out_length];
+		EMatchContext res = new EMatchContext(out_length, val);
 		
 		if (matcher.match(val, res)) {
-			out = out.cons(ETuple.make(res));
+			out = out.cons(ETuple.make(res.vars));
 		}
 		
 		return out;	
 	}
 
 	boolean match(ETuple val) {
-		EObject[] res = new EObject[out_length];
+		EMatchContext res = new EMatchContext(out_length, val);
 		return matcher.match(val, res);
 	}
 
