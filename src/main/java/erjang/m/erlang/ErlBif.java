@@ -237,6 +237,10 @@ public class ErlBif {
 			return EModuleManager.get_attributes(m);
 		}
 		
+		if (k == ERT.am_module) {
+			return mod;
+		}
+		
 		throw new NotImplemented("get_module_info "+mod+", "+key);
 	}
 
@@ -1030,7 +1034,7 @@ public class ErlBif {
 			return result;
 		} 
 		
-		return new ETuple2(ERT.AM_MODULE, mod);
+		return new ETuple2(ERT.am_module, mod);
 	}
 
 	@BIF

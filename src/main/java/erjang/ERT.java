@@ -64,7 +64,7 @@ public class ERT {
 	public static final EAtom am_badarg = EAtom.intern("badarg");
 	public static final EAtom AM_BADMATCH = EAtom.intern("badmatch");
 	public static final EAtom AM_BADARITH = EAtom.intern("badarith");
-	public static final EAtom AM_MODULE = EAtom.intern("module");
+	public static final EAtom am_module = EAtom.intern("module");
 
 	public static ECons cons(EObject h, EObject t) {
 		return t.cons(h);
