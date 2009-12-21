@@ -1445,6 +1445,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					h.target = new Label();
 					h.end = new Label();
 					h.reg = out;
+					h.handler_beam_label = val;
 
 					mv.visitTryCatchBlock(h.begin, h.end, h.target, Type
 							.getType(ErlangException.class).getInternalName());
@@ -1505,6 +1506,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 					test_ex_start();
 
+					
 					mv.visitJumpInsn(GOTO, after);
 
 					while (!ex_catch_handlers.isEmpty()) {
@@ -2321,6 +2323,14 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			 */
 			@Override
 			public void visitJump(int label) {
+				
+				EXHandler h = ex_catch_handlers.isEmpty() ? null : ex_catch_handlers.peek();
+				if (h != null && h.handler_beam_label == label) {
+					if (h.is_end_visited) throw new InternalError();
+					mv.visitLabel(h.end);
+					h.is_end_visited = true;
+				}
+				
 				mv.visitJumpInsn(GOTO, getLabel(label));
 			}
 
@@ -2708,6 +2718,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 }
 
 class EXHandler {
+	public int handler_beam_label;
 	public boolean is_end_visited;
 	public boolean is_start_visited;
 	Arg reg;

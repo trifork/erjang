@@ -237,7 +237,7 @@ public class ErlBif {
 			return EModuleManager.get_attributes(m);
 		}
 		
-		throw ERT.badarg(mod, key);
+		throw new NotImplemented("get_module_info "+mod+", "+key);
 	}
 
 	@BIF

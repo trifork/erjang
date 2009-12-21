@@ -102,6 +102,14 @@ public class Compiler implements Opcodes {
 
 		byte[] byteArray = cw.toByteArray();
 
+		/* 
+		 // uncomment this block to emit pre-kilim code [for debugging]
+		if (cv.getInternalClassName().indexOf("code_server") != -1) {
+			repo.store(cv.getInternalClassName(), byteArray);
+			return;
+		}
+		*/
+		
 		ClassWeaver cwe = new ClassWeaver(byteArray, new ErjangDetector(
 				cv.getInternalClassName()));
 		for (ClassInfo ci : cwe.getClassInfos()) {
