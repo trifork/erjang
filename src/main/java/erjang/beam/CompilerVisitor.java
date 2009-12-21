@@ -1154,12 +1154,12 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 						&& toType.getSort() == Type.OBJECT) {
 					mv.visitMethodInsn(INVOKESTATIC, ERT_NAME, "box", "("
 							+ fromType.getDescriptor() + ")"
-							+ toType.getDescriptor());
+							+ EDOUBLE_TYPE.getDescriptor());
 				} else if (fromType.equals(Type.BOOLEAN_TYPE)
 						&& toType.getSort() == Type.OBJECT) {
 					mv.visitMethodInsn(INVOKESTATIC, ERT_NAME, "box", "("
 							+ fromType.getDescriptor() + ")"
-							+ toType.getDescriptor());
+							+ EATOM_TYPE.getDescriptor());
 				} else {
 					throw new Error("cannot box " + fromType + " -> " + toType);
 				}
