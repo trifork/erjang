@@ -267,6 +267,11 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 						.fromString(ERT.describe_exception(e)));
 
 				result = ETuple.make(java_ex, erl_trace);
+				
+				if (ERT.DEVEL) {
+					System.err.println("EXITING "+result);
+					System.exit(1);
+				}
 
 			} finally {
 				// this.runner = null;

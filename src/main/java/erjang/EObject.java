@@ -142,7 +142,7 @@ public abstract class EObject implements Comparable<EObject> {
 	}
 	
 	public Type emit_const(MethodVisitor mv) {
-		throw new NotImplemented();
+		throw new NotImplemented("emit_const for "+this.getClass().getName());
 	}
 
 	//

@@ -293,6 +293,7 @@ public class ERT {
 			.intern("function_clause");
 	public static final EObject am_ok = EAtom.intern("ok");
 	private static final EObject am_noconnect = EAtom.intern("noconnect");
+	public static final boolean DEVEL = true;
 
 	public static EBitStringBuilder bs_init(int size, int flags) {
 		return new EBitStringBuilder(size, flags);
@@ -707,6 +708,10 @@ public class ERT {
 
 	public static int unboxToInt(EInteger i) {
 		return i.intValue();
+	}
+
+	public static double unboxToDouble(EInteger i) {
+		return i.doubleValue();
 	}
 
 	public static int unboxToInt(EObject i) {

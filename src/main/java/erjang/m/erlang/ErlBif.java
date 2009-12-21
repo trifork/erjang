@@ -263,6 +263,18 @@ public class ErlBif {
 		}
 		return res;
 	}
+
+	@BIF
+	public static EObject garbage_collect() {
+		System.gc();
+		return ERT.TRUE;
+	}
+	
+	@BIF
+	public static EObject garbage_collect(EObject pid) {
+		System.gc();
+		return ERT.TRUE;
+	}
 	
 	@BIF
 	static public ETuple setelement(EObject a1, EObject a2, EObject term) {
@@ -586,6 +598,26 @@ public class ErlBif {
 		return null;
 	}
 
+	@BIF(name = "/")
+	static public ENumber divide(EObject v1, EObject v2) {
+		ENumber n1;
+		if ((n1 = v1.testNumber()) != null) {
+			ENumber n2;
+			if ((n2 = v2.testNumber()) != null) {
+				if (n2.doubleValue() == 0.0)
+					throw ERT.badarg(v1, v2);
+				return n1.divide(v2);
+			}
+		}
+		throw ERT.badarg(v1, v2);
+	}
+
+	@BIF(type=Type.ARITHBIF)
+	public static double fnegate(double val) { return -val; }
+	
+	@BIF
+	public static EDouble fnegate(EDouble val) { return new EDouble(-val.value); }
+	
 	@BIF(name = "+", type = Type.GUARD)
 	static public ENumber plus$p(EObject v1, EObject v2) {
 		return v1.add(v2, true);
@@ -1024,6 +1056,36 @@ public class ErlBif {
 		return ERT.guard(obj.testInteger() != null);
 	}
 
+	@BIF
+	public static EAtom is_function(EObject obj) {
+		return ERT.box(obj.testFunction() != null);
+	}
+	
+	@BIF
+	public static EAtom is_function(EObject obj, ESmall num) {
+		return ERT.box(obj.testFunction2(num.value) != null);
+	}
+	
+	@BIF(name="is_function", type=Type.GUARD)
+	public static EAtom is_function_guard(EObject obj) {
+		return ERT.guard(obj.testFunction() != null);
+	}
+	
+	@BIF
+	public static EAtom is_reference(EObject obj) {
+		return ERT.box(obj.testReference() != null);
+	}
+	
+	@BIF
+	public static EAtom is_pid(EObject obj) {
+		return ERT.box(obj.testPID() != null);
+	}
+	
+	@BIF(name="is_pid", type=Type.GUARD)
+	public static EAtom is_pid_guard(EObject obj) {
+		return ERT.box(obj.testPID() != null);
+	}
+	
 	@BIF
 	@ErlFun(export = true)
 	public static ETuple2 load_module(EProc proc, EObject mod, EObject bin) throws Pausable {

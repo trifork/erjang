@@ -1147,18 +1147,15 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			private void emit_box(Type fromType, Type toType) {
 				if (fromType.equals(Type.INT_TYPE)
 						&& toType.getSort() == Type.OBJECT) {
-					mv.visitMethodInsn(INVOKESTATIC, ERT_NAME, "box", "("
-							+ fromType.getDescriptor() + ")"
-							+ toType.getDescriptor());
+					mv.visitMethodInsn(INVOKESTATIC, ERT_NAME, "box", "(I)"
+							+ ESMALL_TYPE.getDescriptor());
 				} else if (fromType.equals(Type.DOUBLE_TYPE)
 						&& toType.getSort() == Type.OBJECT) {
-					mv.visitMethodInsn(INVOKESTATIC, ERT_NAME, "box", "("
-							+ fromType.getDescriptor() + ")"
+					mv.visitMethodInsn(INVOKESTATIC, ERT_NAME, "box", "(D)"
 							+ EDOUBLE_TYPE.getDescriptor());
 				} else if (fromType.equals(Type.BOOLEAN_TYPE)
 						&& toType.getSort() == Type.OBJECT) {
-					mv.visitMethodInsn(INVOKESTATIC, ERT_NAME, "box", "("
-							+ fromType.getDescriptor() + ")"
+					mv.visitMethodInsn(INVOKESTATIC, ERT_NAME, "box", "(Z)"
 							+ EATOM_TYPE.getDescriptor());
 				} else {
 					throw new Error("cannot box " + fromType + " -> " + toType);
