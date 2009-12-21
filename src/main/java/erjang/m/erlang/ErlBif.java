@@ -244,6 +244,26 @@ public class ErlBif {
 		throw new NotImplemented("get_module_info "+mod+", "+key);
 	}
 
+	public static final String[] PRE_LOADED_MODULES = new String[] {
+		"erlang",
+		"erl_prim_loader",
+		"init",
+		"otp_ring0",
+		"prim_file",
+		"prim_inet",
+		"prim_zip",
+		"zlib"
+	};
+	
+	@BIF
+	public static ESeq pre_loaded() {
+		ESeq res = ERT.NIL;
+		for (int i = 0; i < PRE_LOADED_MODULES.length; i++) {
+			res = res.cons(EAtom.intern(PRE_LOADED_MODULES[i]));
+		}
+		return res;
+	}
+	
 	@BIF
 	static public ETuple setelement(EObject a1, EObject a2, EObject term) {
 		ETuple t = a2.testTuple();
