@@ -33,6 +33,13 @@ import erjang.util.WeakHashSet;
 public final class EProc extends ETask<EInternalPID> {
 	public static final EObject TAIL_MARKER = new ETailMarker();
 
+	public static final int ERTS_NODES_MON_OPT_TYPE_VISIBLE = 1<<0;
+	public static final int ERTS_NODES_MON_OPT_TYPE_HIDDEN = 1<<1;
+	public static final int ERTS_NODES_MON_OPT_DOWN_REASON = 1<<2;
+	
+	public static final int ERTS_NODES_MON_OPT_TYPES = 
+			ERTS_NODES_MON_OPT_TYPE_VISIBLE | ERTS_NODES_MON_OPT_TYPE_HIDDEN;
+	
 	public static final EAtom am_trap_exit = EAtom.intern("trap_exit");
 	public static final EAtom am_messages = EAtom.intern("messages");
 	public static final EAtom am_message_queue_len = EAtom.intern("message_queue_len");
@@ -40,7 +47,14 @@ public final class EProc extends ETask<EInternalPID> {
 	public static final EAtom am_group_leader = EAtom.intern("group_leader");
 	public static final EAtom am_links = EAtom.intern("links");
 	public static final EAtom am_priority = EAtom.intern("priority");
+	public static final EAtom am_monitor_nodes = EAtom.intern("monitor_nodes");
 	public static final EAtom am_registered_name = EAtom.intern("registered_name");
+
+	public static final EAtom am_nodedown_reason = EAtom.intern("nodedown_reason");
+	public static final EAtom am_node_type = EAtom.intern("node_type");
+	public static final EAtom am_visible = EAtom.intern("visible");
+	public static final EAtom am_hidden = EAtom.intern("hidden");
+	public static final EAtom am_all = EAtom.intern("all");
 
 	public static final EAtom am_max = EAtom.intern("max");
 	public static final EAtom am_normal = EAtom.intern("normal");
@@ -127,6 +141,9 @@ public final class EProc extends ETask<EInternalPID> {
 	private EAtom trap_exit = ERT.FALSE;
 
 	public int midx;
+
+	/** monitor nodes[option] -> true/false */
+	private Map<Integer,EAtom> monitor_nodes = new HashMap<Integer, EAtom>();
 
 	protected void link_failure(EHandle h) throws Pausable {
 		if (trap_exit == ERT.TRUE || h.testLocalHandle()==null) {
@@ -263,7 +280,7 @@ public final class EProc extends ETask<EInternalPID> {
 		if (flag == am_trap_exit) {
 			EAtom old = this.trap_exit;
 			trap_exit = value.testBoolean();
-			return old;
+			return ERT.box(old==ERT.TRUE);
 		}
 
 		if (flag == am_priority) {
@@ -277,7 +294,88 @@ public final class EProc extends ETask<EInternalPID> {
 			throw ERT.badarg(flag, value);
 		}
 		
+		if (flag == am_monitor_nodes) {
+			if (!value.isBoolean()) throw ERT.badarg(flag, value);
+			EObject val = monitor_nodes(ERT.NIL, value.testBoolean());
+			if (val == null) throw ERT.badarg(flag, value);
+			return val;
+		}
+		
+		ETuple2 tup;
+		if ((tup = ETuple2.cast(flag)) != null && tup.elem1==am_monitor_nodes) {
+			ESeq opts = tup.elem2.testSeq();
+			if (opts == null) throw ERT.badarg(flag, value);
+			if (!value.isBoolean()) throw ERT.badarg(flag, value);
+
+			EObject val = monitor_nodes(opts, value.testBoolean());
+			if (val == null) throw ERT.badarg(flag, value);
+			return val;
+		}
+		
 		throw new NotImplemented("process_flag flag="+flag+", value="+value);
+	}
+
+	/**
+	 * @param opts_list
+	 * @param value
+	 * @return
+	 */
+	private EObject monitor_nodes(ESeq opts_list, EAtom value) {
+
+		boolean all = false, visible = false, hidden = false;
+		int opts = 0;
+		
+		for (; !opts_list.isNil(); opts_list = opts_list.tail()) {
+			EObject opt = opts_list.head();
+
+			ETuple2 tp;
+			if (opt == am_nodedown_reason) {
+				opts |= ERTS_NODES_MON_OPT_DOWN_REASON;
+			} else if ((tp = ETuple2.cast(opt)) != null) {
+				if (tp.elem1 == am_node_type) {
+		
+					if (tp.elem2 == am_visible) {
+		
+						if (hidden || all) return null;
+						opts |= ERTS_NODES_MON_OPT_TYPE_VISIBLE;
+						visible = true;
+						
+					} else if (tp.elem2 == am_hidden) {
+						if (visible || all) return null;
+						opts |= ERTS_NODES_MON_OPT_TYPE_HIDDEN;
+						hidden = true;
+						
+					} else if (tp.elem2 == am_all) {
+						if (visible || hidden) return null;
+						opts |= ERTS_NODES_MON_OPT_TYPES;
+					} else {
+						return null;
+					}
+					
+				} else {
+					return null;
+				}
+				
+			} else {
+				return null;
+			}
+			
+		}
+
+		Integer iopts = new Integer(opts);
+		EAtom old = null;
+
+		synchronized(monitor_nodes) {
+			
+			if (value == ERT.TRUE) {
+				old = monitor_nodes.put(iopts, ERT.TRUE);
+			} else {
+				old = monitor_nodes.remove(iopts);
+			}
+			
+		}
+
+		return ERT.box(old==ERT.TRUE);
 	}
 
 	@Override
