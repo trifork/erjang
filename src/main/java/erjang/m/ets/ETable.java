@@ -197,7 +197,7 @@ abstract class ETable implements ExitHook {
 	}
 	
 	@SuppressWarnings("unchecked")
-	<X> X in_tx(WithMap<X> run) {
+	<X> X in_tx(Callable<X> run) {
 		try {
 			return (X) LockingTransaction.runInTransaction(run);
 		} catch (Exception e) {
