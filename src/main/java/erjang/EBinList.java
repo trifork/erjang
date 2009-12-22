@@ -188,9 +188,31 @@ public class EBinList extends ECons {
 		}
 
 	}
+	
+	private boolean all_printable() {
+		byte val;
+		for (int i = 0; i < len; i++) {
+			val = data[off+i];
+			if (val < ' ' || val >= 127) {
+				return false;
+			}
+		}
+		return true;
+	}
 
 	@Override
 	public String toString() {
+		
+		if (tail.isNil() && all_printable()) {
+			StringBuilder sb = new StringBuilder("\"");
+			for (int i = 0; i < len; i++) {
+				byte val = data[off+i];
+				sb.append((char)val);
+			}
+			sb.append('"');
+			return sb.toString();
+		}
+		
 		StringBuilder sb = new StringBuilder("[");
 		
 		int max = Math.min(len, 40);
