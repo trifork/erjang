@@ -1338,13 +1338,12 @@ public class ErlBif {
 	 * @return
 	 */
 	@BIF(name="lists:keysearch/3")
-	public static EObject keysearch(EObject key, EObject n, EObject list) {
-		EAtom k = key.testAtom();
+	public static EObject keysearch(EObject k, EObject n, EObject list) {
 		ESmall idx = n.testSmall();
 		ESeq src = list.testSeq();
 		
 		if (k==null||idx==null||src==null||idx.value<1)
-			throw ERT.badarg(key, n, list);
+			throw ERT.badarg(k, n, list);
 		
 		int index = idx.value;
 
@@ -1354,7 +1353,7 @@ public class ErlBif {
 			ETuple tup;
 			if ((tup = elm.testTuple()) != null) {
 				if (tup.arity() >= index) {
-					if (tup.elm(index) == k) {
+					if (tup.elm(index).equals(k)) {
 						return new ETuple2(ERT.am_value, tup);
 					}
 				}
