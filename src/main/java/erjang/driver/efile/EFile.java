@@ -21,6 +21,7 @@ package erjang.driver.efile;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -601,6 +602,13 @@ public class EFile extends EDriverInstance {
 
 	}
 
+	static FilenameFilter READDIR_FILTER = new FilenameFilter() {
+		
+		@Override
+		public boolean accept(File dir, String name) {
+			return !".".equals(name) && !"..".equals(name);
+		}
+	};
 
 	@Override
 	protected void output(ByteBuffer data) {
@@ -805,6 +813,70 @@ public class EFile extends EDriverInstance {
 				}
 			};
 			
+			break;
+		}
+		
+		case FILE_READDIR: {
+			
+			final String dir_name = IO.strcpy(data);
+			final File dir = new File(dir_name);
+			
+			
+			d = new FileAsync() {
+				{
+					super.level = 2;
+				}
+				
+				String[] files;
+
+				@Override
+				public void async() {
+					if (!dir.exists()) {
+						this.posix_errno = Posix.EEXIST;
+						this.result_ok = false;
+						return;
+					}
+					if (!dir.isDirectory()) {
+						this.posix_errno = Posix.EINVAL;
+						this.result_ok = false;
+						return;
+					}
+					
+					try {
+						files = dir.list(READDIR_FILTER);
+						this.result_ok = true;
+						
+					} catch (SecurityException e) {
+						this.posix_errno = Posix.EPERM;
+						this.result_ok = false;
+						return;
+					}
+				}
+
+				@Override
+				public void ready() {
+					if (!this.result_ok) {
+						reply_posix_error(posix_errno);
+						return;
+					}
+										
+					for (int i = 0; i < files.length; i++) {
+						ByteBuffer resbuf = ByteBuffer.allocate(files[i].length()+1);
+						resbuf.put(FILE_RESP_OK);
+						resbuf.limit(resbuf.capacity());
+						resbuf.position(1);
+						
+						IO.putstr(resbuf, files[i], false);
+						
+						driver_output2(resbuf, null);
+					}
+					
+					ByteBuffer resbuf = ByteBuffer.allocate(1);
+					resbuf.put(FILE_RESP_OK);
+					driver_output2(resbuf, null);
+					
+				}
+			};
 			break;
 		}
 		
