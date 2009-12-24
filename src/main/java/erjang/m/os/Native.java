@@ -33,6 +33,11 @@ import erjang.ETuple2;
  */
 public class Native extends ENative {
 
+	/**
+	 * 
+	 */
+	private static final ETuple2 OS_TYPE = new ETuple2(EAtom.intern("unix"), EAtom.intern("macosx"));
+
 	/** os:getenv(string()) -> string() | false */
 	@BIF
 	public static EObject getenv(EObject o) {
@@ -50,6 +55,6 @@ public class Native extends ENative {
 	
 	@BIF
 	public static ETuple2 type() {
-		return new ETuple2(EAtom.intern("unix"), EAtom.intern("macosx"));
+		return OS_TYPE;
 	}
 }
