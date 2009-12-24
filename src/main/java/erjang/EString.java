@@ -384,7 +384,7 @@ public class EString extends ESeq implements CharSequence {
 			System.arraycopy(other.data, other.off, out, 0, other.length());
 			System.arraycopy(this.data, this.off, out, other.length(), this
 					.length());
-			return new EString(out, out.length);
+			return EString.make(out, 0, out.length);
 		} else {
 			return super.prepend(list);
 		}
