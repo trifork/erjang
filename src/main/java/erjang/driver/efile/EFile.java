@@ -832,7 +832,7 @@ public class EFile extends EDriverInstance {
 				@Override
 				public void async() {
 					if (!dir.exists()) {
-						this.posix_errno = Posix.EEXIST;
+						this.posix_errno = Posix.ENOENT;
 						this.result_ok = false;
 						return;
 					}
