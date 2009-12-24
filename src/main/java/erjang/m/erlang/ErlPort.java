@@ -35,6 +35,7 @@ import erjang.EString;
 import erjang.ETask;
 import erjang.ETuple;
 import erjang.ETuple2;
+import erjang.NotImplemented;
 import erjang.driver.EDriver;
 import erjang.driver.EExecDriverTask;
 import erjang.driver.ESpawnDriverTask;
@@ -44,6 +45,7 @@ import erjang.driver.ESpawnDriverTask;
  */
 public class ErlPort {
 
+	public static final EAtom am_fd = EAtom.intern("fd");
 	static EAtom am_spawn = EAtom.intern("spawn");
 	static EAtom am_spawn_driver = EAtom.intern("spawn_driver");
 	static EAtom am_spawn_executable = EAtom.intern("spawn_executable");
@@ -156,6 +158,9 @@ public class ErlPort {
 			
 		} else if (name.elem1 == am_spawn_executable) {
 			task = new EExecDriverTask(proc, name, portSetting);
+
+		} else if (name.elem1 == am_fd) {
+			throw new NotImplemented("open_port("+portName+", "+portSetting+")");
 		}
 			
 		if (task != null) {
