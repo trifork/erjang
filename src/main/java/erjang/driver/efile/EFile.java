@@ -24,6 +24,7 @@ import java.io.FileNotFoundException;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
 import java.nio.channels.SelectableChannel;
 import java.nio.charset.Charset;
@@ -345,7 +346,7 @@ public class EFile extends EDriverInstance {
 	public static final int FILE_ACCESS_WRITE = 1;
 	public static final int FILE_ACCESS_READ = 2;
 	public static final int FILE_ACCESS_READ_WRITE = 3;
-	private static final String SYS_INFO = null;
+//	private static final String SYS_INFO = null;
 
 	private static final int THREAD_SHORT_CIRCUIT;
 
@@ -779,6 +780,7 @@ public class EFile extends EDriverInstance {
 					final int RESULT_SIZE = (1 + (29 * 4));
 					
 					ByteBuffer res = ByteBuffer.allocate(RESULT_SIZE);
+					res.order(ByteOrder.BIG_ENDIAN);
 					
 					res.put(FILE_RESP_INFO);
 					res.putLong(file_size);
@@ -804,12 +806,18 @@ public class EFile extends EDriverInstance {
 					Calendar c = GregorianCalendar.getInstance();
 					c.setTimeInMillis(time);
 					
-					res.putInt(c.get(Calendar.YEAR));
-					res.putInt(c.get(Calendar.MONTH) - Calendar.JANUARY + 1);
-					res.putInt(c.get(Calendar.DAY_OF_MONTH));
-					res.putInt(c.get(Calendar.HOUR_OF_DAY));
-					res.putInt(c.get(Calendar.MINUTE));
-					res.putInt(c.get(Calendar.SECOND));
+					int year = c.get(Calendar.YEAR);
+					res.putInt(year);
+					int month = c.get(Calendar.MONTH) - Calendar.JANUARY + 1;
+					res.putInt(month);
+					int day_of_month = c.get(Calendar.DAY_OF_MONTH);
+					res.putInt(day_of_month);
+					int hour_of_day = c.get(Calendar.HOUR_OF_DAY);
+					res.putInt(hour_of_day);
+					int minute_of_hour = c.get(Calendar.MINUTE);
+					res.putInt(minute_of_hour);
+					int seconds = c.get(Calendar.SECOND);
+					res.putInt(seconds);
 				}
 			};
 			

@@ -35,9 +35,11 @@ import erjang.EString;
 import erjang.ETask;
 import erjang.ETuple;
 import erjang.ETuple2;
+import erjang.ETuple3;
 import erjang.NotImplemented;
 import erjang.driver.EDriver;
 import erjang.driver.EExecDriverTask;
+import erjang.driver.EFDTask;
 import erjang.driver.ESpawnDriverTask;
 
 /**
@@ -49,154 +51,167 @@ public class ErlPort {
 	static EAtom am_spawn = EAtom.intern("spawn");
 	static EAtom am_spawn_driver = EAtom.intern("spawn_driver");
 	static EAtom am_spawn_executable = EAtom.intern("spawn_executable");
-	
+
 	@BIF
-	static EObject port_command(EProc proc, EObject port, EObject data) throws Pausable
-	{
+	static EObject port_command(EProc proc, EObject port, EObject data)
+			throws Pausable {
 		EInternalPort p = port.testInternalPort();
-		
+
 		if (p == null) {
 			port = ERT.whereis(port);
 			if (port == ERT.am_undefined)
 				port = null;
-			
+
 			p = port.testInternalPort();
 		}
 
 		List<ByteBuffer> ovec = new ArrayList<ByteBuffer>();
-		if (p == null || !data.collectIOList(ovec)) { throw ERT.badarg(port, data); }
-		
+		if (p == null || !data.collectIOList(ovec)) {
+			throw ERT.badarg(port, data);
+		}
+
 		ByteBuffer[] out = new ByteBuffer[ovec.size()];
 		ovec.toArray(out);
 
 		// System.err.println("packing "+data+"::"+data.getClass().getName()+" -> "+ovec);
-		
+
 		p.command(out);
-		
+
 		return ERT.TRUE;
 	}
-	
+
 	@BIF
-	static EObject port_control(EProc proc, EObject port, EObject operation, EObject data)
-	{
+	static EObject port_control(EProc proc, EObject port, EObject operation,
+			EObject data) {
 		EInternalPort p = port.testInternalPort();
-		
+
 		if (p == null) {
 			port = ERT.whereis(port);
 			if (port == ERT.am_undefined)
 				port = null;
-			
+
 			p = port.testInternalPort();
 		}
 
 		ESmall op = operation.testSmall();
-		
+
 		List<ByteBuffer> ovec = new ArrayList<ByteBuffer>();
-		if (p == null || op == null || !data.collectIOList(ovec)) { throw ERT.badarg(port, operation, data); }
-		
+		if (p == null || op == null || !data.collectIOList(ovec)) {
+			throw ERT.badarg(port, operation, data);
+		}
+
 		ByteBuffer[] out = new ByteBuffer[ovec.size()];
 		ovec.toArray(out);
 
-		// TODO: improve exception handling/wrapping here so we get ErlangException types only!
+		// TODO: improve exception handling/wrapping here so we get
+		// ErlangException types only!
 		return p.control(op.value, out);
 	}
-	
+
 	@BIF
-	static EObject port_call(EProc proc, EObject port, EObject operation, EObject data)
-	{
+	static EObject port_call(EProc proc, EObject port, EObject operation,
+			EObject data) {
 		EInternalPort p = port.testInternalPort();
-		
+
 		if (p == null) {
 			port = ERT.whereis(port);
 			if (port == ERT.am_undefined)
 				port = null;
-			
+
 			p = port.testInternalPort();
 		}
 
 		ESmall op = operation.testSmall();
-		
-		if (p == null || op == null) { throw ERT.badarg(port, operation, data); }
-		
-		// TODO: improve exception handling/wrapping here so we get ErlangException types only!
+
+		if (p == null || op == null) {
+			throw ERT.badarg(port, operation, data);
+		}
+
+		// TODO: improve exception handling/wrapping here so we get
+		// ErlangException types only!
 		return p.call(op.value, data);
 	}
-	
+
 	@BIF
-	static EPort open_port(EProc proc, EObject portName, EObject portSetting) throws Pausable {
-		
-		
+	static EPort open_port(EProc proc, EObject portName, EObject portSetting)
+			throws Pausable {
+
 		ETuple t;
 		if ((t = portName.testTuple()) == null)
 			throw ERT.badarg(portName, portSetting);
 
-		ETuple2 name;
-		if ((name = ETuple2.cast(t)) == null)
-			throw ERT.badarg(portName, portSetting);
-
-		EString command = EString.make(name.elem2);
-		
-		
 		ETask<? extends EPort> task = null;
-		
-		if (name.elem1 == am_spawn) {
-			EDriver drv = ERT.find_driver(command);
 
-			if (drv == null) {
-				task = new EExecDriverTask(proc, name, portSetting);
-			} else {
+		ETuple2 name;
+		ETuple3 name3;
+		if ((name = ETuple2.cast(t)) != null) {
+
+			EString command = EString.make(name.elem2);
+
+			if (name.elem1 == am_spawn) {
+				EDriver drv = ERT.find_driver(command);
+
+				if (drv == null) {
+					task = new EExecDriverTask(proc, name, portSetting);
+				} else {
+					task = new ESpawnDriverTask(proc, drv, command, portSetting);
+				}
+
+			} else if (name.elem1 == am_spawn_driver) {
+				EDriver drv = ERT.find_driver(command);
+				if (drv == null) {
+					throw ERT.badarg(portName, portSetting);
+				}
 				task = new ESpawnDriverTask(proc, drv, command, portSetting);
-			}
 
-		} else if (name.elem1 == am_spawn_driver) {
-			EDriver drv = ERT.find_driver(command);
-			if (drv == null) {
-				throw ERT.badarg(portName, portSetting);
-			}
-			task = new ESpawnDriverTask(proc, drv, command, portSetting);
-			
-			
-		} else if (name.elem1 == am_spawn_executable) {
-			task = new EExecDriverTask(proc, name, portSetting);
+			} else if (name.elem1 == am_spawn_executable) {
+				task = new EExecDriverTask(proc, name, portSetting);
 
-		} else if (name.elem1 == am_fd) {
-			throw new NotImplemented("open_port("+portName+", "+portSetting+")");
+			}
+		} else if ((name3 = ETuple3.cast(portName)) != null
+				&& name3.elem1 == am_fd) {
+
+			ESmall in = name3.elem2.testSmall();
+			ESmall out = name3.elem3.testSmall();
+			
+			if (in == null || out == null) throw ERT.badarg(portName, portSetting);
+			
+			task = new EFDTask(proc, in.value, out.value, portSetting);
+			
 		}
-			
+
 		if (task != null) {
 			// link this proc and the driver task
-			//task.link_to(proc);
+			// task.link_to(proc);
 			ERT.run(task);
-			
+
 			return task.self_handle();
 		}
-		
+
 		throw ERT.badarg(portName, portSetting);
 	}
 
 	@BIF
-	static public EObject port_close(EProc proc, EObject port) throws Pausable
-	{
+	static public EObject port_close(EProc proc, EObject port) throws Pausable {
 		EPort p;
-		if ((p=port.testPort())==null) {
-			
+		if ((p = port.testPort()) == null) {
+
 			EObject obj = ERT.whereis(port);
-			
-			if (obj == ERT.am_undefined || ((p=obj.testPort())== null)) {
+
+			if (obj == ERT.am_undefined || ((p = obj.testPort()) == null)) {
 				throw ERT.badarg(port);
 			}
 		}
-		
+
 		if (!p.isOpen()) {
 			throw ERT.badarg(port);
 		}
-		
-		
+
 		proc.unlink(p);
-		
+
 		p.send(new ETuple2(proc.self_handle(), EPort.am_close));
-		
+
 		return ERT.TRUE;
 	}
-	
+
 }

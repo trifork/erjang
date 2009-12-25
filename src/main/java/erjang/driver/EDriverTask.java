@@ -72,7 +72,7 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 
 	@Override
 	public String toString() {
-		return "<driver_task:" + id + ">";
+		return "<driver_task:" + super.id + ">";
 	}
 
 	private static final EAtom am_data = EAtom.intern("data");
@@ -113,14 +113,14 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 	private long abs_timeout;
 
 	/**
-	 * @param es
+	 * @param cmd
 	 * @param portSetting
 	 */
-	protected void parseOptions(EString es, EObject portSetting) {
+	protected void parseOptions(EString command, EObject portSetting) {
 		// TODO: most of this is way too expensive for non-exec ports
 
 		// set by options
-		this.cmd = new String[] { es.stringValue() };
+		this.cmd = new String[] { command.stringValue() };
 		this.cwd = System.getProperty("user.dir");
 		this.env = new HashMap<String, String>(System.getenv());
 
