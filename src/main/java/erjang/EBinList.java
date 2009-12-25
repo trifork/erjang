@@ -115,7 +115,7 @@ public class EBinList extends ECons {
 
 	@Override
 	public EObject head() {
-		return new ESmall(data[off]);
+		return new ESmall(data[off] & 0xff);
 	}
 
 	/*
