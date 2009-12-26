@@ -22,16 +22,27 @@ import java.nio.ByteBuffer;
 import java.util.List;
 
 /**
- * Special cons cell optimizing for [byte, byte, byte | Tail]
+ * Special cons cell optimizing for [byte, byte, byte | Tail].  
+ * An <code>EBinList</code> has a tail, and an array of bytes for the
+ * values it contains.  It is optimized for the case of cons'ing a
+ * byte onto it; it works like a java StringBuilder, but its contents
+ * array grows backwards; so the bytes contained in it are stored in
+ * the last bytes of the <code>data</code> array variable.
  */
 public class EBinList extends ECons {
 
+	/**
+	 * 
+	 */
+	private static final int INITIAL_BUFFER_SIZE = 10;
 	final byte[] data;
 	final int off;
 	final int len;
 	final EObject tail;
 
 	// synchronized access
+	/** True if <code>data</code> is shared by other instances of EBinList.
+	 * In that case, we need to copy the data array if we need to grow. */
 	private boolean shared;
 
 	private EBinList(byte[] data, int off, int len, EObject tail, boolean shared) {
@@ -47,8 +58,8 @@ public class EBinList extends ECons {
 	}
 
 	public EBinList(byte value, EObject tail) {
-		this.data = new byte[10];
-		this.off = 9;
+		this.data = new byte[INITIAL_BUFFER_SIZE];
+		this.off = INITIAL_BUFFER_SIZE-1;
 		this.len = 1;
 		this.tail = tail;
 		this.shared = false;
@@ -88,7 +99,7 @@ public class EBinList extends ECons {
 	@Override
 	public ECons cons(EObject h) {
 		ESmall sm;
-		if ((sm = h.testSmall()) != null && sm.value < 256) {
+		if ((sm = h.testSmall()) != null && sm.value >= 0 && sm.value < 256) {
 
 			byte[] res_data = data;
 			int res_off = off;
@@ -118,11 +129,6 @@ public class EBinList extends ECons {
 		return new ESmall(data[off] & 0xff);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see erjang.ECons#tail()
-	 */
 	@Override
 	public EObject tail() {
 		if (len == 1)
@@ -203,6 +209,9 @@ public class EBinList extends ECons {
 	@Override
 	public String toString() {
 		
+		//
+		// Can this be printed as "..."
+		//
 		if (tail.isNil() && all_printable()) {
 			StringBuilder sb = new StringBuilder("\"");
 			for (int i = 0; i < len; i++) {
@@ -213,6 +222,9 @@ public class EBinList extends ECons {
 			return sb.toString();
 		}
 		
+		//
+		// Otherwise, print it as [.., .., |..]
+		//
 		StringBuilder sb = new StringBuilder("[");
 		
 		int max = Math.min(len, 40);
