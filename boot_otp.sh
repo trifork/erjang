@@ -1,10 +1,14 @@
 
+if [ "x${OTPROOT}" == "x" ]; then
+  OTPROOT=/sw/lib/erlang
+fi
+
 java -ea -cp erjang-0.1.jar \
-    -Derjpath=/sw/lib/erlang/lib/erts-5.7.3/ebin erjang.OTPMain \
-    /sw/lib/erlang/erts-5.7.3/bin/erl \
+    -Derjpath=$OTPROOT/lib/erts-5.7.3/ebin erjang.OTPMain \
+    $OTPROOT/erts-5.7.3/bin/erl \
     -- \
     -boot start \
-    -root /sw/lib/erlang \
+    -root $OTPROOT \
     -progname erl \
     -home $HOME \
     -init_debug \
