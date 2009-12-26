@@ -38,23 +38,42 @@ public class EBitString extends EObject {
 			.getInternalName();
 
 	protected final byte[] data;
-	protected final long bits;
-	protected final int bitOff;
+	private final int data_offset;
+	private final int byte_size;
+	protected final int extra_bits;
+	//private final long bits;
+	//protected final long bitOff = 0;
 
 	public EBitString(byte[] data) {
-		this(data.clone(), 0, data.length * 8);
+		this(data.clone(), 0, data.length, 0);
 	}
 
+	/**
+	 * @return the bits
+	 */
+	public long bitSize() {
+		return byteSize() * 8L + extra_bits;
+	}
+
+	/** 
+	 * @return number of bytes needed to hold this bit string (byteSize + (extrabits?1:0))
+	 * */
+	protected int dataByteSize() {
+		return byteSize() + (extra_bits > 0 ? 1 : 0);
+	}
+	
 	public EBitString testBitString() {
 		return this;
 	}
 
+	/** returns true if this bitstring matches the give <code>matcher</code>. */
 	public boolean match(ETermPattern matcher, EMatchContext r) {
 		return matcher.match(this, r);
 	}
 
 	public EBinary testBinary() {
 		if (isBinary()) {
+			// this should never happen
 			return new EBinary(toByteArray());
 		}
 		return null;
@@ -67,38 +86,44 @@ public class EBitString extends EObject {
 
 	@Override
 	public Type emit_const(MethodVisitor fa) {
-		char[] chs = new char[(int) (bits / 8 + 1)];
+		char[] chs = new char[dataByteSize()];
 
-		for (int pos = 0; pos < bits; pos += 8) {
-
-			int rest = (int) (bits-pos > 8 ? 8 : bits-pos);
-
-			int oc = 0xff & intBitsAt(pos, rest);
-
-			if (rest < 8) {
-				oc <<= (8 - rest);
-			}
-
-			chs[pos / 8] = (char) oc;
+		for (int byteIdx = 0; byteIdx < byteSize(); byteIdx += 1) {
+			chs[byteIdx / 8] = (char)(data[byteIdx] & 0xff);
 		}
+		
+		if (extra_bits != 0) {
+			int rest = intBitsAt(byteSize()*8, extra_bits);
+			rest <<= (8-extra_bits);
+			chs[byteSize()] = (char)rest;
+		}
+		
 
 		String str = new String(chs);
 
 		fa.visitLdcInsn(str);
-		fa.visitLdcInsn(new Integer((int) (bits % 8)));
-		fa.visitMethodInsn(Opcodes.INVOKESTATIC, EBITSTRING_NAME, "fromString",
+		fa.visitLdcInsn(new Integer(extra_bits));
+		fa.visitMethodInsn(Opcodes.INVOKESTATIC, EBITSTRING_NAME, "make",
 				"(Ljava/lang/String;I)L" + EBITSTRING_NAME + ";");
 
 		return EBITSTRING_TYPE;
 	}
 
-	public static EBitString fromString(String str, int extra) {
-		int size = str.length() * 8;
-		byte[] data = new byte[size / 8];
-		for (int i = 0; i < str.length(); i++) {
+	/** called by generated code to emit a constant BitString.
+	 * If extra > 0, then the last char of str contains the extra bits */
+	public static EBitString make(String str, int extra) {
+		int in_len = str.length();
+		byte[] data = new byte[in_len];
+		for (int i = 0; i < in_len; i++) {
 			data[i] = (byte) str.charAt(i);
 		}
-		return new EBitString(data, 0, extra == 0 ? size : size - 8 + extra);
+		
+		int data_len = in_len - (extra>0 ? 1 : 0);
+		
+		return new EBitString(data, 
+					0, 
+					data_len,
+					extra);
 	}
 
 	@Override
@@ -108,33 +133,35 @@ public class EBitString extends EObject {
 
 		EBitString ebs = (EBitString) rhs;
 
-		if (bitCount() != ebs.bitCount())
+		if (byteSize() != ebs.byteSize())
 			return false;
+		
+		if (extra_bits != ebs.extra_bits)
+			return false;
+		
+		int byteOffset = byteOffset();
+		int ebsByteOffset = ebs.byteOffset();
 
-		long bc1 = bitCount();
-		long bc2 = ebs.bitCount();
-		long limit = Math.min(bc1, bc2);
-
-		for (int pos = 0; pos < limit; pos += 8) {
-
-			int rest = (int) (limit-pos>8 ? 8 : limit-pos);
-
-			int oc1 = 0xff & intBitsAt(pos, rest);
-			int oc2 = 0xff & ebs.intBitsAt(pos, rest);
-
-			if (oc1 != oc2)
+		for (int i = 0; i < byte_size; i++) {
+			if (data[byteOffset + i] != ebs.data[ebsByteOffset + i])
 				return false;
 		}
-
-		return true;
+		
+		if (extra_bits != 0) {
+			int myExtraBits = intBitsAt(8L*byte_size, extra_bits);
+			int hisExtraBits = ebs.intBitsAt(8L*byte_size, extra_bits);
+			return myExtraBits == hisExtraBits;
+		} else {
+			return true;
+		}
 	}
 
 	@Override
 	int compare_same(EObject rhs) {
 		EBitString ebs = (EBitString) rhs;
 
-		long bc1 = bitCount();
-		long bc2 = ebs.bitCount();
+		long bc1 = bitSize();
+		long bc2 = ebs.bitSize();
 		long limit = Math.min(bc1, bc2);
 
 		for (int pos = 0; pos < limit; pos += 8) {
@@ -162,57 +189,77 @@ public class EBitString extends EObject {
 			return 1;
 	}
 
-	public EBitString(byte[] data, int offset, long bits) {
+	public static EBitString make(byte[] data, int byteOff, int byteLength, int extra_bits) {
+		if (extra_bits == 0) {
+			return new EBinary(data, byteOff, byteLength);
+		} else {
+			return new EBitString(data, byteOff, byteLength, extra_bits);
+		}
+	}
+	
+	protected EBitString(byte[] data, int byte_off, int byte_len, int extra_bits) {
 		this.data = data;
-		this.bitOff = offset;
-		this.bits = bits;
+		this.data_offset = byte_off;
+		this.byte_size = byte_len;
+		this.extra_bits = extra_bits;
 
-		if (data.length * 8 < bitOff + bits) {
+		if (data.length < byte_off + byte_len + (extra_bits>0?1:0)) {
 			throw new IllegalArgumentException();
 		}
 	}
 
 	public boolean isBinary() {
-		return (bits & 0x07) == 0;
+		return extra_bits == 0;
 	}
 
-	public int octetAt(int idx) {
-		return intBitsAt(idx * 8, 8);
+	public int octetAt(int byteIndex) {
+		return data[byteOffset() + byteIndex] & 0xff;
 	}
 
-	public long bitCount() {
-		return bits;
+	public EBitString substring(long bitOff) {
+		return substring(bitOff, bitSize() - bitOff);
 	}
-
-	public EBitString substring(int bitOff) {
-		if (bitOff < 0 || bitOff > bitCount()) {
+	
+	public EBitString substring(long bitOff, long bit_len) {
+		if (bitOff < 0 || bitOff + bit_len > bitSize()) {
 			throw new IllegalArgumentException("offset out of range");
 		}
-		return new EBitString(data, this.bitOff + bitOff, bitCount() - bitOff);
-	}
-
-	public EBitString substring(int bitOff, long len) {
-		if (bitOff < 0 || bitOff + len > bitCount()) {
-			throw new IllegalArgumentException("offset out of range");
+		
+		int out_full_bytes = (int) (bit_len/8);
+		int extra = (int) (bit_len%8);
+		if (0 == (bitOff % 8)) {
+			return new EBitString(data, 
+					byteOffset() + (int)(bitOff/8), 
+					(int)out_full_bytes, extra);
 		}
-		return new EBitString(data, this.bitOff + bitOff, len);
+		
+		int out_bytes = (int) (out_full_bytes + (extra==0 ? 0 : 1));		
+		byte[] res = new byte[out_bytes];
+		for (int i = 0; i < out_full_bytes; i++) {
+			res[i] = (byte) intBitsAt(bitOff + i*8, 8);
+		}
+		if (extra != 0) {
+			res[(int) out_full_bytes] = 
+				(byte) (intBitsAt(bitOff + bit_len - extra, extra) << (7-extra));
+		}
+		return new EBitString(res, 0, (int) out_full_bytes, extra);
 	}
 
-	public int bitAt(int bitPos) {
-		if (bitPos < 0 || bitPos >= bitCount()) {
+	public int bitAt(long bitPos) {
+		if (bitPos < 0 || bitPos >= bitSize()) {
 			throw new IllegalArgumentException("bit index out of range");
 		}
 
-		bitPos += bitOff;
-		int data_byte = (int) data[bitPos >>> 3];
-		int shift = 7 - (bitPos & 0x07);
+		bitPos += byteOffset() * 8;
+		int data_byte = (int) data[(int) (bitPos >>> 3)];
+		int shift = 7 - (int)(bitPos & 0x07);
 		int bit = 0x01 & (data_byte >> shift);
 		return bit;
 	}
 
-	public int intBitsAt(int bitPos, int bitLength) {
+	public int intBitsAt(long bitPos, int bitLength) {
 
-		if (bitPos + bitLength > this.bits) {
+		if (bitPos + bitLength > this.bitSize()) {
 			throw new IllegalArgumentException(
 					"reading beyond end of BitString");
 		}
@@ -221,7 +268,7 @@ public class EBitString extends EObject {
 			throw new IllegalArgumentException(
 					"this method can only get 32 bits");
 
-		bitPos += bitOff;
+		bitPos += byteOffset() * 8;
 
 		int res = 0;
 
@@ -229,10 +276,10 @@ public class EBitString extends EObject {
 		if ((bitPos & 0x07) != 0) {
 
 			// how many bits from this byte?
-			int len = 8 - (bitPos & 0x07);
+			int len = 8 - (int)(bitPos & 0x07);
 
 			// the byte
-			int val = 0x0ff & (int) data[bitPos >> 3];
+			int val = 0x0ff & (int) data[(int) (bitPos >> 3)];
 			res = val & ((1 << len) - 1);
 
 			if (bitLength < len) {
@@ -248,7 +295,7 @@ public class EBitString extends EObject {
 		assert ((bitPos & 0x07) == 0);
 
 		// we're getting bytes
-		int pos = bitPos >> 3;
+		int pos = (int) (bitPos >> 3);
 		while (bitLength > 7) {
 			res <<= 8;
 			res |= 0x0ff & (int) data[pos++];
@@ -266,7 +313,7 @@ public class EBitString extends EObject {
 			int len = bitLength;
 
 			// the byte
-			int val = 0x0ff & (int) data[bitPos >> 3];
+			int val = 0x0ff & (int) data[(int) (bitPos >> 3)];
 			res = val >> (8 - len);
 
 			bitLength -= len;
@@ -291,9 +338,9 @@ public class EBitString extends EObject {
 		return Float.intBitsToFloat(intBitsAt(bitPos, 32));
 	}
 
-	public long longBitsAt(int bitPos, int bitLength) {
+	public long longBitsAt(long bitPos, int bitLength) {
 
-		if (bitPos + bitLength > this.bits) {
+		if (bitPos + bitLength > this.bitSize()) {
 			throw new IllegalArgumentException(
 					"reading beyond end of BitString");
 		}
@@ -304,16 +351,16 @@ public class EBitString extends EObject {
 
 		long res = 0;
 
-		bitPos += bitOff;
+		bitPos += byteOffset() * 8;
 
 		// first, get the right-most bits from data[bitPos/8]
 		if ((bitPos & 0x07) != 0) {
 
 			// how many bits from this byte?
-			int len = 8 - (bitPos & 0x07);
+			int len = 8 - (int)(bitPos & 0x07);
 
 			// the byte
-			int val = 0x0ff & (int) data[bitPos >> 3];
+			int val = 0x0ff & (int) data[(int) (bitPos >> 3)];
 			res = val & ((1 << len) - 1);
 
 			// are we looking for less that len bits?
@@ -329,7 +376,7 @@ public class EBitString extends EObject {
 		assert ((bitPos & 0x07) == 0);
 
 		// we're getting bytes
-		int pos = bitPos >> 3;
+		int pos = (int) (bitPos >> 3);
 		while (bitLength > 7) {
 			res <<= 8;
 			res |= 0x0ff & (int) data[pos++];
@@ -348,7 +395,7 @@ public class EBitString extends EObject {
 			int len = bitLength;
 
 			// the byte
-			int val = 0x0ff & (int) data[bitPos >> 3];
+			int val = 0x0ff & (int) data[(int) (bitPos >> 3)];
 			res = val >> (8 - len);
 
 			bitLength -= len;
@@ -364,10 +411,10 @@ public class EBitString extends EObject {
 	@Override
 	public String toString() {
 
-		foo: if (bits % 8 == 0) {
+		foo: if (extra_bits == 0) {
 			StringBuilder sb = new StringBuilder("<<\"");
 
-			for (int i = 0; i < bits; i += 8) {
+			for (int i = 0; i < bitSize(); i += 8) {
 				char ch = (char) (0xff & intBitsAt(i, 8));
 				if (ch < ' ' || ch > '~')
 					break foo;
@@ -381,14 +428,14 @@ public class EBitString extends EObject {
 
 		StringBuilder sb = new StringBuilder("<<");
 		int i = 0;
-		long max = Math.min(bits-8, 20*8);
+		long max = Math.min(bitSize()-8, 20*8);
 		for (; i < max; i += 8) {
 			sb.append(0xff & intBitsAt(i, 8));
 			sb.append(',');
 		}
-		if (max != bits-8) { sb.append("...,"); i = (int) (bits-8); }
+		if (max != bitSize()-8) { sb.append("...,"); i = (int) (bitSize()-8); }
 
-		int lastBitLength = (int) (bits - i);
+		int lastBitLength = (int) (bitSize() - i);
 		sb.append(0xff & intBitsAt(i, lastBitLength));
 		if (lastBitLength != 8) {
 			sb.append(':').append(lastBitLength);
@@ -404,10 +451,8 @@ public class EBitString extends EObject {
 		if (!isBinary())
 			throw ERT.badarg();
 
-		byte[] result = new byte[(int) (bits / 8)];
-		for (int i = 0; i < result.length; i++) {
-			result[i] = this.byteAt(i * 8);
-		}
+		byte[] result = new byte[byteSize()];
+		System.arraycopy(data, byteOffset(), result, 0, byteSize());
 		return result;
 	}
 
@@ -416,15 +461,11 @@ public class EBitString extends EObject {
 	 */
 	@Override
 	public boolean collectIOList(List<ByteBuffer> out) {
-		if ((bits % 8) != 0) 
+		if (extra_bits != 0) 
 			return false;
 		
-		if (bits != 0) {
-			if ((bitOff % 8) == 0) {
-				out.add(ByteBuffer.wrap(data, bitOff / 8, (int) (bits / 8)));
-			} else {
-				out.add(ByteBuffer.wrap(toByteArray()));
-			}
+		if (byteSize() > 0) {
+			out.add(ByteBuffer.wrap(data, byteOffset(), byteSize()));
 		}
 		
 		return true;
@@ -436,6 +477,14 @@ public class EBitString extends EObject {
 	 */
 	public static EBitString read(EInputStream eInputStream) {
 		throw new NotImplemented();
+	}
+
+	protected int byteOffset() {
+		return data_offset;
+	}
+
+	public int byteSize() {
+		return byte_size;
 	}
 
 }

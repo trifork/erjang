@@ -53,6 +53,17 @@ public class EString extends ESeq implements CharSequence {
 		this.off = off;
 	}
 
+	EString(byte[] data, int off, int len) {
+		if (data.length == off+len) {
+			this.data = data;
+			this.off = off;
+		} else {
+			this.data = new byte[len];
+			this.off = 0;
+			System.arraycopy(data, off, this.data, 0, len);
+		}
+	}
+
 	/**
 	 * @param array
 	 * @param arrayOffset
@@ -142,7 +153,7 @@ public class EString extends ESeq implements CharSequence {
 		}
 
 		ESeq seq;
-		if ((seq = rhs.testWellformedList()) != null) {
+		if ((seq = rhs.testSeq()) != null) {
 
 			int i = 0;
 
@@ -290,13 +301,8 @@ public class EString extends ESeq implements CharSequence {
 		return length() == 0 ? ERT.NIL : null;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see erjang.ESeq#testWellformedList()
-	 */
 	@Override
-	public ESeq testWellformedList() {
+	public ESeq testSeq() {
 		return this;
 	}
 
@@ -418,14 +424,8 @@ public class EString extends ESeq implements CharSequence {
 	 * @param bin
 	 * @return
 	 */
-	public static EString fromBinary(EBinary bin) {
-		if ((bin.bitOff % 8) == 0) {
-			// TODO: bin also has a bitlength, which may differ from
-			// bin.data.length*8
-			return new EString(bin.data, bin.bitOff / 8);
-		}
-
-		throw new NotImplemented();
+	public static EString make(EBinary bin) {
+		return new EString(bin.data, bin.byteOffset(), bin.byteSize());
 	}
 
 	/**

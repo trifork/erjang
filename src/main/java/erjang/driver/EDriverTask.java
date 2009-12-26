@@ -152,7 +152,7 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 				if ((tup2 = ETuple2.cast(tup)) != null) {
 
 					if (tup2.elem1 == am_args) {
-						ESeq list = tup2.elem2.testWellformedList();
+						ESeq list = tup2.elem2.testSeq();
 						EObject[] nargs = list.toArray();
 
 						String[] new_cmd = new String[nargs.length + 1];
@@ -178,7 +178,7 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 					} else if (tup2.elem1 == am_env) {
 
 						ESeq ee;
-						if ((ee = tup2.elem2.testWellformedList()) == null) {
+						if ((ee = tup2.elem2.testSeq()) == null) {
 							throw ERT.badarg();
 						}
 

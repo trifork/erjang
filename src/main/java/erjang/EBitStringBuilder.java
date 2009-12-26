@@ -36,7 +36,7 @@ public class EBitStringBuilder {
 	public EBitStringBuilder(int size, int flags) {
 		if (flags != 0) throw new NotImplemented("flags="+flags);
 		data = new byte[size];
-		bs = new EBitString(data, 0, size*8L);
+		bs = new EBitString(data, 0, size, 0);
 	}
 
 	/** return bitstring under construction */

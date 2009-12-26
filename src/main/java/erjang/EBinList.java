@@ -45,6 +45,7 @@ public class EBinList extends ECons {
 	 * In that case, we need to copy the data array if we need to grow. */
 	private boolean shared;
 
+	/** create list as sublist of data given */
 	private EBinList(byte[] data, int off, int len, EObject tail, boolean shared) {
 		this.data = data;
 		this.off = off;
@@ -57,6 +58,7 @@ public class EBinList extends ECons {
 		
 	}
 
+	/** create a list with [value|tail], where value is a smallint 0..255 */
 	public EBinList(byte value, EObject tail) {
 		this.data = new byte[INITIAL_BUFFER_SIZE];
 		this.off = INITIAL_BUFFER_SIZE-1;
@@ -68,11 +70,13 @@ public class EBinList extends ECons {
 	}
 	
 	public ECons testNonEmptyList() {
+		if (len == 0) 
+			return tail.testNonEmptyList();
 		return this;
 	}
 	
-	public ESeq testWellformedList() {
-		if (tail.testWellformedList() != null) {
+	public ESeq testSeq() {
+		if (tail.testSeq() != null) {
 			return this.seq();
 		} else {
 			return null;
@@ -82,10 +86,10 @@ public class EBinList extends ECons {
 
 	/**
 	 * @param header
-	 * @param out
+	 * @param tail
 	 */
-	public EBinList(byte[] header, EObject out) {
-		this(header, 0, header.length, out, true);
+	public EBinList(byte[] header, EObject tail) {
+		this(header, 0, header.length, tail, true);
 	}
 
 	/**
@@ -161,16 +165,6 @@ public class EBinList extends ECons {
 		return new EString(out_bin, 0);
 	}
 
-	/** An EBinList is an ESeq iff the tail is an ESeq */
-	@Override
-	public ESeq testSeq() {
-		if (tail.testSeq() != null) {
-			return new Seq();
-		}
-		
-		return null;
-	}
-	
 	private ESeq seq() { return new Seq(); }
 	
 	/**

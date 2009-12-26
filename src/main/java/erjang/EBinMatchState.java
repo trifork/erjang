@@ -18,15 +18,17 @@
 
 package erjang;
 
+import java.math.BigInteger;
+
 public class EBinMatchState {
 
 	public static final EAtom ATOM_ALL = EAtom.intern("all");
 
 	public final EBitString bin;
-	int bit_pos;
+	long bit_pos;
 
 	public long bitsLeft() {
-		return bin.bitCount() - bit_pos;
+		return bin.bitSize() - bit_pos;
 	}
 
 	public EBitString binary() {
@@ -50,7 +52,7 @@ public class EBinMatchState {
 		if (spec == ATOM_ALL) {
 
 			EBitString result = bin.substring(bit_pos, bitsLeft());
-			bit_pos += result.bitCount();
+			bit_pos += result.bitSize();
 			return result;
 
 		}
@@ -70,7 +72,7 @@ public class EBinMatchState {
 			return ESmall.ZERO;
 		}
 
-		if (size < 0 || bin.bitCount() >= (bit_pos + size)) {
+		if (size < 0 || bin.bitSize() > (bit_pos + size)) {
 			return null;
 		}
 
@@ -86,11 +88,27 @@ public class EBinMatchState {
 			return res;
 		}
 
-		throw new NotImplemented();
+		int extra_in_front = (size%8);
+		int bytes_needed = size/8 + (extra_in_front==0 ? 0 : 1);
+		byte[] data = new byte[bytes_needed];
+		int out_offset = 0;
+		if (extra_in_front != 0) {
+			data[0] = (byte) bin.intBitsAt(bit_pos, extra_in_front);
+			out_offset = 1;
+			bit_pos += extra_in_front;
+		}
+		
+		for (int i = 0; i < size/8; i++) {
+			data[out_offset+i] = (byte) bin.intBitsAt(bit_pos, 8);
+			bit_pos += 8;
+		}
+		
+		BigInteger bi = new BigInteger(data);
+		return ERT.box(bi);
 	}
 
 	public EBitString bs_match_string(int bits, EBitString ebs) {
-		long size = ebs.bitCount();
+		long size = ebs.bitSize();
 
 		// do we have bits enough in the input
 		if (size > bitsLeft()) {
@@ -138,7 +156,7 @@ public class EBinMatchState {
 
 	/** yields TRUE if we are at the end */
 	public EObject bs_test_tail2() {
-		if (bit_pos == bin.bitCount())
+		if (bit_pos == bin.bitSize())
 			return ERT.TRUE;
 		return null;
 	}

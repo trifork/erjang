@@ -113,7 +113,7 @@ public class OtpConverter {
 
 		add(OtpErlangBitstr.class, new Converter<OtpErlangBitstr>() {
 			EObject conv(OtpErlangBitstr obj) {
-				return new EBitString(obj.binaryValue(), 0, obj.size()*8 + obj.pad_bits() );
+				return EBitString.make(obj.binaryValue(), 0, obj.size(), obj.pad_bits() );
 			}
 		});
 

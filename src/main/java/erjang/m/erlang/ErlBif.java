@@ -65,7 +65,7 @@ public class ErlBif {
 
 	@BIF
 	static EObject apply(EProc proc, EObject fun, EObject args) throws Pausable {
-		ESeq a = args.testWellformedList();
+		ESeq a = args.testSeq();
 		if (a==null) throw ERT.badarg(fun,args);
 		
 		EFun f = fun.testFunction();
@@ -100,7 +100,7 @@ public class ErlBif {
 	static ESeq binary_to_list(EObject val) {
 		EBinary bin;
 		if ((bin=val.testBinary()) == null) throw ERT.badarg(val);
-		return EString.fromBinary(bin);
+		return EString.make(bin);
 	}
 	
 	
@@ -1083,7 +1083,7 @@ public class ErlBif {
 	
 	@BIF(name="is_pid", type=Type.GUARD)
 	public static EAtom is_pid_guard(EObject obj) {
-		return ERT.box(obj.testPID() != null);
+		return ERT.guard(obj.testPID() != null);
 	}
 	
 	@BIF
@@ -1138,7 +1138,7 @@ public class ErlBif {
 	}
 
 	@BIF(type = Type.GUARD, name = "tuple_size")
-	public static ESmall tuple_size$g(EObject tup) {
+	public static ESmall tuple_size_guard(EObject tup) {
 		ETuple t;
 		if ((t = tup.testTuple()) == null)
 			return null;
@@ -1155,7 +1155,7 @@ public class ErlBif {
 
 	
 	@BIF(type=Type.GUARD, name="byte_size")
-	public static ESmall byte_size$g(EObject o) {
+	public static ESmall byte_size_guard(EObject o) {
 		EBinary bin = o.testBinary();
 		if (bin == null)
 			return null;
@@ -1167,16 +1167,16 @@ public class ErlBif {
 		EBinary bin = tup.testBinary();
 		if (bin == null)
 			throw ERT.badarg();
-		return ERT.box(bin.bitCount());
+		return ERT.box(bin.bitSize());
 	}
 
 
 	@BIF(type=Type.GUARD, name="bit_size")
-	public static EInteger bit_size$g(EObject tup) {
+	public static EInteger bit_size_guard(EObject tup) {
 		EBinary bin = tup.testBinary();
 		if (bin == null)
 			return null;
-		return ERT.box(bin.bitCount());
+		return ERT.box(bin.bitSize());
 	}
 
 	@BIF
@@ -1379,7 +1379,7 @@ public class ErlBif {
 		
 		ETuple3 date = new ETuple3();
 		date.set(1, ERT.box(c.get(Calendar.YEAR)));
-		date.set(2, ERT.box(c.get(Calendar.MONTH)+1));
+		date.set(2, ERT.box(c.get(Calendar.MONTH)-Calendar.JANUARY+1));
 		date.set(3, ERT.box(c.get(Calendar.DAY_OF_MONTH)));
 		
 		ETuple3 time = new ETuple3();

@@ -22,7 +22,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
-import java.util.zip.Adler32;
 import java.util.zip.CRC32;
 
 import org.objectweb.asm.MethodVisitor;
@@ -34,7 +33,7 @@ public class EBinary extends EBitString {
 	public static final EBinary EMPTY = new EBinary(new byte[0]);
 
 	public EBinary(byte[] data, int byteOff, int byteLength) {
-		super(data, byteOff * 8, byteLength * 8);
+		super(data, byteOff, byteLength, 0);
 	}
 
 	/**
@@ -49,8 +48,8 @@ public class EBinary extends EBitString {
 
 	@Override
 	public Type emit_const(MethodVisitor fa) {
-		char[] chs = new char[(int) (bits / 8)];
-		for (int i = 0; i < bits / 8; i++) {
+		char[] chs = new char[byteSize()];
+		for (int i = 0; i < byteSize(); i++) {
 			chs[i] = (char) (0xff & octetAt(i));
 		}
 		String str = new String(chs);
@@ -70,88 +69,36 @@ public class EBinary extends EBitString {
 		}
 		return new EBinary(data, 0, size);
 	}
-	
 
-	
 	public EBinary testBinary() {
 		return this;
-	}
-
-	public void updateAdler32(Adler32 a) {
-		a.update(data, bitOff / 8, (int) (bits / 8));
-	}
-
-	static final int MOD_ADLER = 65521;
-	
-	long adler32() {
-		return adler32(1);
-	}
-
-	long adler32(long adler) {
-		long a = (adler & 0xffff), b = (adler >> 16);
-
-		/* Loop over each byte of data, in order */
-		for (int index = bitOff / 8; index < bits / 8; ++index) {
-			a = (a + (0xff & data[index])) % MOD_ADLER;
-			b = (b + a) % MOD_ADLER;
-		}
-
-		return (b << 16) | a;
-	}
-
-	static long adler32(long adler, int byte_value) {
-		long a = (adler & 0xffff), b = (adler >> 16);
-
-		a = (a + (byte_value & 0xff)) % MOD_ADLER;
-		b = (b + a) % MOD_ADLER;
-
-		return (b << 16) | a;
 	}
 
 	/**
 	 * @return
 	 */
 	public byte[] getByteArray() {
-		int octets = (int) (bitCount() / 8);
+		int octets = byteSize();
 		byte[] res = new byte[octets];
-		if ((bitOff % 8) == 0) {
-			System.arraycopy(data, bitOff / 8, res, 0, octets);
-		} else {
-			for (int i = 0; i < octets; i++) {
-				res[i] = (byte) octetAt(i);
-			}
-		}
+		System.arraycopy(data, byteOffset(), res, 0, octets);
 		return res;
 	}
-	
+
 	public long crc() {
 		CRC32 crc = new CRC32();
-		
-		int octets = (int) (bitCount() / 8);
-		if ((bitOff % 8) == 0) {
-			crc.update(data, bitOff / 8, octets);
-		} else {
-			for (int i = 0; i < octets; i++) {
-				crc.update( (byte) octetAt(i) );
-			}
-		}
+
+		int octets = byteSize();
+		crc.update(data, byteOffset(), octets);
 		return crc.getValue();
 	}
 
 	/**
-	 * @return
-	 */
-	public int byteSize() {
-		return (int) (bitCount() / 8);
-	}
-
-	/**
 	 * @param barr
-	 * @throws IOException 
+	 * @throws IOException
 	 */
 	public void appendTo(OutputStream barr) {
 		try {
-			barr.write(data, bitOff/8, byteSize());
+			barr.write(data, byteOffset(), byteSize());
 		} catch (IOException e) {
 			throw new Error(e);
 		}
@@ -159,17 +106,10 @@ public class EBinary extends EBitString {
 
 	/**
 	 * @param barr
-	 * @throws IOException 
+	 * @throws IOException
 	 */
 	public void writeTo(ByteArrayOutputStream o) {
-		int octets = byteSize();
-		if ((bitOff % 8) == 0) {
-			o.write(data, bitOff / 8, octets);
-		} else {
-			for (int i = 0; i < octets; i++) {
-				o.write( octetAt(i) );
-			}
-		}
+		o.write(data, byteOffset(), byteSize());
 	}
 
 	/**
@@ -177,15 +117,17 @@ public class EBinary extends EBitString {
 	 * @return
 	 */
 	public static EBinary make(ByteBuffer data) {
-		if (data == null || data.remaining()==0) return EMPTY;
-		return new EBinary(data.array(), data.arrayOffset()+data.position(), data.remaining());
+		if (data == null || data.remaining() == 0)
+			return EMPTY;
+		return new EBinary(data.array(), data.arrayOffset() + data.position(),
+				data.remaining());
 	}
 
 	/**
 	 * @return
 	 */
 	public ByteBuffer toByteBuffer() {
-		return ByteBuffer.wrap(this.data, this.bitOff/8, (int)(this.bits/8));
+		return ByteBuffer.wrap(this.data, byteOffset(), byteSize());
 	}
 
 	/**
@@ -200,16 +142,9 @@ public class EBinary extends EBitString {
 	 * @return
 	 */
 	public EInputStream getInputStream() {
-		int octets = (int) (bitCount() / 8);
-		if ((bitOff % 8) == 0) {
-			return new EInputStream(data, bitOff / 8, octets, EInputStream.DECODE_INT_LISTS_AS_STRINGS);
-		} else {
-			byte[] res = new byte[octets];
-			for (int i = 0; i < octets; i++) {
-				res[i] = (byte) octetAt(i);
-			}
-			return new EInputStream(res);
-		}
+		int octets = byteSize();
+		return new EInputStream(data, byteOffset(), octets,
+				EInputStream.DECODE_INT_LISTS_AS_STRINGS);
 	}
 
 }

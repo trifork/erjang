@@ -92,7 +92,7 @@ public class ErlConvert {
 		EBinary bin = obj.testBinary();
 		if (bin == null)
 			throw ERT.badarg(obj);
-		return EString.fromBinary(bin);
+		return EString.make(bin);
 	}
 
 	static private class BARR extends ByteArrayOutputStream {

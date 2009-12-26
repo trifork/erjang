@@ -67,10 +67,6 @@ public abstract class EObject implements Comparable<EObject> {
 		return null;
 	}
 	
-	public ESeq testWellformedList() {
-		return null;
-	}
-	
 	public ETuple testTuple() {
 		return null;
 	}
