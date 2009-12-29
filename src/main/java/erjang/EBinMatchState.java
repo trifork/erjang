@@ -22,6 +22,21 @@ import java.math.BigInteger;
 
 public class EBinMatchState {
 
+	/** Field is guaranteed to be byte-aligned. */
+	public static final int BSF_ALIGNED = 1;	
+	
+	/** Field is little-endian (otherwise big-endian). */
+	public static final int BSF_LITTLE = 2;		
+	
+	/** Field is signed (otherwise unsigned). */
+	public static final int BSF_SIGNED = 4;		
+	
+	/** Size in bs_init is exact. */
+	public static final int BSF_EXACT = 8;		
+
+	/** Native endian. */
+	public static final int BSF_NATIVE = 16;		
+
 	public static final EAtom ATOM_ALL = EAtom.intern("all");
 
 	public final EBitString bin;
@@ -64,7 +79,9 @@ public class EBinMatchState {
 
 	public EInteger bs_get_integer2(int size, int flags) {
 
-		if (flags != 0) {
+		if (flags == 0 || flags == BSF_SIGNED) {
+			// ok 
+		} else {
 			throw new Error("unhandled flags: " + flags);
 		}
 
@@ -73,35 +90,68 @@ public class EBinMatchState {
 		}
 
 		if (size < 0 || bin.bitSize() > (bit_pos + size)) {
+			// no match
 			return null;
 		}
 
 		if (size <= 32) {
-			ESmall res = new ESmall(bin.intBitsAt(bit_pos, size));
+			int value = bin.intBitsAt(bit_pos, size);
+			if ((flags & BSF_SIGNED) == BSF_SIGNED) {
+				value = EBitString.signExtend(value, size);
+			}
+			ESmall res = new ESmall(value);
 			bit_pos += size;
 			return res;
 		}
 
 		if (size <= 64) {
-			EInteger res = ERT.box(bin.longBitsAt(bit_pos, size));
+			long value = bin.longBitsAt(bit_pos, size);
+			if ((flags & BSF_SIGNED) == BSF_SIGNED) {
+				value = EBitString.signExtend(value, size);
+			}
+			EInteger res = ERT.box(value);
 			bit_pos += size;
 			return res;
 		}
 
+		boolean signed = ((flags & BSF_SIGNED) == BSF_SIGNED);
+		byte[] data;
 		int extra_in_front = (size%8);
-		int bytes_needed = size/8 + (extra_in_front==0 ? 0 : 1);
-		byte[] data = new byte[bytes_needed];
-		int out_offset = 0;
 		if (extra_in_front != 0) {
+			int bytes_needed = size/8 + (extra_in_front==0 ? 0 : 1);
+			data = new byte[bytes_needed];
+			int out_offset = 0;
+
 			data[0] = (byte) bin.intBitsAt(bit_pos, extra_in_front);
 			out_offset = 1;
 			bit_pos += extra_in_front;
+			
+			if (signed) {
+				// in this case, sign extend the extra bits to 8 bits
+				data[0] = (byte) ( 0xff & EBitString.signExtend(data[0], extra_in_front) );
+			}
+
+			for (int i = 0; i < size/8; i++) {
+				data[out_offset+i] = (byte) bin.intBitsAt(bit_pos, 8);
+				bit_pos += 8;
+			}
+			
+		} else {
+
+			// if signed, the MSB of data[0] is the sign.
+			// if unsigned, but a 0-byte in front to make it unsiged
+			
+			int bytes_needed = size/8 + (signed ? 0 : 1);
+			data = new byte[bytes_needed];
+			int out_offset = signed ? 0 : 1;
+
+			for (int i = 0; i < size/8; i++) {
+				data[out_offset+i] = (byte) bin.intBitsAt(bit_pos, 8);
+				bit_pos += 8;
+			}
+			
 		}
 		
-		for (int i = 0; i < size/8; i++) {
-			data[out_offset+i] = (byte) bin.intBitsAt(bit_pos, 8);
-			bit_pos += 8;
-		}
 		
 		BigInteger bi = new BigInteger(data);
 		return ERT.box(bi);

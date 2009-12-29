@@ -326,6 +326,30 @@ public class EBitString extends EObject {
 
 	}
 
+	/** Sign extend value of size bits.
+	 * Assumes that bits above sign are zero.
+	 * @see http://www-graphics.stanford.edu/~seander/bithacks.html#VariableSignExtend
+	 * */
+	static int signExtend(int val, int bits) {
+		int r;      // resulting sign-extended number
+		int m = 1 << (bits - 1); // mask can be pre-computed if b is fixed
+
+		// val = val & ((1 << bits) - 1);  // (Skip this if bits in x above position b are already zero.)
+		r = (val ^ m) - m;
+
+		return r;
+	}
+	
+	static long signExtend(long val, int bits) {
+		long r;      // resulting sign-extended number
+		long m = 1 << (bits - 1); // mask can be pre-computed if b is fixed
+
+		// val = val & ((1 << bits) - 1);  // (Skip this if bits in x above position b are already zero.)
+		r = (val ^ m) - m;
+
+		return r;
+	}
+	
 	public byte byteAt(int bitPos) {
 		return (byte) intBitsAt(bitPos, 8);
 	}
