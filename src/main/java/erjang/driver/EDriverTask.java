@@ -78,7 +78,7 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 	private static final EAtom am_data = EAtom.intern("data");
 	private final EInternalPort port;
 	protected EPID owner;
-	private final EDriverInstance instance;
+	private final EDriverControl instance;
 
 	protected EDriverTask(EProc owner, EDriverInstance driver) {
 		this.owner = owner.self_handle();
@@ -296,7 +296,7 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 	 * @throws Pausable
 	 * 
 	 */
-	protected void main_loop() throws Pausable {
+	protected void main_loop() throws Exception, Pausable {
 
 		List<ByteBuffer> out = new ArrayList<ByteBuffer>();
 		EObject msg;
@@ -379,7 +379,7 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 
 				// {'EXIT', From, Reason} comes in this way
 				if (t3.elem1 == ERT.EXIT) {
-					// close
+					// close is handled by exception handling code
 					return;
 				}
 			}
@@ -485,7 +485,7 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 
 		mbox.put(new EPortControl() {
 			@Override
-			public void execute() throws Pausable {
+			public void execute() throws Pausable, IOException {
 				instance.outputv(out);
 			}
 		});
@@ -603,6 +603,13 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 	 */
 	public void output_from_driver(EObject out) {
 		owner.sendb(new ETuple2(port, new ETuple2(am_data, out)));
+	}
+
+	/**
+	 * 
+	 */
+	public void eof_from_driver() {
+		owner.sendb(new ETuple2(port, am_eof));
 	}
 
 }

@@ -23,6 +23,9 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import erjang.EAtom;
@@ -59,7 +62,7 @@ public class EExecDriverTask extends EDriverTask {
 	 * @param portSetting
 	 */
 	public EExecDriverTask(EProc owner, ETuple2 name, EObject portSetting) {
-			super(owner, null);
+			super(owner, new ExecDriverInstance(name));
 
 			this.name = name;
 			
@@ -92,6 +95,11 @@ public class EExecDriverTask extends EDriverTask {
 		} catch (IOException e1) {
 			throw new ErlangError(e1);
 		}
+		
+		List<String> al = new ArrayList<String>();
+		Collections.addAll(al, cmd);
+		
+		System.err.println("EXEC "+ al);
 
 		this.out = new DataOutputStream(this.process.getOutputStream());
 		this.in = new DataInputStream(this.process.getInputStream());

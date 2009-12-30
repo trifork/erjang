@@ -18,6 +18,7 @@
 
 package erjang.driver;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
@@ -35,7 +36,7 @@ import erjang.EString;
 /**
  * 
  */
-public abstract class EDriverInstance {
+public abstract class EDriverInstance extends EDriverControl {
 
 	EDriverTask task;
 	Lock pdl;
@@ -199,14 +200,14 @@ public abstract class EDriverInstance {
 	/*
 	 * called when we have output from erlang to the port
 	 */
-	protected abstract void output(ByteBuffer data);
+	protected abstract void output(ByteBuffer data) throws IOException;
 
 	/*
 	 * called when we have output from erlang to the port, and the iodata()
 	 * passed in contains multiple fragments. Default behavior is to flatten the
 	 * input vector, and call EDriverInstance#output(ByteBuffer).
 	 */
-	protected void outputv(ByteBuffer[] ev) {
+	protected void outputv(ByteBuffer[] ev) throws IOException {
 		output(flatten(ev));
 	}
 
@@ -244,10 +245,6 @@ public abstract class EDriverInstance {
 	 */
 	protected abstract EObject call(int command, EObject data);
 
-	/*
-	 * Called when an event selected by driver_event() has occurred
-	 */
-	protected abstract void event(EDriverEvent event, Object eventData);
 
 	protected abstract void processExit(ERef monitor);
 

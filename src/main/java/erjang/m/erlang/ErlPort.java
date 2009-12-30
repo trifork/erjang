@@ -39,7 +39,7 @@ import erjang.ETuple3;
 import erjang.NotImplemented;
 import erjang.driver.EDriver;
 import erjang.driver.EExecDriverTask;
-import erjang.driver.EFDTask;
+import erjang.driver.EFDDriverTask;
 import erjang.driver.ESpawnDriverTask;
 
 /**
@@ -176,7 +176,7 @@ public class ErlPort {
 			
 			if (in == null || out == null) throw ERT.badarg(portName, portSetting);
 			
-			task = new EFDTask(proc, in.value, out.value, portSetting);
+			task = new EFDDriverTask(proc, in.value, out.value, portSetting);
 			
 		}
 

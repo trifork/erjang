@@ -41,7 +41,6 @@ import erjang.ERef;
 import erjang.EString;
 import erjang.NotImplemented;
 import erjang.driver.EAsync;
-import erjang.driver.EDriverEvent;
 import erjang.driver.EDriverInstance;
 import erjang.driver.IO;
 
@@ -410,11 +409,6 @@ public class EFile extends EDriverInstance {
 		return null;
 	}
 
-	@Override
-	protected void event(EDriverEvent event, Object eventData) {
-		// TODO Auto-generated method stub
-
-	}
 
 	@Override
 	protected void flush() {

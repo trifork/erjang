@@ -34,7 +34,7 @@ public abstract class EPortControl extends EObject {
 	/**
 	 * 
 	 */
-	public abstract void execute() throws Pausable;
+	public abstract void execute() throws Exception, Pausable;
 	
 	
 }

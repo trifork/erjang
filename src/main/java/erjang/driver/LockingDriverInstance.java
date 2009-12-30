@@ -18,6 +18,7 @@
 
 package erjang.driver;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectableChannel;
 import java.util.concurrent.locks.Lock;
@@ -61,16 +62,6 @@ class LockingDriverInstance extends EDriverInstance {
 		}
 	}
 
-	@Override
-	protected void event(EDriverEvent event, Object eventData) {
-		lock.lock();
-		try {
-			target.event(event, eventData);
-		} finally {
-			lock.unlock();
-		}
-
-	}
 
 	@Override
 	protected void flush() {
@@ -83,7 +74,7 @@ class LockingDriverInstance extends EDriverInstance {
 	}
 
 	@Override
-	protected void output(ByteBuffer data) {
+	protected void output(ByteBuffer data) throws IOException {
 		lock.lock();
 		try {
 			target.output(data);
@@ -93,7 +84,7 @@ class LockingDriverInstance extends EDriverInstance {
 	}
 
 	@Override
-	protected void outputv(ByteBuffer[] ev) {
+	protected void outputv(ByteBuffer[] ev) throws IOException {
 		lock.lock();
 		try {
 			target.outputv(ev);
