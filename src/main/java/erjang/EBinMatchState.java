@@ -79,6 +79,10 @@ public class EBinMatchState {
 
 	public EInteger bs_get_integer2(int size, int flags) {
 
+		boolean signed = ((flags & BSF_SIGNED) == BSF_SIGNED);
+		boolean little_endian = ((flags & BSF_LITTLE) == BSF_LITTLE);
+		boolean native_endian = ((flags & BSF_NATIVE) == BSF_NATIVE);
+
 		if (flags == 0 || flags == BSF_SIGNED) {
 			// ok 
 		} else {
@@ -96,7 +100,7 @@ public class EBinMatchState {
 
 		if (size <= 32) {
 			int value = bin.intBitsAt(bit_pos, size);
-			if ((flags & BSF_SIGNED) == BSF_SIGNED) {
+			if (signed) {
 				value = EBitString.signExtend(value, size);
 			}
 			ESmall res = new ESmall(value);
@@ -106,7 +110,7 @@ public class EBinMatchState {
 
 		if (size <= 64) {
 			long value = bin.longBitsAt(bit_pos, size);
-			if ((flags & BSF_SIGNED) == BSF_SIGNED) {
+			if (signed) {
 				value = EBitString.signExtend(value, size);
 			}
 			EInteger res = ERT.box(value);
@@ -114,11 +118,10 @@ public class EBinMatchState {
 			return res;
 		}
 
-		boolean signed = ((flags & BSF_SIGNED) == BSF_SIGNED);
 		byte[] data;
 		int extra_in_front = (size%8);
 		if (extra_in_front != 0) {
-			int bytes_needed = size/8 + (extra_in_front==0 ? 0 : 1);
+			int bytes_needed = size/8 + 1;
 			data = new byte[bytes_needed];
 			int out_offset = 0;
 
