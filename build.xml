@@ -87,7 +87,8 @@
 	</target>
 
 	<target name="jar" description="generate the distribution" depends="clean,weave">
-		<copy file="License" todir="classes/erjang" />
+		<copy file="LICENSE" todir="classes/erjang" />
+		<copy file="NOTICE" todir="classes/erjang" />
 		<jar jarfile="erjang-${erjang.version}.jar" basedir="target/classes">
 			<zipgroupfileset dir="lib" includes="*.jar">
 				<exclude name="junit.jar" />
