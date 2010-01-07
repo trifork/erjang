@@ -20,7 +20,13 @@ package erjang;
 
 import java.math.BigInteger;
 
-public class EBinMatchState {
+/** Match state is another one of those pseudo-terms that are allowed on the stack, 
+ * but in a very controlled fashion. */
+public class EBinMatchState extends EPseudoTerm {
+
+	public EBinMatchState testBinMatchState() {
+		return this;
+	}
 
 	/** Field is guaranteed to be byte-aligned. */
 	public static final int BSF_ALIGNED = 1;	
@@ -40,34 +46,82 @@ public class EBinMatchState {
 	public static final EAtom ATOM_ALL = EAtom.intern("all");
 
 	public final EBitString bin;
-	long bit_pos;
+	long offset;
+	long[] save_offset;
 
 	public long bitsLeft() {
-		return bin.bitSize() - bit_pos;
+		return bin.bitSize() - offset;
 	}
 
 	public EBitString binary() {
 		return bin;
 	}
-
-	public static EBinMatchState bs_start_match2(EObject obj) {
+	
+	public static EBitString bs_context_to_binary (EObject obj) {
+		EBinMatchState bms;
+		if ((bms=obj.testBinMatchState()) != null) {
+			throw new NotImplemented();
+		} else {
+			throw new Error("BADARG: be called with EBinMatchState");
+		}
+	}
+	
+	public static void bs_save2 (EObject obj, int slot) {
+		EBinMatchState bms;
+		if ((bms=obj.testBinMatchState()) != null) {
+			bms.save_offset[slot] = bms.offset;
+		} else {
+			throw new Error("BADARG: be called with EBinMatchState");
+		}
+	}
+	
+	public static void bs_restore2 (EObject obj, int slot) {
+		EBinMatchState bms;
+		if ((bms=obj.testBinMatchState()) != null) {
+			bms.offset = bms.save_offset[slot];
+		} else {
+			throw new Error("BADARG: be called with EBinMatchState");
+		}
+	}
+	
+	public static void bs_restore2_start (EObject obj) {
+		EBinMatchState bms;
+		if ((bms=obj.testBinMatchState()) != null) {
+			bms.offset = 0;
+		} else {
+			throw new Error("BADARG: be called with EBinMatchState");
+		}
+	}
+	
+	public static EBinMatchState bs_start_match2(EObject obj, int slots) {
 		EBitString bs;
-		if ((bs = obj.testBitString()) == null)
-			return null;
-		return new EBinMatchState(bs);
+		if ((bs = obj.testBitString()) != null)
+			return new EBinMatchState(bs, slots);
+		EBinMatchState bms;
+		if ((bms=obj.testBinMatchState()) != null) {
+			int actual_slots = bms.save_offset.length;
+			if (actual_slots < slots) {
+				EBinMatchState res = new EBinMatchState(bms.bin, slots);
+				res.offset = bms.offset;
+				res.save_offset[0] = bms.save_offset[0];
+			}
+			return bms;
+		}
+		return null;
 	}
 
-	public EBinMatchState(EBitString binary) {
+	public EBinMatchState(EBitString binary, int slots) {
 		this.bin = binary;
-		this.bit_pos = 0;
+		this.offset = 0;
+		this.save_offset = new long[Math.min(1, slots)];
 	}
 
 	public EBitString bs_get_binary2(EObject spec, int flags) {
 
 		if (spec == ATOM_ALL) {
 
-			EBitString result = bin.substring(bit_pos, bitsLeft());
-			bit_pos += result.bitSize();
+			EBitString result = bin.substring(offset, bitsLeft());
+			offset += result.bitSize();
 			return result;
 
 		}
@@ -93,28 +147,28 @@ public class EBinMatchState {
 			return ESmall.ZERO;
 		}
 
-		if (size < 0 || bin.bitSize() > (bit_pos + size)) {
+		if (size < 0 || bin.bitSize() > (offset + size)) {
 			// no match
 			return null;
 		}
 
 		if (size <= 32) {
-			int value = bin.intBitsAt(bit_pos, size);
+			int value = bin.intBitsAt(offset, size);
 			if (signed) {
 				value = EBitString.signExtend(value, size);
 			}
 			ESmall res = new ESmall(value);
-			bit_pos += size;
+			offset += size;
 			return res;
 		}
 
 		if (size <= 64) {
-			long value = bin.longBitsAt(bit_pos, size);
+			long value = bin.longBitsAt(offset, size);
 			if (signed) {
 				value = EBitString.signExtend(value, size);
 			}
 			EInteger res = ERT.box(value);
-			bit_pos += size;
+			offset += size;
 			return res;
 		}
 
@@ -125,9 +179,9 @@ public class EBinMatchState {
 			data = new byte[bytes_needed];
 			int out_offset = 0;
 
-			data[0] = (byte) bin.intBitsAt(bit_pos, extra_in_front);
+			data[0] = (byte) bin.intBitsAt(offset, extra_in_front);
 			out_offset = 1;
-			bit_pos += extra_in_front;
+			offset += extra_in_front;
 			
 			if (signed) {
 				// in this case, sign extend the extra bits to 8 bits
@@ -135,8 +189,8 @@ public class EBinMatchState {
 			}
 
 			for (int i = 0; i < size/8; i++) {
-				data[out_offset+i] = (byte) bin.intBitsAt(bit_pos, 8);
-				bit_pos += 8;
+				data[out_offset+i] = (byte) bin.intBitsAt(offset, 8);
+				offset += 8;
 			}
 			
 		} else {
@@ -149,8 +203,8 @@ public class EBinMatchState {
 			int out_offset = signed ? 0 : 1;
 
 			for (int i = 0; i < size/8; i++) {
-				data[out_offset+i] = (byte) bin.intBitsAt(bit_pos, 8);
-				bit_pos += 8;
+				data[out_offset+i] = (byte) bin.intBitsAt(offset, 8);
+				offset += 8;
 			}
 			
 		}
@@ -198,7 +252,7 @@ public class EBinMatchState {
 			return null;
 		}
 
-		bit_pos += bitsWanted;
+		offset += bitsWanted;
 
 		return ERT.TRUE;
 	}
@@ -209,7 +263,7 @@ public class EBinMatchState {
 
 	/** yields TRUE if we are at the end */
 	public EObject bs_test_tail2() {
-		if (bit_pos == bin.bitSize())
+		if (offset == bin.bitSize())
 			return ERT.TRUE;
 		return null;
 	}

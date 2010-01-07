@@ -575,12 +575,7 @@ public final class EProc extends ETask<EInternalPID> {
 
 }
 
-class ETailMarker extends EObject {
-
-	@Override
-	int cmp_order() {
-		return CMP_ORDER_ERJANG_INTERNAL;
-	}
+class ETailMarker extends EPseudoTerm {
 
 	/*
 	 * (non-Javadoc)

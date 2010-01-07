@@ -87,6 +87,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 	private Type self_type;
 
 	private static final EObject ATOM_field_flags = EAtom.intern("field_flags");
+	private static final EObject ATOM_start = EAtom.intern("start");
 
 	static final String[] PAUSABLE_EX = new String[] { Type.getType(
 			Pausable.class).getInternalName() };
@@ -697,23 +698,24 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			 * erjang.beam.Arg)
 			 */
 			@Override
-			public void visitBS(BeamOpcode opcode, Arg arg) {
+			public void visitBS(BeamOpcode opcode, Arg arg, Arg imm) {
 				switch (opcode) {
 				case bs_save2:
-					push(arg, EBINMATCHSTATE_TYPE);
-					mv.visitVarInsn(ASTORE, bit_string_matcher);
-					return;
-
 				case bs_restore2:
-					mv.visitVarInsn(ALOAD, bit_string_matcher);
-					pop(arg, EBINMATCHSTATE_TYPE);
+					push(arg, EOBJECT_TYPE);
+					if (imm.value == ATOM_start && opcode == BeamOpcode.bs_restore2) {
+						mv.visitMethodInsn(INVOKESTATIC, EBINMATCHSTATE_TYPE.getInternalName(), "bs_restore2_start", "("+EOBJECT_DESC+")V");
+					} else {
+						push(imm, Type.INT_TYPE);
+						mv.visitMethodInsn(INVOKESTATIC, EBINMATCHSTATE_TYPE.getInternalName(), opcode.name(), "("+EOBJECT_DESC+"I)V");
+					}
+					
 					return;
 
 				case bs_context_to_binary:
-					mv.visitVarInsn(ALOAD, bit_string_matcher);
-					mv.visitMethodInsn(INVOKEVIRTUAL, EBINMATCHSTATE_TYPE
-							.getInternalName(), "binary", "()"
-							+ EBITSTRING_TYPE.getDescriptor());
+					push(arg, EOBJECT_TYPE);
+					mv.visitMethodInsn(INVOKESTATIC, EBINMATCHSTATE_TYPE
+							.getInternalName(), "bs_context_to_binary", "(" +EOBJECT_DESC + ")" + EBITSTRING_TYPE.getDescriptor());
 					pop(arg, EBITSTRING_TYPE);
 					return;
 				}
@@ -824,10 +826,11 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					Arg in = args[0];
 					Arg out = args[3];
 
-					push(in, EBITSTRING_TYPE);
+					push(in, EOBJECT_TYPE);
+					push(args[2], Type.INT_TYPE);
 					mv.visitMethodInsn(INVOKESTATIC, EBINMATCHSTATE_TYPE
 							.getInternalName(), test.name(), "(" + EOBJECT_DESC
-							+ ")" + EMATCHSTATE_TYPE.getDescriptor());
+							+ "I)" + EMATCHSTATE_TYPE.getDescriptor());
 
 					mv.visitInsn(DUP);
 					mv.visitVarInsn(ASTORE, bit_string_matcher);

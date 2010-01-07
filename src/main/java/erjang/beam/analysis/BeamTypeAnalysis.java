@@ -754,9 +754,13 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 					
 					case bs_context_to_binary:
+						vis.visitBS(opcode, decode_arg(insn_idx, insn.elm(2)), null);
+						// do nothing for now
+						break;
+
 					case bs_restore2:
 					case bs_save2: {
-						vis.visitBS(opcode, decode_arg(insn_idx, insn.elm(2)));
+						vis.visitBS(opcode, decode_arg(insn_idx, insn.elm(2)), decode_arg(insn_idx, insn.elm(3)));
 						// do nothing for now
 						break;
 					}

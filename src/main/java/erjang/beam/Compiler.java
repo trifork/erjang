@@ -44,6 +44,7 @@ import com.ericsson.otp.erlang.OtpAuthException;
 import erjang.EBinary;
 import erjang.EFun;
 import erjang.EObject;
+import erjang.ETuple;
 import erjang.beam.analysis.BeamTypeAnalysis;
 
 public class Compiler implements Opcodes {
@@ -100,11 +101,12 @@ public class Compiler implements Opcodes {
 			e.printStackTrace();
 		}
 
+		
 		byte[] byteArray = cw.toByteArray();
 
-		/* 
+		/*
 		 // uncomment this block to emit pre-kilim code [for debugging]	
-		if (cv.getInternalClassName().indexOf("code_server") != -1) {
+		if (cv.getInternalClassName().indexOf("user") != -1) {
 			repo.store(cv.getInternalClassName(), byteArray);
 			return;
 		}
@@ -142,6 +144,19 @@ public class Compiler implements Opcodes {
 
 		// go!
 		reader.accept(analysis);
+
+		byte[] byteArray = cw.toByteArray();
+
+		/*
+		System.out.println(cv.getInternalClassName());
+		
+		 // uncomment this block to emit pre-kilim code [for debugging]	
+		if (cv.getInternalClassName().indexOf("user") != -1) {
+			classRepo.store(cv.getInternalClassName(), byteArray);
+			System.out.println("emitted non-woven class");
+			return;
+		}
+		*/
 
 		// classRepo.store(cv.getInternalClassName(), cw.toByteArray());
 

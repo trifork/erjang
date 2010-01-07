@@ -175,8 +175,9 @@ public interface BlockVisitor2 extends BlockVisitor {
 	/**
 	 * @param opcode
 	 * @param decodeArg
+	 * @param arg2 
 	 */
-	void visitBS(BeamOpcode opcode, Arg decodeArg);
+	void visitBS(BeamOpcode opcode, Arg arg1, Arg arg2);
 
 	/**
 	 * @param in

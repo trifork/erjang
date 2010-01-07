@@ -343,5 +343,9 @@ public abstract class EObject implements Comparable<EObject> {
 		throw new NotImplemented();
 	}
 
+	public EBinMatchState testBinMatchState() {
+		return null;
+	}
+
 
 }

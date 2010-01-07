@@ -36,6 +36,7 @@ import erjang.ENumber;
 import erjang.EObject;
 import erjang.EPID;
 import erjang.EPort;
+import erjang.EPseudoTerm;
 import erjang.ERT;
 import erjang.ERef;
 import erjang.ESeq;
@@ -48,7 +49,7 @@ import erjang.NotImplemented;
  * 
  * @see http://ftp.sunet.se/pub/lang/erlang/doc/apps/erts/match_spec.html
  */
-public class EMatchSpec extends EObject {
+public class EMatchSpec extends EPseudoTerm {
 	static final EAtom am_set_seq_token = EAtom.intern("set_seq_token");
 	static final EAtom am_get_seq_token = EAtom.intern("get_seq_token");
 	static final EAtom am_message = EAtom.intern("message");
