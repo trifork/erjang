@@ -193,6 +193,8 @@ public class Native extends ENative {
 			return null;
 		}
 
+		if (tid == null) { return null; }
+		
 		ETable table = tid_to_table.get(tid);
 
 		if (table != null && table.allow_access(caller, write_access)) {
