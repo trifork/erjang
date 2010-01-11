@@ -21,6 +21,8 @@ package erjang;
 import java.io.File;
 import java.net.MalformedURLException;
 
+import erjang.beam.Compiler;
+
 /**
  * 
  */
@@ -44,8 +46,10 @@ public class Erj {
 		EAtom fun = EAtom.intern(f);
 		
 		// TODO: remove this hack, it prevents loading real modules for these
-		EModuleManager.load_module(EAtom.intern("io"), new File("target/classes").toURL());
-		EModuleManager.load_module(EAtom.intern("timer"), new File("target/classes").toURL());
+		EModuleManager.load_module(EAtom.intern("io"), new File("target/classes").toURI().toURL());
+		EModuleManager.load_module(EAtom.intern("timer"), new File("target/classes").toURI().toURL());
+		
+		load("erlang");
 		
 		ERT.load_module(EAtom.intern(m));
 		
@@ -63,6 +67,14 @@ public class Erj {
 		p.joinb();
 
 		System.out.println("done.");
+	}
+
+	/**
+	 * @param string
+	 */
+	private static void load(String module) throws Exception {
+		File f = Compiler.find_and_compile(module);
+		EModuleManager.load_module(EAtom.intern(module), f.toURI().toURL());
 	}
 
 	private static void load(File path, String mod) throws Error,
