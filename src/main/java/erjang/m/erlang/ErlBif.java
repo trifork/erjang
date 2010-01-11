@@ -384,7 +384,7 @@ public class ErlBif {
 	@BIF(type = Type.GUARD, name = "hd")
 	static public EObject hd$p(EObject cell) {
 		ECons cons;
-		if ((cons = cell.testCons()) != null) {
+		if ((cons = cell.testNonEmptyList()) != null) {
 			return cons.head();
 		}
 		return null;
@@ -393,7 +393,7 @@ public class ErlBif {
 	@BIF(type = Type.GUARD, name = "tl")
 	static public EObject tl$p(EObject cell) {
 		ECons cons;
-		if ((cons = cell.testCons()) != null) {
+		if ((cons = cell.testNonEmptyList()) != null) {
 			return cons.tail();
 		}
 		return null;
@@ -797,7 +797,7 @@ public class ErlBif {
 
 	@BIF(name = "==", type = Type.GUARD)
 	public static final EAtom is_eq$p(EObject a1, EObject a2) {
-		return ERT.box(a1.compareTo(a2) == 0);
+		return ERT.guard(a1.compareTo(a2) == 0);
 	}
 
 	@BIF(name = "=/=", type = Type.GUARD)
