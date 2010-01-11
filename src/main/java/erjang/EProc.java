@@ -1,3 +1,4 @@
+
 /**
  * This file is part of Erjang - A JVM-based Erlang VM
  *
@@ -575,13 +576,9 @@ public final class EProc extends ETask<EInternalPID> {
 
 }
 
+/** Eventually, EProc.TAIL_MARKER should just be NULL, but this may aid debugging */
 class ETailMarker extends EPseudoTerm {
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see erjang.EObject#compare_same(erjang.EObject)
-	 */
 	@Override
 	int compare_same(EObject rhs) {
 		if (rhs == EProc.TAIL_MARKER)
