@@ -1,8 +1,8 @@
 -module(ring).
 %%-import(lists, [last/1]).
 -export([startRing/2,main/0]).
--define(CYCLES, 1000).
--define(PROCS, 20000).
+-define(CYCLES, 10000).
+-define(PROCS, 1000).
 
 %%
 last([End|[]]) -> 
@@ -45,20 +45,20 @@ nodeloop(SendTo,TimerPid) ->
 	    % io:format("~p received stop from ~p ~n", [self(), From]),
 	    done;
 	start ->
-	    io:format("~p Starting message~n", [now()]),
+	    io:format("~p Starting message, cycles=~p~n", [now(), ?CYCLES]),
 	    TimerPid ! xstart,
 		%	io:format("msg[~p] ~p -> ~p~n", [0, self(), SendTo]),
 	    SendTo ! {self(), 0},
 	    nodeloop(SendTo,TimerPid);
 	{Source, Val} when Source =:= self() ->
-	    logOnNth(Val+1, 10000),
+	    logOnNth(Val+1, ?CYCLES),
 	    if
 		Val+1 == ?CYCLES -> 
-		%	io:format("~p == ~p ... stop ", [Val+1, ?CYCLES]),
+			io:format("~p == ~p ... stop ~n", [Val+1, ?CYCLES]),
 			TimerPid ! stop, 
 			SendTo ! {stop,self()};
 		true -> 
-		%	io:format("msg[~p] ~p -> ~p~n", [Val+1, self(), SendTo]),
+			% io:format("msg[~p] ~p -> ~p~n", [Val+1, self(), SendTo]),
 			SendTo ! {Source, Val+1}
 	    end,
 	    nodeloop(SendTo,TimerPid);
