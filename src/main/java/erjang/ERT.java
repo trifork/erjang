@@ -795,7 +795,7 @@ public class ERT {
 	 * @return
 	 */
 	public static int threadPoolSize() {
-		return 4;
+		return 2;
 	}
 
 }
