@@ -47,8 +47,6 @@ public class ErlangBeamDisLoader extends BeamLoader {
 		self = new OtpSelf(myid);
 		peer = new OtpPeer("beam_loader@localhost");
 		conn = self.connect(peer);
-		
-		System.out.println("connexted to " + peer);
 	}
 	
 	@Override
