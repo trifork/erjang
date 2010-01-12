@@ -795,7 +795,7 @@ public class ERT {
 	 * @return
 	 */
 	public static int threadPoolSize() {
-		return 2;
+		return Integer.parseInt(System.getProperty("erj.threads", "4"));
 	}
 
 }
