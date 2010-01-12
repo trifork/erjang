@@ -56,9 +56,14 @@ runLength(L,N) -> tlength(L), runLength(L,N-1).
    
 main2() ->
    List = makeList(2000),
-   io:format("time=~w~n", [timer:tc(fib,runLength,[List,1000000])]).
+   io:format("time=~w~n", [timer:tc(fib,runLength,[List,100000])]).
+
+main() ->
+    main_fib(),
+    main_fib(),
+    main_fib().    
        
-main() ->   
+main_fib() ->   
    time(fibo3,10),
    time(fibo3,100),
    time(fibo3,1000),
