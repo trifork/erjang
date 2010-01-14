@@ -210,7 +210,7 @@ public abstract class EObject implements Comparable<EObject> {
 	public EInteger bxor(int lhs) { throw ERT.badarg(lhs, this); }
 	public EInteger bxor(BigInteger lhs) { throw ERT.badarg(lhs, this); }
 
-	@BIF(name="bnor")
+	@BIF(name="bnot")
 	public EInteger bnot() { throw ERT.badarg(this); }
 
 	// extra convenience
