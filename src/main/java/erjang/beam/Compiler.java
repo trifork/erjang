@@ -273,7 +273,7 @@ public class Compiler implements Opcodes {
 						+ Long.toHexString(crcFile(in)) + ".jar");
 				JarClassRepo jcp = new JarClassRepo(out);
 
-				System.out.println("compining " + in + " -> " + out + " ...");
+				System.out.println("compiling " + in + " -> " + out + " ...");
 				new Compiler(jcp).compile(in);
 
 				jcp.close();
