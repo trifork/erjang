@@ -42,7 +42,7 @@ public class ErjC {
 				File out = new File(args[i].substring(0, idx) + ".jar");
 				JarClassRepo jcp = new JarClassRepo(out);
 				
-				System.out.println("compining "+in+" -> "+out+" ...");
+				System.out.println("compiling "+in+" -> "+out+" ...");
 				new Compiler(jcp).compile(in);
 			
 				jcp.close();
