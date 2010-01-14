@@ -1246,7 +1246,18 @@ public class ErlBif {
 
 	@BIF(type = Type.GUARD, name = "not")
 	public static EAtom not$g(EObject o1) {
-		return (o1 == ERT.FALSE) ? ERT.TRUE : ERT.FALSE;
+		return ERT.box(o1 == ERT.FALSE);
+	}
+
+	@BIF(/*type = Type.GUARD*/, name = "xor")
+	public static EAtom xor(EObject o1, EObject o2) {
+		EAtom a1, a2;
+		if ((a1 = o1.testBoolean()) == null ||
+		    (a2 = o2.testBoolean()) == null)
+			return null;
+		boolean b1 = a1 == ERT.TRUE,
+		        b2 = a2 == ERT.TRUE;
+		return ERT.box(b1 ^ b2);
 	}
 
 	@BIF(type = Type.GUARD, name = "bnot")
