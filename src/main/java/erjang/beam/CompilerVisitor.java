@@ -703,8 +703,11 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				case bs_save2:
 				case bs_restore2:
 					push(arg, EOBJECT_TYPE);
-					if (imm.value == ATOM_start && opcode == BeamOpcode.bs_restore2) {
-						mv.visitMethodInsn(INVOKESTATIC, EBINMATCHSTATE_TYPE.getInternalName(), "bs_restore2_start", "("+EOBJECT_DESC+")V");
+					if (imm.value == ATOM_start) {
+					    String methName =
+						(opcode == BeamOpcode.bs_restore2)
+						? "bs_restore2_start" : "bs_save2_start";
+					    mv.visitMethodInsn(INVOKESTATIC, EBINMATCHSTATE_TYPE.getInternalName(), methName, "("+EOBJECT_DESC+")V");
 					} else {
 						push(imm, Type.INT_TYPE);
 						mv.visitMethodInsn(INVOKESTATIC, EBINMATCHSTATE_TYPE.getInternalName(), opcode.name(), "("+EOBJECT_DESC+"I)V");

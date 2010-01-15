@@ -46,6 +46,7 @@ public class EBinMatchState extends EPseudoTerm {
 	public static final EAtom ATOM_ALL = EAtom.intern("all");
 
 	public final EBitString bin;
+	long start_offset;
 	long offset;
 	long[] save_offset;
 
@@ -60,8 +61,10 @@ public class EBinMatchState extends EPseudoTerm {
 	public static EBitString bs_context_to_binary (EObject obj) {
 		EBinMatchState bms;
 		if ((bms=obj.testBinMatchState()) != null) {
+			// TODO: Convert from start_offset and forth.
 			throw new NotImplemented();
 		} else {
+		    // Note that the source operand may already be a binary...? /eriksoe
 			throw new Error("BADARG: be called with EBinMatchState");
 		}
 	}
@@ -69,7 +72,16 @@ public class EBinMatchState extends EPseudoTerm {
 	public static void bs_save2 (EObject obj, int slot) {
 		EBinMatchState bms;
 		if ((bms=obj.testBinMatchState()) != null) {
-			bms.save_offset[slot] = bms.offset;
+		    bms.save_offset[slot] = bms.offset;
+		} else {
+			throw new Error("BADARG: be called with EBinMatchState");
+		}
+	}
+
+	public static void bs_save2_start (EObject obj) {
+		EBinMatchState bms;
+		if ((bms=obj.testBinMatchState()) != null) {
+		    bms.start_offset = bms.offset;
 		} else {
 			throw new Error("BADARG: be called with EBinMatchState");
 		}
@@ -87,7 +99,7 @@ public class EBinMatchState extends EPseudoTerm {
 	public static void bs_restore2_start (EObject obj) {
 		EBinMatchState bms;
 		if ((bms=obj.testBinMatchState()) != null) {
-			bms.offset = 0;
+			bms.offset = bms.start_offset;
 		} else {
 			throw new Error("BADARG: be called with EBinMatchState");
 		}
@@ -113,6 +125,7 @@ public class EBinMatchState extends EPseudoTerm {
 	public EBinMatchState(EBitString binary, int slots) {
 		this.bin = binary;
 		this.offset = 0;
+		this.start_offset = 0;
 		this.save_offset = new long[Math.min(1, slots)];
 	}
 
