@@ -1249,7 +1249,7 @@ public class ErlBif {
 		return ERT.box(o1 == ERT.FALSE);
 	}
 
-	@BIF(/*type = Type.GUARD*/, name = "xor")
+	@BIF
 	public static EAtom xor(EObject o1, EObject o2) {
 		EAtom a1, a2;
 		if ((a1 = o1.testBoolean()) == null ||
