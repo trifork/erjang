@@ -136,9 +136,11 @@ class TypeMap {
 	private static boolean eqy(TypeMap me, TypeMap other) {
 		if (me.stacksize != other.stacksize)
 			return false;
+		return eqy_prefix(me, other, Math.min(me.stacksize, other.stacksize));
+	}
 
-		int stacksize = Math.min(me.stacksize, other.stacksize);
-		for (int i = 0; i < stacksize; i++) {
+	private static boolean eqy_prefix(TypeMap me, TypeMap other, int count) {
+		for (int i = 0; i < count; i++) {
 			if (!eq(me.gety(i), other.gety(i)))
 				return false;
 		}
@@ -169,17 +171,13 @@ class TypeMap {
 				other.fregs);
 
 		Type[] new_y = yregs;
-		int new_stacksize = stacksize;
-		if (!eqy(this, other)) {
-
+		int new_stacksize = Math.min(stacksize, other.stacksize);
+		if (!eqy_prefix(this, other, new_stacksize)) {
 			if (stacksize != other.stacksize) {
 				// yank stack!
 				new_stacksize = 0;
 				new_y = NO_TYPES;
 			} else {
-
-				// the smaller stack-size wins
-				new_stacksize = Math.min(stacksize, other.stacksize);
 				new_y = new Type[new_stacksize];
 				for (int i = 0; i < new_stacksize; i++) {
 					new_y[new_stacksize - i - 1] = merge(this.gety(i), other
