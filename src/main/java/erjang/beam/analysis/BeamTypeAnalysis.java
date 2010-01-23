@@ -1282,16 +1282,16 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 					case K_try:
 						current = setType(current, insn.elm(2), EOBJECT_TYPE);
-						current = branch(current, insn.elm(3), insn_idx);
+						current = installExceptionHandler(current, insn.elm(3), insn_idx, true);
 						continue next_insn;
 
-					case try_case_end:
 					case try_end:
-						// no exception happened
+						current = current.popExceptionHandler();
 						continue next_insn;
 
 					case try_case:
 						getType(current, insn.elm(2));
+						current = current.popExceptionHandler();
 						current = current.setx(0, EATOM_TYPE); // reason
 						current = current.setx(1, EOBJECT_TYPE); // value
 						current = current.setx(2, EOBJECT_TYPE); // trace
@@ -1309,11 +1309,12 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						continue next_insn;
 
 					case K_catch:
-						// current = branch(current, insn.elm(3), insn_idx);
+						current = installExceptionHandler(current, insn.elm(3), insn_idx, false);
 						continue next_insn;
 
 					case catch_end:
-						// throw new Error();
+						current = current.popExceptionHandler();
+						current = current.setx(0, EOBJECT_TYPE); // value
 						continue next_insn;
 
 					case make_fun2: {
@@ -1434,6 +1435,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						int argCount = insn.elm(2).asInt();
 						current.touchx(0, argCount);
 						current = current.setx(0, EOBJECT_TYPE);
+						//TODO: Function may throw an exception - add edge to active handler if applicable.
 						continue next_insn;
 					}
 
@@ -1457,6 +1459,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					case if_end:
 					case badmatch:
 					case case_end:
+					case try_case_end:
 						continue next_insn;
 
 					case bs_add: {
@@ -1813,6 +1816,18 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 				}
 
 				return current.clearLive(makeBasicBlock(block_label, idx + 1));
+			}
+
+			private TypeMap installExceptionHandler(TypeMap current, EObject nth, int idx, boolean merge) {
+				 ETuple tuple = nth.testTuple();
+				 if (tuple.elm(1) != F_ATOM)
+					  throw new Error("not a branch target: " + nth);
+
+				 int target = tuple.elm(2).asInt();
+				 TypeMap afterPush = current.pushExceptionHandler(target);
+				 if (merge) get_lb(target, false).merge_from(afterPush);
+
+				 return afterPush.clearLive(makeBasicBlock(block_label, idx + 1));
 			}
 
 			private Type getTupleType(int arity) {

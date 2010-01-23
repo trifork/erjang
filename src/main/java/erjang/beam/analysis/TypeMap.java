@@ -32,6 +32,7 @@ class TypeMap {
 	final int stacksize; // number of y-regs
 
 	final BasicBlock bb;
+	final ExceptionHandler exh;
 
 	public TypeMap(BasicBlock bb) {
 		xregs = NO_TYPES;
@@ -39,6 +40,7 @@ class TypeMap {
 		fregs = NO_TYPES;
 		stacksize = 0;
 		this.bb = bb;
+		exh = null;
 	}
 
 	public String toString() {
@@ -113,13 +115,14 @@ class TypeMap {
 	}
 
 	private TypeMap(Type[] xregs, Type[] yregs, Type[] fregs, int stacksize,
-			BasicBlock bb) {
+			BasicBlock bb, ExceptionHandler exh) {
 		super();
 		this.xregs = xregs;
 		this.yregs = yregs;
 		this.fregs = fregs;
 		this.stacksize = stacksize;
 		this.bb = bb;
+		this.exh = exh;
 	}
 
 	public boolean equals(Object obj) {
@@ -178,6 +181,7 @@ class TypeMap {
 				new_stacksize = 0;
 				new_y = NO_TYPES;
 			} else {
+				// the smaller stack-size wins
 				new_y = new Type[new_stacksize];
 				for (int i = 0; i < new_stacksize; i++) {
 					new_y[new_stacksize - i - 1] = merge(this.gety(i), other
@@ -186,10 +190,18 @@ class TypeMap {
 			}
 		}
 
+		ExceptionHandler new_exh; // = ...
+		try {
+			new_exh = ExceptionHandler.merge(exh, other.exh);
+		} catch (IllegalArgumentException iae) {
+			System.err.println("Exception handler structure in beam code is not sound");
+			new_exh = null;
+		}
+
 		if (new_x == xregs && new_y == yregs && new_f == fregs) {
 			return this;
 		} else {
-			return new TypeMap(new_x, new_y, new_f, new_stacksize, bb);
+			return new TypeMap(new_x, new_y, new_f, new_stacksize, bb, new_exh);
 		}
 	}
 
@@ -240,7 +252,7 @@ class TypeMap {
 			new_xregs = copy(xregs);
 		}
 		new_xregs[reg] = t;
-		return new TypeMap(new_xregs, yregs, fregs, stacksize, bb);
+		return new TypeMap(new_xregs, yregs, fregs, stacksize, bb, exh);
 	}
 
 	public TypeMap setf(int reg, Type t) {
@@ -255,7 +267,7 @@ class TypeMap {
 			new_fregs = copy(fregs);
 		}
 		new_fregs[reg] = t;
-		return new TypeMap(xregs, yregs, new_fregs, stacksize, bb);
+		return new TypeMap(xregs, yregs, new_fregs, stacksize, bb, exh);
 	}
 
 	private Type[] copy(Type[] regs) {
@@ -312,7 +324,7 @@ class TypeMap {
 			new_yregs = copy(yregs);
 		}
 		new_yregs[pos] = t;
-		return new TypeMap(xregs, new_yregs, fregs, stacksize, bb);
+		return new TypeMap(xregs, new_yregs, fregs, stacksize, bb, exh);
 	}
 
 	public Type gety(int reg) {
@@ -327,19 +339,37 @@ class TypeMap {
 	}
 
 	public int get_ypos(int reg) {
+		if (reg < 0 || reg >= stacksize)
+			throw new IllegalArgumentException("No Y" + reg + " register here.");
 		return stacksize - reg - 1;
 	}
 
 	public TypeMap trim_y(int howmuch) {
-		return new TypeMap(xregs, yregs, fregs, stacksize - howmuch, bb);
+		return new TypeMap(xregs, yregs, fregs, stacksize - howmuch, bb, exh);
 	}
 
 	public TypeMap alloc_y(int howmuch) {
-		return new TypeMap(xregs, yregs, fregs, stacksize + howmuch, bb);
+		return new TypeMap(xregs, yregs, fregs, stacksize + howmuch, bb, exh);
 	}
 
 	public TypeMap clearLive(BasicBlock bb) {
-		return new TypeMap(xregs, yregs, fregs, stacksize, bb);
+		return new TypeMap(xregs, yregs, fregs, stacksize, bb, exh);
+	}
+
+	public TypeMap pushExceptionHandler(int handlerLabel) {
+		ExceptionHandler new_exh = ExceptionHandler.push(exh,handlerLabel);
+		return new TypeMap(xregs, yregs, fregs, stacksize, bb, new_exh);
+	}
+
+	public TypeMap popExceptionHandler() {
+		ExceptionHandler new_exh; // = ExceptionHandler.pop(exh);
+		try {
+			new_exh = ExceptionHandler.pop(exh);
+		} catch (IllegalArgumentException iae) {
+			System.err.println("Exception handler structure in beam code is not sound");
+			new_exh = null;
+		}
+		return new TypeMap(xregs, yregs, fregs, stacksize, bb, new_exh);
 	}
 
 	public void add_succ(BasicBlock succ) {
@@ -369,5 +399,4 @@ class TypeMap {
 		}
 		return max + 1;
 	}
-
 }
