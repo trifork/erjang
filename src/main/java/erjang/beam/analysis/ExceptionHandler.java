@@ -64,4 +64,13 @@ public class ExceptionHandler implements BeamExceptionHandler {
 	public String toString() {
 		return "lbl" + handlerLabel + "+" +parent;
 	}
+
+
+	public static class Ambiguous extends ExceptionHandler {
+		ExceptionHandler e1, e2;
+		public Ambiguous() {
+			super(-1, null);
+		}
+		// TODO
+	}
 }

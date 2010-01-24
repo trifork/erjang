@@ -27,6 +27,7 @@ import org.objectweb.asm.commons.Method;
  * 
  */
 public interface BlockVisitor2 extends BlockVisitor {
+	void visitBegin(BeamExceptionHandler exh);
 
 	void visitInsn(BeamOpcode insn);
 	
@@ -185,6 +186,8 @@ public interface BlockVisitor2 extends BlockVisitor {
 	 */
 	void visitBSAdd(Arg[] in, Arg out);
 
-	
 
+	void visitUnreachablePoint();
+	void visitCatchBlockStart(BeamOpcode opcode, int label, Arg out, BeamExceptionHandler exh);
+	void visitCatchBlockEnd(BeamOpcode opcode, Arg out, BeamExceptionHandler exh);
 }
