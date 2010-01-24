@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 import kilim.Pausable;
 import kilim.analysis.ClassInfo;
@@ -371,15 +372,17 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 	Map<String, String> funt = new HashMap<String, String>();
 
 	class ASMFunctionAdapter implements FunctionVisitor2 {
-
-		Stack<EXHandler> ex_try_catch_handlers = new Stack<EXHandler>();
-		Stack<EXHandler> ex_catch_handlers = new Stack<EXHandler>();
-
 		private final EAtom fun_name;
 		private final int arity;
 		private final int startLabel;
 
 		Map<Integer, Label> labels = new TreeMap<Integer, Label>();
+		Map<Integer, Label> ex_handler_labels = new TreeMap<Integer, Label>();
+		Set<Integer> label_inserted = new TreeSet<Integer>();
+		List<EXHandler> ex_handlers = new ArrayList<EXHandler>();
+		EXHandler activeExceptionHandler;
+		BeamExceptionHandler active_beam_exh;
+
 		private boolean isTailRecursive;
 		private MethodVisitor mv;
 		private int[] xregs;
@@ -401,6 +404,15 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			Label l = labels.get(i);
 			if (l == null) {
 				labels.put(i, l = new Label());
+			}
+			return l;
+		}
+
+		Label getExceptionHandlerLabel(BeamExceptionHandler exh) {
+			int i = exh.getHandlerLabel();
+			Label l = ex_handler_labels.get(i);
+			if (l == null) {
+				ex_handler_labels.put(i, l = new Label());
 			}
 			return l;
 		}
@@ -447,7 +459,16 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 		 */
 		@Override
 		public void visitEnd() {
+			adjust_exception_handlers(null, false);
 			mv.visitLabel(end);
+
+			for (EXHandler h : ex_handlers) {
+				if (! label_inserted.contains(h.handler_beam_label))
+					throw new InternalError("Exception handler not inserted: "+h.handler_beam_label);
+				mv.visitTryCatchBlock(h.begin, h.end, h.target,
+						      Type.getType(ErlangException.class).getInternalName());
+			}
+
 			mv.visitMaxs(20, scratch_reg + 3);
 			mv.visitEnd();
 
@@ -504,6 +525,39 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				}
 			}
 
+		}
+
+		private void ensure_exception_handler_in_place() {
+			adjust_exception_handlers(active_beam_exh, false);
+		}
+
+		private void adjust_exception_handlers(BeamExceptionHandler exh, boolean expectChange) {
+			int desiredLabel = exh==null ? -1
+				: exh.getHandlerLabel();
+			int actualLabel = activeExceptionHandler==null ? -1
+				: activeExceptionHandler.handler_beam_label;
+			if (expectChange) assert(actualLabel != desiredLabel);
+			if (actualLabel != desiredLabel) {
+				// Terminate the old handler block:
+				if (activeExceptionHandler != null) {
+					mv.visitLabel(activeExceptionHandler.end);
+					activeExceptionHandler = null;
+
+				}
+				//...and begin a new if necessary:
+				if (exh != null) {
+					EXHandler h = new EXHandler();
+					h.begin = new Label();
+					h.end = new Label();
+					h.target = getExceptionHandlerLabel(exh);
+					h.handler_beam_label = exh.getHandlerLabel();
+					h.beam_exh = exh;
+
+					ex_handlers.add(h);
+					mv.visitLabel(h.begin);
+					activeExceptionHandler = h;
+				}
+			}
 		}
 
 		/**
@@ -672,10 +726,21 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			Label blockLabel = getLabel(label);
 
 			mv.visitLabel(blockLabel);
-			return new ASMBlockVisitor();
+			label_inserted.add(label);
+			return new ASMBlockVisitor(label);
 		}
 
 		class ASMBlockVisitor implements BlockVisitor2 {
+			final int beam_label;
+			BeamExceptionHandler exh_at_block_start;
+			public ASMBlockVisitor(int beam_label) {this.beam_label=beam_label;}
+
+			@Override
+			public void visitBegin(BeamExceptionHandler exh) {
+				exh_at_block_start = exh;
+				if (exh==null || (exh.getHandlerLabel() != beam_label))
+					adjust_exception_handlers(exh, false);
+			}
 
 			/*
 			 * (non-Javadoc)
@@ -976,7 +1041,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			public void visitInsn(BeamOpcode opcode, int failLabel, Arg[] in,
 					Arg out, BuiltInFunction bif) {
 
-				test_ex_start();
+				ensure_exception_handler_in_place();
 
 				switch (opcode) {
 				case gc_bif:
@@ -1019,6 +1084,70 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 				throw new Error();
 			}
+
+			public void visitUnreachablePoint() {
+				mv.visitLdcInsn("Reached unreachable point.");
+				mv.visitInsn(DUP);
+				mv.visitMethodInsn(INVOKESPECIAL, "Ljava/lang/RuntimeException;", "<init>", "(Ljava/lang/String;)");
+				mv.visitInsn(ATHROW);
+			}
+
+			public void visitCatchBlockStart(BeamOpcode opcode, int label, Arg out, BeamExceptionHandler exh) {
+				switch (opcode) {
+				case K_try:
+				case K_catch: {
+					active_beam_exh = exh;
+					return;
+				}
+				}
+			}
+
+			public void visitCatchBlockEnd(BeamOpcode opcode, Arg out, BeamExceptionHandler exh) {
+				active_beam_exh = exh.getParent();
+ 				adjust_exception_handlers(active_beam_exh, false);
+				switch (opcode) {
+				case try_end: {
+				} break;
+
+				case catch_end: {
+					// Insert exception decoding sequence:
+					Label after = new Label();
+					mv.visitJumpInsn(GOTO, after);
+					mv.visitLabel(getExceptionHandlerLabel(exh));
+					mv.visitMethodInsn(INVOKESTATIC, ERT_NAME,
+							   "decode_exception2", "("
+							   + ERLANG_EXCEPTION_TYPE.getDescriptor()
+							   + ")" + EOBJECT_DESC);
+
+					mv.visitVarInsn(ASTORE, xregs[0]);
+					mv.visitLabel(after);
+				} break;
+
+				case try_case: {
+					mv.visitLabel(getExceptionHandlerLabel(exh));
+					mv.visitMethodInsn(INVOKESTATIC, ERT_NAME,
+							"decode_exception3", "("
+									+ ERLANG_EXCEPTION_TYPE.getDescriptor()
+									+ ")" + getTubleType(3).getDescriptor());
+
+					mv.visitInsn(DUP);
+					mv.visitFieldInsn(GETFIELD, ETUPLE_NAME + 3, "elem1",
+							EOBJECT_DESC);
+					mv.visitVarInsn(ASTORE, xregs[0]);
+
+					mv.visitInsn(DUP);
+					mv.visitFieldInsn(GETFIELD, ETUPLE_NAME + 3, "elem2",
+							EOBJECT_DESC);
+					mv.visitVarInsn(ASTORE, xregs[1]);
+
+					mv.visitFieldInsn(GETFIELD, ETUPLE_NAME + 3, "elem3",
+							EOBJECT_DESC);
+					mv.visitVarInsn(ASTORE, xregs[2]);
+
+				} break;
+				}
+			}
+
 
 			/**
 			 * @param out
@@ -1313,7 +1442,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			public void visitReceive(BeamOpcode opcode, int blockLabel, Arg out) {
 				switch (opcode) {
 				case loop_rec:
-					test_ex_start();
+					ensure_exception_handler_in_place();
 					
 					mv.visitVarInsn(ALOAD, 0);
 					mv.visitMethodInsn(INVOKESTATIC, ERT_NAME, "receive_peek",
@@ -1349,7 +1478,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					pop(out, ECONS_TYPE);
 					return;
 				case call_fun: {
-					test_ex_start();
+					ensure_exception_handler_in_place();
 					
 					int nargs = in.length - 1;
 					push(in[nargs], EOBJECT_TYPE);
@@ -1406,23 +1535,6 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				throw new Error();
 			}
 
-			void test_ex_start() {
-				if (ex_catch_handlers.size() > 0) {
-					for (EXHandler ex : ex_catch_handlers)
-					if (!ex.is_start_visited) {
-						mv.visitLabel(ex.begin);
-						ex.is_start_visited = true;
-					}
-				}
-				if (ex_try_catch_handlers.size() > 0) {
-					for (EXHandler ex : ex_try_catch_handlers)
-					if (!ex.is_start_visited) {
-						mv.visitLabel(ex.begin);
-						ex.is_start_visited = true;
-					}
-				}
-			}
-
 			/*
 			 * (non-Javadoc)
 			 * 
@@ -1440,98 +1552,6 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					pop(out, out.type);
 
 					return;
-
-				case K_try:
-				case K_catch: {
-					EXHandler h = new EXHandler();
-					h.begin = new Label();
-					h.target = new Label();
-					h.end = new Label();
-					h.reg = out;
-					h.handler_beam_label = val;
-
-					mv.visitTryCatchBlock(h.begin, h.end, h.target, Type
-							.getType(ErlangException.class).getInternalName());
-
-					if (opcode==BeamOpcode.K_catch) {
-						ex_catch_handlers.push(h);						
-					} else {
-						ex_try_catch_handlers.push(h);						
-					}
-					return;
-				}
-
-				case try_end:
-					test_ex_start();
-					EXHandler ex = ex_try_catch_handlers.peek();
-					mv.visitLabel(ex.end);
-					ex.is_end_visited = true;
-					return;
-
-				case try_case: {
-
-					test_ex_start();
-
-					EXHandler h = ex_try_catch_handlers.pop();
-
-					if (!h.is_end_visited) {
-						mv.visitLabel(h.end);
-						h.is_end_visited = true;
-					}
-
-					mv.visitLabel(h.target);
-
-					mv.visitMethodInsn(INVOKESTATIC, ERT_NAME,
-							"decode_exception3", "("
-									+ ERLANG_EXCEPTION_TYPE.getDescriptor()
-									+ ")" + getTubleType(3).getDescriptor());
-
-					mv.visitInsn(DUP);
-					mv.visitFieldInsn(GETFIELD, ETUPLE_NAME + 3, "elem1",
-							EOBJECT_DESC);
-					mv.visitVarInsn(ASTORE, xregs[0]);
-
-					mv.visitInsn(DUP);
-					mv.visitFieldInsn(GETFIELD, ETUPLE_NAME + 3, "elem2",
-							EOBJECT_DESC);
-					mv.visitVarInsn(ASTORE, xregs[1]);
-
-					mv.visitFieldInsn(GETFIELD, ETUPLE_NAME + 3, "elem3",
-							EOBJECT_DESC);
-					mv.visitVarInsn(ASTORE, xregs[2]);
-
-					return;
-				}
-
-				case catch_end: {
-
-					Label after = new Label();
-
-					test_ex_start();
-
-					
-					mv.visitJumpInsn(GOTO, after);
-
-					while (!ex_catch_handlers.isEmpty()) {
-						EXHandler h = ex_catch_handlers.pop();
-						if (!h.is_end_visited) {
-							mv.visitLabel(h.end);
-							h.is_end_visited = true;
-						}
-						mv.visitLabel(h.target);
-					}
-
-					mv.visitMethodInsn(INVOKESTATIC, ERT_NAME,
-							"decode_exception2", "("
-									+ ERLANG_EXCEPTION_TYPE.getDescriptor()
-									+ ")" + EOBJECT_DESC);
-
-					mv.visitVarInsn(ASTORE, xregs[0]);
-
-					mv.visitLabel(after);
-
-					return;
-				}
 
 				case wait_timeout: {
 					mv.visitVarInsn(ALOAD, 0);
@@ -1993,7 +2013,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 				} 
 
-				test_ex_start();
+				ensure_exception_handler_in_place();
 
 				if (opcode == BeamOpcode.apply || opcode == BeamOpcode.apply_last) {
 
@@ -2050,9 +2070,8 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			@Override
 			public void visitInsn(BeamOpcode opcode, ExtFunc efun,
 					Arg[] freevars) {
-				
-				test_ex_start();
-				
+				ensure_exception_handler_in_place();
+
 				if (opcode == BeamOpcode.make_fun2) {
 
 					CompilerVisitor.this.register_lambda(efun.fun, efun.no,
@@ -2326,14 +2345,6 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			 */
 			@Override
 			public void visitJump(int label) {
-				
-				EXHandler h = ex_catch_handlers.isEmpty() ? null : ex_catch_handlers.peek();
-				if (h != null && h.handler_beam_label == label) {
-					if (h.is_end_visited) throw new InternalError();
-					mv.visitLabel(h.end);
-					h.is_end_visited = true;
-				}
-				
 				mv.visitJumpInsn(GOTO, getLabel(label));
 			}
 
@@ -2355,7 +2366,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			public void visitCall(ExtFunc fun, Arg[] args, boolean is_tail,
 					boolean isExternal) {
 
-				test_ex_start();
+				ensure_exception_handler_in_place();
 
 				if (false /* fun.mod == ERLANG_ATOM */) {
 
@@ -2720,10 +2731,9 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 }
 
+/** Active exception handler */
 class EXHandler {
-	public int handler_beam_label;
-	public boolean is_end_visited;
-	public boolean is_start_visited;
-	Arg reg;
+	int handler_beam_label;
 	Label begin, end, target;
+	BeamExceptionHandler beam_exh;
 }
