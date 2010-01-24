@@ -111,6 +111,8 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 	static final EObject FIELD_FLAGS_ATOM = EAtom.intern("field_flags");
 	static final EObject EXTFUNC_ATOM = EAtom.intern("extfunc");
 	static final EObject APPLY_ATOM = EAtom.intern("apply");
+	static final EObject ERLANG_ATOM = EAtom.intern("erlang");
+	static final EObject ERROR_ATOM = EAtom.intern("error");
 
 	private static final ETuple X0_REG = ETuple.make(new EObject[] { X_ATOM,
 			new ESmall(0) });
@@ -381,6 +383,8 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 				int tuple_pos = 0;
 				Arg tuple_reg = null;
 
+				vis.visitBegin(this.map[0].exh);
+
 				for (int insn_idx = 0; insn_idx < insns.size(); insn_idx++) {
 					ETuple insn = insns.get(insn_idx);
 					BeamOpcode opcode = BeamOpcode.get(insn.elm(1).testAtom());
@@ -500,6 +504,8 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 					case call_ext:
 						do_call(vis, insn_idx, insn, false, true);
+						if (is_exceptional_call(insn))
+							vis.visitUnreachablePoint();
 						break;
 
 					case call:
@@ -663,8 +669,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					case try_case_end:
 					case badmatch:
 					case case_end:
-						vis.visitInsn(opcode, decode_out_arg(insn_idx, insn
-								.elm(2)));
+						vis.visitInsn(opcode, decode_arg(insn_idx, insn.elm(2)));
 						break;
 
 					case if_end:
@@ -680,8 +685,10 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 					case K_try:
 					case K_catch: {
-						vis.visitInsn(opcode, decode_labelref(insn.elm(3)),
-								decode_arg(insn_idx, insn.elm(2)));
+						TypeMap type_map_after = this.map[insn_idx+1];
+						vis.visitCatchBlockStart(opcode, decode_labelref(insn.elm(3)),
+												 decode_arg(insn_idx, insn.elm(2)),
+												 type_map_after.exh);
 						break;
 					}
 
@@ -695,12 +702,12 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						break;
 					}
 					
-					
 					case try_end:
 					case try_case:
 					case catch_end:
-						vis.visitInsn(opcode, /* ignore */-1, decode_arg(
-								insn_idx, insn.elm(2)));
+						vis.visitCatchBlockEnd(opcode,
+								       decode_arg(insn_idx, insn.elm(2)),
+								       type_map.exh);
 						break;
 
 					case loop_rec: /* loop receive */
@@ -1081,6 +1088,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 			public void analyze0() {
 				TypeMap current = initial;
 				BeamOpcode last_opcode = BeamOpcode.NONE;
+				ETuple last_insn = null;
 
 				map = new TypeMap[insns.size()];
 
@@ -1096,11 +1104,15 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					map[insn_idx] = current;
 					ETuple insn = insns.get(insn_idx);
 					BeamOpcode code = BeamOpcode.get(insn.elm(1).testAtom());
-					last_opcode = code;
+					last_opcode = code; last_insn = insn;
 					/*
 					 * System.out.println(name + "(" + bb_label + "):" + i +
 					 * " :: " + current + "" + insn);
 					 */
+
+					if (current.exh != null && may_terminate_exceptionally(code))
+						addExceptionEdge(current);
+
 					switch (code) {
 					case fmove:
 					case move: {
@@ -1282,7 +1294,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 					case K_try:
 						current = setType(current, insn.elm(2), EOBJECT_TYPE);
-						current = installExceptionHandler(current, insn.elm(3), insn_idx, true);
+						current = installExceptionHandler(current, insn.elm(3), insn_idx);
 						continue next_insn;
 
 					case try_end:
@@ -1297,6 +1309,9 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						current = current.setx(2, EOBJECT_TYPE); // trace
 						continue next_insn;
 
+					case try_case_end:
+						continue next_insn;
+
 					case raise:
 						boolean is_guard = false;
 						if (insn.elm(2).testTuple().elm(2).asInt() != 0) {
@@ -1309,7 +1324,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						continue next_insn;
 
 					case K_catch:
-						current = installExceptionHandler(current, insn.elm(3), insn_idx, false);
+						current = installExceptionHandler(current, insn.elm(3), insn_idx);
 						continue next_insn;
 
 					case catch_end:
@@ -1435,7 +1450,6 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						int argCount = insn.elm(2).asInt();
 						current.touchx(0, argCount);
 						current = current.setx(0, EOBJECT_TYPE);
-						//TODO: Function may throw an exception - add edge to active handler if applicable.
 						continue next_insn;
 					}
 
@@ -1459,7 +1473,6 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					case if_end:
 					case badmatch:
 					case case_end:
-					case try_case_end:
 						continue next_insn;
 
 					case bs_add: {
@@ -1526,7 +1539,9 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 				update_max_regs(current);
 
-				if (is_term(last_opcode) == false) {
+				if (is_term(last_opcode) == false &&
+					!is_exceptional_call(last_insn))
+				{
 					LabeledBlock lbv;
 					lbv = get_lb(this.block_label + 1, false);
 					try {
@@ -1570,6 +1585,38 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 				default:
 					return false;
 				}
+			}
+
+			boolean may_terminate_exceptionally(BeamOpcode code) {
+				// A conservative approximation:
+				switch (code) {
+				case label:
+				case jump:
+				case move:
+				case K_try:
+				case K_catch:
+				case try_end:
+				case catch_end:
+					return false;
+				default:
+					return true;
+				}
+			}
+
+			boolean is_exceptional_call(ETuple insn) {
+				BeamOpcode opcode = BeamOpcode.get(insn.elm(1).testAtom());
+				if (opcode == BeamOpcode.call_ext) {
+				    ETuple ft = insn.elm(3).testTuple();
+				    if (ft.elm(1) != EXTFUNC_ATOM) {
+					EAtom module   = ft.elm(1).testAtom();
+					EAtom function = ft.elm(2).testAtom();
+					int arity      = ft.elm(3).asInt();
+					if (module == ERLANG_ATOM &&
+					    function == ERROR_ATOM &&
+					    arity == 1) return true;
+				    }
+				}
+				return false;
 			}
 
 			private int sizeof(TypeMap current, EObject cell) {
@@ -1818,17 +1865,22 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 				return current.clearLive(makeBasicBlock(block_label, idx + 1));
 			}
 
-			private TypeMap installExceptionHandler(TypeMap current, EObject nth, int idx, boolean merge) {
+			private TypeMap installExceptionHandler(TypeMap current, EObject nth, int idx) {
 				 ETuple tuple = nth.testTuple();
 				 if (tuple.elm(1) != F_ATOM)
 					  throw new Error("not a branch target: " + nth);
 
 				 int target = tuple.elm(2).asInt();
 				 TypeMap afterPush = current.pushExceptionHandler(target);
-				 if (merge) get_lb(target, false).merge_from(afterPush);
 
 				 return afterPush.clearLive(makeBasicBlock(block_label, idx + 1));
 			}
+
+			private void addExceptionEdge(TypeMap current) {
+				int handler_lbl = current.exh.getHandlerLabel();
+				if (handler_lbl>=0) get_lb(handler_lbl, false).merge_from(current);
+			}
+
 
 			private Type getTupleType(int arity) {
 

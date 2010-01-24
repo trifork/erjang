@@ -130,7 +130,8 @@ class TypeMap {
 			TypeMap other = (TypeMap) obj;
 
 			return eq(xregs, other.xregs) && eqy(this, other)
-					&& eq(fregs, other.fregs);
+					&& eq(fregs, other.fregs)
+					&& eq(exh, other.exh);
 		}
 
 		return false;
@@ -167,6 +168,10 @@ class TypeMap {
 		return t1.equals(t2);
 	}
 
+	private static boolean eq(ExceptionHandler e1, ExceptionHandler e2) {
+		return (e1==e2) || (e1 != null && e1.equals(e2));
+	}
+
 	public TypeMap mergeFrom(TypeMap other) {
 		Type[] new_x = eq(xregs, other.xregs) ? xregs : merge_regs(xregs,
 				other.xregs);
@@ -181,7 +186,6 @@ class TypeMap {
 				new_stacksize = 0;
 				new_y = NO_TYPES;
 			} else {
-				// the smaller stack-size wins
 				new_y = new Type[new_stacksize];
 				for (int i = 0; i < new_stacksize; i++) {
 					new_y[new_stacksize - i - 1] = merge(this.gety(i), other
@@ -190,12 +194,13 @@ class TypeMap {
 			}
 		}
 
-		ExceptionHandler new_exh; // = ...
+		ExceptionHandler new_exh;
 		try {
 			new_exh = ExceptionHandler.merge(exh, other.exh);
 		} catch (IllegalArgumentException iae) {
-			System.err.println("Exception handler structure in beam code is not sound");
-			new_exh = null;
+			if (erjang.ERT.DEBUG) System.err.println("Warning: Exception handler structure can't yet be translated correctly: "+exh+" vs. "+other.exh);
+			//TODO: Handle this appropriately.
+			new_exh = new ExceptionHandler.Ambiguous();
 		}
 
 		if (new_x == xregs && new_y == yregs && new_f == fregs) {
@@ -362,13 +367,7 @@ class TypeMap {
 	}
 
 	public TypeMap popExceptionHandler() {
-		ExceptionHandler new_exh; // = ExceptionHandler.pop(exh);
-		try {
-			new_exh = ExceptionHandler.pop(exh);
-		} catch (IllegalArgumentException iae) {
-			System.err.println("Exception handler structure in beam code is not sound");
-			new_exh = null;
-		}
+		ExceptionHandler new_exh = (exh instanceof ExceptionHandler.Ambiguous)? null : ExceptionHandler.pop(exh); // Temporary fix - to avoid throws
 		return new TypeMap(xregs, yregs, fregs, stacksize, bb, new_exh);
 	}
 
