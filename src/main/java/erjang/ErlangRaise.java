@@ -54,7 +54,7 @@ public class ErlangRaise extends ErlangException {
 	}
 	
 	@Override
-	ESeq getTrace() {
+	public ESeq getTrace() {
 		return trace;
 	}
 }

@@ -123,7 +123,7 @@ public abstract class ErlangException extends RuntimeException {
 	static Map<StackTraceElement, ETuple3> cache = Collections
 			.synchronizedMap(new WeakHashMap<StackTraceElement, ETuple3>());
 
-	ESeq getTrace() {
+	public ESeq getTrace() {
 		return decodeTrace(getStackTrace());
 	}
 

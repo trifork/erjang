@@ -1114,6 +1114,14 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					Label after = new Label();
 					mv.visitJumpInsn(GOTO, after);
 					mv.visitLabel(getExceptionHandlerLabel(exh));
+
+					// Remember the exception value:
+					mv.visitInsn(DUP);
+					mv.visitVarInsn(ALOAD, 0);
+					mv.visitInsn(SWAP);
+					mv.visitFieldInsn(PUTFIELD, EPROC_NAME,
+							  "last_exception", EEXCEPTION_DESC);
+
 					mv.visitMethodInsn(INVOKESTATIC, ERT_NAME,
 							   "decode_exception2", "("
 							   + ERLANG_EXCEPTION_TYPE.getDescriptor()
@@ -1125,6 +1133,14 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 				case try_case: {
 					mv.visitLabel(getExceptionHandlerLabel(exh));
+
+					// Remember the exception value:
+					mv.visitInsn(DUP);
+					mv.visitVarInsn(ALOAD, 0);
+					mv.visitInsn(SWAP);
+					mv.visitFieldInsn(PUTFIELD, EPROC_NAME,
+							  "last_exception", EEXCEPTION_DESC);
+
 					mv.visitMethodInsn(INVOKESTATIC, ERT_NAME,
 							"decode_exception3", "("
 									+ ERLANG_EXCEPTION_TYPE.getDescriptor()

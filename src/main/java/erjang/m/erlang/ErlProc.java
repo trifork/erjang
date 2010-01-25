@@ -43,6 +43,7 @@ import erjang.EString;
 import erjang.ETuple;
 import erjang.ETuple2;
 import erjang.ErlFun;
+import erjang.ErlangException;
 import erjang.ErlangError;
 import erjang.ErlangExit;
 import erjang.Import;
@@ -97,10 +98,11 @@ public class ErlProc {
 	}
 
 	@BIF
-	public static ESeq get_stacktrace() {
-		return new ErlangError(ERT.NIL).getTrace().tail();
+	public static ESeq get_stacktrace(EProc proc) {
+	    ErlangException ex = proc.getLastException();
+	    return ex != null ? ex.getTrace().tail() : ERT.NIL;
 	}
-	
+
 	@BIF
 	public static EObject erase(EProc proc, EObject key) {
 		return proc.erase(key);

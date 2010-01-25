@@ -67,6 +67,7 @@ public final class EProc extends ETask<EInternalPID> {
 
 	public EFun tail;
 	public EObject arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8;
+	public ErlangException last_exception;
 
 	private EInternalPID self;
 
@@ -254,6 +255,10 @@ public final class EProc extends ETask<EInternalPID> {
 	 */
 	void set_group_leader(EPID group_leader) {
 		this.group_leader = group_leader;
+	}
+
+	public ErlangException getLastException() {
+		return last_exception;
 	}
 
 	/**
