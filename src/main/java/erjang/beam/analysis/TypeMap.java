@@ -200,7 +200,7 @@ class TypeMap {
 		} catch (IllegalArgumentException iae) {
 			if (erjang.ERT.DEBUG) System.err.println("Warning: Exception handler structure can't yet be translated correctly: "+exh+" vs. "+other.exh);
 			//TODO: Handle this appropriately.
-			new_exh = new ExceptionHandler.Ambiguous();
+			new_exh = new ExceptionHandler.Ambiguous(exh, other.exh);
 		}
 
 		if (new_x == xregs && new_y == yregs && new_f == fregs) {

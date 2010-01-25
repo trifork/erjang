@@ -58,6 +58,7 @@ import erjang.beam.BeamCodeBlock;
 import erjang.beam.BeamFunction;
 import erjang.beam.BeamInstruction;
 import erjang.beam.BeamOpcode;
+import erjang.beam.BeamExceptionHandler;
 import erjang.beam.BlockVisitor;
 import erjang.beam.BlockVisitor2;
 import erjang.beam.BuiltInFunction;
@@ -143,6 +144,8 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 		}
 
 		TreeMap<Integer, BasicBlock> bbs = new TreeMap<Integer, BasicBlock>();
+		/** Maps from label to list of exception handler labels. */
+		TreeMap<Integer, List<BeamExceptionHandler>> blocks_with_ambiguous_exh = new TreeMap<Integer, List<BeamExceptionHandler>>();
 
 		void live_analysis() {
 
@@ -256,6 +259,17 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 			SortedSet<Integer> labels = new TreeSet<Integer>();
 			labels.addAll(lbs.keySet());
 
+			for (int i : labels) {
+				lb = lbs.get(i);
+				if (lb.initial == null) continue;
+				ExceptionHandler e = lb.initial.exh;
+				if (e == null) continue;
+				List<BeamExceptionHandler> ambi = e.ambiguousities();
+				if (ambi != null) {
+					blocks_with_ambiguous_exh.put(i,ambi);
+				}
+			}
+
 			boolean has_unreachable_code = false;
 			for (int i : labels) {
 				lb = lbs.get(i);
@@ -284,20 +298,33 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 			}
 
 			for (LabeledBlock block : this.lbs.values()) {
-
-				BlockVisitor vis = super.fv
-						.visitLabeledBlock(block.block_label);
-
-				try {
-					block.accept(vis);
-				} catch (Error e) {
-					dump();
-					throw e;
+				ExceptionHandler block_exh =
+					block.initial==null? null :  block.initial.exh;
+				assert(blocks_with_ambiguous_exh.containsKey(block.block_label) == (block_exh != null && block_exh.ambiguousities() != null));
+				if (block_exh != null && block_exh.ambiguousities() != null) {
+					// Handle block with ambiguous exception handler:
+					List<BeamExceptionHandler> ambi = blocks_with_ambiguous_exh.get(block.block_label);
+					for (BeamExceptionHandler e : ambi) {
+						int ext_label = extendedLabel(block.block_label, e);
+						function_visit_end_aux(block, ext_label, e);
+					}
+				} else {
+					int ext_label = extendedLabel(block.block_label, block_exh);
+					function_visit_end_aux(block, ext_label, block_exh);
 				}
 			}
 
 			super.fv.visitEnd();
+		}
 
+		private void function_visit_end_aux(LabeledBlock block, int ext_label, BeamExceptionHandler exh) {
+			BlockVisitor vis = super.fv.visitLabeledBlock(ext_label);
+			try {
+				block.accept(vis, exh);
+			} catch (Error e) {
+				dump();
+				throw e;
+			}
 		}
 
 		private void dump() {
@@ -339,6 +366,21 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 			}
 		}
 
+		int extendedLabel(int label, BeamExceptionHandler exh) {
+			assert ((label &~ 0xffff) == 0);
+			int extLabel = label;
+			if (blocks_with_ambiguous_exh.containsKey(label)) {
+				// Add info about exception context:
+				if (exh != null) {
+					assert(! blocks_with_ambiguous_exh.containsKey(exh.getHandlerLabel()));
+					int handlerLabel = exh.getHandlerLabel();
+					assert ((handlerLabel &~ 0xffff) == 0);
+					extLabel |= (handlerLabel << 16);
+				} // else high 16 bits are 0.
+			}
+			return extLabel;
+		}
+
 		class LabeledBlock implements BlockVisitor, BeamCodeBlock {
 
 			private final int block_label;
@@ -354,13 +396,13 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 			/**
 			 * @param vis
 			 */
-			public void accept(BlockVisitor vis) {
+			public void accept(BlockVisitor vis, BeamExceptionHandler exh) {
 
 				try {
 					if (!isDeadCode()) {
 
 						if (vis instanceof BlockVisitor2) {
-							accept_2((BlockVisitor2) vis);
+							accept_2((BlockVisitor2) vis, exh);
 						} else {
 							accept_1(vis);
 						}
@@ -379,11 +421,11 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 				}
 			}
 
-			private void accept_2(BlockVisitor2 vis) {
+			private void accept_2(BlockVisitor2 vis, BeamExceptionHandler exh) {
 				int tuple_pos = 0;
 				Arg tuple_reg = null;
 
-				vis.visitBegin(this.map[0].exh);
+				vis.visitBegin(exh);
 
 				for (int insn_idx = 0; insn_idx < insns.size(); insn_idx++) {
 					ETuple insn = insns.get(insn_idx);
@@ -423,7 +465,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					case arithfbif: {
 						// System.err.println("gen: " + insn);
 						EAtom name = insn.elm(2).testAtom();
-						int failLabel = decode_labelref(insn.elm(3));
+						int failLabel = decode_labelref(insn.elm(3), this.map[insn_idx].exh);
 						ESeq parms = insn.elm(4).testSeq();
 						Arg[] in = decode_args(insn_idx, parms.toArray());
 						Arg out = decode_out_arg(insn_idx, insn.elm(5));
@@ -439,7 +481,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					case bif: {
 						// System.err.println("gen: " + insn);
 						EAtom name = insn.elm(2).testAtom();
-						int failLabel = decode_labelref(insn.elm(3));
+						int failLabel = decode_labelref(insn.elm(3), this.map[insn_idx].exh);
 						ESeq parms = insn.elm(4).testSeq();
 						Arg[] in = decode_args(insn_idx, parms.toArray());
 						Arg out = decode_out_arg(insn_idx, insn.elm(5));
@@ -455,7 +497,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					case gc_bif: {
 						// System.err.println("gen: " + insn);
 						EAtom name = insn.elm(2).testAtom();
-						int failLabel = decode_labelref(insn.elm(3));
+						int failLabel = decode_labelref(insn.elm(3), this.map[insn_idx].exh);
 						ESeq parms = insn.elm(5).testSeq();
 						Arg[] in = decode_args(insn_idx, parms.toArray());
 						Arg out = decode_out_arg(insn_idx, insn.elm(6));
@@ -591,7 +633,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					}
 
 					case select_tuple_arity: {
-						int failLabel = decode_labelref(insn.elm(3));
+						int failLabel = decode_labelref(insn.elm(3), this.map[insn_idx].exh);
 						Arg in = decode_arg(insn_idx, insn.elm(2));
 
 						ESeq cases = insn.elm(4).testTuple().elm(2).testSeq();
@@ -605,7 +647,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						while (cases != ERT.NIL) {
 							arities[idx] = cases.head().asInt();
 							EObject target = cases.tail().head();
-							targets[idx] = decode_labelref(target);
+							targets[idx] = decode_labelref(target, this.map[insn_idx].exh);
 
 							cases = cases.tail().tail();
 							idx += 1;
@@ -618,7 +660,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 					case select_val: {
 						Arg in = decode_arg(insn_idx, insn.elm(2));
-						int failLabel = decode_labelref(insn.elm(3));
+						int failLabel = decode_labelref(insn.elm(3), this.map[insn_idx].exh);
 						ESeq cases = insn.elm(4).testTuple().elm(2).testSeq();
 						int len = cases.length() / 2;
 
@@ -630,7 +672,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						while (cases != ERT.NIL) {
 							values[idx] = decode_value(cases.head());
 							EObject target = cases.tail().head();
-							targets[idx] = decode_labelref(target);
+							targets[idx] = decode_labelref(target, this.map[insn_idx].exh);
 
 							cases = cases.tail().tail();
 							idx += 1;
@@ -653,7 +695,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					}
 
 					case jump:
-						vis.visitJump(decode_labelref(insn.elm(2)));
+						vis.visitJump(decode_labelref(insn.elm(2), this.map[insn_idx].exh));
 						break;
 
 					case trim:
@@ -686,7 +728,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					case K_try:
 					case K_catch: {
 						TypeMap type_map_after = this.map[insn_idx+1];
-						vis.visitCatchBlockStart(opcode, decode_labelref(insn.elm(3)),
+						vis.visitCatchBlockStart(opcode, decode_labelref(insn.elm(3), this.map[insn_idx].exh),
 												 decode_arg(insn_idx, insn.elm(2)),
 												 type_map_after.exh);
 						break;
@@ -696,7 +738,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						EObject[] argExprs = insn.elm(3).testSeq().toArray();
 						Arg[] in = decode_args(insn_idx, argExprs);
 						Arg ex = decode_arg(insn_idx, insn.elm(4));
-						int failLabel = decode_labelref(insn.elm(2));
+						int failLabel = decode_labelref(insn.elm(2), this.map[insn_idx].exh);
 						
 						vis.visitInsn(opcode, failLabel, in, ex);
 						break;
@@ -711,7 +753,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						break;
 
 					case loop_rec: /* loop receive */
-						vis.visitReceive(opcode, decode_labelref(insn.elm(2)),
+						vis.visitReceive(opcode, decode_labelref(insn.elm(2), this.map[insn_idx].exh),
 								decode_out_arg(insn_idx, insn.elm(3)));
 						break;
 
@@ -724,16 +766,16 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						break;
 
 					case loop_rec_end:
-						vis.visitInsn(opcode, decode_labelref(insn.elm(2)), null);
+						vis.visitInsn(opcode, decode_labelref(insn.elm(2), this.map[insn_idx].exh), null);
 						break;
 
 					case wait:
-						vis.visitInsn(opcode, decode_labelref(insn.elm(2)),
+						vis.visitInsn(opcode, decode_labelref(insn.elm(2), this.map[insn_idx].exh),
 								null);
 						break;
 
 					case wait_timeout:
-						vis.visitInsn(opcode, decode_labelref(insn.elm(2)),
+						vis.visitInsn(opcode, decode_labelref(insn.elm(2), this.map[insn_idx].exh),
 								decode_arg(insn_idx, insn.elm(3)));
 						break;
 
@@ -843,7 +885,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 			private void accept_2_test(BlockVisitor2 vis, ETuple insn,
 					int insn_idx) {
 
-				int failLabel = decode_labelref(insn.elm(3));
+				int failLabel = decode_labelref(insn.elm(3), this.map[insn_idx].exh);
 
 				EObject[] argExprs = insn.elm(4).testSeq().toArray();
 				Arg[] args = decode_args(insn_idx, argExprs);
@@ -1054,11 +1096,11 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 			 * @param nth
 			 * @return
 			 */
-			private int decode_labelref(EObject f_tup) {
+			private int decode_labelref(EObject f_tup, ExceptionHandler exh) {
 				if (f_tup == NOFAIL_ATOM)
 					return 0;
 				assert (f_tup.testTuple().elm(1) == F_ATOM);
-				return f_tup.testTuple().elm(2).asInt();
+				return extendedLabel(f_tup.testTuple().elm(2).asInt(), exh);
 			}
 
 			public boolean isDeadCode() {
@@ -1592,7 +1634,10 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 				switch (code) {
 				case label:
 				case jump:
+				case K_return:
+
 				case move:
+
 				case K_try:
 				case K_catch:
 				case try_end:

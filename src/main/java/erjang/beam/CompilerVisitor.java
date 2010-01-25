@@ -555,6 +555,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 					ex_handlers.add(h);
 					mv.visitLabel(h.begin);
+					mv.visitInsn(NOP); // To avoid potentially-empty exception block; Kilim can't handle those.
 					activeExceptionHandler = h;
 				}
 			}
@@ -732,12 +733,10 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 		class ASMBlockVisitor implements BlockVisitor2 {
 			final int beam_label;
-			BeamExceptionHandler exh_at_block_start;
 			public ASMBlockVisitor(int beam_label) {this.beam_label=beam_label;}
 
 			@Override
 			public void visitBegin(BeamExceptionHandler exh) {
-				exh_at_block_start = exh;
 				if (exh==null || (exh.getHandlerLabel() != beam_label))
 					adjust_exception_handlers(exh, false);
 			}

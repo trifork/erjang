@@ -18,11 +18,23 @@ package erjang.beam.analysis;
 import erjang.beam.BeamExceptionHandler;
 import erjang.ErlangException;
 
+import java.util.Set;
+import java.util.HashSet;
+import java.util.List;
+import java.util.ArrayList;
+
 /* Representation of the stack of exception handlers active at a given
  * program point.
  * 'null' is the end of the stack chain.
  */
 public class ExceptionHandler implements BeamExceptionHandler {
+	/** Special value, for use in exception handler set. */
+	public static final BeamExceptionHandler NULL = new BeamExceptionHandler() {
+		public int getHandlerLabel() {throw new InternalError();}
+		public BeamExceptionHandler getParent() {throw new InternalError();}
+		public String toString() {return "NULL";}
+	};
+
 	private final int handlerLabel;
 	private final ExceptionHandler parent;
 
@@ -33,14 +45,17 @@ public class ExceptionHandler implements BeamExceptionHandler {
 
 	public int getHandlerLabel() {return handlerLabel;}
 	public ExceptionHandler getParent() {return parent;}
+	public List<BeamExceptionHandler> ambiguousities() {return null;}
 
 	public static ExceptionHandler push(ExceptionHandler org, int newHandlerLabel) {
+		assert(! (org instanceof Ambiguous));
 		return new ExceptionHandler(newHandlerLabel, org);
 	}
 
 	public static ExceptionHandler pop(ExceptionHandler org) {
 		if (org==null)
 			throw new IllegalArgumentException("Exception handler structure in beam code is not sound");
+		assert(! (org instanceof Ambiguous));
 		return org.parent;
 	}
 
@@ -61,16 +76,64 @@ public class ExceptionHandler implements BeamExceptionHandler {
 		return new ExceptionHandler(e1.handlerLabel, mergedParent);
 	}
 
+	public boolean equals(Object other) {
+		return other instanceof ExceptionHandler &&
+			equals((ExceptionHandler) other);
+	}
+	public boolean equals(ExceptionHandler other) {
+		ExceptionHandler tmp = merge(this,other);
+		return tmp==this || tmp==other;
+	}
+	public int hashCode() {
+		return handlerLabel;
+	}
+
+	public int compareTo(Object other) {
+		if (! (other instanceof ExceptionHandler)) return 1;
+		return compareTo((ExceptionHandler) other);
+	}
+	public int compareTo(ExceptionHandler other) {
+		return this.handlerLabel - other.handlerLabel;
+	}
+
 	public String toString() {
 		return "lbl" + handlerLabel + "+" +parent;
 	}
 
-
 	public static class Ambiguous extends ExceptionHandler {
-		ExceptionHandler e1, e2;
-		public Ambiguous() {
+		final Set<BeamExceptionHandler> exhs;
+		public Ambiguous(ExceptionHandler src1, ExceptionHandler src2) {
 			super(-1, null);
+			exhs = new HashSet();
+			add_to_set(exhs, src1);
+			add_to_set(exhs, src2);
 		}
-		// TODO
+
+		private static void add_to_set(Set<BeamExceptionHandler> exhs,
+					       ExceptionHandler src)
+		{
+			if (src instanceof Ambiguous)
+				exhs.addAll(((Ambiguous)src).exhs);
+			else if (src==null)
+				exhs.add(NULL);
+			else
+				exhs.add(src);
+		}
+
+		public List<BeamExceptionHandler> ambiguousities() {
+			List<BeamExceptionHandler> result = new ArrayList<BeamExceptionHandler>(exhs.size());
+			for (BeamExceptionHandler x: exhs)
+				result.add(x==NULL? null : x);
+			return result;
+		}
+
+		public String toString() {
+			StringBuffer res = new StringBuffer("ambi(");
+			for (BeamExceptionHandler e : exhs) {
+				res.append(e).append(" ");
+			}
+			res.append(")");
+			return res.toString();
+		}
 	}
 }
