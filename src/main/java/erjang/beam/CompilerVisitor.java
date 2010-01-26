@@ -737,6 +737,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 			@Override
 			public void visitBegin(BeamExceptionHandler exh) {
+				active_beam_exh = exh;
 				if (exh==null || (exh.getHandlerLabel() != beam_label))
 					adjust_exception_handlers(exh, false);
 			}
