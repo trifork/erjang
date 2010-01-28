@@ -404,6 +404,8 @@ public final class EProc extends ETask<EInternalPID> {
 			} catch (ErlangException e) {
 				System.err.print("exiting "+self_handle()+" with: ");
 				e.printStackTrace(System.err);
+				last_exception = e;
+				System.err.println("Erlang stacktrace: "+ErlProc.get_stacktrace(this));
 				result = e.reason();
 
 			} catch (ErlangExitSignal e) {
@@ -458,7 +460,9 @@ public final class EProc extends ETask<EInternalPID> {
 		
 		res = res.cons(new ETuple2(am_group_leader, group_leader));
 
-		res = res.cons(new ETuple2(am_registered_name, self_handle().name));
+		EObject reg_name = self_handle().name;
+		if (reg_name != null)
+			res = res.cons(new ETuple2(am_registered_name, reg_name));
 
 		ESeq links = links();
 		res = res.cons(new ETuple2(am_links, group_leader));
@@ -484,15 +488,29 @@ public final class EProc extends ETask<EInternalPID> {
 	 * @return
 	 */
 	public EObject process_info(EObject spec) {
-		
 		if (spec == am_registered_name) {
 			return self_handle().name == null 
 				? ERT.NIL 
 				: new ETuple2(am_registered_name, self_handle().name);
+		} else if (spec == am_trap_exit) {
+			return new ETuple2(am_trap_exit, trap_exit);
+		} else if (spec == am_message_queue_len) {
+			return new ETuple2(am_message_queue_len,
+					   new ESmall(mbox.size()));
+		} else if (spec == am_messages) {
+			ESeq messages = EList.make((Object[])mbox.messages());
+			return new ETuple2(am_messages, messages);
+		} else if (spec == am_dictionary) {
+			return new ETuple2(am_dictionary, get());
+		} else if (spec == am_group_leader) {
+			return new ETuple2(am_group_leader, group_leader);
+		} else if (spec == am_links) {
+			ESeq links = links();
+			return new ETuple2(am_links, group_leader);
+		} else {
+			System.err.println(spec);
+			throw new NotImplemented();
 		}
-		
-		System.err.println(spec);
-		throw new NotImplemented();
 	}
 
 	/* (non-Javadoc)
