@@ -616,7 +616,7 @@ public class ERT {
 	}
 
 	public static EObject badmatch(EObject val) {
-		throw new ErlangError(am_badmatch, val);
+		throw new ErlangError(new ETuple2(am_badmatch, val));
 	}
 
 	public static EObject decode_exception2(final ErlangException e) {
