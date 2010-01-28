@@ -1586,7 +1586,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 					push(out, out.type);
 					mv.visitTypeInsn(CHECKCAST, ETUPLE_NAME);
-					push_int(pos);
+					push_int(pos + 1);
 					push(val, val.type);
 					mv.visitMethodInsn(INVOKEVIRTUAL, ETUPLE_NAME, "set", "(I"
 							+ EOBJECT_DESC + ")V");
