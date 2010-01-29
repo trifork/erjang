@@ -1875,6 +1875,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 				case bs_test_unit:
 				case bs_skip_bits2:
 				case bs_match_string:
+				case bs_skip_utf8:
 
 					if (!EMATCHSTATE_TYPE.equals(getType(current, args[0]))) {
 						throw new Error("matching without a state");
