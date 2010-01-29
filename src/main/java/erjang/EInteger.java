@@ -20,6 +20,7 @@
 package erjang;
 
 import java.math.BigInteger;
+import java.io.IOException;
 
 
 /**
@@ -40,8 +41,8 @@ public abstract class EInteger extends ENumber {
 		return bigintValue().longValue();
 	}
 
-	public static EInteger read(EInputStream ei) {
-		throw new NotImplemented();
+	public static EInteger read(EInputStream ei) throws IOException {
+		return ei.read_tagged_integer();
 	}
 
 }

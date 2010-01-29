@@ -24,7 +24,9 @@ package erjang;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.EOFException;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 
 import erjang.driver.IO;
 
@@ -204,6 +206,20 @@ public class EInputStream extends ByteArrayInputStream {
 		return tag;
 	}
 
+	public void readFully(byte[] b) throws IOException {
+		int pos = 0;
+		while (pos < b.length) {
+			int read;
+			try {
+				read = super.read(b, pos, b.length-pos);
+			} catch (IndexOutOfBoundsException ioobe) {
+				read = 0;
+			}
+			if (read==0) throw new EOFException("Can't read enough from input stream");
+			pos += read;
+		}
+	}
+
 	/**
 	 * Read a two byte big endian integer from the stream.
 	 * 
@@ -214,12 +230,7 @@ public class EInputStream extends ByteArrayInputStream {
 	 */
 	public int read2BE() throws IOException {
 		final byte[] b = new byte[2];
-		try {
-			super.read(b);
-		} catch (final IOException e) {
-			throw new IOException("Cannot read from input stream");
-		}
-		;
+		readFully(b);
 		return (b[0] << 8 & 0xff00) + (b[1] & 0xff);
 	}
 
@@ -233,12 +244,7 @@ public class EInputStream extends ByteArrayInputStream {
 	 */
 	public int read4BE() throws IOException {
 		final byte[] b = new byte[4];
-		try {
-			super.read(b);
-		} catch (final IOException e) {
-			throw new IOException("Cannot read from input stream");
-		}
-		;
+		readFully(b);
 		return (b[0] << 24 & 0xff000000) + (b[1] << 16 & 0xff0000)
 				+ (b[2] << 8 & 0xff00) + (b[3] & 0xff);
 	}
@@ -253,12 +259,7 @@ public class EInputStream extends ByteArrayInputStream {
 	 */
 	public int read2LE() throws IOException {
 		final byte[] b = new byte[2];
-		try {
-			super.read(b);
-		} catch (final IOException e) {
-			throw new IOException("Cannot read from input stream");
-		}
-		;
+		readFully(b);
 		return (b[1] << 8 & 0xff00) + (b[0] & 0xff);
 	}
 
@@ -272,12 +273,7 @@ public class EInputStream extends ByteArrayInputStream {
 	 */
 	public int read4LE() throws IOException {
 		final byte[] b = new byte[4];
-		try {
-			super.read(b);
-		} catch (final IOException e) {
-			throw new IOException("Cannot read from input stream");
-		}
-		;
+		readFully(b);
 		return (b[3] << 24 & 0xff000000) + (b[2] << 16 & 0xff0000)
 				+ (b[1] << 8 & 0xff00) + (b[0] & 0xff);
 	}
@@ -666,6 +662,16 @@ public class EInputStream extends ByteArrayInputStream {
 	public long read_long(final boolean unsigned) throws IOException {
 		final byte[] b = read_integer_byte_array();
 		return EInputStream.byte_array_to_long(b, unsigned);
+	}
+
+	public EInteger read_tagged_integer() throws IOException {
+		int tag = read1skip_version();
+
+		switch (tag) {
+		case EExternal.smallIntTag: return new ESmall(read1());
+		case EExternal.intTag:      return new ESmall(read4BE());
+		default: setPos(getPos()-1); return new EBig(new BigInteger(read_integer_byte_array()));
+		} // switch
 	}
 
 	/**
@@ -1094,23 +1100,34 @@ public class EInputStream extends ByteArrayInputStream {
 			throw new IOException("Wrong tag encountered, expected "
 					+ EExternal.compressedTag + ", got " + tag);
 		}
-
-		final int size = read4BE();
-		final byte[] buf = new byte[size];
-		final java.util.zip.InflaterInputStream is = new java.util.zip.InflaterInputStream(
-				this);
-		try {
-			final int dsize = is.read(buf, 0, size);
-			if (dsize != size) {
-				throw new IOException("Decompression gave " + dsize
-						+ " bytes, not " + size);
-			}
-		} catch (final IOException e) {
-			throw new IOException("Cannot read from input stream");
-		}
+		final byte[] buf = read_size_and_inflate();
 
 		final EInputStream ois = new EInputStream(buf, flags);
 		return ois.read_any();
+	}
+
+	public byte[] read_size_and_inflate() throws IOException {
+		final int size = read4BE();
+		final byte[] buf = new byte[size];
+		final java.util.zip.Inflater inflater = new java.util.zip.Inflater();
+		final java.util.zip.InflaterInputStream is = new java.util.zip.InflaterInputStream(this, inflater);
+
+		int pos = 0;
+		while (pos<size) { // Inflate fully
+			final int dsize = is.read(buf, pos, size-pos);
+			if (dsize==0) break;
+			pos += dsize;
+		}
+		if (pos < size) {
+			throw new IOException("Decompression gave " + pos
+					      + " bytes, not " + size);
+		}
+
+		// Back up if the inflater read ahead:
+		int read_ahead = inflater.getRemaining();
+		setPos(getPos() - read_ahead);
+
+		return buf;
 	}
 
 	/**
@@ -1183,7 +1200,7 @@ public class EInputStream extends ByteArrayInputStream {
 			return EFun.read(this);
 
 		default:
-			throw new IOException("Uknown data type: " + tag);
+			throw new IOException("Unknown data type: " + tag + " at position " + getPos());
 		}
 	}
 }
