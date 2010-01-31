@@ -22,6 +22,7 @@ import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ListIterator;
 
 
 public abstract class ESeq extends ECons {
@@ -63,6 +64,16 @@ public abstract class ESeq extends ECons {
 		ESeq res = ERT.NIL;
 		for (int i = args.length-1; i >= 0; i--) {
 			res = res.cons(args[i]);
+		}
+		return res;
+	}
+
+	public static ESeq fromList(List<EObject> args) {
+		ESeq res = ERT.NIL;
+
+		ListIterator<EObject> iter = args.listIterator(args.size());
+		while (iter.hasPrevious()) {
+			res = res.cons(iter.previous());
 		}
 		return res;
 	}
