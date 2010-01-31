@@ -2,9 +2,16 @@ package erjang.beam.loader;
 
 import erjang.EObject;
 import erjang.EAtom;
+import erjang.ESmall;
+import erjang.EBig;
+import erjang.ETuple;
+import erjang.ESeq;
+import erjang.ERT;
 
 import java.util.ArrayList;
 import java.math.BigInteger;
+
+import static erjang.beam.CodeAtoms.*;
 
 public class Operands {
 
@@ -27,6 +34,8 @@ public class Operands {
 	public YReg asYReg() {
 	    throw new IllegalArgumentException("Not a Y register: "+this);
 	}
+
+	public abstract EObject toSymbolic(CodeTables ct);
     }
     static abstract class SourceOperand extends Operand {
 	@Override
@@ -47,16 +56,19 @@ public class Operands {
     static class Int extends Literal {
 	public final int value;
 	public Int(int value) {this.value=value;}
+	public EObject toSymbolic(CodeTables ct) {return new ESmall(value);}
     }
 
     static class BigInt extends Literal {
 	public final BigInteger value;
 	public BigInt(BigInteger value) {this.value=value;}
+	public EObject toSymbolic(CodeTables ct) {return new EBig(value);}
     }
 
     static final Nil Nil = new Nil();
     static class Nil extends Literal {
 	private Nil() {}
+	public EObject toSymbolic(CodeTables ct) {return ERT.NIL;}
     }
 
     static class List extends Literal {
@@ -65,23 +77,28 @@ public class Operands {
 
 	@Override
 	public List asList() {return this;}
+	public EObject toSymbolic(CodeTables ct) {
+	    EObject[] elems = new EObject[list.length];
+	    for (int i=0; i<list.length; i++) {
+		elems[i] = list[i].toSymbolic(ct);
+	    }
+	    return ESeq.fromArray(elems);
+	}
     }
 
     static class Atom extends Literal {
 	private int idx;
-	public EAtom value;
 	public Atom(int idx) {this.idx=idx;}
-	public Atom(EAtom value) {this.value=value;}
 
 	@Override
 	public Atom asAtom() {return this;}
+	public EObject toSymbolic(CodeTables ct) {return ct.atom(idx);}
     }
 
     static class TableLiteral extends Literal {
 	private int idx;
-	private EObject value;
 	public TableLiteral(int idx) {this.idx=idx;}
-	public TableLiteral(EObject value) {this.value=value;}
+	public EObject toSymbolic(CodeTables ct) {return ct.literal(idx);}
     }
 
     static class Label extends Operand {
@@ -89,6 +106,10 @@ public class Operands {
 	public Label(int nr) {this.nr=nr;}
 	@Override
 	public Label asLabel() {return this;}
+
+	public EObject toSymbolic(CodeTables ct) {
+	    return ETuple.make(F_ATOM, new ESmall(nr));
+	}
     }
 
     static class XReg extends DestinationOperand {
@@ -101,6 +122,10 @@ public class Operands {
 		cache.add(new XReg(cache.size()));
 	    }
 	    return cache.get(nr);
+	}
+
+	public EObject toSymbolic(CodeTables ct) {
+	    return ETuple.make(X_ATOM, new ESmall(nr));
 	}
     }
 
@@ -118,8 +143,10 @@ public class Operands {
 	    }
 	    return cache.get(nr);
 	}
+
+	public EObject toSymbolic(CodeTables ct) {
+	    return ETuple.make(Y_ATOM, new ESmall(nr));
+	}
     }
-
-
 
 }

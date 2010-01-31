@@ -660,7 +660,7 @@ public class BeamLoader extends CodeTables {
 	case ATOM12_TAG:
 	{
 	    int nr = readSmallIntValue(d1);
-	    return (nr==0)? Operands.Nil : new Operands.Atom(atom(nr));
+	    return (nr==0)? Operands.Nil : new Operands.Atom(nr);
 	}
 
 	case XREG4_TAG:

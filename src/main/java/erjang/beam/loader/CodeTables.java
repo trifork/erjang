@@ -12,4 +12,5 @@ public class CodeTables {
 
 	EAtom atom(int nr) {return atoms[nr-1];}		// 1-based
 	ExtFun extFun(int nr) {return externalFuns[nr];}	// 0-based
+	EObject literal(int nr) {return literals[nr];}		// 0-based?
 }

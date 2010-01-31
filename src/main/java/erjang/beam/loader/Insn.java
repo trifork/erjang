@@ -3,18 +3,23 @@ package erjang.beam.loader;
 import erjang.beam.BeamInstruction;
 import erjang.beam.BeamOpcode;
 
-// import erjang.EObject;
+import erjang.EObject;
 import erjang.EAtom;
+import erjang.ETuple;
+import erjang.ESmall;
 
 import static erjang.beam.loader.Operands.*;
 
 
 public class Insn implements BeamInstruction {
-	private BeamOpcode opcode;
+	protected final BeamOpcode opcode;
 	public Insn(BeamOpcode opcode) {this.opcode = opcode;}
 	public BeamOpcode opcode() {return opcode;}
 
 	public String toString() {return opcode+"(...)";}
+	public EObject toSymbolic(CodeTables ct) {
+	    return opcode.symbol;
+	}
 
 	/*============================================================
 	 *                     Instruction formats
@@ -35,6 +40,9 @@ public class Insn implements BeamInstruction {
 			super(opcode);
 			this.i1 = i1;
 		}
+		public ETuple toSymbolic(CodeTables ct) {
+			return ETuple.make(opcode.symbol, new ESmall(i1));
+		}
 	}
 
 	public static class S extends Insn { // E.g. 'put'
@@ -42,6 +50,9 @@ public class Insn implements BeamInstruction {
 		public S(BeamOpcode opcode, SourceOperand src) {
 			super(opcode);
 			this.src = src;
+		}
+		public ETuple toSymbolic(CodeTables ct) {
+			return ETuple.make(opcode.symbol, src.toSymbolic(ct));
 		}
 	}
 
@@ -51,6 +62,9 @@ public class Insn implements BeamInstruction {
 			super(opcode);
 			this.dest = dest;
 		}
+		public ETuple toSymbolic(CodeTables ct) {
+			return ETuple.make(opcode.symbol, dest.toSymbolic(ct));
+		}
 	}
 
 	public static class L extends Insn { // E.g. 'jump'
@@ -58,6 +72,9 @@ public class Insn implements BeamInstruction {
 		public L(BeamOpcode opcode, Label label) {
 			super(opcode);
 			this.label = label;
+		}
+		public ETuple toSymbolic(CodeTables ct) {
+			return ETuple.make(opcode.symbol, label.toSymbolic(ct));
 		}
 	}
 
@@ -75,6 +92,9 @@ public class Insn implements BeamInstruction {
 			super(opcode);
 			this.y = y;
 		}
+		public ETuple toSymbolic(CodeTables ct) {
+			return ETuple.make(opcode.symbol, y.toSymbolic(ct));
+		}
 	}
 
 	public static class SD extends Insn { // E.g. 'move'
@@ -85,34 +105,44 @@ public class Insn implements BeamInstruction {
 			this.src = src;
 			this.dest = dest;
 		}
+		public ETuple toSymbolic(CodeTables ct) {
+			return ETuple.make(opcode.symbol,
+					   src.toSymbolic(ct),
+					   dest.toSymbolic(ct));
+		}
 	}
 
 	public static class LD extends Insn { // E.g. 'loop_rec'
-		final Label lbl;
+		final Label label;
 		final DestinationOperand dest;
-		public LD(BeamOpcode opcode, Label lbl, DestinationOperand dest) {
+		public LD(BeamOpcode opcode, Label label, DestinationOperand dest) {
 			super(opcode);
-			this.lbl = lbl;
+			this.label = label;
 			this.dest = dest;
+		}
+		public ETuple toSymbolic(CodeTables ct) {
+			return ETuple.make(opcode.symbol,
+					   label.toSymbolic(ct),
+					   dest.toSymbolic(ct));
 		}
 	}
 
 	public static class YL extends Insn { // E.g. 'catch'
 		final YReg y;
-		final Label lbl;
-		public YL(BeamOpcode opcode, YReg y, Label lbl) {
+		final Label label;
+		public YL(BeamOpcode opcode, YReg y, Label label) {
 			super(opcode);
 			this.y = y;
-			this.lbl = lbl;
+			this.label = label;
 		}
 	}
 
 	public static class LS extends Insn { // E.g. 'is_nil'
-		final Label lbl;
+		final Label label;
 		final SourceOperand src;
-		public LS(BeamOpcode opcode, Label lbl, SourceOperand src) {
+		public LS(BeamOpcode opcode, Label label, SourceOperand src) {
 			super(opcode);
-			this.lbl = lbl;
+			this.label = label;
 			this.src = src;
 		}
 	}
@@ -128,11 +158,11 @@ public class Insn implements BeamInstruction {
 
 	public static class IL extends Insn { // E.g. 'call'
 		final int i1;
-		final Label lbl;
-		public IL(BeamOpcode opcode, int i1, Label lbl) {
+		final Label label;
+		public IL(BeamOpcode opcode, int i1, Label label) {
 			super(opcode);
 			this.i1 = i1;
-			this.lbl = lbl;
+			this.label = label;
 		}
 	}
 
@@ -159,7 +189,6 @@ public class Insn implements BeamInstruction {
 	public static class IE extends Insn { // E.g. 'call_ext'
 		final int i1;
 		final int ext_fun_ref;
-		ExtFun ext_fun;
 		public IE(BeamOpcode opcode, int i1, int ext_fun_ref) {
 			super(opcode);
 			this.i1 = i1;
@@ -188,25 +217,24 @@ public class Insn implements BeamInstruction {
 	}
 
 	public static class LED extends Insn { // E.g. 'bif0'
-		final Label lbl;
+		final Label label;
 		final int ext_fun_ref;
-		ExtFun ext_fun;
 		final DestinationOperand dest;
-		public LED(BeamOpcode opcode, Label lbl, int ext_fun_ref, DestinationOperand dest) {
+		public LED(BeamOpcode opcode, Label label, int ext_fun_ref, DestinationOperand dest) {
 			super(opcode);
-			this.lbl = lbl;
+			this.label = label;
 			this.ext_fun_ref = ext_fun_ref;
 			this.dest = dest;
 		}
 	}
 
 	public static class LSI extends Insn { // E.g. 'test_arity'
-		final Label lbl;
+		final Label label;
 		final SourceOperand src;
 		final int i1;
-		public LSI(BeamOpcode opcode, Label lbl, SourceOperand src, int i1) {
+		public LSI(BeamOpcode opcode, Label label, SourceOperand src, int i1) {
 			super(opcode);
-			this.lbl = lbl;
+			this.label = label;
 			this.src = src;
 			this.i1 = i1;
 		}
@@ -225,12 +253,12 @@ public class Insn implements BeamInstruction {
 	}
 
 	public static class LSS extends Insn { // E.g. 'is_eq_exact'
-		final Label lbl;
+		final Label label;
 		final SourceOperand src1;
 		final SourceOperand src2;
-		public LSS(BeamOpcode opcode, Label lbl, SourceOperand src1, SourceOperand src2) {
+		public LSS(BeamOpcode opcode, Label label, SourceOperand src1, SourceOperand src2) {
 			super(opcode);
-			this.lbl = lbl;
+			this.label = label;
 			this.src1 = src1;
 			this.src2 = src2;
 		}
@@ -275,11 +303,11 @@ public class Insn implements BeamInstruction {
 
 	public static class ILI extends Insn { // E.g. 'call'
 		final int i1, i3;
-		final Label lbl;
-		public ILI(BeamOpcode opcode, int i1, Label lbl, int i3) {
+		final Label label;
+		public ILI(BeamOpcode opcode, int i1, Label label, int i3) {
 			super(opcode);
 			this.i1 = i1;
-			this.lbl = lbl;
+			this.label = label;
 			this.i3 = i3;
 		}
 	}
@@ -287,7 +315,6 @@ public class Insn implements BeamInstruction {
 	public static class IEI extends Insn { // E.g. 'call'
 		final int i1, i3;
 		final int ext_fun_ref;
-		ExtFun ext_fun;
 		public IEI(BeamOpcode opcode, int i1, int ext_fun_ref, int i3) {
 			super(opcode);
 			this.i1 = i1;
@@ -313,14 +340,13 @@ public class Insn implements BeamInstruction {
 	}
 
 	public static class LESD extends Insn { // E.g. 'bif1'
-		final Label lbl;
+		final Label label;
 		final int ext_fun_ref;
-		ExtFun ext_fun;
 		final SourceOperand src;
 		final DestinationOperand dest;
-		public LESD(BeamOpcode opcode, Label lbl, int ext_fun_ref, SourceOperand src, DestinationOperand dest) {
+		public LESD(BeamOpcode opcode, Label label, int ext_fun_ref, SourceOperand src, DestinationOperand dest) {
 			super(opcode);
-			this.lbl = lbl;
+			this.label = label;
 			this.ext_fun_ref = ext_fun_ref;
 			this.src = src;
 			this.dest = dest;
@@ -328,15 +354,14 @@ public class Insn implements BeamInstruction {
 	}
 
 	public static class LEISD extends Insn { // E.g. 'gc_bif1'
-		final Label lbl;
+		final Label label;
 		final int ext_fun_ref;
-		ExtFun ext_fun;
 		final int i;
 		final SourceOperand src;
 		final DestinationOperand dest;
-		public LEISD(BeamOpcode opcode, Label lbl, int ext_fun_ref, int i, SourceOperand src, DestinationOperand dest) {
+		public LEISD(BeamOpcode opcode, Label label, int ext_fun_ref, int i, SourceOperand src, DestinationOperand dest) {
 			super(opcode);
-			this.lbl = lbl;
+			this.label = label;
 			this.ext_fun_ref = ext_fun_ref;
 			this.i = i;
 			this.src = src;
@@ -345,16 +370,15 @@ public class Insn implements BeamInstruction {
 	}
 
 	public static class LEISSD extends Insn { // E.g. 'gc_bif2'
-		final Label lbl;
+		final Label label;
 		final int ext_fun_ref;
-		ExtFun ext_fun;
 		final int i;
 		final SourceOperand src1;
 		final SourceOperand src2;
 		final DestinationOperand dest;
-		public LEISSD(BeamOpcode opcode, Label lbl, int ext_fun_ref, int i, SourceOperand src1, SourceOperand src2, DestinationOperand dest) {
+		public LEISSD(BeamOpcode opcode, Label label, int ext_fun_ref, int i, SourceOperand src1, SourceOperand src2, DestinationOperand dest) {
 			super(opcode);
-			this.lbl = lbl;
+			this.label = label;
 			this.ext_fun_ref = ext_fun_ref;
 			this.i = i;
 			this.src1 = src1;
@@ -367,16 +391,16 @@ public class Insn implements BeamInstruction {
 
 	public static class Select extends Insn { // E.g. 'select_val'
 		SourceOperand src;
-		Label defaultLbl;
+		Label defaultLabel;
 		Operands.List jumpTable; // TODO: Improve representation.
 		public Select(BeamOpcode opcode,
 			      SourceOperand src,
-			      Label defaultLbl,
+			      Label defaultLabel,
 			      Operands.List jumpTable)
 		{
 			super(opcode);
 			this.src = src;
-			this.defaultLbl = defaultLbl;
+			this.defaultLabel = defaultLabel;
 			this.jumpTable = jumpTable;
 		}
 	}
