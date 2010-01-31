@@ -4,6 +4,7 @@ import erjang.EObject;
 import erjang.EAtom;
 
 import java.util.ArrayList;
+import java.math.BigInteger;
 
 public class Operands {
 
@@ -37,9 +38,20 @@ public class Operands {
     }
     static abstract class Literal extends SourceOperand {}
 
+    static Literal makeInt(byte[] d) {
+	BigInteger tmp = new BigInteger(d);
+	return (d.length<=4)
+	    ? new Int(tmp.intValue())
+	    : new BigInt(tmp);
+    }
     static class Int extends Literal {
 	public final int value;
 	public Int(int value) {this.value=value;}
+    }
+
+    static class BigInt extends Literal {
+	public final BigInteger value;
+	public BigInt(BigInteger value) {this.value=value;}
     }
 
     static final Nil Nil = new Nil();

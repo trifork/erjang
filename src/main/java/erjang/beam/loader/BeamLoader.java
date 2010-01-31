@@ -310,7 +310,9 @@ public class BeamLoader extends CodeTables {
 		return new Insn.F(opcode, fun_ref);
 	    }
 
+	    case try_end:
 	    case catch_end:
+	    case try_case:
 	    {
 		YReg y = readYReg();
 		return new Insn.Y(opcode, y);
@@ -364,6 +366,7 @@ public class BeamLoader extends CodeTables {
 		return new Insn.LD(opcode, label, dest);
 	    }
 
+	    case K_try:
 	    case K_catch:
 	    {
 		YReg y = readYReg();
@@ -383,10 +386,18 @@ public class BeamLoader extends CodeTables {
 	    case is_list:
 	    case is_nonempty_list:
 	    case is_tuple:
+	    case is_function:
 	    {
 		Label label = readLabel();
 		SourceOperand src = readSource();
 		return new Insn.LS(opcode, label, src);
+	    }
+
+	    case raise:
+	    {
+		SourceOperand src1 = readSource();
+		SourceOperand src2 = readSource();
+		return new Insn.SS(opcode, src1, src2);
 	    }
 
 	    //---------- 3-ary ----------
@@ -623,8 +634,7 @@ public class BeamLoader extends CodeTables {
 		int len = 2+(hdata>>1);
 		byte d[] = new byte[len];
 		in.readFully(d);
-		throw new erjang.NotImplemented();
-// 		return ERT.box(new BigInteger(d));
+		return Operands.makeInt(d);
 	    }
 	}
 

@@ -136,6 +136,15 @@ public class Insn implements BeamInstruction {
 		}
 	}
 
+	public static class SS extends Insn { // E.g. 'raise'
+		final SourceOperand src1, src2;
+		public SS(BeamOpcode opcode, SourceOperand src1, SourceOperand src2) {
+			super(opcode);
+			this.src1 = src1;
+			this.src2 = src2;
+		}
+	}
+
 	public static class AAI extends Insn { // E.g. 'func_info'
 		final Atom a1,a2;
 		final int i1;
