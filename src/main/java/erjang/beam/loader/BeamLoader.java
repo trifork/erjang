@@ -269,6 +269,8 @@ public class BeamLoader extends CodeTables {
 	    case K_return:
 	    case send:
 	    case remove_message:
+	    case timeout:
+	    case if_end:
 	    case int_code_end:
 		return new Insn(opcode); // TODO: use static set of objects
 
@@ -293,12 +295,14 @@ public class BeamLoader extends CodeTables {
 	    case put:
 	    case badmatch:
 	    case case_end:
+	    case try_case_end:
 	    {
 		SourceOperand src = readSource();
  		return new Insn.S(opcode, src);
 	    }
 
 	    case init:
+	    case bs_context_to_binary:
 	    {
 		DestinationOperand dest = readDestination();
 		return new Insn.D(opcode, dest);
@@ -306,7 +310,7 @@ public class BeamLoader extends CodeTables {
 
 	    case make_fun2:
 	    {
-		int fun_ref = in.read1(); // Might be var-length.
+		int fun_ref = readCodeInteger();
 		return new Insn.F(opcode, fun_ref);
 	    }
 
@@ -387,6 +391,9 @@ public class BeamLoader extends CodeTables {
 	    case is_nonempty_list:
 	    case is_tuple:
 	    case is_function:
+	    case is_boolean:
+	    case is_bitstr:
+	    case wait_timeout:
 	    {
 		Label label = readLabel();
 		SourceOperand src = readSource();
@@ -402,6 +409,7 @@ public class BeamLoader extends CodeTables {
 
 	    //---------- 3-ary ----------
 	    case allocate_heap:
+	    case allocate_heap_zero:
 	    {
 		int i1 = readCodeInteger();
 		int i2 = readCodeInteger();
@@ -484,6 +492,16 @@ public class BeamLoader extends CodeTables {
 		Label label = readLabel();
 		int i3 = readCodeInteger();
 		return new Insn.ILI(opcode, i1, label, i3);
+	    }
+
+	    case bs_start_match2:
+	    {
+		Label label = readLabel();
+		SourceOperand src = readSource();
+		int i3 = readCodeInteger();
+		int i4 = readCodeInteger();
+		DestinationOperand dest = readDestination();
+		return new Insn.LSIID(opcode, label, src, i3, i4, dest);
 	    }
 
 	    case select_val:

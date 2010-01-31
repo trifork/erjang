@@ -296,6 +296,22 @@ public class Insn implements BeamInstruction {
 		}
 	}
 
+
+	public static class LSIID extends Insn { // E.g. 'bs_start_match2'
+		final Label label;
+		final SourceOperand src;
+		final int i3, i4;
+		final DestinationOperand dest;
+		public LSIID(BeamOpcode opcode, Label label, SourceOperand src, int i3, int i4, DestinationOperand dest) {
+			super(opcode);
+			this.label = label;
+			this.src = src;
+			this.i3 = i3;
+			this.i4 = i4;
+			this.dest = dest;
+		}
+	}
+
 	public static class LESD extends Insn { // E.g. 'bif1'
 		final Label lbl;
 		final int ext_fun_ref;
