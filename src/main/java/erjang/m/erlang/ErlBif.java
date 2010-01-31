@@ -1254,7 +1254,7 @@ public class ErlBif {
 		EAtom a1, a2;
 		if ((a1 = o1.testBoolean()) == null ||
 		    (a2 = o2.testBoolean()) == null)
-			return null;
+			throw ERT.badarg(o1, o2);
 		boolean b1 = a1 == ERT.TRUE,
 		        b2 = a2 == ERT.TRUE;
 		return ERT.box(b1 ^ b2);
