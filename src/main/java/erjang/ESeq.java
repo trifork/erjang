@@ -68,10 +68,10 @@ public abstract class ESeq extends ECons {
 		return res;
 	}
 
-	public static ESeq fromList(List<EObject> args) {
+	public static ESeq fromList(List<? extends EObject> args) {
 		ESeq res = ERT.NIL;
 
-		ListIterator<EObject> iter = args.listIterator(args.size());
+		ListIterator<? extends EObject> iter = args.listIterator(args.size());
 		while (iter.hasPrevious()) {
 			res = res.cons(iter.previous());
 		}
