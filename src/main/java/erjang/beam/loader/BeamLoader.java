@@ -10,6 +10,9 @@ import java.io.ByteArrayInputStream;
 import erjang.EObject;
 import erjang.EAtom;
 import erjang.EString;
+import erjang.ETuple;
+import erjang.ESeq;
+import erjang.ESmall;
 import erjang.EInputStream;
 
 import erjang.beam.BeamOpcode;
@@ -24,15 +27,48 @@ public class BeamLoader extends CodeTables {
     }
 
 
-    public static void read(String filename) throws IOException {
+    public static BeamLoader read(String filename) throws IOException {
 	long file_size = new File(filename).length();
 	DataInputStream in = null;
 	try {
 	    in = new DataInputStream(new FileInputStream(filename));
-	    new BeamLoader(in, file_size).read();
+	    BeamLoader bl = new BeamLoader(in, file_size);
+	    bl.read();
+	    return bl;
 	} finally {
 	    if (in != null) in.close();
 	}
+    }
+
+    public static BeamLoader parse(byte[] data) throws IOException {
+	ByteArrayInputStream in = new ByteArrayInputStream(data);
+	BeamLoader bl = new BeamLoader(new DataInputStream(in), data.length);
+	bl.read();
+	return bl;
+    }
+
+    //======================================================================
+    public ETuple toSymbolic() {
+	ESeq functions = null;
+	return ETuple.make(EAtom.intern("beam_file"),
+			   symbolicModuleName(),
+			   symbolicExportList(),
+			   attributes, compilation_info,
+			   functions);
+    }
+
+    public EAtom symbolicModuleName() {
+	// The module name is the first atom in the table.
+	return atom(1);
+    }
+
+    public ESeq symbolicExportList() {
+	EObject[] symExports = new EObject[exports.length];
+	for (int i=0; i<exports.length; i++) {
+	    ExportedFun f = exports[i];
+	    symExports[i] = ETuple.make(atom(f.name_atom_nr), new ESmall(f.arity), new ESmall(f.label));
+	}
+	return ESeq.fromArray(symExports);
     }
 
     //======================================================================
@@ -57,7 +93,9 @@ public class BeamLoader extends CodeTables {
     //========== State: ==========
     private EInputStream in;
     private EObject attributes, compilation_info, abstract_tree;
+    private ExportedFun[] exports;
 
+    // TODO: Take an InputStream instead of a DataInputStream (to avoid overhead when we start out with a ByteArrayInputStream).
     public BeamLoader(DataInputStream in, long actual_file_size) throws IOException {
 	if (in.readInt() != FOR1) throw new IOException("Bad header. Not an IFF1 file.");
 	int stated_length = in.readInt();
@@ -145,13 +183,15 @@ public class BeamLoader extends CodeTables {
     public void readExportSection() throws IOException {
 	if (DEBUG) System.err.println("readExportSection");
 	int nExports = in.read4BE();
+	exports = new ExportedFun[nExports];
 	if (DEBUG) System.err.println("Number of exports: "+nExports);
 	for (int i=0; i<nExports; i++) {
-	    int f_atm_no = in.read4BE();
+	    int name_atom_nr = in.read4BE();
 	    int arity    = in.read4BE();
 	    int label    = in.read4BE();
+	    exports[i] = new ExportedFun(name_atom_nr, arity, label);
 	    if (DEBUG && atoms != null) {
-		System.err.println("- #"+(i+1)+": "+atom(f_atm_no)+"/"+arity+" @ "+label);
+		System.err.println("- #"+(i+1)+": "+atom(name_atom_nr)+"/"+arity+" @ "+label);
 	    }
 	}
     }
@@ -241,14 +281,14 @@ public class BeamLoader extends CodeTables {
 
     public void readCodeSection() throws IOException {
 	if (DEBUG) System.err.println("readCodeSection");
-	int dummy1 = in.read4BE();
-	int zero1  = in.read4BE();
-	int dummy2 = in.read4BE();
+	int flags = in.read4BE(); // Only 16 ever seen
+	int zero  = in.read4BE(); // Only 0 ever seen
+	int highestOpcode = in.read4BE();
 	int labelCnt = in.read4BE();
 	int funCnt = in.read4BE();
-	if (DEBUG) System.err.println("Code metrics: d1:"+dummy1+
+	if (DEBUG) System.err.println("Code metrics: flags:"+flags+
 				      ", z:"+zero1+
-				      ", d2:"+dummy2+
+				      ", hop:"+highestOpcode+
 				      ", L:"+labelCnt+
 				      ", f:"+funCnt);
 
@@ -716,6 +756,16 @@ public class BeamLoader extends CodeTables {
 	    return hdata;
 	} else {
 	    return (hdata<<7) + in.read1();
+	}
+    }
+
+
+    static class ExportedFun {
+	int name_atom_nr, arity, label;
+	public ExportedFun(int name_atom_nr, int arity, int label) {
+	    this.name_atom_nr = name_atom_nr;
+	    this.arity = arity;
+	    this.label = label;
 	}
     }
 }
