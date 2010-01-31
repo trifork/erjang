@@ -89,7 +89,9 @@ public class OtpConverter {
 
 		add(OtpErlangLong.class, new Converter<OtpErlangLong>() {
 			EObject conv(OtpErlangLong obj) {
-				return ERT.box(obj.longValue());
+				return (obj.isLong())
+					? ERT.box(obj.longValue())
+					: ERT.box(obj.bigIntegerValue());
 			}
 		});
 
