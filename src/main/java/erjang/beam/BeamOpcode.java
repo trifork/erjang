@@ -125,11 +125,11 @@ public enum BeamOpcode {
 	gc_bif2			(0x7d),
 	is_bitstr,
 	bs_context_to_binary    (0x82),
-	bs_test_unit,
-	bs_match_string,
-	bs_init_writable,
-	bs_append,
-	bs_private_append,
+	bs_test_unit		(0x83),
+	bs_match_string		(0x84),
+	bs_init_writable	(0x85),
+	bs_append		(0x86),
+	bs_private_append	(0x87),
 	trim                    (0x88),
 	bs_init_bits,
 	bs_get_utf8,
@@ -154,6 +154,10 @@ public enum BeamOpcode {
 	// illegal op-code
 	NONE
 	;
+
+	public final EAtom symbol = EAtom.intern(name().startsWith("K_")
+						 ? name().substring(2)
+						 : name());
 
 	public final int encoding;
 	BeamOpcode() {this.encoding = -1;}
