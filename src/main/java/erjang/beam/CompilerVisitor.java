@@ -73,6 +73,7 @@ import erjang.ErlangException;
 import erjang.Export;
 import erjang.Import;
 import erjang.Module;
+import erjang.NotImplemented;
 import erjang.beam.Arg.Kind;
 
 /**
@@ -823,6 +824,26 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 			}
 
+			@Override
+			public void visitBitStringAppend(BeamOpcode opcode, Arg extra_size, Arg src, Arg flags, Arg dst) {
+
+				push(src, EOBJECT_TYPE);
+				push(extra_size, Type.INT_TYPE);
+				push(flags, Type.INT_TYPE);
+				mv.visitMethodInsn(INVOKESTATIC, EBITSTRINGBUILDER_TYPE.getInternalName(),
+							"bs_append", "("+ EOBJECT_DESC +"II)"+EBITSTRINGBUILDER_TYPE.getDescriptor());
+				
+				mv.visitInsn(DUP);
+				mv.visitVarInsn(ASTORE, bit_string_builder);
+
+				mv.visitMethodInsn(INVOKEVIRTUAL, EBITSTRINGBUILDER_TYPE
+						.getInternalName(), "bitstring", "()"
+						+ EBITSTRING_TYPE.getDescriptor());
+
+				pop(dst, EBITSTRING_TYPE);
+				return;
+			}
+			
 			/*
 			 * (non-Javadoc)
 			 * 
@@ -869,7 +890,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					push(flags, Type.INT_TYPE);
 					mv.visitMethodInsn(INVOKEVIRTUAL, EBITSTRINGBUILDER_TYPE
 							.getInternalName(), "put_bitstring", "("
-							+ EBITSTRING_TYPE.getDescriptor()
+							+ EOBJECT_TYPE.getDescriptor()
 							+ EATOM_TYPE.getDescriptor() + "I)V");
 					return;
 

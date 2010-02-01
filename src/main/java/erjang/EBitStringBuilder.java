@@ -19,6 +19,7 @@
 
 package erjang;
 
+
 /**
  * 
  */
@@ -37,6 +38,12 @@ public class EBitStringBuilder {
 		if (flags != 0) throw new NotImplemented("flags="+flags);
 		data = new byte[size];
 		bs = new EBitString(data, 0, size, 0);
+	}
+
+	public EBitStringBuilder(int size, int extra, int flags) {
+		if (flags != 0) throw new NotImplemented("flags="+flags);
+		data = new byte[size+1];
+		bs = new EBitString(data, 0, size, extra);
 	}
 
 	/** return bitstring under construction */
@@ -74,8 +81,26 @@ public class EBitStringBuilder {
 		System.arraycopy(str.data, str.off, data, bpos, str.length());
 		bpos += str.length();
 	}
+	
+	public static EBitStringBuilder bs_append(EObject str_or_builder, int extra_size, int flags)
+	{
+		EBitString ebs = str_or_builder.testBitString();
+		if (ebs == null) throw new NotImplemented();
+		
+		long bitSize = ebs.bitSize() + extra_size;
+		int size = (int) (bitSize/8);
+		int extra = (int) (bitSize % 8);
+		
+		EBitStringBuilder result = new EBitStringBuilder(size, extra, flags);
+		System.arraycopy(ebs.data, ebs.byteOffset(), result.data, 0, ebs.dataByteSize());
+		result.bpos = (int) ebs.bitSize();
+		return result;
+	}
 
-	public void put_bitstring(EBitString str, EAtom how, int flags) {
+	public void put_bitstring(EObject str, EAtom how, int flags) {
+		EBitString ebs = str.testBitString();
+		if (ebs == null) throw new InternalError("bad code gen, arg is "+str.getClass());
+		
 		throw new NotImplemented();
 	}
 }

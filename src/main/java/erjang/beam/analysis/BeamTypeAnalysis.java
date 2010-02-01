@@ -855,6 +855,25 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					}
 						
 
+					case bs_append: {
+						
+						//     {bs_append,{f,0},{integer,32},0,3,8,{x,1},{field_flags,[]},{x,0}}.
+
+						//   * tmp_arg1 = Number of bytes to build
+						//   * tmp_arg2 = Source binary
+						//   * Operands: Fail ExtraHeap Live Unit Dst
+						
+						Arg extra_size = decode_arg(insn_idx, insn.elm(3));
+						Arg src = decode_arg(insn_idx, insn.elm(7));
+						Arg flags = decode_arg(insn_idx, insn.elm(8));
+						Arg dst = decode_out_arg(insn_idx, insn.elm(9));
+						
+						vis.visitBitStringAppend(opcode, extra_size, src, flags, dst);
+						
+						break;
+					}
+					
+
 					
 					default:
 						throw new Error("unhandled insn: " + insn);
@@ -1553,6 +1572,22 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						continue next_insn;
 					}
 
+					case bs_append: {
+						
+						//     {bs_append,{f,0},{integer,32},0,3,8,{x,1},{field_flags,[]},{x,0}}.
+
+						// Arg extra_size = decode_arg(insn_idx, insn.elm(3));
+						// Arg src = decode_arg(insn_idx, insn.elm(7));
+						// Arg flags = decode_arg(insn_idx, insn.elm(8));
+						// Arg dst = decode_out_arg(insn_idx, insn.elm(9));
+
+						getType(current, insn.elm(3));
+						getType(current, insn.elm(7));
+						
+						current = setType(current, insn.elm(9), EBITSTRING_TYPE);
+						continue next_insn;
+					}
+					
 					case bs_put_string: {
 						continue next_insn;
 					}
@@ -1561,6 +1596,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						continue next_insn;
 					}
 
+					case bs_put_float:
 					case bs_put_integer: {
 						continue next_insn;
 					}

@@ -173,6 +173,8 @@ public interface BlockVisitor2 extends BlockVisitor {
 	 */
 	void visitBitStringPut(BeamOpcode opcode, Arg value, Arg size, Arg flags);
 
+	void visitBitStringAppend(BeamOpcode opcode, Arg extra_size, Arg src, Arg flags, Arg dst);
+
 	/**
 	 * @param opcode
 	 * @param decodeArg
