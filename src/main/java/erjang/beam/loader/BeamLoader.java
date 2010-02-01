@@ -7,13 +7,24 @@ import java.io.FileInputStream;
 import java.io.DataInputStream;
 import java.io.ByteArrayInputStream;
 
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
+
 import erjang.EObject;
 import erjang.EAtom;
 import erjang.EString;
+import erjang.ETuple;
+import erjang.ESeq;
+import erjang.ESmall;
 import erjang.EInputStream;
+
 import erjang.beam.BeamOpcode;
 
-public class BeamLoader {
+import static erjang.beam.loader.Operands.*;
+import static erjang.beam.CodeAtoms.*;
+
+public class BeamLoader extends CodeTables {
     static final boolean DEBUG = true;
 
     public static void main(String[] args) throws IOException {
@@ -21,15 +32,99 @@ public class BeamLoader {
     }
 
 
-    public static void read(String filename) throws IOException {
+    public static BeamLoader read(String filename) throws IOException {
 	long file_size = new File(filename).length();
 	DataInputStream in = null;
 	try {
 	    in = new DataInputStream(new FileInputStream(filename));
-	    new BeamLoader(in, file_size).read();
+	    BeamLoader bl = new BeamLoader(in, file_size);
+	    bl.read();
+	    return bl;
 	} finally {
 	    if (in != null) in.close();
 	}
+    }
+
+    public static BeamLoader parse(byte[] data) throws IOException {
+	ByteArrayInputStream in = new ByteArrayInputStream(data);
+	BeamLoader bl = new BeamLoader(new DataInputStream(in), data.length);
+	bl.read();
+	return bl;
+    }
+
+    //======================================================================
+    private EInputStream in;
+    private EObject attributes, compilation_info, abstract_tree;
+    private FunctionInfo[] exports, localFunctions;
+    private ArrayList<Insn> code;
+    //======================================================================
+    public ETuple toSymbolic() {
+	return ETuple.make(BEAM_FILE_ATOM,
+			   symbolicModuleName(),
+			   symbolicExportList(),
+			   attributes, compilation_info,
+			   symbolicCode());
+    }
+
+    public EAtom symbolicModuleName() {
+	// The module name is the first atom in the table.
+	return atom(1);
+    }
+
+    public ESeq symbolicExportList() {
+	ArrayList<EObject> symExports = new ArrayList<EObject>(exports.length);
+	int i=0;
+	for (FunctionInfo f : exports) {
+	    symExports.add(ETuple.make(atom(f.name_atom_nr), new ESmall(f.arity), new ESmall(f.label)));
+	}
+	java.util.Collections.sort(symExports);
+	return ESeq.fromList(symExports);
+    }
+
+    public ESeq symbolicCode() {
+	Map<Integer, FunctionInfo> funcMap = new HashMap<Integer, FunctionInfo>();
+	for (FunctionInfo f : exports) funcMap.put(f.label, f);
+	for (FunctionInfo f : localFunctions) funcMap.put(f.label, f);
+
+	System.err.println("DB| sizes: "+(exports.length)+" / "+localFunctions.length);
+	for (int k : funcMap.keySet()) System.err.println("DB| funclabel: "+k);
+
+
+	ArrayList<ETuple> functions = new ArrayList<ETuple>(exports.length +
+							    localFunctions.length);
+	int fpos = 0;
+	FunctionInfo fi = null;
+	ArrayList<EObject> currentFunctionBody = null;
+	for (Insn insn : code) {
+	    System.err.println("| "+insn.toSymbolic(this));
+	    FunctionInfo newFI = null;
+	    if (insn.opcode() == BeamOpcode.label) { // We might switch to a new function
+		int labelNr = ((Insn.I)insn).i1;
+		newFI = funcMap.get(labelNr+1);
+		System.err.println("| label#"+labelNr+" -> "+newFI);
+		if (newFI==null) newFI = funcMap.get(labelNr);
+		System.err.println("| label#"+labelNr+" --> "+newFI);
+	    } else if (insn.opcode() == BeamOpcode.int_code_end) {
+		newFI = new FunctionInfo(-1,-1,-1); // Easy way to handle last function
+		System.err.println("| int_code_end");
+	    }
+	    if (newFI != null && newFI != fi) { // Do switch
+		if (fi != null) { // Add previous
+		    ETuple fun = ETuple.make(FUNCTION_ATOM,
+					     atom(fi.name_atom_nr),
+					     new ESmall(fi.arity),
+					     new ESmall(fi.label),
+					     ESeq.fromList(currentFunctionBody));
+		    functions.add(fun);
+		}
+		fi = newFI;
+		currentFunctionBody = new ArrayList<EObject>();
+	    }
+	    // currentFunctionBody and fi are now updated.
+	    currentFunctionBody.add(insn.toSymbolic(this));
+	}
+
+	return ESeq.fromList(functions);
     }
 
     //======================================================================
@@ -51,13 +146,7 @@ public class BeamLoader {
     static final int C_INF = 0x43496e66; // "CInf"
     static final int ABST  = 0x41627374; // "Abst"
 
-    //========== State: ==========
-    private EInputStream in;
-    private EAtom[] atoms;
-    private EString[] strings;
-    private EObject[] literals;
-    private EObject attributes, compilation_info, abstract_tree;
-
+    // TODO: Take an InputStream instead of a DataInputStream (to avoid overhead when we start out with a ByteArrayInputStream).
     public BeamLoader(DataInputStream in, long actual_file_size) throws IOException {
 	if (in.readInt() != FOR1) throw new IOException("Bad header. Not an IFF1 file.");
 	int stated_length = in.readInt();
@@ -90,10 +179,10 @@ public class BeamLoader {
 	int startPos = in.getPos();
 
 	// Read section body:
-	int allowed_readahead = 0;
+	try {
 	if (sectionLength>0) switch (tag) {
 	case ATOM:  readAtomSection(); break;
-	case CODE:  if (DEBUG) System.err.println("<code>"); break;
+	case CODE:  readCodeSection(); break;
 	case STR_T: readStringSection(); break;
 	case IMP_T: readImportSection(); break;
 	case EXP_T: readExportSection(); break;
@@ -106,10 +195,14 @@ public class BeamLoader {
 	default:
 	    if (DEBUG) System.err.println("Unrecognized section tag: "+Integer.toHexString(tag));
 	} // switch
+	} catch (Exception e) {
+	    int relPos = in.getPos()-startPos;
+	    throw new IOException("Error occurred around "+relPos+"=0x"+Integer.toHexString(relPos)+" bytes into section "+Integer.toHexString(tag), e);
+	}
 
 	int readLength = in.getPos()-startPos;
-	if (readLength > sectionLength+allowed_readahead)
-	    throw new IOException("Malformed section #"+Integer.toHexString(tag)+": used "+readLength+" bytes of "+sectionLength+" (pos="+in.getPos()+", a.r.="+allowed_readahead+")");
+	if (readLength > sectionLength)
+	    throw new IOException("Malformed section #"+Integer.toHexString(tag)+": used "+readLength+" bytes of "+sectionLength+" (pos="+in.getPos());
 	in.setPos(startPos + ((sectionLength+3)&~3));
 	return true;
     }
@@ -141,13 +234,15 @@ public class BeamLoader {
     public void readExportSection() throws IOException {
 	if (DEBUG) System.err.println("readExportSection");
 	int nExports = in.read4BE();
+	exports = new FunctionInfo[nExports];
 	if (DEBUG) System.err.println("Number of exports: "+nExports);
 	for (int i=0; i<nExports; i++) {
-	    int f_atm_no = in.read4BE();
+	    int name_atom_nr = in.read4BE();
 	    int arity    = in.read4BE();
 	    int label    = in.read4BE();
+	    exports[i] = new FunctionInfo(name_atom_nr, arity, label);
 	    if (DEBUG && atoms != null) {
-		System.err.println("- #"+(i+1)+": "+atoms[f_atm_no-1]+"/"+arity+" @ "+label);
+		System.err.println("- #"+(i+1)+": "+atom(name_atom_nr)+"/"+arity+" @ "+label);
 	    }
 	}
     }
@@ -155,13 +250,15 @@ public class BeamLoader {
     public void readLocalFunctionSection() throws IOException {
 	if (DEBUG) System.err.println("readLocalFunctionSection");
 	int nLocals = in.read4BE();
+	localFunctions = new FunctionInfo[nLocals];
 	if (DEBUG) System.err.println("Number of locals: "+nLocals);
 	for (int i=0; i<nLocals; i++) {
-	    int f_atm_no = in.read4BE();
+	    int name_atom_nr = in.read4BE();
 	    int arity    = in.read4BE();
 	    int label    = in.read4BE();
+	    localFunctions[i] = new FunctionInfo(name_atom_nr, arity, label);
 	    if (DEBUG && atoms != null) {
-		System.err.println("- #"+(i+1)+": "+atoms[f_atm_no-1]+"/"+arity+" @ "+label);
+		System.err.println("- #"+(i+1)+": "+atom(name_atom_nr)+"/"+arity+" @ "+label);
 	    }
 	}
     }
@@ -178,7 +275,7 @@ public class BeamLoader {
 	    int arity2    = in.read4BE();
 	    int value    = in.read4BE();
 	    if (DEBUG && atoms != null) {
-		System.err.println("- #"+(i+1)+": "+atoms[f_atm_no-1]+"/"+arity+" @ "+label);
+		System.err.println("- #"+(i+1)+": "+atom(f_atm_no)+"/"+arity+" @ "+label);
 		System.err.println("--> "+perm_nr+"/"+arity2+" $ "+value);
 	    }
 	}
@@ -187,13 +284,15 @@ public class BeamLoader {
     public void readImportSection() throws IOException {
 	if (DEBUG) System.err.println("readImportSection");
 	int nImports = in.read4BE();
-	if (DEBUG) System.err.println("Number of exports: "+nImports);
+	if (DEBUG) System.err.println("Number of imports: "+nImports);
+	externalFuns = new ExtFun[nImports];
 	for (int i=0; i<nImports; i++) {
 	    int m_atm_no = in.read4BE();
 	    int f_atm_no = in.read4BE();
 	    int arity    = in.read4BE();
 	    if (DEBUG && atoms != null) {
-		System.err.println("- #"+(i+1)+": "+atoms[m_atm_no-1]+":"+atoms[f_atm_no-1]+"/"+arity);
+		System.err.println("- #"+(i+1)+": "+atom(m_atm_no)+":"+atom(f_atm_no)+"/"+arity);
+	    externalFuns[i] = new ExtFun(m_atm_no, f_atm_no, arity);
 	    }
 	}
     }
@@ -233,11 +332,495 @@ public class BeamLoader {
 	}
     }
 
+    public void readCodeSection() throws IOException {
+	if (DEBUG) System.err.println("readCodeSection");
+	int flags = in.read4BE(); // Only 16 ever seen
+	int zero  = in.read4BE(); // Only 0 ever seen
+	int highestOpcode = in.read4BE();
+	int labelCnt = in.read4BE();
+	int funCnt = in.read4BE();
+	if (DEBUG) System.err.println("Code metrics: flags:"+flags+
+				      ", z:"+zero+
+				      ", hop:"+highestOpcode+
+				      ", L:"+labelCnt+
+				      ", f:"+funCnt);
+
+	code = new ArrayList<Insn>();
+	Insn insn;
+	do {
+	    insn = readInstruction();
+	    if (DEBUG) System.err.println(insn);
+	    code.add(insn);
+	} while (insn.opcode() != BeamOpcode.int_code_end);
+    }
+
+    public Insn readInstruction() throws IOException {
+	int opcode_no = in.read1();
+	BeamOpcode opcode = BeamOpcode.decode(opcode_no);
+	if (DEBUG) System.err.print("<"+opcode+">");
+	if (opcode != null) {
+	    switch (opcode) {
+	    //---------- 0-ary ----------
+	    case K_return:
+	    case send:
+	    case remove_message:
+	    case timeout:
+	    case if_end:
+	    case int_code_end:
+		return new Insn(opcode); // TODO: use static set of objects
+
+	    //---------- 1-ary ----------
+	    case label:
+	    case deallocate:
+	    case call_fun:
+	    {
+		int i1 = readCodeInteger();
+		if (DEBUG && opcode==BeamOpcode.label) System.err.println("DB| ### label "+i1+"###");
+		return new Insn.I(opcode, i1);
+	    }
+
+	    case loop_rec_end:
+	    case wait:
+	    case jump:
+	    {
+		Label lbl = readLabel();
+		return new Insn.L(opcode, lbl);
+	    }
+
+	    case put:
+	    case badmatch:
+	    case case_end:
+	    case try_case_end:
+	    {
+		SourceOperand src = readSource();
+ 		return new Insn.S(opcode, src);
+	    }
+
+	    case init:
+	    case bs_context_to_binary:
+	    {
+		DestinationOperand dest = readDestination();
+		return new Insn.D(opcode, dest);
+	    }
+
+	    case make_fun2:
+	    {
+		int fun_ref = readCodeInteger();
+		return new Insn.F(opcode, fun_ref);
+	    }
+
+	    case try_end:
+	    case catch_end:
+	    case try_case:
+	    {
+		YReg y = readYReg();
+		return new Insn.Y(opcode, y);
+	    }
+
+	    //---------- 2-ary ----------
+	    case allocate:
+	    case allocate_zero:
+	    case test_heap:
+	    case trim:
+	    {
+		int i1 = readCodeInteger();
+		int i2 = readCodeInteger();
+		return new Insn.II(opcode, i1, i2);
+	    }
+
+	    case call:
+	    case call_only:
+	    {
+		int i1 = readCodeInteger();
+		Label label = readLabel();
+		return new Insn.IL(opcode, i1, label);
+	    }
+
+	    case call_ext:
+	    case call_ext_only:
+	    {
+		int i1 = readCodeInteger();
+		int ext_fun_ref = readCodeInteger();
+		return new Insn.IE(opcode, i1, ext_fun_ref);
+	    }
+
+	    case move:
+	    {
+		SourceOperand src = readSource();
+		DestinationOperand dest = readDestination();
+		return new Insn.SD(opcode, src, dest);
+	    }
+
+	    case put_tuple:
+	    {
+		int i1 = readCodeInteger();
+		DestinationOperand dest = readDestination();
+ 		return new Insn.ID(opcode, i1, dest);
+	    }
+
+	    case loop_rec:
+	    {
+		Label label = readLabel();
+		DestinationOperand dest = readDestination();
+		return new Insn.LD(opcode, label, dest);
+	    }
+
+	    case K_try:
+	    case K_catch:
+	    {
+		YReg y = readYReg();
+		Label label = readLabel();
+		return new Insn.YL(opcode, y, label);
+	    }
+
+	    case is_integer:
+	    case is_float:
+	    case is_number:
+	    case is_atom:
+	    case is_pid:
+	    case is_reference:
+	    case is_port:
+	    case is_nil:
+	    case is_binary:
+	    case is_list:
+	    case is_nonempty_list:
+	    case is_tuple:
+	    case is_function:
+	    case is_boolean:
+	    case is_bitstr:
+	    case wait_timeout:
+	    {
+		Label label = readLabel();
+		SourceOperand src = readSource();
+		return new Insn.LS(opcode, label, src, true);
+	    }
+
+	    case raise:
+	    {
+		SourceOperand src1 = readSource();
+		SourceOperand src2 = readSource();
+		return new Insn.SS(opcode, src1, src2);
+	    }
+
+	    //---------- 3-ary ----------
+	    case allocate_heap:
+	    case allocate_heap_zero:
+	    {
+		int i1 = readCodeInteger();
+		int i2 = readCodeInteger();
+		int i3 = readCodeInteger();
+		return new Insn.III(opcode, i1, i2, i3);
+	    }
+
+	    case func_info:
+	    {
+		Atom mod = readAtom();
+		Atom fun = readAtom();
+		int arity = readCodeInteger();
+		return new Insn.AAI(opcode, mod,fun,arity);
+	    }
+
+	    case call_ext_last:
+	    {
+		int arity = readCodeInteger();
+		int fun_ref = readCodeInteger();
+		int save = readCodeInteger();
+		return new Insn.IEI(opcode, arity, fun_ref, save);
+	    }
+
+	    case put_list:
+	    {
+		SourceOperand src1 = readSource();
+		SourceOperand src2 = readSource();
+		DestinationOperand dest = readDestination();
+		return new Insn.SSD(opcode, src1, src2, dest);
+	    }
+
+	    case get_tuple_element:
+	    {
+		SourceOperand src = readSource();
+		int i = readCodeInteger();
+		DestinationOperand dest = readDestination();
+		return new Insn.SID(opcode, src, i, dest);
+	    }
+
+	    case set_tuple_element:
+	    {
+		SourceOperand src = readSource();
+		DestinationOperand dest = readDestination();
+		int i = readCodeInteger();
+		return new Insn.SDI(opcode, src, dest, i);
+	    }
+
+	    case get_list:
+	    {
+		SourceOperand src = readSource();
+		DestinationOperand dest1 = readDestination();
+		DestinationOperand dest2 = readDestination();
+		return new Insn.SDD(opcode, src, dest1, dest2);
+	    }
+
+	    case test_arity:
+	    {
+		Label label = readLabel();
+		SourceOperand src = readSource();
+		int i1 = readCodeInteger();
+		return new Insn.LSI(opcode, label, src, i1, true);
+	    }
+
+	    case is_lt:
+	    case is_ge:
+	    case is_eq:
+	    case is_ne:
+	    case is_eq_exact:
+	    case is_ne_exact:
+	    {
+		Label label = readLabel();
+		SourceOperand src1 = readSource();
+		SourceOperand src2 = readSource();
+		return new Insn.LSS(opcode, label, src1, src2, true);
+	    }
+
+	    case call_last:
+	    {
+		int i1 = readCodeInteger();
+		Label label = readLabel();
+		int i3 = readCodeInteger();
+		return new Insn.ILI(opcode, i1, label, i3);
+	    }
+
+	    case bs_start_match2:
+	    {
+		Label label = readLabel();
+		SourceOperand src = readSource();
+		int i3 = readCodeInteger();
+		int i4 = readCodeInteger();
+		DestinationOperand dest = readDestination();
+		return new Insn.LSIID(opcode, label, src, i3, i4, dest);
+	    }
+
+	    case select_val:
+	    case select_tuple_arity:
+	    {
+		SourceOperand src = readSource();
+		Label defaultLbl = readLabel();
+		Operands.List jumpTable = readList();
+		return new Insn.Select(opcode, src, defaultLbl, jumpTable);
+	    }
+
+	    //---------- BIFs ----------
+	    case bif0: {
+		Label optLabel = readOptionalLabel();
+		int ext_fun_ref = in.read1();
+		DestinationOperand dest = readDestination();
+		return new Insn.LED(opcode, optLabel, ext_fun_ref, dest);
+	    }
+	    case bif1: {
+		Label optLabel = readOptionalLabel();
+		int ext_fun_ref = in.read1();
+		SourceOperand arg = readSource();
+		DestinationOperand dest = readDestination();
+		return new Insn.LESD(opcode, optLabel, ext_fun_ref, arg, dest);
+	    }
+	    case bif2: {
+		Label optLabel = readOptionalLabel();
+		int save = in.read1();
+		int ext_fun_ref = in.read1();
+		SourceOperand arg1 = readSource();
+		SourceOperand arg2 = readSource();
+		DestinationOperand dest = readDestination();
+		return new Insn.LEISSD(opcode, optLabel, ext_fun_ref, save, arg1, arg2, dest);
+	    }
+
+	    case gc_bif1: {
+		Label optLabel = readOptionalLabel();
+		int save = readCodeInteger();
+		int ext_fun_ref = readCodeInteger();
+		SourceOperand arg = readSource();
+		DestinationOperand dest = readDestination();
+		return new Insn.LEISD(opcode, optLabel, ext_fun_ref, save, arg, dest);
+	    }
+	    case gc_bif2: {
+		Label optLabel = readOptionalLabel();
+		int save = readCodeInteger();
+		int ext_fun_ref = readCodeInteger();
+		SourceOperand arg1 = readSource();
+		SourceOperand arg2 = readSource();
+		DestinationOperand dest = readDestination();
+		return new Insn.LEISSD(opcode, optLabel, ext_fun_ref, save, arg1, arg2, dest);
+	    }
+
+	    default:
+		throw new IOException("Unknown instruction: "+opcode);
+	    } // switch
+	} else System.err.println("***unknown: 0x"+Integer.toHexString(opcode_no)+"***");
+	return null;
+    }
+
     //========== Utility functions ==============================
     public String readString(int len) throws IOException {
 	byte[] data = new byte[len];
 	int read = in.read(data);
 	assert(read==len);
 	return new String(data);
+    }
+
+    //========== Operand tags:
+    //TODO: These need to be cleared up. Look at a bit less.
+    static final int INT4_TAG = 0;
+    static final int INTLIT4_TAG = 1;
+    static final int ATOM4_TAG = 2;
+    static final int XREG4_TAG = 3;
+    static final int YREG4_TAG = 4;
+    static final int LABEL4_TAG = 5;
+    static final int EXTENDED_TAG = 7;
+
+    static final int INT12_TAG = 8;
+    static final int BIGINT_TAG = 9;
+    static final int ATOM12_TAG = 10;
+    static final int XREG12_TAG = 11;
+    static final int YREG12_TAG = 12;
+    static final int LABEL12_TAG = 13;
+    static final int EXTENDED2_TAG = 7;
+
+    //========== Extended operand tags:
+    static final int LIST_TAG2 = 1;
+    static final int LITERAL_TAG2 = 4;
+
+    int peekTag() throws IOException {
+	return in.peek() & 0x0F;
+    }
+
+    public SourceOperand readSource() throws IOException {
+	return readOperand().asSource();
+    }
+    public DestinationOperand readDestination() throws IOException {
+	return readOperand().asDestination();
+    }
+
+    public Label readOptionalLabel() throws IOException {
+	return (peekTag() == LABEL4_TAG || peekTag() == LABEL12_TAG)
+	    ? readLabel()
+	    : null; // 'nofail'
+    }
+
+    public Label readLabel() throws IOException {
+	return readOperand().asLabel();
+    }
+
+    public Atom readAtom() throws IOException {
+	return readOperand().asAtom();
+    }
+
+    public Operands.List readList() throws IOException {
+	return readOperand().asList();
+    }
+
+    public YReg readYReg() throws IOException {
+	return readOperand().asYReg();
+    }
+
+    public int readCodeInteger() throws IOException {
+	int d1 = in.read1();
+	int tag = d1 & 0x07;
+	if ((d1 & 0x07) == INT4_TAG)
+	    return readSmallIntValue(d1);
+	else
+	    throw new IOException("Not a smallint: "+readOperand(d1));
+    }
+
+    public Operand readOperand() throws IOException {
+	int d1 = in.read1();
+	return readOperand(d1);
+    }
+    public Operand readOperand(int d1) throws IOException {
+	int tag = d1 & 0x0F;
+	switch (tag) {
+	case INTLIT4_TAG:
+	    return new Operands.Int(readSmallIntValue(d1));
+
+  	case BIGINT_TAG: {
+	    int hdata  = d1>>4;
+	    if ((hdata & 1) == 0) { // Fixed-length
+		return new Operands.Int((hdata << 7) + in.read1());
+	    } else {
+		int len = 2+(hdata>>1);
+		byte d[] = new byte[len];
+		in.readFully(d);
+		return Operands.makeInt(d);
+	    }
+	}
+
+	case ATOM4_TAG:
+	case ATOM12_TAG:
+	{
+	    int nr = readSmallIntValue(d1);
+	    return (nr==0)? Operands.Nil : new Operands.Atom(nr);
+	}
+
+	case XREG4_TAG:
+	case XREG12_TAG:
+	{
+ 	    int nr = readSmallIntValue(d1);
+	    return XReg.get(nr);
+	}
+	case YREG4_TAG:
+	case YREG12_TAG:
+	{
+ 	    int nr = readSmallIntValue(d1);
+	    return YReg.get(nr);
+	}
+	case LABEL4_TAG:
+	case LABEL12_TAG:
+	{
+	    int nr = readSmallIntValue(d1);
+	    return new Label(nr);
+	}
+	case EXTENDED_TAG:
+	{
+	    int moretag = d1>>4;
+	    switch (moretag) {
+	    case LIST_TAG2: {
+		int length = readSmallIntValue(in.read1());
+		Operand[] list = new Operand[length];
+		for (int i=0; i<length; i++) {
+		    list[i] = readOperand();
+		}
+		return new Operands.List(list);
+	    }
+	    case LITERAL_TAG2: {
+		int nr = readSmallIntValue(in.read1());
+		return new TableLiteral(nr);
+	    }
+	    default:
+		System.err.println("*** Unhandled extended operand tag: "+tag);
+	    } // switch
+	    break;
+	}
+	default:
+	    System.err.println("*** Unhandled operand tag: "+tag);
+	} // switch
+	return null;
+    }
+
+
+    public int readSmallIntValue(int head) throws IOException {
+	int tag = head & 0x0F;
+	int hdata  = head>>4;
+	if ((tag & 0x08) == 0) {
+	    return hdata;
+	} else {
+	    return (hdata<<7) + in.read1();
+	}
+    }
+
+
+    static class FunctionInfo {
+	int name_atom_nr, arity, label;
+	public FunctionInfo(int name_atom_nr, int arity, int label) {
+	    this.name_atom_nr = name_atom_nr;
+	    this.arity = arity;
+	    this.label = label;
+	}
     }
 }

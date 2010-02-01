@@ -76,6 +76,8 @@ import erjang.Module;
 import erjang.NotImplemented;
 import erjang.beam.Arg.Kind;
 
+import static erjang.beam.CodeAtoms.*;
+
 /**
  * 
  */
@@ -155,21 +157,6 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 	static final Type EPID_TYPE = Type.getType(EPID.class);
 	static final Type EPORT_TYPE = Type.getType(EPort.class);
 	static final Type EMATCHSTATE_TYPE = Type.getType(EBinMatchState.class);
-
-	static final EObject TRUE_ATOM = EAtom.intern("true");
-	static final EObject FALSE_ATOM = EAtom.intern("false");
-	static final EObject X_ATOM = EAtom.intern("x");
-	static final EObject Y_ATOM = EAtom.intern("y");
-	static final EObject FR_ATOM = EAtom.intern("fr");
-	static final EObject NIL_ATOM = EAtom.intern("nil");
-	static final EObject INTEGER_ATOM = EAtom.intern("integer");
-	static final EObject FLOAT_ATOM = EAtom.intern("float");
-	static final EObject ATOM_ATOM = EAtom.intern("atom");
-	static final EObject LITERAL_ATOM = EAtom.intern("literal");
-	static final EObject NOFAIL_ATOM = EAtom.intern("nofail");
-	static final EObject F_ATOM = EAtom.intern("f");
-	static final EObject FIELD_FLAGS_ATOM = EAtom.intern("field_flags");
-	static final EObject ERLANG_ATOM = EAtom.intern("erlang");
 
 	static final Type MODULE_ANN_TYPE = Type.getType(Module.class);
 	static final Type ERLFUN_ANN_TYPE = Type.getType(ErlFun.class);

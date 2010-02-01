@@ -70,6 +70,8 @@ import erjang.beam.ModuleAdapter;
 import erjang.beam.ModuleVisitor;
 import erjang.beam.Arg.Kind;
 
+import static erjang.beam.CodeAtoms.*;
+
 public class BeamTypeAnalysis extends ModuleAdapter {
 	/**
 	 * 
@@ -97,23 +99,6 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 	static final Type EPORT_TYPE = Type.getType(EPort.class);
 	static final Type EREFERENCE_TYPE = Type.getType(ERef.class);
 	static final Type EMATCHSTATE_TYPE = Type.getType(EBinMatchState.class);
-
-	static final EObject X_ATOM = EAtom.intern("x");
-	static final EObject Y_ATOM = EAtom.intern("y");
-	static final EObject FR_ATOM = EAtom.intern("fr");
-	static final EObject NIL_ATOM = EAtom.intern("nil");
-	static final EObject INTEGER_ATOM = EAtom.intern("integer");
-	static final EObject STRING_ATOM = EAtom.intern("string");
-	static final EObject FLOAT_ATOM = EAtom.intern("float");
-	static final EObject ATOM_ATOM = EAtom.intern("atom");
-	static final EObject LITERAL_ATOM = EAtom.intern("literal");
-	static final EObject NOFAIL_ATOM = EAtom.intern("nofail");
-	static final EObject F_ATOM = EAtom.intern("f");
-	static final EObject FIELD_FLAGS_ATOM = EAtom.intern("field_flags");
-	static final EObject EXTFUNC_ATOM = EAtom.intern("extfunc");
-	static final EObject APPLY_ATOM = EAtom.intern("apply");
-	static final EObject ERLANG_ATOM = EAtom.intern("erlang");
-	static final EObject ERROR_ATOM = EAtom.intern("error");
 
 	private static final ETuple X0_REG = ETuple.make(new EObject[] { X_ATOM,
 			new ESmall(0) });
