@@ -24,19 +24,23 @@ import erjang.EAtom;
 import erjang.ENative;
 import erjang.EObject;
 import erjang.ERT;
-import erjang.ESeq;
 import erjang.EString;
 import erjang.ETuple2;
 
 /**
+ * Native methods (BIFs) for the Erlang module 'os'. 
  * 
+ * The fact that this class represents the module os is deduced from the package name,
  */
 public class Native extends ENative {
 
 	/**
 	 * 
 	 */
-	private static final ETuple2 OS_TYPE = new ETuple2(EAtom.intern("unix"), EAtom.intern("macosx"));
+	private static final EAtom am_macosx = EAtom.intern("macosx");
+	private static final EAtom am_unix = EAtom.intern("unix");
+
+	private static final ETuple2 OS_TYPE = new ETuple2(am_unix, am_macosx);
 
 	/** os:getenv(string()) -> string() | false */
 	@BIF
