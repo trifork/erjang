@@ -37,6 +37,7 @@ public class Operands {
 
 	public abstract EObject toSymbolic(CodeTables ct);
     }
+
     static abstract class SourceOperand extends Operand {
 	@Override
 	public SourceOperand asSource() {return this;}
@@ -68,7 +69,7 @@ public class Operands {
     static final Nil Nil = new Nil();
     static class Nil extends Literal {
 	private Nil() {}
-	public EObject toSymbolic(CodeTables ct) {return ERT.NIL;}
+	public EObject toSymbolic(CodeTables ct) {return NIL_ATOM;}
     }
 
     static class List extends Literal {
@@ -82,7 +83,7 @@ public class Operands {
 	    for (int i=0; i<list.length; i++) {
 		elems[i] = list[i].toSymbolic(ct);
 	    }
-	    return ESeq.fromArray(elems);
+	    return ETuple.make(LIST_ATOM, ESeq.fromArray(elems));
 	}
     }
 
@@ -92,13 +93,17 @@ public class Operands {
 
 	@Override
 	public Atom asAtom() {return this;}
-	public EObject toSymbolic(CodeTables ct) {return ct.atom(idx);}
+	public EObject toSymbolic(CodeTables ct) {
+	    return ETuple.make(ATOM_ATOM, ct.atom(idx));
+	}
     }
 
     static class TableLiteral extends Literal {
 	private int idx;
 	public TableLiteral(int idx) {this.idx=idx;}
-	public EObject toSymbolic(CodeTables ct) {return ct.literal(idx);}
+	public EObject toSymbolic(CodeTables ct) {
+	    return ETuple.make(LITERAL_ATOM, ct.literal(idx));
+	}
     }
 
     static class Label extends Operand {

@@ -12,7 +12,9 @@ public class CodeAtoms {
 	public static final EAtom STRING_ATOM = EAtom.intern("string");
 	public static final EAtom FLOAT_ATOM = EAtom.intern("float");
 	public static final EAtom ATOM_ATOM = EAtom.intern("atom");
+	public static final EAtom LIST_ATOM = EAtom.intern("list");
 	public static final EAtom LITERAL_ATOM = EAtom.intern("literal");
+	public static final EAtom TEST_ATOM = EAtom.intern("test");
 	public static final EAtom NOFAIL_ATOM = EAtom.intern("nofail");
 	public static final EAtom F_ATOM = EAtom.intern("f");
 	public static final EAtom FIELD_FLAGS_ATOM = EAtom.intern("field_flags");
@@ -20,4 +22,6 @@ public class CodeAtoms {
 	public static final EAtom APPLY_ATOM = EAtom.intern("apply");
 	public static final EAtom ERLANG_ATOM = EAtom.intern("erlang");
 	public static final EAtom ERROR_ATOM = EAtom.intern("error");
+	public static final EAtom BEAM_FILE_ATOM = EAtom.intern("beam_file");
+	public static final EAtom FUNCTION_ATOM  = EAtom.intern("function");
 }
