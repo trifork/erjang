@@ -57,13 +57,17 @@ public class Operands {
     static class Int extends Literal {
 	public final int value;
 	public Int(int value) {this.value=value;}
-	public EObject toSymbolic(CodeTables ct) {return new ESmall(value);}
+	public EObject toSymbolic(CodeTables ct) {
+	    return ETuple.make(INTEGER_ATOM, new ESmall(value));
+	}
     }
 
     static class BigInt extends Literal {
 	public final BigInteger value;
 	public BigInt(BigInteger value) {this.value=value;}
-	public EObject toSymbolic(CodeTables ct) {return new EBig(value);}
+	public EObject toSymbolic(CodeTables ct) {
+	    return ETuple.make(INTEGER_ATOM, new EBig(value));
+	}
     }
 
     static final Nil Nil = new Nil();

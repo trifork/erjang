@@ -24,4 +24,7 @@ public class CodeAtoms {
 	public static final EAtom ERROR_ATOM = EAtom.intern("error");
 	public static final EAtom BEAM_FILE_ATOM = EAtom.intern("beam_file");
 	public static final EAtom FUNCTION_ATOM  = EAtom.intern("function");
+
+	public static final EAtom BIF_ATOM = EAtom.intern("bif");
+	public static final EAtom GCBIF_ATOM = EAtom.intern("gc_bif");
 }

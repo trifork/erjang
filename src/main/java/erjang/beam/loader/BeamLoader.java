@@ -10,6 +10,8 @@ import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Collections;
+import java.util.Arrays;
 
 import erjang.EObject;
 import erjang.EAtom;
@@ -62,7 +64,8 @@ public class BeamLoader extends CodeTables {
 	return ETuple.make(BEAM_FILE_ATOM,
 			   symbolicModuleName(),
 			   symbolicExportList(),
-			   attributes, compilation_info,
+			   symbolicAttributes(),
+			   compilation_info,
 			   symbolicCode());
     }
 
@@ -71,47 +74,45 @@ public class BeamLoader extends CodeTables {
 	return atom(1);
     }
 
+    public EObject symbolicAttributes() {
+	// Sort the attributes to make them comparable to beam_disasm's output:
+	ESeq attrs_as_seq = attributes.testSeq();
+	if (attrs_as_seq == null) return attributes;
+
+	EObject[] attrs = attrs_as_seq.toArray();
+	Arrays.sort(attrs);
+	return ESeq.fromArray(attrs);
+    }
+
     public ESeq symbolicExportList() {
 	ArrayList<EObject> symExports = new ArrayList<EObject>(exports.length);
 	int i=0;
 	for (FunctionInfo f : exports) {
-	    symExports.add(ETuple.make(atom(f.name_atom_nr), new ESmall(f.arity), new ESmall(f.label)));
+	    symExports.add(ETuple.make(atom(f.fun), new ESmall(f.arity), new ESmall(f.label)));
 	}
-	java.util.Collections.sort(symExports);
+	Collections.sort(symExports);
 	return ESeq.fromList(symExports);
     }
 
     public ESeq symbolicCode() {
-	Map<Integer, FunctionInfo> funcMap = new HashMap<Integer, FunctionInfo>();
-	for (FunctionInfo f : exports) funcMap.put(f.label, f);
-	for (FunctionInfo f : localFunctions) funcMap.put(f.label, f);
-
-	System.err.println("DB| sizes: "+(exports.length)+" / "+localFunctions.length);
-	for (int k : funcMap.keySet()) System.err.println("DB| funclabel: "+k);
-
-
 	ArrayList<ETuple> functions = new ArrayList<ETuple>(exports.length +
 							    localFunctions.length);
 	int fpos = 0;
 	FunctionInfo fi = null;
 	ArrayList<EObject> currentFunctionBody = null;
 	for (Insn insn : code) {
-	    System.err.println("| "+insn.toSymbolic(this));
 	    FunctionInfo newFI = null;
 	    if (insn.opcode() == BeamOpcode.label) { // We might switch to a new function
 		int labelNr = ((Insn.I)insn).i1;
-		newFI = funcMap.get(labelNr+1);
-		System.err.println("| label#"+labelNr+" -> "+newFI);
-		if (newFI==null) newFI = funcMap.get(labelNr);
-		System.err.println("| label#"+labelNr+" --> "+newFI);
+		newFI = functionAtLabel(labelNr+1);
+		if (newFI==null) newFI = functionAtLabel(labelNr);
 	    } else if (insn.opcode() == BeamOpcode.int_code_end) {
 		newFI = new FunctionInfo(-1,-1,-1); // Easy way to handle last function
-		System.err.println("| int_code_end");
 	    }
 	    if (newFI != null && newFI != fi) { // Do switch
 		if (fi != null) { // Add previous
 		    ETuple fun = ETuple.make(FUNCTION_ATOM,
-					     atom(fi.name_atom_nr),
+					     atom(fi.fun),
 					     new ESmall(fi.arity),
 					     new ESmall(fi.label),
 					     ESeq.fromList(currentFunctionBody));
@@ -237,12 +238,13 @@ public class BeamLoader extends CodeTables {
 	exports = new FunctionInfo[nExports];
 	if (DEBUG) System.err.println("Number of exports: "+nExports);
 	for (int i=0; i<nExports; i++) {
-	    int name_atom_nr = in.read4BE();
+	    int fun_atom_nr = in.read4BE();
 	    int arity    = in.read4BE();
 	    int label    = in.read4BE();
-	    exports[i] = new FunctionInfo(name_atom_nr, arity, label);
+	    exports[i] = new FunctionInfo(fun_atom_nr, arity, label);
+	    addFunctionAtLabel(label, fun_atom_nr, arity);
 	    if (DEBUG && atoms != null) {
-		System.err.println("- #"+(i+1)+": "+atom(name_atom_nr)+"/"+arity+" @ "+label);
+		System.err.println("- #"+(i+1)+": "+atom(fun_atom_nr)+"/"+arity+" @ "+label);
 	    }
 	}
     }
@@ -253,12 +255,13 @@ public class BeamLoader extends CodeTables {
 	localFunctions = new FunctionInfo[nLocals];
 	if (DEBUG) System.err.println("Number of locals: "+nLocals);
 	for (int i=0; i<nLocals; i++) {
-	    int name_atom_nr = in.read4BE();
+	    int fun_atom_nr = in.read4BE();
 	    int arity    = in.read4BE();
 	    int label    = in.read4BE();
-	    localFunctions[i] = new FunctionInfo(name_atom_nr, arity, label);
+	    localFunctions[i] = new FunctionInfo(fun_atom_nr, arity, label);
+	    addFunctionAtLabel(label, fun_atom_nr, arity);
 	    if (DEBUG && atoms != null) {
-		System.err.println("- #"+(i+1)+": "+atom(name_atom_nr)+"/"+arity+" @ "+label);
+		System.err.println("- #"+(i+1)+": "+atom(fun_atom_nr)+"/"+arity+" @ "+label);
 	    }
 	}
     }
@@ -266,17 +269,20 @@ public class BeamLoader extends CodeTables {
     public void readFunctionSection() throws IOException {
 	if (DEBUG) System.err.println("readFunctionSection");
 	int nFunctions = in.read4BE();
+	anonymousFuns = new AnonFun[nFunctions];
 	if (DEBUG) System.err.println("Number of function descrs: "+nFunctions);
 	for (int i=0; i<nFunctions; i++) {
-	    int f_atm_no = in.read4BE();
-	    int arity    = in.read4BE();
-	    int label    = in.read4BE();
-	    int perm_nr  = in.read4BE();
-	    int arity2    = in.read4BE();
-	    int value    = in.read4BE();
+	    int fun_atom_nr = in.read4BE();
+	    int total_arity = in.read4BE();
+	    int label     = in.read4BE();
+	    int occur_nr  = in.read4BE();
+	    int free_vars = in.read4BE();
+	    int uniq      = in.read4BE();
+	    anonymousFuns[i] = new AnonFun(fun_atom_nr, total_arity, free_vars, label, occur_nr, uniq);
+
 	    if (DEBUG && atoms != null) {
-		System.err.println("- #"+(i+1)+": "+atom(f_atm_no)+"/"+arity+" @ "+label);
-		System.err.println("--> "+perm_nr+"/"+arity2+" $ "+value);
+		System.err.println("- #"+(i+1)+": "+atom(fun_atom_nr)+"/"+total_arity+" @ "+label);
+		System.err.println("--> occur:"+occur_nr+" free:"+free_vars+" $ "+uniq);
 	    }
 	}
     }
@@ -433,7 +439,7 @@ public class BeamLoader extends CodeTables {
 	    {
 		int i1 = readCodeInteger();
 		Label label = readLabel();
-		return new Insn.IL(opcode, i1, label);
+		return new Insn.IL(opcode, i1, label, true);
 	    }
 
 	    case call_ext:
@@ -488,11 +494,17 @@ public class BeamLoader extends CodeTables {
 	    case is_function:
 	    case is_boolean:
 	    case is_bitstr:
-	    case wait_timeout:
 	    {
 		Label label = readLabel();
 		SourceOperand src = readSource();
 		return new Insn.LS(opcode, label, src, true);
+	    }
+
+	    case wait_timeout:
+	    {
+		Label label = readLabel();
+		SourceOperand src = readSource();
+		return new Insn.LS(opcode, label, src, false);
 	    }
 
 	    case raise:
@@ -586,7 +598,7 @@ public class BeamLoader extends CodeTables {
 		int i1 = readCodeInteger();
 		Label label = readLabel();
 		int i3 = readCodeInteger();
-		return new Insn.ILI(opcode, i1, label, i3);
+		return new Insn.ILI(opcode, i1, label, i3, true);
 	    }
 
 	    case bs_start_match2:
@@ -624,12 +636,14 @@ public class BeamLoader extends CodeTables {
 	    }
 	    case bif2: {
 		Label optLabel = readOptionalLabel();
-		int save = in.read1();
 		int ext_fun_ref = in.read1();
+		System.err.println("Bif1: "+optLabel+", "+ext_fun_ref);
 		SourceOperand arg1 = readSource();
+		System.err.println("- Bif arg1="+arg1.toSymbolic(this));
 		SourceOperand arg2 = readSource();
+		System.err.println("- Bif arg2="+arg2.toSymbolic(this));
 		DestinationOperand dest = readDestination();
-		return new Insn.LEISSD(opcode, optLabel, ext_fun_ref, save, arg1, arg2, dest);
+		return new Insn.LESSD(opcode, optLabel, ext_fun_ref, arg1, arg2, dest);
 	    }
 
 	    case gc_bif1: {
@@ -811,16 +825,6 @@ public class BeamLoader extends CodeTables {
 	    return hdata;
 	} else {
 	    return (hdata<<7) + in.read1();
-	}
-    }
-
-
-    static class FunctionInfo {
-	int name_atom_nr, arity, label;
-	public FunctionInfo(int name_atom_nr, int arity, int label) {
-	    this.name_atom_nr = name_atom_nr;
-	    this.arity = arity;
-	    this.label = label;
 	}
     }
 }
