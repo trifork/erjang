@@ -379,6 +379,7 @@ public class BeamLoader extends CodeTables {
 	    case label:
 	    case deallocate:
 	    case call_fun:
+	    case apply:
 	    {
 		int i1 = readCodeInteger();
 		if (DEBUG && opcode==BeamOpcode.label) System.err.println("DB| ### label "+i1+"###");
@@ -428,6 +429,7 @@ public class BeamLoader extends CodeTables {
 	    case allocate_zero:
 	    case test_heap:
 	    case trim:
+	    case apply_last:
 	    {
 		int i1 = readCodeInteger();
 		int i2 = readCodeInteger();
