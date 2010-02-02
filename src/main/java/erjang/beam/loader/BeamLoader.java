@@ -680,7 +680,7 @@ public class BeamLoader extends CodeTables {
 
     //========== Operand tags:
     //TODO: These need to be cleared up. Look at a bit less.
-    static final int INT4_TAG = 0;
+    static final int CODEINT4_TAG = 0;
     static final int INTLIT4_TAG = 1;
     static final int ATOM4_TAG = 2;
     static final int XREG4_TAG = 3;
@@ -736,7 +736,7 @@ public class BeamLoader extends CodeTables {
     public int readCodeInteger() throws IOException {
 	int d1 = in.read1();
 	int tag = d1 & 0x07;
-	if ((d1 & 0x07) == INT4_TAG)
+	if ((d1 & 0x07) == CODEINT4_TAG)
 	    return readSmallIntValue(d1);
 	else
 	    throw new IOException("Not a smallint: "+readOperand(d1));
@@ -749,6 +749,9 @@ public class BeamLoader extends CodeTables {
     public Operand readOperand(int d1) throws IOException {
 	int tag = d1 & 0x0F;
 	switch (tag) {
+	case CODEINT4_TAG:
+	    return new Operands.CodeInt(readSmallIntValue(d1));
+
 	case INTLIT4_TAG:
 	    return new Operands.Int(readSmallIntValue(d1));
 
@@ -794,7 +797,7 @@ public class BeamLoader extends CodeTables {
 	    int moretag = d1>>4;
 	    switch (moretag) {
 	    case LIST_TAG2: {
-		int length = readSmallIntValue(in.read1());
+		int length = readCodeInteger();
 		Operand[] list = new Operand[length];
 		for (int i=0; i<length; i++) {
 		    list[i] = readOperand();

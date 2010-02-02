@@ -54,6 +54,16 @@ public class Operands {
 	    ? new Int(tmp.intValue())
 	    : new BigInt(tmp);
     }
+
+    /** CodeInt is present in jump-table-by-arity (select_arity). */
+    static class CodeInt extends Operand {
+	public final int value;
+	public CodeInt(int value) {this.value=value;}
+	public EObject toSymbolic(CodeTables ct) {
+	    return new ESmall(value);
+	}
+    }
+
     static class Int extends Literal {
 	public final int value;
 	public Int(int value) {this.value=value;}
