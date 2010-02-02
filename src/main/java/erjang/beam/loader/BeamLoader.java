@@ -625,25 +625,22 @@ public class BeamLoader extends CodeTables {
 	    //---------- BIFs ----------
 	    case bif0: {
 		Label optLabel = readOptionalLabel();
-		int ext_fun_ref = in.read1();
+		int ext_fun_ref = readCodeInteger();
 		DestinationOperand dest = readDestination();
-		return new Insn.LED(opcode, optLabel, ext_fun_ref, dest);
+		return new Insn.LED(opcode, optLabel, ext_fun_ref, dest, true);
 	    }
 	    case bif1: {
 		Label optLabel = readOptionalLabel();
-		int ext_fun_ref = in.read1();
+		int ext_fun_ref = readCodeInteger();
 		SourceOperand arg = readSource();
 		DestinationOperand dest = readDestination();
 		return new Insn.LESD(opcode, optLabel, ext_fun_ref, arg, dest);
 	    }
 	    case bif2: {
 		Label optLabel = readOptionalLabel();
-		int ext_fun_ref = in.read1();
-		System.err.println("Bif1: "+optLabel+", "+ext_fun_ref);
+		int ext_fun_ref = readCodeInteger();
 		SourceOperand arg1 = readSource();
-		System.err.println("- Bif arg1="+arg1.toSymbolic(this));
 		SourceOperand arg2 = readSource();
-		System.err.println("- Bif arg2="+arg2.toSymbolic(this));
 		DestinationOperand dest = readDestination();
 		return new Insn.LESSD(opcode, optLabel, ext_fun_ref, arg1, arg2, dest);
 	    }

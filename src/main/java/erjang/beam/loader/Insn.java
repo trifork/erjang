@@ -9,6 +9,7 @@ import erjang.ETuple;
 import erjang.ESeq;
 import erjang.EList;
 import erjang.ESmall;
+import erjang.ERT;
 
 import static erjang.beam.loader.Operands.*;
 import static erjang.beam.CodeAtoms.TEST_ATOM;
@@ -16,6 +17,7 @@ import static erjang.beam.CodeAtoms.LIST_ATOM;
 import static erjang.beam.CodeAtoms.BIF_ATOM;
 import static erjang.beam.CodeAtoms.GCBIF_ATOM;
 import static erjang.beam.CodeAtoms.F_ATOM;
+import static erjang.beam.CodeAtoms.NOFAIL_ATOM;
 
 public class Insn implements BeamInstruction {
 	protected final BeamOpcode opcode;
@@ -26,6 +28,11 @@ public class Insn implements BeamInstruction {
 	public EObject toSymbolic(CodeTables ct) {
 	    return opcode.symbol;
 	}
+
+	static EObject toSymbolic(Label label, CodeTables ct) {
+		return label==null? NOFAIL_ATOM : label.toSymbolic(ct);
+	}
+
 
 	/*============================================================
 	 *                     Instruction formats
@@ -303,17 +310,26 @@ public class Insn implements BeamInstruction {
 		final Label label;
 		final int ext_fun_ref;
 		final DestinationOperand dest;
-		public LED(BeamOpcode opcode, Label label, int ext_fun_ref, DestinationOperand dest) {
+		final boolean is_bif;
+		public LED(BeamOpcode opcode, Label label, int ext_fun_ref, DestinationOperand dest, boolean is_bif) {
 			super(opcode);
 			this.label = label;
 			this.ext_fun_ref = ext_fun_ref;
 			this.dest = dest;
+			this.is_bif = is_bif;
 		}
 		public ETuple toSymbolic(CodeTables ct) {
-			return ETuple.make(opcode.symbol,
-					   label.toSymbolic(ct),
-					   ct.extFun(ext_fun_ref).toSymbolic(ct),
-					   dest.toSymbolic(ct));
+			if (is_bif)
+				return ETuple.make(BIF_ATOM,
+						   ct.atom(ct.extFun(ext_fun_ref).fun),
+						   toSymbolic(label, ct),
+						   ERT.NIL,
+						   dest.toSymbolic(ct));
+			else
+				return ETuple.make(opcode.symbol,
+						   toSymbolic(label, ct),
+						   ct.extFun(ext_fun_ref).toSymbolic(ct),
+						   dest.toSymbolic(ct));
 		}
 	}
 
