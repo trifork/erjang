@@ -922,7 +922,7 @@ public class BeamLoader extends CodeTables {
     public int readCodeInteger() throws IOException {
 	int d1 = in.read1();
 	int tag = d1 & 0x07;
-	if ((d1 & 0x07) == CODEINT4_TAG)
+	if (tag == CODEINT4_TAG)
 	    return readSmallIntValue(d1);
 	else
 	    throw new IOException("Not a code-int: "+readOperand(d1).toSymbolic(this));
@@ -1035,8 +1035,10 @@ public class BeamLoader extends CodeTables {
 	int hdata  = head>>4;
 	if ((tag & 0x08) == 0) {
 	    return hdata;
-	} else {
+	} else if ((hdata & 1) == 0) { // 1 byte more
 	    return (hdata<<7) + in.read1();
+	} else {		       // 2 bytes more
+	    return ((hdata & ~1)<<15) + in.read2BE();
 	}
     }
 }
