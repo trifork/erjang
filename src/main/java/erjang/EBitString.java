@@ -18,6 +18,7 @@
 
 package erjang;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
 
@@ -499,7 +500,7 @@ public class EBitString extends EObject {
 	 * @param eInputStream
 	 * @return
 	 */
-	public static EBitString read(EInputStream eInputStream) {
+	public static EBitString read(EInputStream eInputStream) throws IOException {
 		throw new NotImplemented();
 	}
 
