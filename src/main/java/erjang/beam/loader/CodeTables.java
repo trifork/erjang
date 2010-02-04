@@ -2,19 +2,21 @@ package erjang.beam.loader;
 
 import erjang.EObject;
 import erjang.EAtom;
-import erjang.EString;
 import erjang.ETuple;
 import erjang.ESmall;
+import erjang.EBitString;
+import erjang.EBinary;
+import erjang.EString;
 
 import java.util.Map;
 import java.util.HashMap;
 
 public class CodeTables {
 	protected EAtom[]   atoms;
-	protected EString[] strings;
 	protected EObject[] literals;
 	protected ExtFun[]  externalFuns;
 	protected AnonFun[] anonymousFuns;
+	protected byte[]    stringpool;
 
  	protected Map<Integer,FunctionInfo> functionMap = new HashMap();
 
@@ -22,6 +24,12 @@ public class CodeTables {
 	EObject literal(int nr) {return literals[nr];}		// 0-based
 	ExtFun extFun(int nr) {return externalFuns[nr];}	// 0-based
 	AnonFun anonFun(int nr) {return anonymousFuns[nr];}
+	EBitString bitstring(int start, int bits) {
+		return EBitString.make(stringpool, start, bits/8, bits%8);
+	}
+	EString string(int start, int bytes) {
+		return EString.make(stringpool, start, bytes);
+	}
 
 	EAtom moduleName() { return atom(1); }
 

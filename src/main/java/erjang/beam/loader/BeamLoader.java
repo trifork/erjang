@@ -184,7 +184,7 @@ public class BeamLoader extends CodeTables {
 	if (sectionLength>0) switch (tag) {
 	case ATOM:  readAtomSection(); break;
 	case CODE:  readCodeSection(); break;
-	case STR_T: readStringSection(); break;
+	case STR_T: readStringSection(sectionLength); break;
 	case IMP_T: readImportSection(); break;
 	case EXP_T: readExportSection(); break;
 	case FUN_T: readFunctionSection(); break;
@@ -236,16 +236,9 @@ public class BeamLoader extends CodeTables {
 	}
     }
 
-    public void readStringSection() throws IOException {
+    public void readStringSection(int sectionLength) throws IOException {
 	if (DEBUG) System.err.println("readStringSection");
-	int nStrings = in.read4BE();
-	if (DEBUG) System.err.println("Number of strings: "+nStrings);
-	strings = new EString[nStrings];
-	for (int i=0; i<nStrings; i++) {
-	    String string = readString(in.read1());
-	    if (DEBUG) System.err.println("- #"+(i+1)+": '"+string+"'");
-	    strings[i] = new EString(string);
-	}
+	stringpool = readBinary(sectionLength);
     }
 
     public void readExportSection() throws IOException {
@@ -442,6 +435,12 @@ public class BeamLoader extends CodeTables {
 		return new Insn.Y(opcode, y);
 	    }
 
+	    case bs_put_string:
+	    {
+		ByteString bin = readBytestringRef();
+		return new Insn.By(opcode, bin);
+	    }
+
 	    //---------- 2-ary ----------
 	    case allocate:
 	    case allocate_zero:
@@ -456,7 +455,9 @@ public class BeamLoader extends CodeTables {
 	    case test_heap:
 	    {
 		    switch (peekTag()) {
-		    case CODEINT4_TAG: {
+		    case CODEINT4_TAG:
+		    case CODEINT12_TAG:
+		    {
 			    int i1 = readCodeInteger();
 			    int i2 = readCodeInteger();
 			    return new Insn.II(opcode, i1, i2);
@@ -485,6 +486,19 @@ public class BeamLoader extends CodeTables {
 		int i1 = readCodeInteger();
 		int ext_fun_ref = readCodeInteger();
 		return new Insn.IE(opcode, i1, ext_fun_ref);
+	    }
+
+	    case bs_save2:
+	    case bs_restore2:
+	    {
+		SourceOperand src = readSource();
+		int i2;
+		if ((peekTag() & 0x7) == ATOM4_TAG) {
+		    if (readAtom().asEAtom(this) != START_ATOM)
+			throw new IOException("integer or 'start' expected");
+		    i2 = -1;
+		} else i2 = readCodeInteger();
+		return new Insn.SI(opcode, src, i2, true);
 	    }
 
 	    case move:
@@ -612,6 +626,8 @@ public class BeamLoader extends CodeTables {
 	    }
 
 	    case test_arity:
+	    case bs_test_tail2:
+	    case bs_test_unit:
 	    {
 		Label label = readLabel();
 		SourceOperand src = readSource();
@@ -625,6 +641,7 @@ public class BeamLoader extends CodeTables {
 	    case is_ne:
 	    case is_eq_exact:
 	    case is_ne_exact:
+	    case is_function2:
 	    {
 		Label label = readLabel();
 		SourceOperand src1 = readSource();
@@ -640,6 +657,47 @@ public class BeamLoader extends CodeTables {
 		return new Insn.ILI(opcode, i1, label, i3, true);
 	    }
 
+	    case fadd:
+	    case fsub:
+	    case fmul:
+	    case fdiv:
+	    {
+		Label label = readLabel();
+		SourceOperand src1 = readSource();
+		SourceOperand src2 = readSource();
+		DestinationOperand dest = readDestination();
+		return new Insn.LSSD(opcode, label, src1, src2, dest, true);
+	    }
+
+	    case bs_add:
+	    {
+		Label label = readLabel();
+		SourceOperand src1 = readSource();
+		SourceOperand src2 = readSource();
+		int i3 = readCodeInteger();
+		DestinationOperand dest = readDestination();
+		return new Insn.LSSID(opcode, label, src1, src2, i3, dest);
+	    }
+
+	    case bs_skip_utf8:
+	    case bs_skip_utf16:
+	    case bs_skip_utf32:
+	    {
+		Label label = readLabel();
+		SourceOperand src = readSource();
+		int i3 = readCodeInteger();
+		int i4 = readCodeInteger();
+		return new Insn.LSII(opcode, label, src, i3, i4);
+	    }
+
+	    case bs_match_string:
+	    {
+		Label label = readLabel();
+		SourceOperand src = readSource();
+		BitString bin = readBitstringRef();
+		return new Insn.LSBi(opcode, label, src, bin);
+	    }
+
 	    case bs_start_match2:
 	    {
 		Label label = readLabel();
@@ -648,6 +706,73 @@ public class BeamLoader extends CodeTables {
 		int i4 = readCodeInteger();
 		DestinationOperand dest = readDestination();
 		return new Insn.LSIID(opcode, label, src, i3, i4, dest);
+	    }
+
+	    case bs_put_integer:
+	    case bs_put_binary:
+	    {
+		Label label = readLabel();
+		SourceOperand src2 = readSource();
+		int i3 = readCodeInteger();
+		int i4 = readCodeInteger();
+		SourceOperand src5 = readSource();
+		return new Insn.LSIIS(opcode, label, src2, i3, i4, src5);
+	    }
+
+	    case bs_init2:
+	    {
+		Label label = readOptionalLabel();
+		if ((peekTag() & 0x7) == CODEINT4_TAG) {
+		    int i2 = readCodeInteger();
+		    int i3 = readCodeInteger();
+		    int i4 = readCodeInteger();
+		    int i5 = readCodeInteger();
+		    DestinationOperand dest = readDestination();
+		    return new Insn.LIIIID(opcode, label, i2, i3, i4, i5, dest);
+		} else {
+		    SourceOperand src2 = readSource();
+		    int i3 = readCodeInteger();
+		    int i4 = readCodeInteger();
+		    int i5 = readCodeInteger();
+		    DestinationOperand dest = readDestination();
+		    return new Insn.LSIIID(opcode, label, src2, i3, i4, i5, dest);
+		}
+	    }
+
+	    case bs_skip_bits2:
+	    {
+		Label label = readLabel();
+		SourceOperand src1 = readSource();
+		SourceOperand src2 = readSource();
+		int i3 = readCodeInteger();
+		int i4 = readCodeInteger();
+		return new Insn.LSSII(opcode, label, src1, src2, i3, i4);
+	    }
+
+	    case bs_get_integer2:
+	    case bs_get_binary2:
+	    {
+		Label label = readLabel();
+		SourceOperand src2 = readSource();
+		int i3 = readCodeInteger();
+		SourceOperand src4 = readSource();
+		int i5 = readCodeInteger();
+		int i6 = readCodeInteger();
+		DestinationOperand dest = readDestination();
+		return new Insn.LSISIID(opcode, label, src2, i3, src4, i5, i6, dest);
+	    }
+
+	    case bs_append: // LSIIISIS
+	    {
+		Label label = readLabel();
+		SourceOperand src2 = readSource();
+		int i3 = readCodeInteger();
+		int i4 = readCodeInteger();
+		int i5 = readCodeInteger();
+		SourceOperand src6 = readSource();
+		int i7 = readCodeInteger();
+		SourceOperand src8 = readSource();
+		return new Insn.BSAppend(opcode, label, src2, i3, i4, i5, src6, i7, src8);
 	    }
 
 	    case select_val:
@@ -709,10 +834,12 @@ public class BeamLoader extends CodeTables {
 
     //========== Utility functions ==============================
     public String readString(int len) throws IOException {
+	return new String(readBinary(len));
+    }
+    public byte[] readBinary(int len) throws IOException {
 	byte[] data = new byte[len];
-	int read = in.read(data);
-	assert(read==len);
-	return new String(data);
+	in.readFully(data);
+	return data;
     }
 
     //========== Operand tags:
@@ -725,7 +852,7 @@ public class BeamLoader extends CodeTables {
     static final int LABEL4_TAG = 5;
     static final int EXTENDED_TAG = 7;
 
-    static final int INT12_TAG = 8;
+    static final int CODEINT12_TAG = 8;
     static final int BIGINT_TAG = 9;
     static final int ATOM12_TAG = 10;
     static final int XREG12_TAG = 11;
@@ -767,6 +894,17 @@ public class BeamLoader extends CodeTables {
 
     public Atom readAtom() throws IOException {
 	return readOperand().asAtom();
+    }
+
+    public BitString readBitstringRef() throws IOException {
+	int bits  = readCodeInteger();
+	int start = readCodeInteger();
+	return new BitString(start, bits);
+    }
+    public ByteString readBytestringRef() throws IOException {
+	int bytes  = readCodeInteger();
+	int start = readCodeInteger();
+	return new ByteString(start, bytes);
     }
 
     public Operands.SelectList readSelectList() throws IOException {

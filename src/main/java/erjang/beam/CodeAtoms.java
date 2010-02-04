@@ -19,6 +19,7 @@ public class CodeAtoms {
 	public static final EAtom WORDS_ATOM = EAtom.intern("words");
 	public static final EAtom FLOATS_ATOM = EAtom.intern("floats");
 	public static final EAtom NOFAIL_ATOM = EAtom.intern("nofail");
+	public static final EAtom START_ATOM = EAtom.intern("start");
 	public static final EAtom F_ATOM = EAtom.intern("f");
 	public static final EAtom FIELD_FLAGS_ATOM = EAtom.intern("field_flags");
 	public static final EAtom EXTFUNC_ATOM = EAtom.intern("extfunc");
@@ -30,4 +31,5 @@ public class CodeAtoms {
 
 	public static final EAtom BIF_ATOM = EAtom.intern("bif");
 	public static final EAtom GCBIF_ATOM = EAtom.intern("gc_bif");
+	public static final EAtom ARITHFBIF_ATOM = EAtom.intern("arithfbif");
 }

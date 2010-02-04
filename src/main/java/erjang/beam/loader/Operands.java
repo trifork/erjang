@@ -7,6 +7,7 @@ import erjang.EBig;
 import erjang.EDouble;
 import erjang.ETuple;
 import erjang.ESeq;
+import erjang.EBitString;
 import erjang.ERT;
 
 import java.util.ArrayList;
@@ -129,8 +130,9 @@ public class Operands {
 	@Override
 	public AllocList asAllocList() {return this;}
 	public EObject toSymbolic(CodeTables ct) {
-	    EObject[] elems = new EObject[list.length];
-	    for (int i=0; i<list.length; i++) {
+	    int len = list.length/2;
+	    EObject[] elems = new EObject[len];
+	    for (int i=0; i<len; i++) {
 		elems[i] = ETuple.make(kindToSymbolic(list[2*i]),
 				       new ESmall(list[2*i+1]));
 	    }
@@ -153,8 +155,40 @@ public class Operands {
 
 	@Override
 	public Atom asAtom() {return this;}
+	public EAtom asEAtom(CodeTables ct) {return ct.atom(idx);}
 	public EObject toSymbolic(CodeTables ct) {
 	    return ETuple.make(ATOM_ATOM, ct.atom(idx));
+	}
+    }
+
+    static class BitString extends Literal {
+	protected final int start;
+	protected final int bits;
+	public BitString(int start, int bits) {
+	    this.start = start;
+	    this.bits = bits;
+	}
+	public int bitLength() {return bits;}
+
+	@Override
+	public EObject toSymbolic(CodeTables ct) {
+	    int bitsRoundedUp = (bits+7) & ~7; // Just in order to match.
+	    return ct.bitstring(start,bitsRoundedUp);
+	}
+    }
+
+    static class ByteString extends Literal {
+	protected final int start;
+	protected final int bytes;
+	public ByteString(int start, int bytes) {
+	    this.start = start;
+	    this.bytes = bytes;
+	}
+	public int byteLength() {return bytes;}
+
+	@Override
+	public EObject toSymbolic(CodeTables ct) {
+	    return ETuple.make(STRING_ATOM, ct.string(start,bytes));
 	}
     }
 
