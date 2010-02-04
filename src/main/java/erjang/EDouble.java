@@ -208,8 +208,8 @@ public class EDouble extends ENumber {
 		return ERT.box(value + rhs);
 	}
 
-	public static EDouble read(EInputStream ei) {
-		throw new NotImplemented();
+	public static EDouble read(EInputStream ei) throws java.io.IOException {
+		return new EDouble(ei.read_double());
 	}
 
 }

@@ -134,8 +134,9 @@ public class EBinary extends EBitString {
 	 * @param eInputStream
 	 * @return
 	 */
-	public static EBinary read(EInputStream eInputStream) {
-		throw new NotImplemented();
+	public static EBinary read(EInputStream eInputStream) throws IOException {
+	    byte[] data = eInputStream.read_binary();
+	    return new EBinary(data); //TODO: use a make().
 	}
 
 	/**

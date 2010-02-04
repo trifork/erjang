@@ -75,7 +75,7 @@ public class EString extends ESeq implements CharSequence {
 		} else {
 			byte[] copy = new byte[len];
 			System.arraycopy(array, arrayOffset, copy, 0, len);
-			return new EString(array, len);
+			return new EString(copy, 0);
 		}
 	}
 

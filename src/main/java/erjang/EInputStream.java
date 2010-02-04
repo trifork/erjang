@@ -670,7 +670,7 @@ public class EInputStream extends ByteArrayInputStream {
 		switch (tag) {
 		case EExternal.smallIntTag: return new ESmall(read1());
 		case EExternal.intTag:      return new ESmall(read4BE());
-		default: setPos(getPos()-1); return new EBig(new BigInteger(read_integer_byte_array()));
+		default: setPos(getPos()-1); return ERT.box(new BigInteger(read_integer_byte_array()));
 		} // switch
 	}
 
