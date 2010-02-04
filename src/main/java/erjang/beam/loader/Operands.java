@@ -4,6 +4,7 @@ import erjang.EObject;
 import erjang.EAtom;
 import erjang.ESmall;
 import erjang.EBig;
+import erjang.EDouble;
 import erjang.ETuple;
 import erjang.ESeq;
 import erjang.ERT;
@@ -25,11 +26,17 @@ public class Operands {
 	public Label asLabel() {
 	    throw new IllegalArgumentException("Not a label: "+this);
 	}
+	public Literal asLiteral() {
+	    throw new IllegalArgumentException("Not a literal: "+this);
+	}
 	public Atom asAtom() {
 	    throw new IllegalArgumentException("Not an atom: "+this);
 	}
-	public List asList() {
-	    throw new IllegalArgumentException("Not a list: "+this);
+	public SelectList asSelectList() {
+	    throw new IllegalArgumentException("Not a select list: "+this);
+	}
+	public AllocList asAllocList() {
+	    throw new IllegalArgumentException("Not a alloc list: "+this);
 	}
 	public YReg asYReg() {
 	    throw new IllegalArgumentException("Not a Y register: "+this);
@@ -46,7 +53,10 @@ public class Operands {
 	@Override
 	public DestinationOperand asDestination() {return this;}
     }
-    static abstract class Literal extends SourceOperand {}
+    static abstract class Literal extends SourceOperand {
+	@Override
+	public Literal asLiteral() {return this;}
+    }
 
     static Literal makeInt(byte[] d) {
 	BigInteger tmp = new BigInteger(d);
@@ -80,18 +90,26 @@ public class Operands {
 	}
     }
 
+    static class Float extends Literal {
+	public final double value;
+	public Float(double value) {this.value=value;}
+	public EObject toSymbolic(CodeTables ct) {
+	    return ETuple.make(FLOAT_ATOM, new EDouble(value));
+	}
+    }
+
     static final Nil Nil = new Nil();
     static class Nil extends Literal {
 	private Nil() {}
 	public EObject toSymbolic(CodeTables ct) {return NIL_ATOM;}
     }
 
-    static class List extends Literal {
+    static class SelectList extends Operand {
 	Operand[] list;
-	public List(Operand[] list) {this.list=list;}
+	public SelectList(Operand[] list) {this.list=list;}
 
 	@Override
-	public List asList() {return this;}
+	public SelectList asSelectList() {return this;}
 	public EObject toSymbolic(CodeTables ct) {
 	    EObject[] elems = new EObject[list.length];
 	    for (int i=0; i<list.length; i++) {
@@ -100,6 +118,34 @@ public class Operands {
 	    return ETuple.make(LIST_ATOM, ESeq.fromArray(elems));
 	}
     }
+
+    static class AllocList extends Operand {
+	static final int WORDS  = 0;
+	static final int FLOATS = 1;
+
+	int[] list;
+	public AllocList(int[] list) {this.list=list;}
+
+	@Override
+	public AllocList asAllocList() {return this;}
+	public EObject toSymbolic(CodeTables ct) {
+	    EObject[] elems = new EObject[list.length];
+	    for (int i=0; i<list.length; i++) {
+		elems[i] = ETuple.make(kindToSymbolic(list[2*i]),
+				       new ESmall(list[2*i+1]));
+	    }
+	    return ETuple.make(ALLOC_ATOM, ESeq.fromArray(elems));
+	}
+	protected EAtom kindToSymbolic(int kind) {
+	    switch (kind) {
+	    case WORDS:  return WORDS_ATOM;
+	    case FLOATS: return FLOATS_ATOM;
+	    default:
+		throw new IllegalArgumentException("Unknown alloc kind: "+kind);
+	    } // switch
+	}
+    }
+
 
     static class Atom extends Literal {
 	private int idx;
@@ -165,6 +211,23 @@ public class Operands {
 
 	public EObject toSymbolic(CodeTables ct) {
 	    return ETuple.make(Y_ATOM, new ESmall(nr));
+	}
+    }
+
+    static class FReg extends DestinationOperand {
+	public final int nr;
+	public FReg(int nr) {this.nr=nr;}
+
+	private static ArrayList<FReg> cache = new ArrayList();
+	public static FReg get(int nr) {
+	    while (cache.size() <= nr) {
+		cache.add(new FReg(cache.size()));
+	    }
+	    return cache.get(nr);
+	}
+
+	public EObject toSymbolic(CodeTables ct) {
+	    return ETuple.make(FR_ATOM, new ESmall(nr));
 	}
     }
 

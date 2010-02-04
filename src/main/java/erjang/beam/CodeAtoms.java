@@ -15,6 +15,9 @@ public class CodeAtoms {
 	public static final EAtom LIST_ATOM = EAtom.intern("list");
 	public static final EAtom LITERAL_ATOM = EAtom.intern("literal");
 	public static final EAtom TEST_ATOM = EAtom.intern("test");
+	public static final EAtom ALLOC_ATOM = EAtom.intern("alloc");
+	public static final EAtom WORDS_ATOM = EAtom.intern("words");
+	public static final EAtom FLOATS_ATOM = EAtom.intern("floats");
 	public static final EAtom NOFAIL_ATOM = EAtom.intern("nofail");
 	public static final EAtom F_ATOM = EAtom.intern("f");
 	public static final EAtom FIELD_FLAGS_ATOM = EAtom.intern("field_flags");

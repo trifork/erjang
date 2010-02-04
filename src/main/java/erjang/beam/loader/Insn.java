@@ -648,13 +648,13 @@ public class Insn implements BeamInstruction {
 	//============================================================
 
 	public static class Select extends Insn { // E.g. 'select_val'
-		SourceOperand src;
-		Label defaultLabel;
-		Operands.List jumpTable; // TODO: Improve representation.
+		final SourceOperand src;
+		final Label defaultLabel;
+		final SelectList jumpTable; // TODO: Improve representation.
 		public Select(BeamOpcode opcode,
 			      SourceOperand src,
 			      Label defaultLabel,
-			      Operands.List jumpTable)
+			      SelectList jumpTable)
 		{
 			super(opcode);
 			this.src = src;
@@ -666,6 +666,21 @@ public class Insn implements BeamInstruction {
 					   src.toSymbolic(ct),
 					   defaultLabel.toSymbolic(ct),
 					   jumpTable.toSymbolic(ct));
+		}
+	}
+
+	public static class ExtendedTestHeap extends Insn { // E.g. 'test_heap'
+		final AllocList alist;
+		final int i2;
+		public ExtendedTestHeap(BeamOpcode opcode, AllocList alist, int i2) {
+			super(opcode);
+			this.alist = alist;
+			this.i2 = i2;
+		}
+		public ETuple toSymbolic(CodeTables ct) {
+			return ETuple.make(opcode.symbol,
+					   alist.toSymbolic(ct),
+					   new ESmall(i2));
 		}
 	}
 

@@ -198,6 +198,22 @@ public class BeamLoader extends CodeTables {
 	} // switch
 	} catch (Exception e) {
 	    int relPos = in.getPos()-startPos;
+	    try {
+		    int curPos = in.getPos();
+		    in.setPos(curPos-16);
+		    byte[] d = new byte[64];
+		    int ctxlen = in.read(d);
+		    if (DEBUG) {
+			    System.err.println("Context dump: ");
+			    for (int i=0; i<ctxlen; i++) {
+				    int byt = d[i] & 0xFF;
+				    if (byt<16) System.err.print("0");
+				    System.err.print(Integer.toHexString(byt & 0xFF));
+				    System.err.print(" ");
+				    if ((i+1) % 16 == 0 || (i+1)==ctxlen) System.err.println();
+			    }
+		    }
+	    } catch (Exception e2) {}
 	    throw new IOException("Error occurred around "+relPos+"=0x"+Integer.toHexString(relPos)+" bytes into section "+Integer.toHexString(tag), e);
 	}
 
@@ -373,6 +389,7 @@ public class BeamLoader extends CodeTables {
 	    case timeout:
 	    case if_end:
 	    case int_code_end:
+	    case fclearerror:
 		return new Insn(opcode); // TODO: use static set of objects
 
 	    //---------- 1-ary ----------
@@ -389,6 +406,7 @@ public class BeamLoader extends CodeTables {
 	    case loop_rec_end:
 	    case wait:
 	    case jump:
+	    case fcheckerror:
 	    {
 		Label lbl = readLabel();
 		return new Insn.L(opcode, lbl);
@@ -427,13 +445,30 @@ public class BeamLoader extends CodeTables {
 	    //---------- 2-ary ----------
 	    case allocate:
 	    case allocate_zero:
-	    case test_heap:
 	    case trim:
 	    case apply_last:
 	    {
 		int i1 = readCodeInteger();
 		int i2 = readCodeInteger();
 		return new Insn.II(opcode, i1, i2);
+	    }
+
+	    case test_heap:
+	    {
+		    switch (peekTag()) {
+		    case CODEINT4_TAG: {
+			    int i1 = readCodeInteger();
+			    int i2 = readCodeInteger();
+			    return new Insn.II(opcode, i1, i2);
+		    }
+		    case EXTENDED_TAG: {
+			    AllocList al = readAllocList();
+			    int i2 = readCodeInteger();
+			    return new Insn.ExtendedTestHeap(opcode, al, i2);
+		    }
+		    default:
+			    throw new IOException("test_heap: unknown argument tag "+peekTag());
+		    } // switch
 	    }
 
 	    case call:
@@ -453,6 +488,8 @@ public class BeamLoader extends CodeTables {
 	    }
 
 	    case move:
+	    case fmove:
+	    case fconv:
 	    {
 		SourceOperand src = readSource();
 		DestinationOperand dest = readDestination();
@@ -618,7 +655,7 @@ public class BeamLoader extends CodeTables {
 	    {
 		SourceOperand src = readSource();
 		Label defaultLbl = readLabel();
-		Operands.List jumpTable = readList();
+		SelectList jumpTable = readSelectList();
 		return new Insn.Select(opcode, src, defaultLbl, jumpTable);
 	    }
 
@@ -697,8 +734,11 @@ public class BeamLoader extends CodeTables {
     static final int EXTENDED2_TAG = 7;
 
     //========== Extended operand tags:
-    static final int LIST_TAG2 = 1;
-    static final int LITERAL_TAG2 = 4;
+    static final int FLOATLIT_TAG2   = 0;
+    static final int SELECTLIST_TAG2 = 1;
+    static final int FLOATREG_TAG2   = 2;
+    static final int ALLOCLIST_TAG2  = 3;
+    static final int LITERAL_TAG2    = 4;
 
     int peekTag() throws IOException {
 	return in.peek() & 0x0F;
@@ -721,12 +761,20 @@ public class BeamLoader extends CodeTables {
 	return readOperand().asLabel();
     }
 
+    public Literal readLiteral() throws IOException {
+	return readOperand().asLiteral();
+    }
+
     public Atom readAtom() throws IOException {
 	return readOperand().asAtom();
     }
 
-    public Operands.List readList() throws IOException {
-	return readOperand().asList();
+    public Operands.SelectList readSelectList() throws IOException {
+	return readOperand().asSelectList();
+    }
+
+    public Operands.AllocList readAllocList() throws IOException {
+	return readOperand().asAllocList();
     }
 
     public YReg readYReg() throws IOException {
@@ -739,7 +787,7 @@ public class BeamLoader extends CodeTables {
 	if ((d1 & 0x07) == CODEINT4_TAG)
 	    return readSmallIntValue(d1);
 	else
-	    throw new IOException("Not a smallint: "+readOperand(d1));
+	    throw new IOException("Not a code-int: "+readOperand(d1).toSymbolic(this));
     }
 
     public Operand readOperand() throws IOException {
@@ -760,7 +808,12 @@ public class BeamLoader extends CodeTables {
 	    if ((hdata & 1) == 0) { // Fixed-length
 		return new Operands.Int((hdata << 7) + in.read1());
 	    } else {
-		int len = 2+(hdata>>1);
+		int len;
+		if (hdata < 15) { // Small var-length
+		    len = 2+(hdata>>1);
+		} else { // Big var-length
+		    len = 2+(hdata>>1) + readCodeInteger();
+		}
 		byte d[] = new byte[len];
 		in.readFully(d);
 		return Operands.makeInt(d);
@@ -796,20 +849,39 @@ public class BeamLoader extends CodeTables {
 	{
 	    int moretag = d1>>4;
 	    switch (moretag) {
-	    case LIST_TAG2: {
+	    case FLOATLIT_TAG2:{
+		double value = Double.longBitsToDouble(in.readBE(8));
+		return new Operands.Float(value);
+	    }
+	    case SELECTLIST_TAG2: {
 		int length = readCodeInteger();
+		assert(length % 2 == 0);
 		Operand[] list = new Operand[length];
-		for (int i=0; i<length; i++) {
-		    list[i] = readOperand();
+		for (int i=0; i<length; ) {
+		    list[i++] = readOperand();
+		    list[i++] = readLabel();
 		}
-		return new Operands.List(list);
+		return new SelectList(list);
+	    }
+	    case ALLOCLIST_TAG2: {
+		int length = readCodeInteger();
+		int[] list = new int[2*length];
+		for (int i=0; i<length; i++) {
+		    list[2*i] = readCodeInteger();
+		    list[2*i+1] = readCodeInteger();
+		}
+		return new AllocList(list);
+	    }
+	    case FLOATREG_TAG2: {
+		int nr = readSmallIntValue(in.read1());
+		return new FReg(nr);
 	    }
 	    case LITERAL_TAG2: {
 		int nr = readSmallIntValue(in.read1());
 		return new TableLiteral(nr);
 	    }
 	    default:
-		System.err.println("*** Unhandled extended operand tag: "+tag);
+		System.err.println("*** Unhandled extended operand tag: "+moretag);
 	    } // switch
 	    break;
 	}
