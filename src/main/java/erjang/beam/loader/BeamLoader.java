@@ -13,6 +13,8 @@ import java.util.HashMap;
 import java.util.Collections;
 import java.util.Arrays;
 
+import java.math.BigInteger;
+
 import erjang.EObject;
 import erjang.EAtom;
 import erjang.EString;
@@ -1037,8 +1039,15 @@ public class BeamLoader extends CodeTables {
 	    return hdata;
 	} else if ((hdata & 1) == 0) { // 1 byte more
 	    return (hdata<<7) + in.read1();
-	} else {		       // 2 bytes more
-	    return ((hdata & ~1)<<15) + in.read2BE();
+	} else {		       // >1 bytes more
+	    int len = 2+(hdata>>1);
+	    byte d[] = new byte[len];
+	    in.readFully(d);
+	    BigInteger value = new BigInteger(d);
+	    if (len>4 || value.compareTo(BigInteger.ZERO) < 0)
+		throw new IOException("Code integer out of bounds: "+value);
+	    else
+		return value.intValue();
 	}
     }
 }
