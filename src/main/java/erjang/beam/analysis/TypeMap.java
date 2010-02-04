@@ -198,8 +198,6 @@ class TypeMap {
 		try {
 			new_exh = ExceptionHandler.merge(exh, other.exh);
 		} catch (IllegalArgumentException iae) {
-			if (erjang.ERT.DEBUG) System.err.println("Warning: Exception handler structure can't yet be translated correctly: "+exh+" vs. "+other.exh);
-			//TODO: Handle this appropriately.
 			new_exh = new ExceptionHandler.Ambiguous(exh, other.exh);
 		}
 
