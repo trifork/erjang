@@ -46,12 +46,29 @@ public abstract class ECons extends EObject {
 
 	@Override
 	int compare_same(EObject rhs) {
-		if (rhs.isNil()) return 1;
+		ECons ths = this;
 		ECons other = rhs.testCons();
-		int cmp1 = head().compareTo(other.head());
-		if (cmp1 != 0)
-			return cmp1;
-		return tail().compareTo(other.tail());
+		do {
+			// This would have been nicer if not ENil <: ECons...:
+			if (other.isNil())
+				return ths.isNil() ? 0 : 1;
+			if (ths.isNil()) return -1;
+
+			int cmp1 = ths.head().compareTo(other.head());
+			if (cmp1 != 0)
+				return cmp1;
+
+			// Iterate instead of recurse if possible:
+			EObject thisTail = ths.tail();
+			EObject otherTail = other.tail();
+			if (! (thisTail instanceof ECons &&
+			       otherTail instanceof ECons))
+				return thisTail.compareTo(otherTail);
+			else {
+				ths = thisTail.testCons();
+				other = otherTail.testCons();
+			}
+		} while (true);
 	}
 
 	public abstract EObject head();
