@@ -35,6 +35,8 @@ import com.ericsson.otp.erlang.OtpSelf;
 import erjang.ETuple;
 
 public class ErlangBeamDisLoader extends BeamLoader {
+	/** For transition phase from external to internal beam file reader */
+	final boolean TRY_NATIVE_LOADER = false;
 
 	String myid = "JVM2@localhost";
 	OtpConnection conn;
@@ -60,7 +62,7 @@ public class ErlangBeamDisLoader extends BeamLoader {
 		try {
 			OtpErlangObject reply = conn.receiveRPC();
 
-			return new BeamFileData((ETuple)OtpConverter.convert(reply));
+			return new BeamFileData(check((ETuple)OtpConverter.convert(reply), file));
 
 		} catch (OtpErlangExit e) {
 			throw new RuntimeException("external beam_loader died", e);
@@ -81,7 +83,7 @@ public class ErlangBeamDisLoader extends BeamLoader {
 		try {
 			OtpErlangObject reply = conn.receiveRPC();
 
-			return new BeamFileData((ETuple)OtpConverter.convert(reply));
+			return new BeamFileData(check((ETuple)OtpConverter.convert(reply), data));
 
 		} catch (OtpErlangExit e) {
 			throw new RuntimeException("external beam_loader died", e);
@@ -106,5 +108,26 @@ public class ErlangBeamDisLoader extends BeamLoader {
 
 		conn.send(server, new OtpErlangTuple(gen));
 	}
+
+	protected ETuple check(ETuple dis1, File file) throws IOException {
+		if (!TRY_NATIVE_LOADER) return dis1;
+		ETuple dis2 = erjang.beam.loader.BeamLoader.read(file.getAbsolutePath()).toSymbolic();
+		return check(dis1, dis2);
+	}
+	protected ETuple check(ETuple dis1, byte[] data) throws IOException {
+		if (!TRY_NATIVE_LOADER) return dis1;
+		ETuple dis2 = erjang.beam.loader.BeamLoader.parse(data).toSymbolic();
+		return check(dis1, dis2);
+	}
+	protected ETuple check(ETuple dis1, ETuple dis2) {
+		System.err.print("DB| loader-cmp: ");
+		boolean eq = false;
+		try {eq = dis1.equals(dis2);} catch (RuntimeException re) {System.err.println(re);}
+		if (eq) System.err.println("OK");
+		else System.err.println("DIFF:\n"+dis1+"\nvs\n"+dis2);
+		return dis1;
+	}
+
+
 
 }
