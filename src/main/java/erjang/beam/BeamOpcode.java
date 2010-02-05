@@ -123,7 +123,7 @@ public enum BeamOpcode {
 	bs_restore2		(0x7b),
 	gc_bif1			(0x7c),
 	gc_bif2			(0x7d),
-	is_bitstr,
+	is_bitstr		(0x81),
 	bs_context_to_binary    (0x82),
 	bs_test_unit		(0x83),
 	bs_match_string		(0x84),
@@ -138,11 +138,11 @@ public enum BeamOpcode {
 	bs_skip_utf16		(0x8d),
 	bs_get_utf32		(0x8e),
 	bs_skip_utf32		(0x8f),
-	bs_utf8_size,
-	bs_put_utf8,
-	bs_utf16_size,
-	bs_put_utf16,
-	bs_put_utf32,
+	bs_utf8_size		(0x90),
+	bs_put_utf8		(0x91),
+	bs_utf16_size		(0x92),
+	bs_put_utf16		(0x93),
+	bs_put_utf32		(0x94),
 	
 	// Opcode groups
 	

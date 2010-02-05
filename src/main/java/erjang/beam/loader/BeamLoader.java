@@ -172,7 +172,6 @@ public class BeamLoader extends CodeTables {
 	// Read section header:
 	int tag;
 	try {
-// 	    if (DEBUG) System.err.println("Reading section at offset "+in.getPos());
 	    tag = in.read4BE();
 	    if (DEBUG) System.err.println("Reading section with tag "+Integer.toHexString(tag)+" at "+in.getPos());
 	} catch (EOFException eof) {
@@ -366,7 +365,6 @@ public class BeamLoader extends CodeTables {
 	Insn insn;
 	do {
 	    insn = readInstruction();
-	    if (DEBUG) System.err.println(insn);
 	    code.add(insn);
 	} while (insn.opcode() != BeamOpcode.int_code_end);
     }
@@ -374,7 +372,6 @@ public class BeamLoader extends CodeTables {
     public Insn readInstruction() throws IOException {
 	int opcode_no = in.read1();
 	BeamOpcode opcode = BeamOpcode.decode(opcode_no);
-	if (DEBUG) System.err.print("<"+opcode+">");
 	if (opcode != null) {
 	    switch (opcode) {
 	    //---------- 0-ary ----------
@@ -385,6 +382,7 @@ public class BeamLoader extends CodeTables {
 	    case if_end:
 	    case int_code_end:
 	    case fclearerror:
+	    case bs_init_writable:
 		return new Insn(opcode); // TODO: use static set of objects
 
 	    //---------- 1-ary ----------
@@ -651,6 +649,15 @@ public class BeamLoader extends CodeTables {
 		return new Insn.LSS(opcode, label, src1, src2, true);
 	    }
 
+	    case bs_utf8_size:
+	    case bs_utf16_size:
+	    {
+		Label label = readLabel();
+		SourceOperand src = readSource();
+		DestinationOperand dest = readDestination();
+		return new Insn.LSD(opcode, label, src, dest);
+	    }
+
 	    case call_last:
 	    {
 		int i1 = readCodeInteger();
@@ -700,17 +707,32 @@ public class BeamLoader extends CodeTables {
 		return new Insn.LSBi(opcode, label, src, bin);
 	    }
 
+	    case bs_put_utf8:
+	    case bs_put_utf16:
+	    case bs_put_utf32:
+	    {
+		Label label = readLabel();
+		int i2 = readCodeInteger();
+		SourceOperand src = readSource();
+		return new Insn.LIS(opcode, label, i2, src, true);
+	    }
+
 	    case bs_start_match2:
+	    case bs_get_utf8:
+	    case bs_get_utf16:
+	    case bs_get_utf32:
 	    {
 		Label label = readLabel();
 		SourceOperand src = readSource();
 		int i3 = readCodeInteger();
 		int i4 = readCodeInteger();
 		DestinationOperand dest = readDestination();
-		return new Insn.LSIID(opcode, label, src, i3, i4, dest);
+		return new Insn.LSIID(opcode, label, src, i3, i4, dest, true,
+				      opcode != BeamOpcode.bs_start_match2);
 	    }
 
 	    case bs_put_integer:
+	    case bs_put_float:
 	    case bs_put_binary:
 	    {
 		Label label = readLabel();
@@ -718,10 +740,11 @@ public class BeamLoader extends CodeTables {
 		int i3 = readCodeInteger();
 		int i4 = readCodeInteger();
 		SourceOperand src5 = readSource();
-		return new Insn.LSIIS(opcode, label, src2, i3, i4, src5);
+		return new Insn.LSIIS(opcode, label, src2, i3, i4, src5, true);
 	    }
 
 	    case bs_init2:
+	    case bs_init_bits:
 	    {
 		Label label = readOptionalLabel();
 		if ((peekTag() & 0x7) == CODEINT4_TAG) {
@@ -737,7 +760,7 @@ public class BeamLoader extends CodeTables {
 		    int i4 = readCodeInteger();
 		    int i5 = readCodeInteger();
 		    DestinationOperand dest = readDestination();
-		    return new Insn.LSIIID(opcode, label, src2, i3, i4, i5, dest);
+		    return new Insn.LSIIID(opcode, label, src2, i3, i4, i5, dest, true);
 		}
 	    }
 
@@ -752,6 +775,7 @@ public class BeamLoader extends CodeTables {
 	    }
 
 	    case bs_get_integer2:
+	    case bs_get_float2:
 	    case bs_get_binary2:
 	    {
 		Label label = readLabel();
@@ -761,7 +785,7 @@ public class BeamLoader extends CodeTables {
 		int i5 = readCodeInteger();
 		int i6 = readCodeInteger();
 		DestinationOperand dest = readDestination();
-		return new Insn.LSISIID(opcode, label, src2, i3, src4, i5, i6, dest);
+		return new Insn.LSISIID(opcode, label, src2, i3, src4, i5, i6, dest, true);
 	    }
 
 	    case bs_append: // LSIIISIS
@@ -775,6 +799,17 @@ public class BeamLoader extends CodeTables {
 		int i7 = readCodeInteger();
 		SourceOperand src8 = readSource();
 		return new Insn.BSAppend(opcode, label, src2, i3, i4, i5, src6, i7, src8);
+	    }
+
+	    case bs_private_append: // LSISID
+	    {
+		Label label = readLabel();
+		SourceOperand src2 = readSource();
+		int i3 = readCodeInteger();
+		SourceOperand src4 = readSource();
+		int i5 = readCodeInteger();
+		DestinationOperand dest = readDestination();
+		return new Insn.BSPrivateAppend(opcode, label, src2, i3, src4, i5, dest);
 	    }
 
 	    case select_val:
@@ -935,28 +970,29 @@ public class BeamLoader extends CodeTables {
 	return readOperand(d1);
     }
     public Operand readOperand(int d1) throws IOException {
-	int tag = d1 & 0x0F;
+	int tag = d1 & 0x07;
 	switch (tag) {
 	case CODEINT4_TAG:
 	    return new Operands.CodeInt(readSmallIntValue(d1));
 
-	case INTLIT4_TAG:
-	    return new Operands.Int(readSmallIntValue(d1));
-
-  	case BIGINT_TAG: {
-	    int hdata  = d1>>4;
-	    if ((hdata & 1) == 0) { // Fixed-length
-		return new Operands.Int((hdata << 7) + in.read1());
-	    } else {
-		int len;
-		if (hdata < 15) { // Small var-length
-		    len = 2+(hdata>>1);
-		} else { // Big var-length
-		    len = 2+(hdata>>1) + readCodeInteger();
+	case INTLIT4_TAG: {
+	    if ((d1 & 0x8) == 0)
+		return new Operands.Int(readSmallIntValue(d1));
+	    else { // case BIGINT_TAG:
+		int hdata  = d1>>4;
+		if ((hdata & 1) == 0) { // Fixed-length
+		    return new Operands.Int((hdata << 7) + in.read1());
+		} else {
+		    int len;
+		    if (hdata < 15) { // Small var-length
+			len = 2+(hdata>>1);
+		    } else { // Big var-length
+			len = 2+(hdata>>1) + readCodeInteger();
+		    }
+		    byte d[] = new byte[len];
+		    in.readFully(d);
+		    return Operands.makeInt(d);
 		}
-		byte d[] = new byte[len];
-		in.readFully(d);
-		return Operands.makeInt(d);
 	    }
 	}
 
@@ -999,7 +1035,9 @@ public class BeamLoader extends CodeTables {
 		Operand[] list = new Operand[length];
 		for (int i=0; i<length; ) {
 		    list[i++] = readOperand();
+		    System.err.println("DB| selectlist: op="+list[i-1]);
 		    list[i++] = readLabel();
+		    System.err.println("DB| selectlist: label="+list[i-1]);
 		}
 		return new SelectList(list);
 	    }
