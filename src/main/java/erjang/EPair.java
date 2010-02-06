@@ -45,7 +45,7 @@ public class EPair extends ECons {
 	}
 
 	public EObject tail() {
-		return (ECons)tail;
+		return tail;
 	}
 
 	@Override
