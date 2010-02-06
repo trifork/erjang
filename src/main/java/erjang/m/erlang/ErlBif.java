@@ -554,6 +554,19 @@ public class ErlBif {
 		return n1.idiv(v2);
 	}
 
+	@BIF(name = "div", type = Type.GUARD)
+	static public ENumber div$g(EObject v1, EObject v2) {
+		ENumber n1, n2;
+		if ((n1 = v1.testInteger()) != null &&
+		    (n2 = v2.testInteger()) != null)
+		{
+			if (n2.equals(ESmall.ZERO)) return null;
+			return n1.idiv(n2);
+		}
+		return null;
+	}
+
+
 	@BIF(name = "-")
 	static public ENumber minus(EObject v1, int v2) {
 		return v1.subtract(v2);
@@ -727,6 +740,38 @@ public class ErlBif {
 		if ((d = o.testFloat()) == null)
 			throw ERT.badarg();
 		return ERT.box(Math.round(d.value));
+	}
+
+	@BIF(name = "round", type = Type.GUARD)
+	static public EInteger round$g(double d) {
+		return ERT.box(Math.round(d));
+	}
+
+	@BIF(name = "round", type = Type.GUARD)
+	static public EInteger round$g(EDouble d) {
+		return ERT.box(Math.round(d.value));
+	}
+
+	@BIF(name = "round", type = Type.GUARD)
+	static public EInteger round$g(EObject o) {
+		EDouble d = o.testFloat();
+		if (d == null) return null;
+		return ERT.box(Math.round(d.value));
+	}
+
+	@BIF(name = "float")
+	static public double float$n(int v) {
+		return (double)v;
+	}
+	@BIF(name = "float")
+	static public double float$n(ENumber v) {
+		return v.doubleValue();
+	}
+	@BIF(name = "float")
+	static public EDouble float$n(EObject v) {
+		ENumber n = v.testNumber();
+		if (n==null) return null;
+		return ERT.box(n.doubleValue());
 	}
 
 	@BIF
