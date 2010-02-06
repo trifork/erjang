@@ -181,16 +181,10 @@ class TypeMap {
 		Type[] new_y = yregs;
 		int new_stacksize = Math.min(stacksize, other.stacksize);
 		if (!eqy_prefix(this, other, new_stacksize)) {
-			if (stacksize != other.stacksize) {
-				// yank stack!
-				new_stacksize = 0;
-				new_y = NO_TYPES;
-			} else {
-				new_y = new Type[new_stacksize];
-				for (int i = 0; i < new_stacksize; i++) {
-					new_y[new_stacksize - i - 1] = merge(this.gety(i), other
-							.gety(i));
-				}
+			new_y = new Type[new_stacksize];
+			for (int i = 0; i < new_stacksize; i++) {
+				new_y[new_stacksize - i - 1] = merge(this.gety(i),
+								     other.gety(i));
 			}
 		}
 
