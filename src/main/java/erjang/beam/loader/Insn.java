@@ -51,6 +51,7 @@ public class Insn implements BeamInstruction {
 	 * K - Optional label (fail label)
 	 * E - External function
 	 * F - Anonymous function object
+	 * W - Allocation size
 	 */
 
 	public static class I extends Insn { // E.g. 'deallocate'
@@ -332,18 +333,34 @@ public class Insn implements BeamInstruction {
 		}
 	}
 
-	public static class III extends Insn { // E.g. 'allocate'
-		final int i1, i2, i3;
-		public III(BeamOpcode opcode, int i1, int i2, int i3) {
+	public static class WI extends Insn { // E.g. 'test_heap'
+		final AllocList alist;
+		final int i2;
+		public WI(BeamOpcode opcode, AllocList alist, int i2) {
+			super(opcode);
+			this.alist = alist;
+			this.i2 = i2;
+		}
+		public ETuple toSymbolic(CodeTables ct) {
+			return ETuple.make(opcode.symbol,
+					   alist.toSymbolic(ct),
+					   new ESmall(i2));
+		}
+	}
+
+	public static class IWI extends Insn { // E.g. 'allocate_heap'
+		final int i1, i3;
+		final AllocList al;
+		public IWI(BeamOpcode opcode, int i1, AllocList al, int i3) {
 			super(opcode);
 			this.i1 = i1;
-			this.i2 = i2;
+			this.al = al;
 			this.i3 = i3;
 		}
 		public ETuple toSymbolic(CodeTables ct) {
 			return ETuple.make(opcode.symbol,
 					   new ESmall(i1),
-					   new ESmall(i2),
+					   al.toSymbolic(ct),
 					   new ESmall(i3));
 		}
 	}
@@ -560,6 +577,23 @@ public class Insn implements BeamInstruction {
 					   new ESmall(i1),
 					   ct.extFun(ext_fun_ref).toSymbolic(ct),
 					   new ESmall(i3));
+		}
+	}
+
+	public static class ByD extends Insn { // E.g. 'put_string'
+		final ByteString bin;
+		final DestinationOperand dest;
+		public ByD(BeamOpcode opcode, ByteString bin, DestinationOperand dest) {
+			super(opcode);
+			this.bin = bin;
+			this.dest = dest;
+		}
+
+		public ETuple toSymbolic(CodeTables ct) {
+			return ETuple.make(opcode.symbol,
+					   new ESmall(bin.byteLength()),
+					   bin.toSymbolic(ct),
+					   dest.toSymbolic(ct));
 		}
 	}
 
@@ -1045,21 +1079,6 @@ public class Insn implements BeamInstruction {
 					   src.toSymbolic(ct),
 					   defaultLabel.toSymbolic(ct),
 					   jumpTable.toSymbolic(ct));
-		}
-	}
-
-	public static class ExtendedTestHeap extends Insn { // E.g. 'test_heap'
-		final AllocList alist;
-		final int i2;
-		public ExtendedTestHeap(BeamOpcode opcode, AllocList alist, int i2) {
-			super(opcode);
-			this.alist = alist;
-			this.i2 = i2;
-		}
-		public ETuple toSymbolic(CodeTables ct) {
-			return ETuple.make(opcode.symbol,
-					   alist.toSymbolic(ct),
-					   new ESmall(i2));
 		}
 	}
 

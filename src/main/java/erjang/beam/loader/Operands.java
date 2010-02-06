@@ -126,11 +126,20 @@ public class Operands {
 
 	int[] list;
 	public AllocList(int[] list) {this.list=list;}
+	public AllocList(int words) {
+	    list=new int[2];
+	    list[0] = WORDS;
+	    list[1] = words;
+	}
 
 	@Override
 	public AllocList asAllocList() {return this;}
 	public EObject toSymbolic(CodeTables ct) {
 	    int len = list.length/2;
+
+	    if (len==1 && list[0] == WORDS)
+		return new ESmall(list[1]); // Just words.
+
 	    EObject[] elems = new EObject[len];
 	    for (int i=0; i<len; i++) {
 		elems[i] = ETuple.make(kindToSymbolic(list[2*i]),

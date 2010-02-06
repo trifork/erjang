@@ -29,7 +29,8 @@ import static erjang.beam.loader.Operands.*;
 import static erjang.beam.CodeAtoms.*;
 
 public class BeamLoader extends CodeTables {
-    static final boolean DEBUG = true;
+    static final boolean DEBUG = false;
+    static final boolean DEBUG_ON_ERROR = true;
 
     public static void main(String[] args) throws IOException {
 	for (String filename : args) read(filename);
@@ -204,7 +205,7 @@ public class BeamLoader extends CodeTables {
 		    in.setPos(curPos-16);
 		    byte[] d = new byte[64];
 		    int ctxlen = in.read(d);
-		    if (DEBUG) {
+		    if (DEBUG_ON_ERROR) {
 			    System.err.println("Context dump: ");
 			    for (int i=0; i<ctxlen; i++) {
 				    int byt = d[i] & 0xFF;
@@ -306,9 +307,9 @@ public class BeamLoader extends CodeTables {
 	    int m_atm_no = in.read4BE();
 	    int f_atm_no = in.read4BE();
 	    int arity    = in.read4BE();
+	    externalFuns[i] = new ExtFun(m_atm_no, f_atm_no, arity);
 	    if (DEBUG && atoms != null) {
 		System.err.println("- #"+(i+1)+": "+atom(m_atm_no)+":"+atom(f_atm_no)+"/"+arity);
-	    externalFuns[i] = new ExtFun(m_atm_no, f_atm_no, arity);
 	    }
 	}
     }
@@ -454,22 +455,9 @@ public class BeamLoader extends CodeTables {
 
 	    case test_heap:
 	    {
-		    switch (peekTag()) {
-		    case CODEINT4_TAG:
-		    case CODEINT12_TAG:
-		    {
-			    int i1 = readCodeInteger();
-			    int i2 = readCodeInteger();
-			    return new Insn.II(opcode, i1, i2);
-		    }
-		    case EXTENDED_TAG: {
-			    AllocList al = readAllocList();
-			    int i2 = readCodeInteger();
-			    return new Insn.ExtendedTestHeap(opcode, al, i2);
-		    }
-		    default:
-			    throw new IOException("test_heap: unknown argument tag "+peekTag());
-		    } // switch
+		AllocList al = readAllocList();
+		int i2 = readCodeInteger();
+		return new Insn.WI(opcode, al, i2);
 	    }
 
 	    case call:
@@ -567,14 +555,21 @@ public class BeamLoader extends CodeTables {
 		return new Insn.SS(opcode, src1, src2);
 	    }
 
+	    case put_string:
+	    {
+		ByteString bin = readBytestringRef();
+		DestinationOperand dest = readDestination();
+		return new Insn.ByD(opcode, bin, dest);
+	    }
+
 	    //---------- 3-ary ----------
 	    case allocate_heap:
 	    case allocate_heap_zero:
 	    {
 		int i1 = readCodeInteger();
-		int i2 = readCodeInteger();
+		AllocList al = readAllocList();
 		int i3 = readCodeInteger();
-		return new Insn.III(opcode, i1, i2, i3);
+		return new Insn.IWI(opcode, i1, al, i3);
 	    }
 
 	    case func_info:
@@ -649,6 +644,7 @@ public class BeamLoader extends CodeTables {
 		return new Insn.LSS(opcode, label, src1, src2, true);
 	    }
 
+	    case fnegate:
 	    case bs_utf8_size:
 	    case bs_utf16_size:
 	    {
@@ -865,8 +861,7 @@ public class BeamLoader extends CodeTables {
 	    default:
 		throw new IOException("Unknown instruction: "+opcode);
 	    } // switch
-	} else System.err.println("***unknown: 0x"+Integer.toHexString(opcode_no)+"***");
-	return null;
+	} else throw new IOException("Unknown opcode: 0x"+Integer.toHexString(opcode_no));
     }
 
     //========== Utility functions ==============================
@@ -944,12 +939,25 @@ public class BeamLoader extends CodeTables {
 	return new ByteString(start, bytes);
     }
 
-    public Operands.SelectList readSelectList() throws IOException {
+    public SelectList readSelectList() throws IOException {
 	return readOperand().asSelectList();
     }
 
-    public Operands.AllocList readAllocList() throws IOException {
-	return readOperand().asAllocList();
+    public AllocList readAllocList() throws IOException {
+	switch (peekTag()) {
+	case CODEINT4_TAG:
+	case CODEINT12_TAG:
+	{
+	    int words = readCodeInteger();
+	    return new AllocList(words);
+	}
+	case EXTENDED_TAG: {
+	    return readOperand().asAllocList();
+	}
+	default:
+	    throw new IOException("Expected alloc list, got "+readOperand().toSymbolic(this));
+	} // switch
+
     }
 
     public YReg readYReg() throws IOException {
@@ -1035,9 +1043,7 @@ public class BeamLoader extends CodeTables {
 		Operand[] list = new Operand[length];
 		for (int i=0; i<length; ) {
 		    list[i++] = readOperand();
-		    System.err.println("DB| selectlist: op="+list[i-1]);
 		    list[i++] = readLabel();
-		    System.err.println("DB| selectlist: label="+list[i-1]);
 		}
 		return new SelectList(list);
 	    }
