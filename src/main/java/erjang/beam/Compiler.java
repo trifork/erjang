@@ -47,22 +47,28 @@ import erjang.EObject;
 import erjang.ETuple;
 import erjang.beam.analysis.BeamTypeAnalysis;
 
+import erjang.beam.loader.ErjangBeamDisLoader;
+
 public class Compiler implements Opcodes {
+	static final boolean USE_NATIVE_LOADER = true;
 
 	static BeamLoader xloader;
 	private ClassRepo classRepo;
 
 	static BeamLoader getLoader() {
 		if (xloader == null) {
-			try {
-				xloader = new ErlangBeamDisLoader();
-			} catch (OtpAuthException e) {
-				throw new Error(e);
-			} catch (IOException e) {
-				throw new Error(e);
-			}
+			if (USE_NATIVE_LOADER)
+				xloader = new ErjangBeamDisLoader();
+			else
+				try {
+					xloader = new ErlangBeamDisLoader();
+				} catch (OtpAuthException e) {
+					throw new Error(e);
+				} catch (IOException e) {
+					throw new Error(e);
+				}
 		}
-		
+
 		return xloader;
 	}
 
