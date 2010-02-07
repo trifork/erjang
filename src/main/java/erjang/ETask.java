@@ -83,7 +83,7 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 	}
 
 	protected void do_proc_termination(EObject exit_reason) throws Pausable {
-		this.exit_reason = null;
+		this.exit_reason = exit_reason;
 		H me = self_handle();
 		for (EHandle handle : links) {
 			handle.exit_signal(me, exit_reason);
