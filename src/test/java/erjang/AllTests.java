@@ -6,7 +6,7 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *  
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
@@ -25,7 +25,7 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 
 /**
- * 
+ *
  */
 public class AllTests {
 
@@ -33,41 +33,61 @@ public class AllTests {
 
 	public static Test suite() {
 		TestSuite suite = new TestSuite("Test for erjang");
+
+		TestSuite otpCompileSuite = new TestSuite("Compiling OTP");
 		//$JUnit-BEGIN$
-		find_beam_files(suite, new File(OTP_HOME));
+		find_beam_files(otpCompileSuite, new File(OTP_HOME));
 		//$JUnit-END$
+ 		suite.addTest(otpCompileSuite);
+
+		TestSuite coverageRunSuite = new TestSuite("Coverage run tests");
+		//$JUnit-BEGIN$
+		find_erl_files(coverageRunSuite, new File("src/test/erl"));
+		//$JUnit-END$
+
+		suite.addTest(coverageRunSuite);
+
 		return suite;
 	}
 
-	
+
 	static void find_beam_files(TestSuite suite, File dir) {
-		
 		TestSuite ts = null;
-		
+
 		for (File file : dir.listFiles()) {
-			
 			if (file.isDirectory()) {
 				find_beam_files(suite, file);
-			
 			} else if (file.getName().endsWith(".beam")) {
-				
 				if (ts == null) {
-					
 					System.err.println("added.. " + dir);
-					
-					ts = new TestSuite(dir.getPath()); 
+
+					ts = new TestSuite(dir.getPath());
 					suite.addTest(ts);
 				}
-				
+
 				ts.addTest(new TestCompileFile(file));
 
-				
 				// System.out.println("added: "+file);
 			}
-			
-			
-			
 		}
-		
 	}
+
+	static void find_erl_files(TestSuite suite, File dir) {
+		TestSuite ts = null;
+
+		for (File file : dir.listFiles()) {
+			if (file.isDirectory()) {
+				find_erl_files(suite, file);
+			} else if (file.getName().endsWith(".erl")) {
+				if (ts == null) {
+					System.err.println("added.. " + dir);
+					ts = new TestSuite(dir.getPath());
+					suite.addTest(ts);
+				}
+
+				ts.addTest(new TestRunFile(file));
+			}
+		}
+	}
+
 }
