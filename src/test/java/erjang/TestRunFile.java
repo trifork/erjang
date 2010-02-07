@@ -24,10 +24,14 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 
 import erjang.beam.Compiler;
+import erjang.EObject;
 import erjang.EAtom;
 import erjang.EList;
 import erjang.ETuple;
+import erjang.EBinary;
 import erjang.beam.DirClassRepo;
+
+import erjang.m.erlang.ErlConvert;
 
 import junit.framework.Test;
 import junit.framework.TestResult;
@@ -87,7 +91,7 @@ public class TestRunFile implements Test {
 		try {
 			erl_compile(RUN_WRAPPER_HOME+"/run_wrapper.erl");
 			erl_compile(file.getAbsolutePath());
-			String expected = erl_run(file);
+			EObject expected = erl_run(file);
 
 			File wrapperBeamFile = new File(BEAM_DIR, "run_wrapper.beam");
 			File beamFile = new File(BEAM_DIR,
@@ -104,7 +108,7 @@ public class TestRunFile implements Test {
 			ERT.run(p);
 			p.joinb();
 
-			String actual = p.exit_reason.toString();
+			EObject actual = (EObject) p.exit_reason;
 			Assert.assertEquals(expected, actual);
 		} catch (AssertionFailedError e) {
 		    result.addFailure(this, e);
@@ -126,12 +130,14 @@ public class TestRunFile implements Test {
 		EModuleManager.load_module(EAtom.intern(moduleName), repoDir.toURL());
 	}
 
-	private String erl_run(File file) throws Exception {
+	private EObject erl_run(File file) throws Exception {
 		String moduleName = trimExtension(file.getName());
-		return execGetOutput(new String[] {ERL_PRG, "-noinput",
-						   "-pa", BEAM_DIR,
-						   "-s", "run_wrapper", "run_wrapper", "erlang", moduleName,
-						   "-s", "erlang", "halt"});
+		String[] cmd = new String[] {ERL_PRG, "-noinput",
+					     "-pa", BEAM_DIR,
+					     "-s", "run_wrapper", "run_wrapper", "erlang", moduleName,
+					     "-s", "erlang", "halt"};
+		byte[] bin = execGetBinaryOutput(cmd);
+		return ErlConvert.binary_to_term(new EBinary(bin));
 	}
 
 	private void erl_compile(String fileName) throws Exception {
@@ -141,6 +147,10 @@ public class TestRunFile implements Test {
 	}
 
 	private String execGetOutput(String[] cmd) throws Exception {
+	    byte[] output = execGetBinaryOutput(cmd);
+	    return output.toString();
+	}
+	private byte[] execGetBinaryOutput(String[] cmd) throws Exception {
 		Runtime rt = Runtime.getRuntime();
 		Process p = rt.exec(cmd);
 		ByteArrayOutputStream output = new ByteArrayOutputStream();
@@ -174,7 +184,7 @@ public class TestRunFile implements Test {
 				System.err.println("IE="+ie);
 			}
 		}
-		return output.toString();
+		return output.toByteArray();
 	}
 
 
