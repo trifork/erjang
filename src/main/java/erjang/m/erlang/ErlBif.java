@@ -770,7 +770,7 @@ public class ErlBif {
 	@BIF(name = "float")
 	static public EDouble float$n(EObject v) {
 		ENumber n = v.testNumber();
-		if (n==null) return null;
+		if (n==null) throw ERT.badarg(v);
 		return ERT.box(n.doubleValue());
 	}
 
