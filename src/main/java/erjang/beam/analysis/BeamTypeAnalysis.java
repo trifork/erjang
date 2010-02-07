@@ -41,6 +41,7 @@ import erjang.EDouble;
 import erjang.EFun;
 import erjang.EInteger;
 import erjang.EList;
+import erjang.EString;
 import erjang.ENil;
 import erjang.ENumber;
 import erjang.EObject;
@@ -444,6 +445,14 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						}
 
 						vis.visitInsn(opcode, arg1, arg2);
+						break;
+					}
+
+					case put_string: {
+						Arg arg1 = decode_arg(insn_idx, insn.elm(3));
+						Arg arg2 = decode_out_arg(insn_idx, insn.elm(4));
+						arg2 = new Arg(arg2, ESEQ_TYPE);
+						vis.visitInsn(BeamOpcode.move, arg1, arg2);
 						break;
 					}
 
@@ -1184,6 +1193,16 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						continue next_insn;
 					}
 
+					case put_string: {
+						ETuple2 src = (ETuple2) insn.elm(3);
+						assert(src.elm(1) == STRING_ATOM);
+						ESmall length = (ESmall) insn.elm(2);
+						EString value = (EString) src.elm(2);
+						EObject dst = insn.elm(4);
+						current = setType(current, (ETuple2) dst, ESEQ_TYPE);
+						continue next_insn;
+					}
+
 					case jump: {
 						current = branch(current, insn.elm(2), insn_idx);
 						continue next_insn;
@@ -1897,7 +1916,8 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 				case bs_skip_bits2:
 				case bs_match_string:
 				case bs_skip_utf8:
-
+				case bs_skip_utf16:
+				case bs_skip_utf32:
 					if (!EMATCHSTATE_TYPE.equals(getType(current, args[0]))) {
 						throw new Error("matching without a state");
 					}
