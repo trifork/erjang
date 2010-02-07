@@ -738,7 +738,7 @@ public class ErlBif {
 	static public EInteger round(EObject o) {
 		EDouble d;
 		if ((d = o.testFloat()) == null)
-			throw ERT.badarg();
+			throw ERT.badarg(o);
 		return ERT.box(Math.round(d.value));
 	}
 

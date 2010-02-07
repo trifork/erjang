@@ -81,11 +81,31 @@ public abstract class ErlangException extends RuntimeException {
 	/**
 	 * 
 	 */
-	private static final class ExceptionTuple extends EObject {
+	private static final class ExceptionTuple extends ETuple {
 		/**
 		 * 
 		 */
 		private final ErlangException e;
+		private ETuple instance;
+
+		protected ETuple instantiate() {
+			if (instance == null) {
+				if (e instanceof ErlangThrow) {
+					instance = new ETuple2(ERT.EXIT, e.reason);
+				} else {
+					ETuple2 reason_plus_trace =
+						new ETuple2(e.reason, e.getTrace());
+					instance = new ETuple2(ERT.EXIT, reason_plus_trace);
+				}
+			}
+			return instance;
+		}
+
+		public int arity() {return instantiate().arity();}
+		public EObject elm(int i) {return instantiate().elm(i);}
+		public void set(int index, EObject term) {throw new IllegalStateException();}
+		public ETuple blank() {return instantiate().blank();}
+
 
 		/**
 		 * @param e
@@ -111,15 +131,7 @@ public abstract class ErlangException extends RuntimeException {
 
 		@Override
 		public ETuple testTuple() {
-		    if (e instanceof ErlangThrow) {
-			ETuple2 t = new ETuple2(ERT.EXIT, e.reason);
-			return t;
-		    } else {
-			ETuple2 reason_plus_trace =
-			    new ETuple2(e.reason, e.getTrace());
-			ETuple2 t = new ETuple2(ERT.EXIT, reason_plus_trace);
-			return t;
-		    }
+			return instantiate();
 		}
 	}
 
