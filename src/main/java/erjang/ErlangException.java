@@ -111,8 +111,15 @@ public abstract class ErlangException extends RuntimeException {
 
 		@Override
 		public ETuple testTuple() {
+		    if (e instanceof ErlangThrow) {
 			ETuple2 t = new ETuple2(ERT.EXIT, e.reason);
 			return t;
+		    } else {
+			ETuple2 reason_plus_trace =
+			    new ETuple2(e.reason, e.getTrace());
+			ETuple2 t = new ETuple2(ERT.EXIT, reason_plus_trace);
+			return t;
+		    }
 		}
 	}
 
