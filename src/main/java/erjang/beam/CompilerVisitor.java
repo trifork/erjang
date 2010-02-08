@@ -2041,30 +2041,41 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 				if (opcode == BeamOpcode.apply || opcode == BeamOpcode.apply_last) {
 
-					mv.visitVarInsn(ALOAD, 0);
+					int arity = ys.length-2;
 					push(ys[ys.length-2], EOBJECT_TYPE); // push mod
 					push(ys[ys.length-1], EOBJECT_TYPE); // push fun
+					push_int(arity); // push arity
+
+					mv.visitMethodInsn(INVOKESTATIC, ERT_NAME, "resolve_fun", "("+EOBJECT_DESC+EOBJECT_DESC+"I)"+EFUN_DESCRIPTOR);
 					
-					mv.visitFieldInsn(GETSTATIC, ERT_NAME, "NIL", "L"+ENIL_NAME+";");
-					for (int i = ys.length-3; i >= 0; i--) {
+					String funtype = EFUN_NAME + arity;
+
+					mv.visitMethodInsn(INVOKESTATIC, funtype, "cast", "("
+							+ EOBJECT_DESC + ")L" + funtype + ";");
+					
+					mv.visitVarInsn(ALOAD, 0); // push eproc
+					int loops = 0;
+					for (int i = 0; i <= ys.length-3; i++) {
 						push(ys[i], EOBJECT_TYPE);
-						mv.visitMethodInsn(INVOKEVIRTUAL, ESEQ_TYPE.getInternalName(), "cons", 
-									"(" + EOBJECT_DESC + ")" + ESEQ_TYPE.getDescriptor() );
+						loops += 1;
 					}
-					push_int(ys.length-2);
-					mv.visitMethodInsn(INVOKESTATIC, ERT_NAME, 
-							(opcode == BeamOpcode.apply) ? "apply_list" : "apply_list_last", 
-							"(" + EPROC_TYPE.getDescriptor()
-							    + EOBJECT_TYPE.getDescriptor()
-							    + EOBJECT_TYPE.getDescriptor()
-							    + ESEQ_TYPE.getDescriptor()
-							    + "I)" + EOBJECT_DESC
-					);
 					
-					if (opcode == BeamOpcode.apply) {
-						mv.visitVarInsn(ASTORE, xregs[0]);
-					} else {
+					if (loops != arity) {
+						// invariant for above complicated loop logic.
+						throw new InternalError("bad args here");
+					}
+					
+					boolean is_tail = opcode == BeamOpcode.apply_last;
+					if (is_tail) {
+						mv.visitMethodInsn(INVOKEVIRTUAL, funtype, "invoke_tail", EUtil
+									.getSignature(arity, true));
 						mv.visitInsn(ARETURN);						
+					} else {
+						mv.visitMethodInsn(INVOKEVIRTUAL, funtype,
+								"invoke", EUtil
+										.getSignature(arity, true));
+											
+						mv.visitVarInsn(ASTORE, xregs[0]);
 					}
 						
 					return;
