@@ -29,7 +29,11 @@ import java.io.IOException;
 public abstract class EInteger extends ENumber {
 
 	abstract BigInteger bigintValue();
-	
+
+	public EInteger testInteger() {
+		return this;
+	}
+
 	public EInteger asInteger() {
 		return this;
 	}

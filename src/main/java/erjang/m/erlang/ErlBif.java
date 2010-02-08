@@ -1000,8 +1000,8 @@ public class ErlBif {
 
 	@BIF(name = "++")
 	public static ECons append(EObject l1, EObject l2) {
-		ECons c1 = is_list(l1);
-		ECons c2 = is_list(l2);
+		ECons c1 = as_list(l1);
+		ECons c2 = as_list(l2);
 
 		if (c1 == null || c2 == null)
 			throw ERT.badarg();
@@ -1017,13 +1017,17 @@ public class ErlBif {
 	@BIF(name = "++")
 	public static ECons append(EObject o1, ECons l2) {
 		ECons l1;
-		if ((l1 = is_list(o1)) != null)
+		if ((l1 = as_list(o1)) != null)
 			return l2.prepend(l1);
 		throw ERT.badarg();
 	}
 
 	@BIF
-	public static ECons is_list(EObject o) {
+	public static EAtom is_list(EObject o) {
+		return ERT.box(o.testCons() != null || o.testNil() != null);
+	}
+
+	public static ECons as_list(EObject o) { // TODO: This function should probably be replaced by o.testCons or something similar.
 		return o == null ? ERT.NIL : o.testCons();
 	}
 
@@ -1073,7 +1077,7 @@ public class ErlBif {
 
 	@BIF
 	public static EAtom is_tuple(EObject obj) {
-		return ERT.box(obj.testAtom() != null);
+		return ERT.box(obj.testTuple() != null);
 	}
 
 	@BIF(name = "is_binary", type = Type.GUARD)
@@ -1084,6 +1088,16 @@ public class ErlBif {
 	@BIF
 	public static EAtom is_binary(EObject obj) {
 		return ERT.box(obj.testBinary() != null);
+	}
+
+	@BIF
+	public static EAtom is_bitstring(EObject obj) {
+		return ERT.box(obj.testBitString() != null);
+	}
+
+	@BIF(name = "is_bitstring", type = Type.GUARD)
+	public static EAtom is_bitstring$g(EObject obj) {
+		return ERT.guard(obj.testBitString() != null);
 	}
 
 	@BIF
@@ -1099,6 +1113,16 @@ public class ErlBif {
 	@BIF(name = "is_integer", type = Type.GUARD)
 	public static EAtom is_integer$p(EObject obj) {
 		return ERT.guard(obj.testInteger() != null);
+	}
+
+	@BIF(name = "is_float", type = Type.GUARD)
+	public static EAtom is_float$g(EObject obj) {
+		return ERT.guard(obj.testFloat() != null);
+	}
+
+	@BIF(name = "is_number", type = Type.GUARD)
+	public static EAtom is_number$g(EObject obj) {
+		return ERT.guard(obj.testNumber() != null);
 	}
 
 	@BIF
@@ -1129,6 +1153,16 @@ public class ErlBif {
 	@BIF(name="is_pid", type=Type.GUARD)
 	public static EAtom is_pid_guard(EObject obj) {
 		return ERT.guard(obj.testPID() != null);
+	}
+
+	@BIF
+	public static EAtom is_port(EObject obj) {
+		return ERT.box(obj.testPort() != null);
+	}
+	
+	@BIF(name="is_port", type=Type.GUARD)
+	public static EAtom is_port$g(EObject obj) {
+		return ERT.guard(obj.testPort() != null);
 	}
 	
 	@BIF
@@ -1167,6 +1201,16 @@ public class ErlBif {
 	@BIF
 	public static EAtom is_integer(EObject o) {
 		return ERT.box(o.testInteger() != null);
+	}
+
+	@BIF
+	public static EAtom is_float(EObject o) {
+		return ERT.box(o.testFloat() != null);
+	}
+
+	@BIF
+	public static EAtom is_number(EObject o) {
+		return ERT.box(o.testNumber() != null);
 	}
 
 	@BIF
