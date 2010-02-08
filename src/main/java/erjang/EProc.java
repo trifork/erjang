@@ -210,13 +210,13 @@ public final class EProc extends ETask<EInternalPID> {
 	public EObject put(EObject key, EObject value) {
 		EObject res = pdict.put(key, value);
 		if (res == null)
-			return ERT.NIL;
+			return ERT.am_undefined;
 		return res;
 	}
 
 	public EObject get(EObject key) {
 		EObject res = pdict.get(key);
-		return (res == null) ? ERT.NIL : res;
+		return (res == null) ? ERT.am_undefined : res;
 	}
 
 	/**
@@ -237,7 +237,7 @@ public final class EProc extends ETask<EInternalPID> {
 	public EObject erase(EObject key) {
 		EObject res = pdict.remove(key);
 		if (res == null)
-			res = ERT.NIL;
+			res = ERT.am_undefined;
 		return res;
 	}
 
