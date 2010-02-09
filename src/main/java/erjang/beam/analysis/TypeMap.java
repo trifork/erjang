@@ -192,10 +192,12 @@ class TypeMap {
 		try {
 			new_exh = ExceptionHandler.merge(exh, other.exh);
 		} catch (IllegalArgumentException iae) {
-			new_exh = new ExceptionHandler.Ambiguous(exh, other.exh);
+			new_exh = ExceptionHandler.Ambiguous.make(exh, other.exh);
 		}
 
-		if (new_x == xregs && new_y == yregs && new_f == fregs) {
+		if (new_x == xregs && new_y == yregs && new_f == fregs &&
+		    new_stacksize == stacksize && new_exh == exh)
+		{
 			return this;
 		} else {
 			return new TypeMap(new_x, new_y, new_f, new_stacksize, bb, new_exh);
