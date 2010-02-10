@@ -1,0 +1,51 @@
+// To expand:
+// cpp -P Interpreter.java.in  | sed -e 's/\$nl\$/\n/g'
+
+#include "opcodelist.h"
+
+Module {
+  short[] insns;
+  EObject[] consts;
+}
+
+Function {
+   Module mod;
+   int start_pc;
+
+   // Generic interpreter...
+   void interpret(EProc proc) {
+      EObject stack[] = proc.stack;
+      int sp = proc.sp;
+      final int x0 = sp;
+      int pc = start_pc;
+      int fp = sp;
+      short[] insns = mod.insns;
+      next_insn: while(true) {
+         switch(insns[pc++]) {
+#define NEXTVAL	 insns[pc++]
+#define LIT(nr)  consts[nr]
+#define XREG(nr) stack[x0 + (nr)]
+#define YREG(nr) stack[fp - (nr)]
+#define TEMPLATE(opcode,body) case opcode: {body} continue; $nl$
+FORALL_OPS(test,arg)
+#undef TEMPLATE
+#undef LIT
+#undef XREG
+#undef YREG
+#undef NEXTVAL
+         }
+   }
+
+   // this may be codegen'ed into EFun1
+   EObject call_1arg(EProc proc, EObject arg) {
+      int sp = proc.sp;
+      try {
+        proc.stack[sp] = arg;
+        interpret(proc);
+      } finally {
+        proc.sp = sp; 
+      }
+      return proc.stack[sp]; 
+   }
+
+}
