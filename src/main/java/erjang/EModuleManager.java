@@ -111,8 +111,11 @@ public class EModuleManager {
 					new EFunHandler() {
 						public EObject invoke(EProc proc, EObject[] args)
 								throws Pausable {
+							
+							/** Get reference to error_handler:undefined_function/3 */
 							EFun uf = undefined_function.resolved_value;
 
+							/** this is just some debugging info to help understand downstream errors */
 							if (get_module_info(fun.module).is_loaded()) {
 								System.err.println("MISSING "+fun);
 							} else {
@@ -120,6 +123,8 @@ public class EModuleManager {
 							}
 								
 							if (uf == null) {
+								/** this is just some debugging info to help understand downstream errors */
+								System.err.println("failed to load "+fun+" (error_handler:undefined_function/3 not found)");
 								throw new ErlangUndefined(fun.module,
 										fun.function, fun.arity);
 							} else {

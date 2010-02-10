@@ -182,20 +182,27 @@ class TypeMap {
 		int new_stacksize = Math.min(stacksize, other.stacksize);
 		if (!eqy_prefix(this, other, new_stacksize)) {
 			new_y = new Type[new_stacksize];
+			boolean differs_from_my_y = false;
 			for (int i = 0; i < new_stacksize; i++) {
-				new_y[new_stacksize - i - 1] = merge(this.gety(i),
-								     other.gety(i));
+				Type t1;
+				Type res = merge(t1 = this.gety(i), other.gety(i));
+				new_y[new_stacksize - i - 1] = res;
+				differs_from_my_y = differs_from_my_y ||
+					(res!=t1 && (res==null || !res.equals(t1)));
 			}
+			if (!differs_from_my_y) new_y = yregs;
 		}
 
 		ExceptionHandler new_exh;
 		try {
 			new_exh = ExceptionHandler.merge(exh, other.exh);
 		} catch (IllegalArgumentException iae) {
-			new_exh = new ExceptionHandler.Ambiguous(exh, other.exh);
+			new_exh = ExceptionHandler.Ambiguous.make(exh, other.exh);
 		}
 
-		if (new_x == xregs && new_y == yregs && new_f == fregs) {
+		if (new_x == xregs && new_y == yregs && new_f == fregs &&
+		    new_stacksize == stacksize && new_exh == exh)
+		{
 			return this;
 		} else {
 			return new TypeMap(new_x, new_y, new_f, new_stacksize, bb, new_exh);
@@ -204,13 +211,17 @@ class TypeMap {
 
 	private Type[] merge_regs(Type[] r1, Type[] r2) {
 		Type[] res = new Type[Math.max(r1.length, r2.length)];
+		boolean differs_from_r1 = false;
 		for (int i = 0; i < res.length; i++) {
 			Type t1 = get(r1, i);
 			Type t2 = get(r2, i);
 
 			res[i] = merge(t1, t2);
+			differs_from_r1 = differs_from_r1 ||
+			    (res[i]!=t1 && (res[i]==null || !res[i].equals(t1)));
 		}
-		return res;
+		assert(eq(r1,res) || differs_from_r1);
+		return differs_from_r1 ? res : r1;
 	}
 
 	private Type merge(Type t1, Type t2) {

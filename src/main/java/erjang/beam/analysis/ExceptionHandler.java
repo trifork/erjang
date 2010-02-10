@@ -81,9 +81,24 @@ public class ExceptionHandler implements BeamExceptionHandler {
 			equals((ExceptionHandler) other);
 	}
 	public boolean equals(ExceptionHandler other) {
-		ExceptionHandler tmp = merge(this,other);
-		return tmp==this || tmp==other;
+		return equals(this,other);
 	}
+	public static boolean equals(ExceptionHandler e1, ExceptionHandler e2) {
+	    if (e1==e2) return true;
+		if (e1==null || e2==null) return false;
+		if (e1.handlerLabel != e2.handlerLabel) return false;
+
+		if (e1 instanceof Ambiguous && e2 instanceof Ambiguous) {
+			Ambiguous a1 = (Ambiguous) e1;
+			Ambiguous a2 = (Ambiguous) e2;
+			return a1.exhs.equals(a2.exhs);
+		}
+		if (e1 instanceof Ambiguous || e2 instanceof Ambiguous)
+			return false;
+
+		return equals(e1.parent, e2.parent);
+	}
+
 	public int hashCode() {
 		return handlerLabel;
 	}
@@ -108,9 +123,25 @@ public class ExceptionHandler implements BeamExceptionHandler {
 			add_to_set(exhs, src1);
 			add_to_set(exhs, src2);
 		}
+		public Ambiguous(Set<BeamExceptionHandler> exhs) {
+			super(-1, null);
+			this.exhs = exhs;
+		}
+
+		public static Ambiguous make(ExceptionHandler src1, ExceptionHandler src2) {
+			HashSet<BeamExceptionHandler> exhs = new HashSet();
+			add_to_set(exhs, src1);
+			add_to_set(exhs, src2);
+			Ambiguous a;
+			if (src1 instanceof Ambiguous && exhs.equals((a=(Ambiguous)src1).exhs))
+				return a;
+			if (src2 instanceof Ambiguous && exhs.equals((a=(Ambiguous)src2).exhs))
+				return a;
+			return new Ambiguous(exhs);
+		}
 
 		private static void add_to_set(Set<BeamExceptionHandler> exhs,
-					       ExceptionHandler src)
+									   ExceptionHandler src)
 		{
 			if (src instanceof Ambiguous)
 				exhs.addAll(((Ambiguous)src).exhs);
@@ -119,6 +150,10 @@ public class ExceptionHandler implements BeamExceptionHandler {
 			else
 				exhs.add(src);
 		}
+
+	    public int hashCode() {
+			return exhs.hashCode();
+	    }
 
 		public List<BeamExceptionHandler> ambiguousities() {
 			List<BeamExceptionHandler> result = new ArrayList<BeamExceptionHandler>(exhs.size());

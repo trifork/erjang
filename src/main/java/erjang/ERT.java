@@ -511,6 +511,18 @@ public class ERT {
 		throw new ErlangError(am_undef, args);
 	}
 
+	public static EFun resolve_fun(EObject mod, EObject fun, int arity) {
+		EAtom m = mod.testAtom();
+		EAtom f = fun.testAtom();
+		
+		if (m == null || f == null )
+			throw ERT.badarg(mod, fun, new ESmall(arity));
+
+		EFun efun = EModuleManager.resolve(new FunID(m, f, arity));
+
+		return efun;
+	}
+	
 	public static EObject apply_list(EProc proc, EObject mod, EObject fun,
 			ESeq seq, int len) throws Pausable {
 		EAtom m = mod.testAtom();

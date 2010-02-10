@@ -1993,6 +1993,8 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					TypeMap new_types = initial.mergeFrom(typeMap);
 					if (new_types == initial) {
 						// ignore //
+					} else if (new_types.equals(initial)) {
+					    if (ERT.DEBUG) System.err.println("Missed TypeMap sharing opportunity");
 					} else {
 
 						// System.out.println("merge " + initial + "\n    | " +

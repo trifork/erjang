@@ -25,7 +25,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import erjang.BIF;
 import erjang.EAtom;
 import erjang.EInteger;
-import erjang.EList;
 import erjang.ENative;
 import erjang.EObject;
 import erjang.EPID;
