@@ -244,6 +244,15 @@ public final class EProc extends ETask<EInternalPID> {
 	/**
 	 * @return
 	 */
+    public EObject erase() {
+		EObject res = get();
+		pdict.clear();
+		return res;
+	}
+
+	/**
+	 * @return
+	 */
 	public EPID group_leader() {
 		return group_leader;
 	}

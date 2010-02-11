@@ -109,6 +109,11 @@ public class ErlProc {
 	}
 
 	@BIF
+	public static EObject erase(EProc proc) {
+		return proc.erase();
+	}
+
+	@BIF
 	public static EObject register(EObject name, EObject pid) {
 		EAtom aname;
 		EHandle handle = pid.testHandle();
