@@ -1,4 +1,4 @@
-package erjang.beam.loader;
+package erjang.beam.repr;
 
 import erjang.EObject;
 import erjang.EAtom;
@@ -17,7 +17,7 @@ import static erjang.beam.CodeAtoms.*;
 
 public class Operands {
 
-    static abstract class Operand {
+    public static abstract class Operand {
 	public SourceOperand asSource() {
 	    throw new IllegalArgumentException("Not a source: "+this);
 	}
@@ -46,20 +46,20 @@ public class Operands {
 	public abstract EObject toSymbolic(CodeTables ct);
     }
 
-    static abstract class SourceOperand extends Operand {
+    public static abstract class SourceOperand extends Operand {
 	@Override
 	public SourceOperand asSource() {return this;}
     }
-    static abstract class DestinationOperand extends SourceOperand {
+    public static abstract class DestinationOperand extends SourceOperand {
 	@Override
 	public DestinationOperand asDestination() {return this;}
     }
-    static abstract class Literal extends SourceOperand {
+    public static abstract class Literal extends SourceOperand {
 	@Override
 	public Literal asLiteral() {return this;}
     }
 
-    static Literal makeInt(byte[] d) {
+    public static Literal makeInt(byte[] d) {
 	BigInteger tmp = new BigInteger(d);
 	return (d.length<=4)
 	    ? new Int(tmp.intValue())
@@ -67,7 +67,7 @@ public class Operands {
     }
 
     /** CodeInt is present in jump-table-by-arity (select_arity). */
-    static class CodeInt extends Operand {
+    public static class CodeInt extends Operand {
 	public final int value;
 	public CodeInt(int value) {this.value=value;}
 	public EObject toSymbolic(CodeTables ct) {
@@ -75,7 +75,7 @@ public class Operands {
 	}
     }
 
-    static class Int extends Literal {
+    public static class Int extends Literal {
 	public final int value;
 	public Int(int value) {this.value=value;}
 	public EObject toSymbolic(CodeTables ct) {
@@ -83,7 +83,7 @@ public class Operands {
 	}
     }
 
-    static class BigInt extends Literal {
+    public static class BigInt extends Literal {
 	public final BigInteger value;
 	public BigInt(BigInteger value) {this.value=value;}
 	public EObject toSymbolic(CodeTables ct) {
@@ -91,7 +91,7 @@ public class Operands {
 	}
     }
 
-    static class Float extends Literal {
+    public static class Float extends Literal {
 	public final double value;
 	public Float(double value) {this.value=value;}
 	public EObject toSymbolic(CodeTables ct) {
@@ -99,13 +99,13 @@ public class Operands {
 	}
     }
 
-    static final Nil Nil = new Nil();
-    static class Nil extends Literal {
+    public static final Nil Nil = new Nil();
+    public static class Nil extends Literal {
 	private Nil() {}
 	public EObject toSymbolic(CodeTables ct) {return NIL_ATOM;}
     }
 
-    static class SelectList extends Operand {
+    public static class SelectList extends Operand {
 	Operand[] list;
 	public SelectList(Operand[] list) {this.list=list;}
 
@@ -120,7 +120,7 @@ public class Operands {
 	}
     }
 
-    static class AllocList extends Operand {
+    public static class AllocList extends Operand {
 	static final int WORDS  = 0;
 	static final int FLOATS = 1;
 
@@ -158,7 +158,7 @@ public class Operands {
     }
 
 
-    static class Atom extends Literal {
+    public static class Atom extends Literal {
 	private int idx;
 	public Atom(int idx) {this.idx=idx;}
 
@@ -170,7 +170,7 @@ public class Operands {
 	}
     }
 
-    static class BitString extends Literal {
+    public static class BitString extends Literal {
 	protected final int start;
 	protected final int bits;
 	public BitString(int start, int bits) {
@@ -186,7 +186,7 @@ public class Operands {
 	}
     }
 
-    static class ByteString extends Literal {
+    public static class ByteString extends Literal {
 	protected final int start;
 	protected final int bytes;
 	public ByteString(int start, int bytes) {
@@ -201,7 +201,7 @@ public class Operands {
 	}
     }
 
-    static class TableLiteral extends Literal {
+    public static class TableLiteral extends Literal {
 	private int idx;
 	public TableLiteral(int idx) {this.idx=idx;}
 	public EObject toSymbolic(CodeTables ct) {
@@ -209,7 +209,7 @@ public class Operands {
 	}
     }
 
-    static class Label extends Operand {
+    public static class Label extends Operand {
 	public final int nr;
 	public Label(int nr) {this.nr=nr;}
 	@Override
@@ -220,7 +220,7 @@ public class Operands {
 	}
     }
 
-    static class XReg extends DestinationOperand {
+    public static class XReg extends DestinationOperand {
 	public final int nr;
 	public XReg(int nr) {this.nr=nr;}
 
@@ -237,7 +237,7 @@ public class Operands {
 	}
     }
 
-    static class YReg extends DestinationOperand {
+    public static class YReg extends DestinationOperand {
 	public final int nr;
 	public YReg(int nr) {this.nr=nr;}
 
@@ -257,7 +257,7 @@ public class Operands {
 	}
     }
 
-    static class FReg extends DestinationOperand {
+    public static class FReg extends DestinationOperand {
 	public final int nr;
 	public FReg(int nr) {this.nr=nr;}
 

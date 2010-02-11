@@ -25,7 +25,11 @@ import erjang.EInputStream;
 
 import erjang.beam.BeamOpcode;
 
-import static erjang.beam.loader.Operands.*;
+import erjang.beam.repr.CodeTables;
+import erjang.beam.repr.Operands;
+import erjang.beam.repr.Insn;
+
+import static erjang.beam.repr.Operands.*;
 import static erjang.beam.CodeAtoms.*;
 
 public class BeamLoader extends CodeTables {
