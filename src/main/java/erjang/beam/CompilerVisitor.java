@@ -1000,17 +1000,21 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 				/*{test,bs_skip_utf8,{f,275},[{x,6},7,{field_flags,0}]} */
 				case bs_skip_utf8:
+				case bs_skip_utf16:
+				case bs_skip_utf32:
 					push(args[0], EBINMATCHSTATE_TYPE);
 					push_immediate(args[2].value.testTuple().elm(2),
 							Type.INT_TYPE);
 					mv.visitMethodInsn(INVOKEVIRTUAL, EBINMATCHSTATE_TYPE
-							.getInternalName(), test.name(), "(I)I");
+							.getInternalName(), test.name(), "(I)Z");
 					mv.visitJumpInsn(IFEQ, getLabel(failLabel));
 					return;
 
 				/* {test,bs_get_utf8,{f,6},[{x,0},1,
 				   {field_flags,[...,unsigned,big]},{x,1}]}. */
 				case bs_get_utf8:
+				case bs_get_utf16:
+				case bs_get_utf32:
 					push(args[0], EBINMATCHSTATE_TYPE);
 					push(args[2], Type.INT_TYPE);
 					mv.visitMethodInsn(INVOKEVIRTUAL, EBINMATCHSTATE_TYPE

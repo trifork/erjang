@@ -221,6 +221,26 @@ public class EBitString extends EObject {
 		return data[byteOffset() + byteIndex] & 0xff;
 	}
 
+	public int uint16_at(int byteIndex, int flags) {
+	    int b1 = data[byteOffset() + byteIndex]     & 0xff;
+	    int b2 = data[byteOffset() + byteIndex + 1] & 0xff;
+	    if ((flags & EBinMatchState.BSF_LITTLE) > 0)
+			return b1 + (b2 << 8);
+	    else
+			return (b1 << 8) + b2;
+	}
+
+	public int int32_at(int byteIndex, int flags) {
+	    int b1 = data[byteOffset() + byteIndex]     & 0xff;
+	    int b2 = data[byteOffset() + byteIndex + 1] & 0xff;
+	    int b3 = data[byteOffset() + byteIndex + 2] & 0xff;
+	    int b4 = data[byteOffset() + byteIndex + 3] & 0xff;
+	    if ((flags & EBinMatchState.BSF_LITTLE) > 0)
+			return  b1        + (b2 <<  8) + (b3 << 16) + (b4 << 24);
+	    else
+			return (b1 << 24) + (b2 << 16) + (b3 <<  8) +  b4;
+	}
+
 	public EBitString substring(long bitOff) {
 		return substring(bitOff, bitSize() - bitOff);
 	}

@@ -306,6 +306,36 @@ public class EBinMatchState extends EPseudoTerm {
 		return character;
 	}
 
+	public boolean bs_skip_utf16(int flags) {
+		long save_offset = offset;
+		int character = decodeUTF16(flags);
+		if (character<0) assert(offset == save_offset);
+		return (character >= 0);
+	}
+
+	/** Returns the obtained character, or -1 in case of decoding failure. */
+	public int bs_get_utf16(int flags) {
+		long save_offset = offset;
+		int character = decodeUTF16(flags);
+		if (character<0) assert(offset == save_offset);
+		return character;
+	}
+
+	public boolean bs_skip_utf32(int flags) {
+		long save_offset = offset;
+		int character = decodeUTF32(flags);
+		if (character<0) assert(offset == save_offset);
+		return (character >= 0);
+	}
+
+	/** Returns the obtained character, or -1 in case of decoding failure. */
+	public int bs_get_utf32(int flags) {
+		long save_offset = offset;
+		int character = decodeUTF32(flags);
+		if (character<0) assert(offset == save_offset);
+		return character;
+	}
+
 	/** Decode an UTF-8 character and advance offset.
 	 *  If decoding fails, return -1, leaving offset unchanged.
 	 */
@@ -340,6 +370,43 @@ public class EBinMatchState extends EPseudoTerm {
 		offset = 8L * byte_pos;
 		return acc;
     }
+
+	public int decodeUTF16(int flags) {
+		if (offset % 8 != 0) return -1; // Misaligned.
+		int byte_pos = (int)(offset/8);
+
+		if (bitsLeft() < 16) return -1;
+		int acc = bin.uint16_at(byte_pos, flags); byte_pos+=2;
+
+		if ((acc & ~0x3FF) == 0xD800) { // Two-word case
+			if (bitsLeft() < 2*16) return -1;
+			int w2 = bin.uint16_at(byte_pos, flags); byte_pos+=2;
+
+			if ((w2 & ~0x3FF) != 0xDC00) return -1; // Bad continuation.
+
+			acc = ((acc & 0x3FF)<<10) + (w2 & 0x3FF);
+		} else if ((acc & ~0x3FF) == 0xDC00) {
+			return -1; // Bad first word.
+		}
+
+		if (!isValidCodePoint(acc)) return -1;
+
+		offset = 8L * byte_pos;
+		return acc;
+	}
+
+	public int decodeUTF32(int flags) {
+		if (offset % 8 != 0) return -1; // Misaligned.
+		int byte_pos = (int)(offset/8);
+
+		if (bitsLeft() < 32) return -1;
+		int acc = bin.int32_at(byte_pos, flags);
+
+		if (acc < 0 || !isValidCodePoint(acc)) return -1;
+
+		offset += 32;
+		return acc;
+	}
 
 	public static boolean isValidCodePoint(int c) {
 		return ((c & ~0x7FF) != 0xD800 && // First invalid range
