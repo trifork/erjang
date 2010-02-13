@@ -384,7 +384,7 @@ public class EBinMatchState extends EPseudoTerm {
 
 			if ((w2 & ~0x3FF) != 0xDC00) return -1; // Bad continuation.
 
-			acc = ((acc & 0x3FF)<<10) + (w2 & 0x3FF);
+			acc = ((acc & 0x3FF)<<10) + (w2 & 0x3FF) + 0x10000;
 		} else if ((acc & ~0x3FF) == 0xDC00) {
 			return -1; // Bad first word.
 		}
