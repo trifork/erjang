@@ -28,6 +28,7 @@
 		<mkdir dir="target" />
 		<mkdir dir="target/classes" />
 		<mkdir dir="target/test-classes" />
+		<mkdir dir="target/test-beam" />
 		<mkdir dir="target/compiled" />
 
 		<echo message="Compiling src ===================" />
