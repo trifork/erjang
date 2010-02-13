@@ -998,6 +998,33 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					pop(args[5], EOBJECT_TYPE);
 					return;
 
+				/*{test,bs_skip_utf8,{f,275},[{x,6},7,{field_flags,0}]} */
+				case bs_skip_utf8:
+					push(args[0], EBINMATCHSTATE_TYPE);
+					push(args[2], Type.INT_TYPE);
+					push_immediate(args[3].value.testTuple().elm(2),
+							Type.INT_TYPE);
+					mv.visitMethodInsn(INVOKEVIRTUAL, EBINMATCHSTATE_TYPE
+							.getInternalName(), test.name(), "(I)I");
+					mv.visitJumpInsn(IFEQ, getLabel(failLabel));
+					return;
+
+				/* {test,bs_get_utf8,{f,6},[{x,0},1,
+				   {field_flags,[...,unsigned,big]},{x,1}]}. */
+				case bs_get_utf8:
+					push(args[0], EBINMATCHSTATE_TYPE);
+					push(args[2], Type.INT_TYPE);
+					mv.visitMethodInsn(INVOKEVIRTUAL, EBINMATCHSTATE_TYPE
+							.getInternalName(), test.name(), "(I)I");
+					mv.visitInsn(DUP);
+					mv.visitVarInsn(ISTORE, scratch_reg);
+
+					mv.visitJumpInsn(IFLT, getLabel(failLabel));
+					mv.visitVarInsn(ILOAD, scratch_reg);
+
+					pop(args[3], Type.INT_TYPE);
+					return;
+
 				case bs_test_tail2:
 					push(args[0], EBINMATCHSTATE_TYPE);
 					mv.visitMethodInsn(INVOKEVIRTUAL, EBINMATCHSTATE_TYPE

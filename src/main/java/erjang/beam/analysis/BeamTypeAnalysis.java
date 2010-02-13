@@ -990,6 +990,12 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 				case bs_get_binary2:
 				case bs_skip_bits2:
 				case bs_test_unit:
+				case bs_skip_utf8:
+				case bs_skip_utf16:
+				case bs_skip_utf32:
+				case bs_get_utf8:
+				case bs_get_utf16:
+				case bs_get_utf32:
 					vis.visitBitStringTest(test, failLabel, args);
 					break;
 
@@ -1922,6 +1928,15 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						throw new Error("matching without a state");
 					}
 
+					return current;
+
+				case bs_get_utf8:
+				case bs_get_utf16:
+				case bs_get_utf32:
+					if (!EMATCHSTATE_TYPE.equals(getType(current, args[0]))) {
+						throw new Error("matching without a state");
+					}
+					current = setType(current, args[3], Type.INT_TYPE);
 					return current;
 
 				default:

@@ -264,7 +264,7 @@ public class EBinMatchState extends EPseudoTerm {
 			// throw badarg?
 			return null;
 		}
-		
+
 		int bitsWanted = bits * count.intValue();
 
 		if (bitsLeft() < bitsWanted) {
@@ -287,5 +287,64 @@ public class EBinMatchState extends EPseudoTerm {
 		if (offset == bin.bitSize())
 			return ERT.TRUE;
 		return null;
+	}
+
+    //==================== UTF-related operations ====================
+
+	public boolean bs_skip_utf8(int flags) {
+		long save_offset = offset;
+		int character = decodeUTF8();
+		if (character<0) assert(offset == save_offset);
+		return (character >= 0);
+	}
+
+	/** Returns the obtained character, or -1 in case of decoding failure. */
+	public int bs_get_utf8(int flags) {
+		long save_offset = offset;
+		int character = decodeUTF8();
+		if (character<0) assert(offset == save_offset);
+		return character;
+	}
+
+	/** Decode an UTF-8 character and advance offset.
+	 *  If decoding fails, return -1, leaving offset unchanged.
+	 */
+    static final int[] UTF8_MASK = {0, 0x7F, 0x7FF, 0xFFFF, 0x1FFFFF};
+	public int decodeUTF8() {
+		//TODO: Use getOctet() instead of intBitsAt().
+		long pos = offset;
+
+		if (bitsLeft() < 8) return -1;
+		int acc = bin.intBitsAt(pos, 8);
+		pos += 8;
+
+		if (acc < 0x80) {offset=pos; return acc;} // ASCII case.
+		if ((acc & 0xC0) == 0x80) return -1; // Sequence starts with a continuation byte.
+		if (acc > 0xF8) return -1;           // Out of range.
+
+		int len;
+		byte t = (byte)acc;
+		for (len=1; (t<<=1) < 0; len++) {
+			if (bitsLeft() < 8) return -1;
+			int b = bin.intBitsAt(pos, 8);
+			pos += 8;
+			if ((b & 0xC0) != 0x80) return -1; // Incorrect continuation byte.
+			acc = (acc<<6) + (b & 0x3F);
+		}
+
+		acc &= UTF8_MASK[len];
+		if (acc <= UTF8_MASK[len-1]) return -1; // Over-long encoding.
+
+		if (!isValidCodePoint(acc)) return -1;
+
+		// Non-ASCII success
+		offset = pos;
+		return acc;
+    }
+
+	public static boolean isValidCodePoint(int c) {
+		return ((c & ~0x7FF) != 0xD800 && // First invalid range
+				(c & ~0x1) != 0xFFFE   && // Second invalid range
+				c < 0x110000);            // Third invalid range
 	}
 }
