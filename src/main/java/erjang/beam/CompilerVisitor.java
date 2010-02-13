@@ -1001,8 +1001,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				/*{test,bs_skip_utf8,{f,275},[{x,6},7,{field_flags,0}]} */
 				case bs_skip_utf8:
 					push(args[0], EBINMATCHSTATE_TYPE);
-					push(args[2], Type.INT_TYPE);
-					push_immediate(args[3].value.testTuple().elm(2),
+					push_immediate(args[2].value.testTuple().elm(2),
 							Type.INT_TYPE);
 					mv.visitMethodInsn(INVOKEVIRTUAL, EBINMATCHSTATE_TYPE
 							.getInternalName(), test.name(), "(I)I");
