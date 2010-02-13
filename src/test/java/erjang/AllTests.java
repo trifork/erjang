@@ -52,6 +52,7 @@ public class AllTests {
 
 
 	static void find_beam_files(TestSuite suite, File dir) {
+		if (! dir.isDirectory()) throw new IllegalArgumentException("not a directory: "+dir);
 		TestSuite ts = null;
 
 		for (File file : dir.listFiles()) {
@@ -73,6 +74,7 @@ public class AllTests {
 	}
 
 	static void find_erl_files(TestSuite suite, File dir) {
+		if (! dir.isDirectory()) throw new IllegalArgumentException("not a directory: "+dir);
 		TestSuite ts = null;
 
 		for (File file : dir.listFiles()) {
