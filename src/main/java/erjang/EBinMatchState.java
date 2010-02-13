@@ -160,7 +160,7 @@ public class EBinMatchState extends EPseudoTerm {
 			return ESmall.ZERO;
 		}
 
-		if (size < 0 || bin.bitSize() > (offset + size)) {
+		if (size < 0 || bin.bitSize() < (offset + size)) {
 			// no match
 			return null;
 		}
