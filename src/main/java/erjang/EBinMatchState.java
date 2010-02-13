@@ -57,18 +57,24 @@ public class EBinMatchState extends EPseudoTerm {
 	public EBitString binary() {
 		return bin;
 	}
-	
+
 	public static EBitString bs_context_to_binary (EObject obj) {
 		EBinMatchState bms;
 		if ((bms=obj.testBinMatchState()) != null) {
-			// TODO: Convert from start_offset and forth.
-			throw new NotImplemented();
+		    if (bms.offset % 8 == 0) {
+				int start_byte = (int)(bms.offset/8);
+				EBitString result = EBitString.makeByteOffsetTail(bms.bin, start_byte);
+				return result;
+			} else {
+				// TODO: Convert from start_offset and forth.
+				throw new NotImplemented();
+			}
 		} else {
 		    // Note that the source operand may already be a binary...? /eriksoe
 			throw new Error("BADARG: be called with EBinMatchState");
 		}
 	}
-	
+
 	public static void bs_save2 (EObject obj, int slot) {
 		EBinMatchState bms;
 		if ((bms=obj.testBinMatchState()) != null) {
