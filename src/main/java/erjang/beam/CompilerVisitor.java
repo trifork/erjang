@@ -113,6 +113,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 	static final String EOBJECT_DESC = EOBJECT_TYPE.getDescriptor();
 	static final Type EPROC_TYPE = Type.getType(EProc.class);
 	static final String EPROC_NAME = EPROC_TYPE.getInternalName();
+	static final String EPROC_DESC = EPROC_TYPE.getDescriptor();
 
 	static final Type ESMALL_TYPE = Type.getType(ESmall.class);
 	static final String ESMALL_NAME = ESMALL_TYPE.getInternalName();
@@ -146,9 +147,12 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 	static final String EDOUBLE_NAME = EDOUBLE_TYPE.getInternalName();
 	static final String EINTEGER_NAME = EINTEGER_TYPE.getInternalName();
 	static final String ENIL_NAME = ENIL_TYPE.getInternalName();
+	static final String ESEQ_NAME = ESEQ_TYPE.getInternalName();
 
 	static final String ETUPLE_DESC = ETUPLE_TYPE.getDescriptor();
 	static final String EATOM_DESC = EATOM_TYPE.getDescriptor();
+	static final String ECONS_DESC = ECONS_TYPE.getDescriptor();
+	static final String ESEQ_DESC = ESEQ_TYPE.getDescriptor();
 
 	/**
 	 * 
@@ -1705,9 +1709,17 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					ExtFunc f = (ExtFunc) arg;
 					push_immediate(f.mod, EATOM_TYPE);
 					push_immediate(f.fun, EATOM_TYPE);
-					mv.visitLdcInsn(new Integer(arg.no));
+
+					push_immediate(ERT.NIL, ENIL_TYPE);
+					for (int i=arg.no-1; i>=0; i--) {
+						push(new Arg(Kind.X, i), EOBJECT_TYPE);
+						mv.visitMethodInsn(INVOKEVIRTUAL, ESEQ_NAME, "cons", "("
+										   + EOBJECT_DESC + ")"
+										   + ESEQ_DESC);
+					}
+
 					mv.visitMethodInsn(INVOKESTATIC, ERT_NAME, "func_info", "("
-							+ EATOM_DESC + EATOM_DESC + "I)" + EOBJECT_DESC);
+							+ EATOM_DESC + EATOM_DESC + ESEQ_DESC +")" + EOBJECT_DESC);
 					mv.visitInsn(ARETURN);
 					return;
 

@@ -760,6 +760,10 @@ public class ERT {
 		throw new ErlangError(am_function_clause);
 	}
 
+	public static EObject func_info(EAtom mod, EAtom fun, ESeq args) {
+		throw new ErlangError(am_function_clause, args);
+	}
+
 	static void load_module(EAtom module) throws IOException {
 		File f = Compiler.find_and_compile(module.getName());
 		EModuleManager.load_module(module, f.toURI().toURL());
