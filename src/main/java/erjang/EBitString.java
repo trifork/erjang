@@ -197,7 +197,11 @@ public class EBitString extends EObject {
 			return new EBitString(data, byteOff, byteLength, extra_bits);
 		}
 	}
-	
+
+	public static EBitString makeByteOffsetTail(EBitString org, int byteOff) {
+	    return new EBitString(org.data, org.data_offset+byteOff, org.byte_size-byteOff, org.extra_bits);
+	}
+
 	protected EBitString(byte[] data, int byte_off, int byte_len, int extra_bits) {
 		this.data = data;
 		this.data_offset = byte_off;
