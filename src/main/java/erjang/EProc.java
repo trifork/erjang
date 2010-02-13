@@ -225,7 +225,7 @@ public final class EProc extends ETask<EInternalPID> {
 	public ESeq get() {
 		ESeq res = ERT.NIL;
 		for (Map.Entry<EObject, EObject> ent : pdict.entrySet()) {
-			res.cons(ETuple.make(ent.getKey(), ent.getValue()));
+			res = res.cons(ETuple.make(ent.getKey(), ent.getValue()));
 		}
 		return res;
 	}
