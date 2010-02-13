@@ -271,7 +271,9 @@ public class EBinMatchState extends EPseudoTerm {
 	}
 	
 	public EObject bs_test_unit(int size) {
-		throw new NotImplemented();
+		if (offset % size == 0)
+			return ERT.TRUE;
+		return null;
 	}
 
 	/** yields TRUE if we are at the end */
