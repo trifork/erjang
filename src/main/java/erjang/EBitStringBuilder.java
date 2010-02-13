@@ -75,10 +75,10 @@ public class EBitStringBuilder {
 
 			byte b1, b2;
 			if ((flags & EBinMatchState.BSF_LITTLE) > 0) {
-				b1 = (byte)val; val <<= 8;
+				b1 = (byte)val; val >>= 8;
 				b2 = (byte)val;
 			} else {
-				b2 = (byte)val; val <<= 8;
+				b2 = (byte)val; val >>= 8;
 				b1 = (byte)val;
 			}
 			data[bpos++] = b1;
@@ -92,14 +92,14 @@ public class EBitStringBuilder {
 
 			byte b1, b2, b3, b4;
 			if ((flags & EBinMatchState.BSF_LITTLE) > 0) {
-				b1 = (byte)val; val <<= 8;
-				b2 = (byte)val; val <<= 8;
-				b3 = (byte)val; val <<= 8;
+				b1 = (byte)val; val >>= 8;
+				b2 = (byte)val; val >>= 8;
+				b3 = (byte)val; val >>= 8;
 				b4 = (byte)val;
 			} else {
-				b4 = (byte)val; val <<= 8;
-				b3 = (byte)val; val <<= 8;
-				b2 = (byte)val; val <<= 8;
+				b4 = (byte)val; val >>= 8;
+				b3 = (byte)val; val >>= 8;
+				b2 = (byte)val; val >>= 8;
 				b1 = (byte)val;
 			}
 			data[bpos++] = b1;
