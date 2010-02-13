@@ -311,23 +311,22 @@ public class EBinMatchState extends EPseudoTerm {
 	 */
     static final int[] UTF8_MASK = {0, 0x7F, 0x7FF, 0xFFFF, 0x1FFFFF};
 	public int decodeUTF8() {
-		//TODO: Use getOctet() instead of intBitsAt().
-		long pos = offset;
+		if (offset % 8 != 0) return -1; // Misaligned.
+		int byte_pos = (int)(offset/8);
 
 		if (bitsLeft() < 8) return -1;
-		int acc = bin.intBitsAt(pos, 8);
-		pos += 8;
+		int acc = bin.octetAt(byte_pos++);
 
-		if (acc < 0x80) {offset=pos; return acc;} // ASCII case.
+		if (acc < 0x80) {offset=8L * byte_pos; return acc;} // ASCII case.
 		if ((acc & 0xC0) == 0x80) return -1; // Sequence starts with a continuation byte.
 		if (acc > 0xF8) return -1;           // Out of range.
 
 		int len;
 		byte t = (byte)acc;
 		for (len=1; (t<<=1) < 0; len++) {
-			if (bitsLeft() < 8) return -1;
-			int b = bin.intBitsAt(pos, 8);
-			pos += 8;
+			if (bitsLeft()-8*len < 8) return -1;
+			int b = bin.octetAt(byte_pos++);
+
 			if ((b & 0xC0) != 0x80) return -1; // Incorrect continuation byte.
 			acc = (acc<<6) + (b & 0x3F);
 		}
@@ -338,7 +337,7 @@ public class EBinMatchState extends EPseudoTerm {
 		if (!isValidCodePoint(acc)) return -1;
 
 		// Non-ASCII success
-		offset = pos;
+		offset = 8L * byte_pos;
 		return acc;
     }
 
