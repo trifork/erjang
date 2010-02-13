@@ -56,22 +56,60 @@ public class EBitStringBuilder {
 	}
 
 	public void put_integer(EObject value, int size, int flags) {
-		
 		if (extraBits != 0)
 			throw new NotImplemented();
-		
-		if (size==8) {
+
+		switch (size) {
+		case 8: {
 			ESmall sm = value.testSmall();
 			if (sm==null) { throw ERT.badarg(value); }
 			int val = sm.value;
-			
-			if ((flags & 0x01) == 0x01) // unsigned
-				val &= 0xff;
-			
+
 			data[bpos++] = (byte)val;
 			return;
 		}
-		
+		case 16: {
+			ESmall sm = value.testSmall();
+			if (sm==null) { throw ERT.badarg(value); }
+			int val = sm.value;
+
+			byte b1, b2;
+			if ((flags & EBinMatchState.BSF_LITTLE) > 0) {
+				b1 = (byte)val; val <<= 8;
+				b2 = (byte)val;
+			} else {
+				b2 = (byte)val; val <<= 8;
+				b1 = (byte)val;
+			}
+			data[bpos++] = b1;
+			data[bpos++] = b2;
+			return;
+		}
+		case 32: {
+			ESmall sm = value.testSmall();
+			if (sm==null) { throw ERT.badarg(value); }
+			int val = sm.value;
+
+			byte b1, b2, b3, b4;
+			if ((flags & EBinMatchState.BSF_LITTLE) > 0) {
+				b1 = (byte)val; val <<= 8;
+				b2 = (byte)val; val <<= 8;
+				b3 = (byte)val; val <<= 8;
+				b4 = (byte)val;
+			} else {
+				b4 = (byte)val; val <<= 8;
+				b3 = (byte)val; val <<= 8;
+				b2 = (byte)val; val <<= 8;
+				b1 = (byte)val;
+			}
+			data[bpos++] = b1;
+			data[bpos++] = b2;
+			data[bpos++] = b3;
+			data[bpos++] = b4;
+			return;
+		}
+		} // switch
+
 		throw new NotImplemented("val="+value+";size="+size+";flags="+flags);
 	}
 
