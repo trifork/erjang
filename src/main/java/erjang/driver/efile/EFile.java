@@ -1230,12 +1230,19 @@ public class EFile extends EDriverInstance {
 		driver_output2(header, buf);
 	}
 
+	void reply_eof() {
+		ByteBuffer header = ByteBuffer.allocate(1);
+		header.put(FILE_RESP_EOF);
+		driver_output2(header, null);
+	}
+
 	/**
 	 * 
 	 */
 	public void reply_ok() {
-		// TODO Auto-generated method stub
-
+		ByteBuffer header = ByteBuffer.allocate(1);
+		header.put(FILE_RESP_OK);
+		driver_output2(header, null);
 	}
 
 	protected static int fileNotFound_to_posixErrno(File file, int mode) {
