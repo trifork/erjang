@@ -20,6 +20,8 @@ package erjang.driver.efile;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.RandomAccessFile;
 import java.io.FileNotFoundException;
 import java.io.FilenameFilter;
 import java.io.IOException;
@@ -387,8 +389,9 @@ public class EFile extends EDriverInstance {
 	 * @param replySize
 	 */
 	public void reply_Uint(int value) {
-		// TODO Auto-generated method stub
-
+		ByteBuffer response = ByteBuffer.allocate(4);
+		response.putInt(value);
+		driver_output2(response, null);
 	}
 
 	/**
@@ -475,8 +478,137 @@ public class EFile extends EDriverInstance {
 			return;
 		}
 
-		int command = ev[0].get();
+		byte command = ev[0].get();
 		switch (command) {
+		case FILE_CLOSE: {
+			if (ev.length > 1 && ev[0].hasRemaining()) {
+				reply_posix_error(Posix.EINVAL);
+				return;
+			}
+			ByteBuffer last = ev[ev.length - 1];
+
+			if (last.hasRemaining()) {
+				reply_posix_error(Posix.EINVAL);
+				return;
+			}
+
+			//TODO: Flush & check.
+
+			// Is this check necessary?
+			/*
+			if (fd == null) {
+				reply_posix_error(Posix.BADF);
+				return;
+			}
+			*/
+
+			FileAsync d = new FileAsync() {
+				{
+					this.fd = EFile.this.fd;
+				}
+				public void async() {
+					try {
+						fd.close();
+						result_ok = true;
+					} catch (IOException e) {
+						result_ok = false;
+						posix_errno = IO.exception_to_posix_code(e);
+					}
+				}
+
+				@Override
+				public void ready() {
+					if (result_ok) {
+						reply_ok();
+					} else {
+						reply_posix_error(posix_errno);
+					}
+				}
+			};
+			cq_enq(d);
+			break;
+		}
+
+		case FILE_READ: {
+			if (ev.length > 1 && ev[0].hasRemaining()) {
+				reply_posix_error(Posix.EINVAL);
+				return;
+			}
+			ByteBuffer last = ev[ev.length - 1];
+
+			if (last.remaining() != 8) {
+				reply_posix_error(Posix.EINVAL);
+				return;
+			}
+
+			final long size = last.getLong();
+			if (size > Integer.MAX_VALUE || size < 0) {
+				reply_posix_error(Posix.ENOMEM);
+				return;
+			}
+
+			//TODO: Write-flush & check.
+
+			FileAsync d = new FileAsync() {
+				private ByteBuffer binp = null;
+				{
+					super.level = 2;
+					super.again = true;
+					this.fd = EFile.this.fd;
+				}
+
+				@Override
+				public void async() {
+					// first time only, initialize binp
+					if (binp == null) {
+						try {
+							binp = ByteBuffer.allocate((int) size);
+						} catch (OutOfMemoryError e) {
+							result_ok = false;
+							posix_errno = Posix.ENOMEM;
+							return;
+						}
+					}
+
+					if (binp != null && binp.hasRemaining()) {
+						try {
+							int bytes = fd.read(binp);
+
+							if (bytes == -1) {
+								result_ok = true;
+								again = false;
+								return;
+							}
+
+							if (binp.hasRemaining()) {
+								again = true;
+								return;
+							} else {
+								result_ok = true;
+							}
+						} catch (IOException e) {
+							result_ok = false;
+							posix_errno = IO.exception_to_posix_code(e);
+						}
+					}
+
+					again = false;
+				}
+
+				@Override
+				public void ready() {
+					if (!result_ok) {
+						reply_posix_error(posix_errno);
+						return;
+					}
+
+					reply_buf(binp);
+					binp.flip();
+				}
+			};
+			cq_enq(d);
+			break;
+		} //break;
 		case FILE_READ_FILE: {
 			if (ev.length > 1 && ev[0].hasRemaining()) {
 				reply_posix_error(Posix.EINVAL);
@@ -510,13 +642,7 @@ public class EFile extends EDriverInstance {
 						} catch (FileNotFoundException e) {
 							this.again = false;
 							result_ok = false;
-
-							if (!file.exists() || !file.isFile())
-								posix_errno = Posix.ENOENT;
-							else if (!file.canRead())
-								posix_errno = Posix.EPERM;
-							else
-								posix_errno = Posix.EUNKNOWN;
+							posix_errno = fileNotFound_to_posixErrno(file, EFILE_MODE_READ);
 
 							this.again = false;
 							return;
@@ -607,7 +733,6 @@ public class EFile extends EDriverInstance {
 
 	@Override
 	protected void output(ByteBuffer data) {
-
 		FileAsync d;
 		byte cmd = data.get();
 		switch (cmd) {
@@ -712,6 +837,59 @@ public class EFile extends EDriverInstance {
 			};
 			break;
 		}
+
+		case FILE_OPEN: {
+			final int mode = data.getInt();
+			final String file_name = IO.strcpy(data);
+
+			d = new SimpleFileAsync(cmd, file_name) {
+				public void run() {
+					boolean compressed = (mode & EFILE_COMPRESSED) > 0;
+					boolean append = (mode & EFILE_MODE_APPEND) > 0;
+					if ((mode & ~(EFILE_MODE_APPEND | EFILE_MODE_READ_WRITE)) > 0)
+						throw new NotImplemented();
+					try {
+						if (compressed) {
+							if ((mode & EFILE_MODE_READ_WRITE) == EFILE_MODE_READ_WRITE && append) {
+								posix_errno = Posix.EINVAL;
+								return;
+							}
+							throw new NotImplemented();
+						} else {
+							switch (mode & EFILE_MODE_READ_WRITE) {
+							case EFILE_MODE_READ:
+								fd = new FileInputStream(file).getChannel();
+								break;
+							case EFILE_MODE_WRITE:
+								fd = new FileOutputStream(file,append).getChannel();
+								break;
+							case EFILE_MODE_READ_WRITE:
+								fd = new RandomAccessFile(file,"rw").getChannel();
+								break;
+							default:
+								throw new NotImplemented();
+							}//switch
+
+							result_ok = true;
+						}
+					} catch (FileNotFoundException fnfe) {
+						posix_errno = fileNotFound_to_posixErrno(file, mode);
+					}
+				}
+
+				@Override
+				public void ready() {
+					if (result_ok) {
+						EFile.this.fd = fd;
+						reply_Uint(1234); /* TODO: fd */
+					} else {
+						reply_posix_error(posix_errno);
+					}
+				}
+
+
+			};
+		} break;
 
 		
 		case FILE_FSTAT: 
@@ -1058,6 +1236,17 @@ public class EFile extends EDriverInstance {
 	public void reply_ok() {
 		// TODO Auto-generated method stub
 
+	}
+
+	protected static int fileNotFound_to_posixErrno(File file, int mode) {
+		if (!file.exists() || !file.isFile())
+			return Posix.ENOENT;
+		else if ((mode & EFILE_MODE_READ) > 0 && !file.canRead())
+			return Posix.EPERM;
+		else if ((mode & EFILE_MODE_WRITE) > 0 && !file.canWrite())
+			return Posix.EPERM;
+		else
+			return Posix.EUNKNOWN;
 	}
 
 }
