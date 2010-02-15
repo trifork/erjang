@@ -235,6 +235,19 @@ public class Native extends ENative {
 		return ERT.TRUE;
 	}
 
+	@BIF
+	public static EObject delete(EProc proc, EObject tab, EObject key) {
+		// test arguments
+		ETable table = resolve(proc, tab, true);
+		if (table == null) {
+			throw ERT.badarg(tab, key);
+		}
+
+		table.delete(key);
+
+		return ERT.TRUE;
+	}
+
 
 	@BIF
 	public static EObject lookup(EProc proc, EObject tab, EObject key) {

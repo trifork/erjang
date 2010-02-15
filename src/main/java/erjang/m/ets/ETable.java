@@ -221,6 +221,8 @@ abstract class ETable implements ExitHook {
 
 	protected abstract ESeq match(EPattern matcher);
 
+	protected abstract void delete(EObject key);
+
 	protected abstract EInteger select_delete(EMatchSpec matcher);
 
 	protected void delete_all_objects() {

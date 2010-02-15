@@ -159,6 +159,27 @@ public class ETableBag extends ETable {
 	}
 
 	@Override
+	protected void delete(final EObject key) {
+		in_tx(new WithMap<Object>() {
+			@Override
+			protected Object run(IPersistentMap map) {
+				IPersistentCollection empty = empty();
+				IPersistentCollection c =
+					(IPersistentCollection) map.valAt(key, empty);
+				try {
+				    map = map.without(key);
+				} catch (Exception e) {
+				    // should not happen!
+				    throw new Error(e);
+				}
+				set(map);
+				sizeRef.set((Integer)sizeRef.deref() - c.count());
+				return null;
+			}
+		});
+	}
+
+	@Override
 	protected EInteger select_delete(final EMatchSpec matcher) {
 
 		int delete_count = in_tx(new WithMap<Integer>() {

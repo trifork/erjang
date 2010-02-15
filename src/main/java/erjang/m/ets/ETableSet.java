@@ -65,7 +65,6 @@ public class ETableSet extends ETable {
 		});
 	}
 
-
 	@Override
 	protected void insert_many(final ESeq values) {
 		in_tx(new WithMap<Object>() {
@@ -146,6 +145,23 @@ public class ETableSet extends ETable {
 		}
 		
 		return res;
+	}
+
+	@Override
+	protected void delete(final EObject key) {
+		in_tx(new WithMap<Object>() {
+			@Override
+				protected Object run(IPersistentMap map) {
+			    try {
+					map = map.without(key);
+			    } catch (Exception e) {
+					// should not happen!
+					throw new Error(e);
+			    }
+			    set(map);
+			    return null;
+			}
+		});
 	}
 
 	@Override
