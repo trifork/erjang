@@ -293,7 +293,17 @@ public class ErlProc {
 
 	@Import(module="erlang", fun="flush_monitor_message", arity=2)
 	static EFun flush_monitor_message = null;
-	
+
+	@BIF
+	@ErlFun(export = true)
+	static public EObject demonitor(EProc self, EObject ref) throws Pausable {
+	    return demonitor(self, ref, ERT.NIL);
+	}
+
+    /* TODO: Split option parsing from the action; used the action
+	 * part more directly in demonitor/1.
+	 * TODO: Support the 'info' option.
+	 */
 	@BIF
 	@ErlFun(export = true)
 	static public EObject demonitor(EProc self, EObject ref, EObject options) throws Pausable {
