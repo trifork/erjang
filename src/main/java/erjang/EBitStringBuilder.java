@@ -50,7 +50,31 @@ public class EBitStringBuilder {
 	public EBitString bitstring() {
 		return bs;
 	}
-	
+
+	public void put_float(EObject value, int size, int flags) {
+		if (extraBits != 0)
+			throw new NotImplemented();
+
+		switch (size) {
+		case 32: {
+			ENumber en = value.testNumber();
+			if (en==null) { throw ERT.badarg(value); }
+			float val = (float)en.doubleValue();
+			put_int32(Float.floatToIntBits(val), flags);
+			return;
+		}
+		case 64: {
+			ENumber en = value.testNumber();
+			if (en==null) { throw ERT.badarg(value); }
+			double val = en.doubleValue();
+			put_int64(Double.doubleToLongBits(val), flags);
+			return;
+		}
+		} // switch
+
+		throw new NotImplemented("val="+value+";size="+size+";flags="+flags);
+	}
+
 	public void put_integer(EObject value, int flags) {
 		throw new NotImplemented("val="+value+";flags="+flags);
 	}
@@ -89,31 +113,37 @@ public class EBitStringBuilder {
 			ESmall sm = value.testSmall();
 			if (sm==null) { throw ERT.badarg(value); }
 			int val = sm.value;
-
-			if ((flags & EBinMatchState.BSF_LITTLE) > 0) {
-				put_int32_little(val);
-			} else {
-				put_int32_big(val);
-			}
+			put_int32(val, flags);
 			return;
 		}
 		case 64: {
-			EInteger sm = value.testInteger();
-			if (sm==null) { throw ERT.badarg(value); }
-			long val = sm.longValue();
-
-			if ((flags & EBinMatchState.BSF_LITTLE) > 0) {
-				put_int32_little((int)val);
-				put_int32_little((int)(val>>32));
-			} else {
-				put_int32_big((int)(val>>32));
-				put_int32_big((int)val);
-			}
+			EInteger ei = value.testInteger();
+			if (ei==null) { throw ERT.badarg(value); }
+			long val = ei.longValue();
+			put_int64(val, flags);
 			return;
 		}
 		} // switch
 
 		throw new NotImplemented("val="+value+";size="+size+";flags="+flags);
+	}
+
+	protected void put_int64(long val, int flags) {
+		if ((flags & EBinMatchState.BSF_LITTLE) > 0) {
+			put_int32_little((int)val);
+			put_int32_little((int)(val>>32));
+		} else {
+			put_int32_big((int)(val>>32));
+			put_int32_big((int)val);
+		}
+	}
+
+	protected void put_int32(int val, int flags) {
+		if ((flags & EBinMatchState.BSF_LITTLE) > 0) {
+			put_int32_little(val);
+		} else {
+			put_int32_big(val);
+		}
 	}
 
 	protected void put_int32_little(int val) {

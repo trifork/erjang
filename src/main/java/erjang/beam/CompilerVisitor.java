@@ -871,7 +871,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					push(size, Type.INT_TYPE);
 					push(flags, Type.INT_TYPE);
 					mv.visitMethodInsn(INVOKEVIRTUAL, EBITSTRINGBUILDER_TYPE
-							.getInternalName(), "put_integer", "(DII)V");
+							.getInternalName(), "put_float", "("+EOBJECT_DESC+"II)V");
 					return;
 
 				case bs_put_binary:

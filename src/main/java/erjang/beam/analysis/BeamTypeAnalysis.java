@@ -839,7 +839,9 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					}
 						
 					case bs_put_binary:
-					case bs_put_integer: {
+					case bs_put_integer:
+					case bs_put_float:
+					{
 						Arg size = decode_arg(insn_idx, insn.elm(3));
 						Arg flags = decode_arg(insn_idx, insn.elm(4));
 						Arg value = decode_arg(insn_idx, insn.elm(6));
