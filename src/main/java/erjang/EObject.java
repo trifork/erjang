@@ -149,74 +149,74 @@ public abstract class EObject implements Comparable<EObject> {
 	public ENumber negate() { throw ERT.badarg(this); }
 
 	@BIF(name="+")
-	public ENumber add(EObject rhs, boolean guard) { if (guard) return null; throw ERT.badarg(this, rhs); }
-	public ENumber add(int lhs, boolean guard) { if (guard) return null; throw ERT.badarg(lhs, this); }
-	public ENumber add(double lhs, boolean guard) { if (guard) return null; throw ERT.badarg(lhs, this); }
-	public ENumber add(BigInteger lhs, boolean guard) { if (guard) return null; throw ERT.badarg(lhs, this); }
+	public ENumber add(EObject rhs, boolean guard) { if (guard) return null; throw ERT.badarith(this, rhs); }
+	public ENumber add(int lhs, boolean guard) { if (guard) return null; throw ERT.badarith(lhs, this); }
+	public ENumber add(double lhs, boolean guard) { if (guard) return null; throw ERT.badarith(lhs, this); }
+	public ENumber add(BigInteger lhs, boolean guard) { if (guard) return null; throw ERT.badarith(lhs, this); }
 
 	@BIF(name="-")
-	public ENumber subtract(EObject rhs, boolean guard) { if (guard) return null; throw ERT.badarg(this, rhs); }
-	public ENumber subtract(int rhs) { throw ERT.badarg(this, rhs); }
-	ENumber r_subtract(int lhs) { throw ERT.badarg(lhs, this); }
-	ENumber r_subtract(double lhs) { throw ERT.badarg(lhs, this); }
-	ENumber r_subtract(BigInteger lhs) { throw ERT.badarg(lhs, this); }
+	public ENumber subtract(EObject rhs, boolean guard) { if (guard) return null; throw ERT.badarith(this, rhs); }
+	public ENumber subtract(int rhs) { throw ERT.badarith(this, rhs); }
+	ENumber r_subtract(int lhs) { throw ERT.badarith(lhs, this); }
+	ENumber r_subtract(double lhs) { throw ERT.badarith(lhs, this); }
+	ENumber r_subtract(BigInteger lhs) { throw ERT.badarith(lhs, this); }
 	
 	@BIF(name="div")
-	public EInteger idiv(EObject rhs) { throw ERT.badarg(this, rhs); }
-	public EInteger idiv(int rhs) { throw ERT.badarg(this, rhs); }
-	EInteger r_idiv(int lhs) { throw ERT.badarg(lhs, this); }
-	EInteger r_idiv(BigInteger lhs) { throw ERT.badarg(lhs, this); }
+	public EInteger idiv(EObject rhs) { throw ERT.badarith(this, rhs); }
+	public EInteger idiv(int rhs) { throw ERT.badarith(this, rhs); }
+	EInteger r_idiv(int lhs) { throw ERT.badarith(lhs, this); }
+	EInteger r_idiv(BigInteger lhs) { throw ERT.badarith(lhs, this); }
 
 	@BIF(name="rem")
-	public EInteger irem(EObject rhs) { throw ERT.badarg(this, rhs); }
-	EInteger r_irem(int lhs) { throw ERT.badarg(lhs, this); }
-	EInteger r_irem(BigInteger lhs) { throw ERT.badarg(lhs, this); }
+	public EInteger irem(EObject rhs) { throw ERT.badarith(this, rhs); }
+	EInteger r_irem(int lhs) { throw ERT.badarith(lhs, this); }
+	EInteger r_irem(BigInteger lhs) { throw ERT.badarith(lhs, this); }
 
 	@BIF(name="/")
-	public EDouble divide(EObject rhs) { throw ERT.badarg(this, rhs); }
-	EDouble r_divide(int lhs) { throw ERT.badarg(lhs, this); }
-	EDouble r_divide(double lhs) { throw ERT.badarg(lhs, this); }
-	EDouble r_divide(BigInteger lhs) { throw ERT.badarg(lhs, this); }
+	public EDouble divide(EObject rhs) { throw ERT.badarith(this, rhs); }
+	EDouble r_divide(int lhs) { throw ERT.badarith(lhs, this); }
+	EDouble r_divide(double lhs) { throw ERT.badarith(lhs, this); }
+	EDouble r_divide(BigInteger lhs) { throw ERT.badarith(lhs, this); }
 
 	@BIF(name="*")
-	public ENumber multiply(EObject rhs) { throw ERT.badarg(this, rhs); }
-	public ENumber multiply(int lhs) { throw ERT.badarg(lhs, this); }
-	public ENumber multiply(double lhs) { throw ERT.badarg(lhs, this); }
-	public ENumber multiply(BigInteger lhs) { throw ERT.badarg(lhs, this); }
+	public ENumber multiply(EObject rhs) { throw ERT.badarith(this, rhs); }
+	public ENumber multiply(int lhs) { throw ERT.badarith(lhs, this); }
+	public ENumber multiply(double lhs) { throw ERT.badarith(lhs, this); }
+	public ENumber multiply(BigInteger lhs) { throw ERT.badarith(lhs, this); }
 
 	@BIF(name="bsr")
-	public EInteger bsr(EObject rhs) { throw ERT.badarg(this, rhs); }
-	EInteger r_bsr(int lhs) { throw ERT.badarg(lhs, this); }
-	EInteger r_bsr(BigInteger lhs) { throw ERT.badarg(lhs, this); }
+	public EInteger bsr(EObject rhs) { throw ERT.badarith(this, rhs); }
+	EInteger r_bsr(int lhs) { throw ERT.badarith(lhs, this); }
+	EInteger r_bsr(BigInteger lhs) { throw ERT.badarith(lhs, this); }
 
 	@BIF(name="bsl")
-	public EInteger bsl(EObject rhs) { throw ERT.badarg(this, rhs); }
-	public EInteger bsl(int rhs) { throw ERT.badarg(this, rhs); }
-	EInteger r_bsl(int lhs) { throw ERT.badarg(lhs, this); }
-	EInteger r_bsl(BigInteger lhs) { throw ERT.badarg(lhs, this); }
+	public EInteger bsl(EObject rhs) { throw ERT.badarith(this, rhs); }
+	public EInteger bsl(int rhs) { throw ERT.badarith(this, rhs); }
+	EInteger r_bsl(int lhs) { throw ERT.badarith(lhs, this); }
+	EInteger r_bsl(BigInteger lhs) { throw ERT.badarith(lhs, this); }
 	
 	@BIF(name="band")
-	public EInteger band(EObject rhs) { throw ERT.badarg(this, rhs); }
-	public EInteger band(int lhs) { throw ERT.badarg(lhs, this); }
-	public EInteger band(BigInteger lhs) { throw ERT.badarg(lhs, this); }
+	public EInteger band(EObject rhs) { throw ERT.badarith(this, rhs); }
+	public EInteger band(int lhs) { throw ERT.badarith(lhs, this); }
+	public EInteger band(BigInteger lhs) { throw ERT.badarith(lhs, this); }
 
 	@BIF(name="bor")
-	public EInteger bor(EObject rhs) { throw ERT.badarg(this, rhs); }
-	public EInteger bor(int lhs) { throw ERT.badarg(lhs, this); }
-	public EInteger bor(BigInteger lhs) { throw ERT.badarg(lhs, this); }
+	public EInteger bor(EObject rhs) { throw ERT.badarith(this, rhs); }
+	public EInteger bor(int lhs) { throw ERT.badarith(lhs, this); }
+	public EInteger bor(BigInteger lhs) { throw ERT.badarith(lhs, this); }
 
 	@BIF(name="bxor")
-	public EInteger bxor(EObject rhs) { throw ERT.badarg(this, rhs); }
-	public EInteger bxor(int lhs) { throw ERT.badarg(lhs, this); }
-	public EInteger bxor(BigInteger lhs) { throw ERT.badarg(lhs, this); }
+	public EInteger bxor(EObject rhs) { throw ERT.badarith(this, rhs); }
+	public EInteger bxor(int lhs) { throw ERT.badarith(lhs, this); }
+	public EInteger bxor(BigInteger lhs) { throw ERT.badarith(lhs, this); }
 
 	@BIF(name="bnot")
-	public EInteger bnot() { throw ERT.badarg(this); }
+	public EInteger bnot() { throw ERT.badarith(this); }
 
 	// extra convenience
 	
-	public EDouble divide(double rhs) { throw ERT.badarg(this,rhs); }
-	public EInteger irem(int rhs) { throw ERT.badarg(this,rhs); }
+	public EDouble divide(double rhs) { throw ERT.badarith(this,rhs); }
+	public EInteger irem(int rhs) { throw ERT.badarith(this,rhs); }
 
 	public boolean equals(Object other) {
 		if (other == this) return true;

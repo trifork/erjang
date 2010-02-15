@@ -83,25 +83,34 @@ public class ERT {
 		throw new ErlangError(am_badarg, NIL.cons(o2).cons(o1));
 	}
 
-	public static ErlangError badarg(int o1, EObject o2) {
-		throw new ErlangError(am_badarg, NIL.cons(o2).cons(o1));
+	public static ErlangError badarith(EObject... args) {
+		throw new ErlangError(AM_BADARITH, args);
 	}
 
-	public static ErlangError badarg(EObject o1, int o2) {
-		throw new ErlangError(am_badarg, NIL.cons(o2).cons(o1));
+	public static ErlangError badarith(EObject o1, EObject o2) throws ErlangError {
+		throw new ErlangError(AM_BADARITH, NIL.cons(o2).cons(o1));
 	}
 
-	public static ErlangError badarg(double o1, EObject o2) {
-		throw new ErlangError(am_badarg, NIL.cons(o2).cons(o1));
+	public static ErlangError badarith(int o1, EObject o2) {
+		throw new ErlangError(AM_BADARITH, NIL.cons(o2).cons(o1));
 	}
 
-	public static ErlangError badarg(EObject o1, double o2) {
-		throw new ErlangError(am_badarg, NIL.cons(o2).cons(o1));
+	public static ErlangError badarith(EObject o1, int o2) {
+		throw new ErlangError(AM_BADARITH, NIL.cons(o2).cons(o1));
 	}
 
-	public static ErlangError badarg(BigInteger o1, EObject o2) {
-		throw new ErlangError(am_badarg, NIL.cons(o2).cons(o1));
+	public static ErlangError badarith(double o1, EObject o2) {
+		throw new ErlangError(AM_BADARITH, NIL.cons(o2).cons(o1));
 	}
+
+	public static ErlangError badarith(EObject o1, double o2) {
+		throw new ErlangError(AM_BADARITH, NIL.cons(o2).cons(o1));
+	}
+
+	public static ErlangError badarith(BigInteger o1, EObject o2) {
+		throw new ErlangError(AM_BADARITH, NIL.cons(o2).cons(o1));
+	}
+
 
 	public static final EAtom TRUE = EAtom.intern("true");
 	public static final EAtom FALSE = EAtom.intern("false");
@@ -281,6 +290,7 @@ public class ERT {
 	public static final EAtom am_if_clause = EAtom.intern("if_clause");
 	public static final boolean DEBUG = true;
 	public static final boolean DEBUG2 = false;
+	public static final boolean DEBUG_WAIT = true;
 	public static final EBinary EMPTY_BINARY = new EBinary(new byte[0]);
 	public static final ByteBuffer[] EMPTY_BYTEBUFFER_ARR = new ByteBuffer[0];
 	public static final ByteBuffer EMPTY_BYTEBUFFER = ByteBuffer.allocate(0);
@@ -675,6 +685,7 @@ public class ERT {
 
 	public static boolean wait_timeout(EProc proc, EObject howlong)
 			throws Pausable {
+		if (ERT.DEBUG_WAIT) System.err.println("WAIT| "+proc+" waits for messages for "+howlong+" ms");
 		if (proc.midx == -1024) {
 			if (howlong == am_infinity) {
 				proc.mbox.untilHasMessage();
@@ -690,24 +701,29 @@ public class ERT {
 		} else {
 			if (howlong == am_infinity) {
 				proc.mbox.untilHasMessages(proc.midx + 1);
+				if (ERT.DEBUG_WAIT) System.err.println("WAIT| "+proc+" wakes up on message");
 				return true;
 			} else {
 				EInteger ei;
 				if ((ei = howlong.testInteger()) == null)
 					throw badarg(howlong);
 
-				return proc.mbox
-						.untilHasMessages(proc.midx + 1, ei.longValue());
+				boolean res = proc.mbox
+					.untilHasMessages(proc.midx + 1, ei.longValue());
+				if (ERT.DEBUG_WAIT) System.err.println("WAIT| "+proc+" wakes up "+(res?"on message" : "after timeout"));
+				return res;
 			}
 		}
 	}
 
 	public static void wait_forever(EProc proc) throws Pausable {
+		if (DEBUG_WAIT) System.err.println("WAIT| "+proc+" waits for messages");
 		if (proc.midx == -1024) {
 			proc.mbox.untilHasMessage();
 		} else {
 			proc.mbox.untilHasMessages(proc.midx + 1);
 		}
+		if (DEBUG_WAIT) System.err.println("WAIT| "+proc+" wakes up after timeout");
 	}
 
 	// this will be followed by a goto the receive
