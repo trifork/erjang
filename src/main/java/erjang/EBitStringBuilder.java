@@ -90,27 +90,54 @@ public class EBitStringBuilder {
 			if (sm==null) { throw ERT.badarg(value); }
 			int val = sm.value;
 
-			byte b1, b2, b3, b4;
 			if ((flags & EBinMatchState.BSF_LITTLE) > 0) {
-				b1 = (byte)val; val >>= 8;
-				b2 = (byte)val; val >>= 8;
-				b3 = (byte)val; val >>= 8;
-				b4 = (byte)val;
+				put_int32_little(val);
 			} else {
-				b4 = (byte)val; val >>= 8;
-				b3 = (byte)val; val >>= 8;
-				b2 = (byte)val; val >>= 8;
-				b1 = (byte)val;
+				put_int32_big(val);
 			}
-			data[bpos++] = b1;
-			data[bpos++] = b2;
-			data[bpos++] = b3;
-			data[bpos++] = b4;
+			return;
+		}
+		case 64: {
+			EInteger sm = value.testInteger();
+			if (sm==null) { throw ERT.badarg(value); }
+			long val = sm.longValue();
+
+			if ((flags & EBinMatchState.BSF_LITTLE) > 0) {
+				put_int32_little((int)val);
+				put_int32_little((int)(val>>32));
+			} else {
+				put_int32_big((int)(val>>32));
+				put_int32_big((int)val);
+			}
 			return;
 		}
 		} // switch
 
 		throw new NotImplemented("val="+value+";size="+size+";flags="+flags);
+	}
+
+	protected void put_int32_little(int val) {
+		byte b1, b2, b3, b4;
+		b1 = (byte)val; val >>= 8;
+		b2 = (byte)val; val >>= 8;
+		b3 = (byte)val; val >>= 8;
+		b4 = (byte)val;
+		data[bpos++] = b1;
+		data[bpos++] = b2;
+		data[bpos++] = b3;
+		data[bpos++] = b4;
+	}
+
+	protected void put_int32_big(int val) {
+		byte b1, b2, b3, b4;
+		b4 = (byte)val; val >>= 8;
+		b3 = (byte)val; val >>= 8;
+		b2 = (byte)val; val >>= 8;
+		b1 = (byte)val;
+		data[bpos++] = b1;
+		data[bpos++] = b2;
+		data[bpos++] = b3;
+		data[bpos++] = b4;
 	}
 
 	public void put_string(EString str) {
