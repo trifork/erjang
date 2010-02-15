@@ -65,12 +65,11 @@ public class FDDriverInstance extends EDriverInstance {
 		if (out == 2) {
 			outs = System.err;
 		}
-		
 		// that's it.
-		
+	}
+
+	public void setup() {
 		if (ins != null) {
-			
-			
 			new Thread() {
 				{ setDaemon(true); start(); }
 				

@@ -30,6 +30,8 @@ import erjang.EObject;
  */
 public abstract class EDriverControl {
 
+	public void setup() {}
+
 	/**
 	 * 
 	 */

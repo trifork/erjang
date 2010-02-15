@@ -87,6 +87,8 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 		driver.task = this;
 	}
 
+	public void setupInstance() {instance.setup();}
+
 	@Override
 	public EInternalPort self_handle() {
 		return port;
