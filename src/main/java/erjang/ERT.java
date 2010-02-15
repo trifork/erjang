@@ -290,7 +290,7 @@ public class ERT {
 	public static final EAtom am_if_clause = EAtom.intern("if_clause");
 	public static final boolean DEBUG = true;
 	public static final boolean DEBUG2 = false;
-	public static final boolean DEBUG_WAIT = true;
+	public static final boolean DEBUG_WAIT = false;
 	public static final EBinary EMPTY_BINARY = new EBinary(new byte[0]);
 	public static final ByteBuffer[] EMPTY_BYTEBUFFER_ARR = new ByteBuffer[0];
 	public static final ByteBuffer EMPTY_BYTEBUFFER = ByteBuffer.allocate(0);
