@@ -31,6 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import kilim.Pausable;
 import kilim.Task;
 import erjang.beam.Compiler;
+import erjang.driver.Drivers;
 import erjang.driver.EAsync;
 import erjang.driver.EDriver;
 import erjang.driver.EDriverTask;
@@ -796,10 +797,7 @@ public class ERT {
 	 * @return
 	 */
 	public static EDriver find_driver(EString command) {
-		if (command.equals(EString.fromString("efile"))) {
-			return new Driver();
-		}
-		return null;
+		return Drivers.getDriver(command.stringValue());
 	}
 
 	/**

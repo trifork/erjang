@@ -19,6 +19,8 @@
 package erjang;
 
 import java.io.IOException;
+import erjang.driver.Drivers;
+import erjang.driver.EDriver;
 
 /**
  * This will eventually be the main entrypoint for an OTP node.
@@ -31,11 +33,19 @@ public class OTPMain {
 			"erlang", "init", "otp_ring0", "prim_file", "prim_inet",
 			"prim_zip", "zlib" };
 
+	public static EDriver[] DRIVERS = new EDriver[] {
+	    new erjang.driver.efile.Driver(),
+	    new erjang.driver.ram_disk.Driver()
+	};
+
 	@SuppressWarnings("unchecked")
 	public static void main(String[] args) throws ClassNotFoundException, InstantiationException, IllegalAccessException, IOException {
 		
-		for (int i = 0; i < MODULES.length; i++) {
-			ERT.load_module(EAtom.intern(MODULES[i]));
+		for (String m : MODULES) {
+			ERT.load_module(EAtom.intern(m));
+		}
+		for (EDriver d : DRIVERS) {
+			erjang.driver.Drivers.register(d);
 		}
 
 		// EErrorLogger.start();
