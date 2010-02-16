@@ -527,7 +527,7 @@ public final class EProc extends ETask<EInternalPID> {
 	 */
 	@Override
 	public String toString() {
-		return self.toString() + "'" + self_handle().name + "'" + super.toString() +
+		return self.toString() + super.toString() +
 			"::" + spawn_mod + ":" + spawn_fun + "/" + spawn_args;
 	}
 	
