@@ -165,13 +165,13 @@ public interface BlockVisitor2 extends BlockVisitor {
 	 * @param flags
 	 * @param out
 	 */
-	void visitInitBitString(Arg size, Arg flags, Arg out);
+	void visitInitBitString(Arg size, Arg flags, Arg out, boolean unit_is_bits);
 
 	/**
 	 * @param opcode
 	 * @param elm
 	 */
-	void visitBitStringPut(BeamOpcode opcode, Arg value, Arg size, Arg flags);
+	void visitBitStringPut(BeamOpcode opcode, Arg value, Arg size, int unit, int flags);
 
 	void visitBitStringAppend(BeamOpcode opcode, Arg extra_size, Arg src, Arg flags, Arg dst);
 

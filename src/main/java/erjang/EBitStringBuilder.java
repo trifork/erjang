@@ -19,6 +19,7 @@
 
 package erjang;
 
+import java.math.BigInteger;
 
 /**
  * 
@@ -81,51 +82,59 @@ public class EBitStringBuilder {
 
 	public void put_integer(EObject value, int size, int flags) {
 		if (extraBits != 0)
-			throw new NotImplemented();
+			throw new NotImplemented("Unaligned");
 
-		switch (size) {
-		case 8: {
-			ESmall sm = value.testSmall();
-			if (sm==null) { throw ERT.badarg(value); }
-			int val = sm.value;
+		boolean litteEndian = (flags & EBinMatchState.BSF_LITTLE) > 0;
 
-			data[bpos++] = (byte)val;
+		EInteger ei = value.testInteger();
+		if (ei==null) throw ERT.badarg(value);
+
+		if (size == 8) { // Common case optimization
+			data[bpos++] = (byte)ei.intValue();
 			return;
 		}
-		case 16: {
-			ESmall sm = value.testSmall();
-			if (sm==null) { throw ERT.badarg(value); }
-			int val = sm.value;
 
-			byte b1, b2;
-			if ((flags & EBinMatchState.BSF_LITTLE) > 0) {
-				b1 = (byte)val; val >>= 8;
-				b2 = (byte)val;
-			} else {
-				b2 = (byte)val; val >>= 8;
-				b1 = (byte)val;
+		ESmall sm = value.testSmall();
+
+		if (size % 8 == 0) {
+			int nBytes = size/8;
+
+			// We process the bytes little-endian:
+			int pos, delta;
+			if (litteEndian) {
+				pos = bpos;
+				delta = 1;
+			} else{
+				pos = bpos + nBytes-1;
+				delta = -1;
 			}
-			data[bpos++] = b1;
-			data[bpos++] = b2;
-			return;
-		}
-		case 32: {
-			ESmall sm = value.testSmall();
-			if (sm==null) { throw ERT.badarg(value); }
-			int val = sm.value;
-			put_int32(val, flags);
-			return;
-		}
-		case 64: {
-			EInteger ei = value.testInteger();
-			if (ei==null) { throw ERT.badarg(value); }
-			long val = ei.longValue();
-			put_int64(val, flags);
-			return;
-		}
-		} // switch
+			bpos += nBytes;
 
-		throw new NotImplemented("val="+value+";size="+size+";flags="+flags);
+			if (sm!=null) { // ESmall case
+				int val = sm.intValue();
+				while (nBytes-- > 0) {
+					data[pos] = (byte)val;
+					pos += delta;
+					val >>= 8;
+				}
+		    } else { // Larger integer case
+				BigInteger big_int = ei.bigintValue();
+
+				byte[] bytes = big_int.toByteArray();
+				int src_pos = bytes.length;
+				while (--src_pos >= 0 && nBytes-- > 0) {
+					data[pos] = bytes[src_pos];
+					pos += delta;
+				}
+				if (nBytes > 0) {
+					byte sign_byte = (byte)(big_int.signum() < 0 ? -1 : 0);
+					while (nBytes-- > 0) {
+						data[pos] = sign_byte;
+						pos += delta;
+					}
+				}
+			}
+		}
 	}
 
 	protected void put_int64(long val, int flags) {

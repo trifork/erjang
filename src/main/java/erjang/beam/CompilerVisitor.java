@@ -790,7 +790,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			 * erjang.beam.Arg, erjang.beam.Arg)
 			 */
 			@Override
-			public void visitInitBitString(Arg size, Arg flags, Arg out) {
+			public void visitInitBitString(Arg size, Arg flags, Arg out, boolean unit_is_bits) {
 
 				ETuple tflags = flags.value.testTuple();
 				if (tflags.elm(1) != ATOM_field_flags)
@@ -799,7 +799,8 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 				push(size, Type.INT_TYPE);
 				mv.visitLdcInsn(new Integer(iflags));
-				mv.visitMethodInsn(INVOKESTATIC, ERT_NAME, "bs_init", "(II)"
+				String methodName = unit_is_bits? "bs_initBits" : "bs_init";
+				mv.visitMethodInsn(INVOKESTATIC, ERT_NAME, methodName, "(II)"
 						+ EBITSTRINGBUILDER_TYPE.getDescriptor());
 
 				mv.visitInsn(DUP);
@@ -844,8 +845,8 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			 */
 			@Override
 			public void visitBitStringPut(BeamOpcode opcode, Arg arg, Arg size,
-					Arg flags) {
-
+										  int unit, int flags)
+			{
 				switch (opcode) {
 				case bs_put_string:
 					mv.visitVarInsn(ALOAD, bit_string_builder);
@@ -858,8 +859,8 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				case bs_put_integer:
 					mv.visitVarInsn(ALOAD, bit_string_builder);
 					push(arg, EINTEGER_TYPE);
-					push(size, Type.INT_TYPE);
-					push(flags, Type.INT_TYPE);
+					push_scaled(size, unit);
+					push_int(flags);
 					mv.visitMethodInsn(INVOKEVIRTUAL, EBITSTRINGBUILDER_TYPE
 							.getInternalName(), "put_integer", "("
 							+ EOBJECT_DESC + "II)V");
@@ -868,17 +869,18 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				case bs_put_float:
 					mv.visitVarInsn(ALOAD, bit_string_builder);
 					push(arg, Type.DOUBLE_TYPE);
-					push(size, Type.INT_TYPE);
-					push(flags, Type.INT_TYPE);
+					push_scaled(size, unit);
+					push_int(flags);
 					mv.visitMethodInsn(INVOKEVIRTUAL, EBITSTRINGBUILDER_TYPE
-							.getInternalName(), "put_float", "("+EOBJECT_DESC+"II)V");
+									   .getInternalName(), "put_float", "("+EOBJECT_DESC+"II)V");
 					return;
 
 				case bs_put_binary:
+					assert(unit==8);
 					mv.visitVarInsn(ALOAD, bit_string_builder);
 					push(arg, EBITSTRING_TYPE);
 					push(size, EATOM_TYPE);
-					push(flags, Type.INT_TYPE);
+					push_int(flags);
 					mv.visitMethodInsn(INVOKEVIRTUAL, EBITSTRINGBUILDER_TYPE
 							.getInternalName(), "put_bitstring", "("
 							+ EOBJECT_TYPE.getDescriptor()
@@ -1368,6 +1370,19 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 				for (int i = 0; i < in.length; i++) {
 					push(in[i], parameterTypes[i]);
+				}
+			}
+
+			private void push_scaled(Arg value, int factor) {
+				if (value.kind == Kind.IMMEDIATE &&
+					value.value instanceof ESmall)
+				{
+					ESmall sm = (ESmall)value.value;
+					mv.visitLdcInsn(new Integer(factor * sm.intValue()));
+				} else {
+					push(value, Type.INT_TYPE);
+ 					push_int(factor);
+					mv.visitInsn(IMUL);
 				}
 			}
 

@@ -310,6 +310,10 @@ public class ERT {
 		return new EBitStringBuilder(size, flags);
 	}
 
+	public static EBitStringBuilder bs_initBits(int size, int flags) {
+		return new EBitStringBuilder(size/8, size%8, flags);
+	}
+
 	/**
 	 * @param e
 	 * @return

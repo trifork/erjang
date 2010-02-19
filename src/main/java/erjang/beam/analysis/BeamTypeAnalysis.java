@@ -814,7 +814,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						Arg flags = decode_arg(insn_idx, insn.elm(6));
 						Arg out = decode_out_arg(insn_idx, insn.elm(7));
 						
-						vis.visitInitBitString(size, flags, out);
+						vis.visitInitBitString(size, flags, out, false);
 						
 						break;
 					}
@@ -826,15 +826,14 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						Arg flags = decode_arg(insn_idx, insn.elm(6));
 						Arg out = decode_out_arg(insn_idx, insn.elm(7));
 						
-						vis.visitInitBitString(size, flags, out);
+						vis.visitInitBitString(size, flags, out, true);
 						
 						break;
 					}
 					
 					case bs_put_string: {
 						Arg str = decode_arg(insn_idx, insn.elm(3));
-						vis.visitBitStringPut(opcode, str, null, null);
-						
+						vis.visitBitStringPut(opcode, str, null,-1,-1);
 						break;
 					}
 						
@@ -843,10 +842,10 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					case bs_put_float:
 					{
 						Arg size = decode_arg(insn_idx, insn.elm(3));
-						Arg flags = decode_arg(insn_idx, insn.elm(4));
+						int unit = insn.elm(4).asInt();
+						int flags = insn.elm(5).testTuple().elm(2).asInt();
 						Arg value = decode_arg(insn_idx, insn.elm(6));
-						vis.visitBitStringPut(opcode, value, size, flags);
-						
+						vis.visitBitStringPut(opcode, value, size, unit, flags);
 						break;
 					}
 						
