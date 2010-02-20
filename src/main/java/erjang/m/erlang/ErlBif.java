@@ -28,6 +28,7 @@ import kilim.Task;
 import erjang.BIF;
 import erjang.EAtom;
 import erjang.EBinary;
+import erjang.EBitString;
 import erjang.ECons;
 import erjang.EDouble;
 import erjang.EFun;
@@ -102,8 +103,14 @@ public class ErlBif {
 		if ((bin=val.testBinary()) == null) throw ERT.badarg(val);
 		return EString.make(bin);
 	}
-	
-	
+
+	@BIF
+	static EBinary list_to_binary(EObject val) {
+		EString es;
+		if ((es = val.testString()) == null) throw ERT.badarg(val);
+		return es.asBitString();
+	}
+
 	@BIF
 	static EObject apply(EProc proc, EObject one, EObject two, EObject three) throws Pausable {
 		EAtom mod = one.testAtom();
@@ -510,6 +517,18 @@ public class ErlBif {
 	static public double fsub(double v1, double v2) {
 		return v1 - v2;
 	}
+
+	@BIF(type = Type.ARITHBIF)
+	static public double fsub(EObject v1, EObject v2) {
+		ENumber n1, n2;
+		if ((n1 = v1.testNumber()) != null &&
+		    (n2 = v2.testNumber()) != null)
+		{
+			return n1.doubleValue() - n2.doubleValue();
+		}
+		throw ERT.badarg();
+	}
+
 
 	@BIF(type = Type.ARITHBIF)
 	static public double fadd(double v1, double v2) {
