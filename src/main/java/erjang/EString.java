@@ -399,7 +399,7 @@ public class EString extends ESeq implements CharSequence {
 	/**
 	 * @return
 	 */
-	public EBitString asBitString() {
+	public EBinary asBitString() {
 		return new EBinary(data, off, length());
 	}
 
