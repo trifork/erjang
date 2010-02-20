@@ -35,7 +35,7 @@ public class OTPMain {
 
 	public static EDriver[] DRIVERS = new EDriver[] {
 	    new erjang.driver.efile.Driver(),
-	    new erjang.driver.ram_disk.Driver()
+	    new erjang.driver.ram_file.Driver()
 	};
 
 	@SuppressWarnings("unchecked")
