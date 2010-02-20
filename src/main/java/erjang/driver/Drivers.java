@@ -24,10 +24,6 @@ import java.util.HashMap;
 /** The collection of known drivers.
  */
 public class Drivers {
-    static Class[] links = new Class[] {
-		erjang.driver.efile.Driver.class,
-		erjang.driver.ram_disk.Driver.class
-    };
     public static final HashMap<String, EDriver> drivers = new HashMap();
 
     public static synchronized void register(EDriver driver) {
