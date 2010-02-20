@@ -244,16 +244,16 @@ public class EBinMatchState extends EPseudoTerm {
 		long limit = size;
 
 		for (int pos = 0; pos < limit; pos += 8) {
-
 			int rest = (int) Math.min(8, limit - pos);
 
-			int oc1 = 0xff & bin.intBitsAt(pos, rest);
+			int oc1 = 0xff & bin.intBitsAt(offset+pos, rest);
 			int oc2 = 0xff & ebs.intBitsAt(pos, rest);
 
 			if (oc1 != oc2)
 				return null;
 		}
 
+		offset += size;
 		return ebs;
 
 	}
