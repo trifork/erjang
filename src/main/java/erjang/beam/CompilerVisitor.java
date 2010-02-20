@@ -868,7 +868,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 				case bs_put_float:
 					mv.visitVarInsn(ALOAD, bit_string_builder);
-					push(arg, Type.DOUBLE_TYPE);
+					push(arg, EDOUBLE_TYPE);
 					push_scaled(size, unit);
 					push_int(flags);
 					mv.visitMethodInsn(INVOKEVIRTUAL, EBITSTRINGBUILDER_TYPE
