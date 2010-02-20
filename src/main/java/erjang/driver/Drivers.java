@@ -25,19 +25,17 @@ import java.util.HashMap;
  */
 public class Drivers {
     static Class[] links = new Class[] {
-	erjang.driver.efile.Driver.class,
-	erjang.driver.ram_disk.Driver.class
+		erjang.driver.efile.Driver.class,
+		erjang.driver.ram_disk.Driver.class
     };
     public static final HashMap<String, EDriver> drivers = new HashMap();
 
     public static synchronized void register(EDriver driver) {
-	System.err.println("DB| Registering driver: "+driver.driverName());
-	drivers.put(driver.driverName(), driver);
+		drivers.put(driver.driverName(), driver);
     }
 
     public static synchronized EDriver getDriver(String name) {
-	EDriver res = drivers.get(name);
-	System.err.println("DB| getDriver("+name+") => "+res);
-	return res;
+		EDriver res = drivers.get(name);
+		return res;
     }
 }
