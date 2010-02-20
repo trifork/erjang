@@ -201,7 +201,10 @@ public class EBitStringBuilder {
 		return result;
 	}
 
-	public void put_bitstring(EObject str, EAtom how, int flags) {
+	/** Append a bit string.
+	 *  @param size The output size in bits; -1 means the entire bitstring.
+	 */
+	public void put_bitstring(EObject str, int size, int flags) {
 		EBitString ebs = str.testBitString();
 		if (ebs == null) throw new InternalError("bad code gen, arg is "+str.getClass());
 		

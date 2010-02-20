@@ -876,15 +876,19 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					return;
 
 				case bs_put_binary:
-					assert(unit==8);
 					mv.visitVarInsn(ALOAD, bit_string_builder);
 					push(arg, EBITSTRING_TYPE);
-					push(size, EATOM_TYPE);
+
+					if (size.kind == Kind.IMMEDIATE &&
+						size.value.equals(EAtom.intern("all")))
+						push_int(-1);
+					else
+						push_scaled(size, unit);
+
 					push_int(flags);
 					mv.visitMethodInsn(INVOKEVIRTUAL, EBITSTRINGBUILDER_TYPE
 							.getInternalName(), "put_bitstring", "("
-							+ EOBJECT_TYPE.getDescriptor()
-							+ EATOM_TYPE.getDescriptor() + "I)V");
+							+ EOBJECT_TYPE.getDescriptor() + "II)V");
 					return;
 
 				}
