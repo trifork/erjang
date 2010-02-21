@@ -112,6 +112,14 @@ public class ErlBif {
 	}
 
 	@BIF
+	static ESmall iolist_size(EObject val) {
+		//TODO: This is a quick hack. Make into an EObject method for efficiency.
+		EString es;
+		if ((es = val.testString()) == null) throw ERT.badarg(val);
+		return ERT.box(es.length());
+	}
+
+	@BIF
 	static EObject apply(EProc proc, EObject one, EObject two, EObject three) throws Pausable {
 		EAtom mod = one.testAtom();
 		EAtom fun = two.testAtom();
