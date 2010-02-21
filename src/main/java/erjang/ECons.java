@@ -20,6 +20,7 @@ package erjang;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
+import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 
@@ -164,6 +165,35 @@ public abstract class ECons extends EObject {
 		}
 
 		return true;
+	}
+
+
+	public void collectCharList(CharCollector out)
+		throws CharCollector.CollectingException,
+		CharCollector.InvalidElementException,
+		IOException
+	{
+		ECons list;
+		EObject tail;
+		for (tail=this; (list = tail.testCons()) != null; tail = list.tail()) {
+			EObject head = list.head();
+
+			ESmall intval;
+			if ((intval = head.testSmall()) != null) {
+				try {
+					out.addInteger(intval.value);
+				} catch (CharCollector.DecodingException e) {
+					throw new CharCollector.CollectingException(list);
+				}
+			} else {
+				head.collectCharList(out);
+			}
+		}
+
+		if (tail.testNumber() != null) {
+			// Only nil and binaries are allowed as tail
+			throw new CharCollector.InvalidElementException();
+		} else tail.collectCharList(out);
 	}
 
 }

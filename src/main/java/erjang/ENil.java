@@ -56,6 +56,10 @@ public class ENil extends ESeq {
 	}
 
 	@Override
+	public void collectCharList(CharCollector out) {
+	}
+
+	@Override
 	public String toString() {
 		return "[]";
 	}

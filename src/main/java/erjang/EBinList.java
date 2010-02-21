@@ -19,6 +19,7 @@
 package erjang;
 
 import java.nio.ByteBuffer;
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -125,7 +126,16 @@ public class EBinList extends ECons {
 		} else {
 			return new EPair(h, this);
 		}
+	}
 
+	public EObject drop(int n) {
+		if (n > len) throw new IllegalArgumentException();
+		if (n == len) return tail;
+
+		synchronized (this) {
+			shared = true;
+		}
+		return new EBinList(data, off+n, len-n, tail, true);
 	}
 
 	@Override
@@ -250,6 +260,25 @@ public class EBinList extends ECons {
 	public boolean collectIOList(List<ByteBuffer> out) {
 		out.add(ByteBuffer.wrap(data, off, len));
 		return tail.collectIOList(out);
+	}
+
+	@Override
+	public void collectCharList(CharCollector out)
+		throws CharCollector.CollectingException,
+		CharCollector.InvalidElementException,
+		IOException
+	{
+		try {
+			out.addBinary(data, off, len);
+		} catch (CharCollector.PartialDecodingException e) {
+			throw new CharCollector.CollectingException(drop(e.inputPos));
+		}
+
+		if (tail.testNumber() != null) {
+			// Only nil and binaries are allowed as tail
+			// TODO: Fail sooner?
+			throw new CharCollector.InvalidElementException();
+		} else tail.collectCharList(out);
 	}
 
 }

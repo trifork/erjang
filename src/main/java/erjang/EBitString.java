@@ -536,4 +536,21 @@ public class EBitString extends EObject {
 		return byte_size;
 	}
 
+	@Override
+	public void collectCharList(CharCollector out)
+		throws CharCollector.CollectingException,
+		CharCollector.InvalidElementException,
+		IOException
+	{
+		if (extra_bits != 0)
+			throw new CharCollector.InvalidElementException();
+
+		try {
+			out.addBinary(data, data_offset, byte_size);
+		} catch (CharCollector.PartialDecodingException e) {
+			int n = e.inputPos;
+			throw new CharCollector.CollectingException(new EBitString(data, data_offset+n, byte_size-n, extra_bits));
+		}
+	}
+
 }

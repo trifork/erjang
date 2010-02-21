@@ -20,6 +20,7 @@ package erjang;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 
@@ -135,6 +136,23 @@ public abstract class EObject implements Comparable<EObject> {
 	
 	public boolean collectIOList(List<ByteBuffer> out) {
 		return false;
+	}
+
+	/**
+	 * @throws CharCollector.CollectingException when encountering
+	 * something that can't be decoded as characters using the given
+	 * CharCollector.  Exception contains the undecoded part of the input.
+	 * @throws IOException when out.output throws IOException.
+	 * @throws InvalidElementException when the input contains an object
+	 * which is neither a list, an integer or a binary (without extra
+	 * bits), or the input contains an integer in non-head position.
+	 */
+	public void collectCharList(CharCollector out)
+		throws CharCollector.CollectingException,
+		CharCollector.InvalidElementException,
+		IOException
+	{
+		throw new CharCollector.InvalidElementException();
 	}
 	
 	public Type emit_const(MethodVisitor mv) {

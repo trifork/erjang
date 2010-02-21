@@ -438,6 +438,17 @@ public class EString extends ESeq implements CharSequence {
 		return true;
 	}
 
+	public void collectCharList(CharCollector out)
+		throws CharCollector.CollectingException, IOException
+	{
+		try {
+			out.addIntegers(data, off, data.length - off);
+		} catch (CharCollector.PartialDecodingException e) {
+			int n = e.inputPos;
+			throw new CharCollector.CollectingException(new EString(data, off+n));
+		}
+	}
+
 	/**
 	 * @param buf
 	 * @return
