@@ -102,7 +102,11 @@ public class ErlConvert {
 	}
 
 	@BIF
-	public static EBinary iolist_to_binary(EObject list) {
+	public static EBitString iolist_to_binary(EObject list) {
+		EBitString bin = list.testBitString();
+		if (bin != null)
+			return bin;
+
 		ECons iol = list.testCons();
 		if (iol == null)
 			throw ERT.badarg(list);
@@ -113,14 +117,16 @@ public class ErlConvert {
 		
 		BARR barr = new BARR();
 
-		iol = collectList(list, iol, barr);
+		collectList(list, iol, barr);
 		
 		return barr.asBinary();
 	}
 
-	private static ECons collectList(EObject list, ECons iol, BARR barr) {
-		while (true) {
-			EObject hd = iol.head();
+	private static void collectList(EObject list, ECons iol, BARR barr) {
+		EObject tail;
+		ECons cons;
+		for (tail=iol; (cons = tail.testNonEmptyList()) != null; tail = cons.tail()) {
+			EObject hd = cons.head();
 
 			ESmall sm;
 			EBinary bi;
@@ -129,35 +135,23 @@ public class ErlConvert {
 				if (sm.value < 0 || sm.value > 255)
 					throw ERT.badarg(list);
 				barr.write(sm.value);
-
 			} else if ((bi = hd.testBinary()) != null) {
 				bi.writeTo(barr);
-
 			} else if ((co = hd.testNonEmptyList()) != null) {
 				collectList(list, co, barr);
-				
-			} else {
-				throw ERT.badarg(list);
-			}
-
-			EObject next = iol.tail();
-
-			if (next.isNil()) {
-				break;
-				
-			}   else if ((sm = next.testSmall()) != null && sm.value==(sm.value&0xff)) {
-				barr.write(sm.value);
-				
-			} else if ((iol = next.testCons()) != null) {
-				continue;
-			} else if ((bi = next.testBinary()) != null) {
-				bi.writeTo(barr);
-				break;
+			} else if (hd.isNil()) {
 			} else {
 				throw ERT.badarg(list);
 			}
 		}
-		return iol;
+
+		// Process tail:
+		EBinary bi;
+		if ((bi = tail.testBinary()) != null) {
+			bi.writeTo(barr);
+		} else if (! tail.isNil()) {
+			throw ERT.badarg(list);
+		}
 	}
 
 	@BIF
