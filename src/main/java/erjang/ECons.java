@@ -175,7 +175,7 @@ public abstract class ECons extends EObject {
 	{
 		ECons list;
 		EObject tail;
-		for (tail=this; (list = tail.testCons()) != null; tail = list.tail()) {
+		for (tail=this; (list = tail.testNonEmptyList()) != null; tail = list.tail()) {
 			EObject head = list.head();
 
 			ESmall intval;
@@ -186,7 +186,11 @@ public abstract class ECons extends EObject {
 					throw new CharCollector.CollectingException(list);
 				}
 			} else {
-				head.collectCharList(out);
+				try {
+					head.collectCharList(out);
+				} catch (CharCollector.CollectingException e) {
+					throw new CharCollector.CollectingException(list.tail().cons(e.restOfInput));
+				}
 			}
 		}
 

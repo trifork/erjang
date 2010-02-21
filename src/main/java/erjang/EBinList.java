@@ -271,7 +271,7 @@ public class EBinList extends ECons {
 		try {
 			out.addBinary(data, off, len);
 		} catch (CharCollector.PartialDecodingException e) {
-			throw new CharCollector.CollectingException(drop(e.inputPos));
+			throw new CharCollector.CollectingException(drop(e.inputPos - off));
 		}
 
 		if (tail.testNumber() != null) {

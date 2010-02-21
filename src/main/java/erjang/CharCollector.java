@@ -28,7 +28,7 @@ import java.nio.ByteBuffer;
 /** Used by the unicode BIFs characters_to_binary/2 and characters_to_list/2.
  */
 public class CharCollector {
-	public static ByteBuffer EMPTY = ByteBuffer.wrap(new byte[]{});
+	public static ByteBuffer EMPTY = ByteBuffer.wrap(new byte[0]);
 	public static int BUF_SIZE = 20486;
 
 	CharsetDecoder decoder;
@@ -54,7 +54,7 @@ public class CharCollector {
 		char c = (char)value;
 		if (c != value) fail(new DecodingException());
 
-		if (buffer.limit() == buffer.capacity())
+		if (! buffer.hasRemaining())
 			flushBuffer(); /* Or write to output directly?   Provided that we
 							* flush the buffer when we do the decoder. */
 		buffer.put(c);
@@ -70,11 +70,11 @@ public class CharCollector {
 		if (length==0) return;
 		if (dirtyDecoder) flushDecoder();
 		while (length > 0) {
-			int free = buffer.capacity() - buffer.limit();
+			int free = buffer.remaining();
 			while (length > 0 && free > 0) {
 				char c = (char)(data[offset] & 0xFF);
 				buffer.put(c);
-				offset++; length--;
+				offset++; length--; free--; // Could be smarter.
 			}
 			if (free==0) flushBuffer();
 		}
@@ -82,14 +82,10 @@ public class CharCollector {
 
 	/** Add a byte array, interpreted as a binary to be decoded. */
 	public void addBinary(byte[] data, int offset, int length) throws IOException, PartialDecodingException {
-		addBinary(ByteBuffer.wrap(data, offset, length));
+		addBinary(ByteBuffer.wrap(data, offset, length), false);
 	}
 
-	public void addBinary(ByteBuffer data) throws IOException, PartialDecodingException {
-		addBinary(data, false);
-	}
-
-	public void addBinary(ByteBuffer data, boolean endOfInput)
+	private void addBinary(ByteBuffer data, boolean endOfInput)
 		throws IOException, PartialDecodingException
 	{
 		CoderResult res;
@@ -98,6 +94,9 @@ public class CharCollector {
 			if (!handle(res))
 				fail(new PartialDecodingException(data.position()));
 		} while (res == CoderResult.OVERFLOW);
+		if (data.hasRemaining())
+			throw new NotImplemented("Character possibly spanning binary boundary");
+		// The decoder may have left some data. Save that in some fashion...
 		dirtyDecoder = true;
 	}
 
@@ -132,8 +131,8 @@ public class CharCollector {
 	}
 
 	protected void flushBuffer() throws IOException {
-		output.append(buffer);
 		buffer.flip();
+		output.append(buffer);
 	}
 
 	public static class DecodingException extends Exception { }
