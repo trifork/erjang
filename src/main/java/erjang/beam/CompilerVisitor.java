@@ -875,6 +875,30 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 									   .getInternalName(), "put_float", "("+EOBJECT_DESC+"II)V");
 					return;
 
+				case bs_put_utf8:
+					mv.visitVarInsn(ALOAD, bit_string_builder);
+					push(arg, EINTEGER_TYPE);
+					push_int(flags);
+					mv.visitMethodInsn(INVOKEVIRTUAL, EBITSTRINGBUILDER_TYPE
+									   .getInternalName(), "put_utf8", "("+EOBJECT_DESC+"I)V");
+					return;
+
+				case bs_put_utf16:
+					mv.visitVarInsn(ALOAD, bit_string_builder);
+					push(arg, EINTEGER_TYPE);
+					push_int(flags);
+					mv.visitMethodInsn(INVOKEVIRTUAL, EBITSTRINGBUILDER_TYPE
+									   .getInternalName(), "put_utf16", "("+EOBJECT_DESC+"I)V");
+					return;
+
+				case bs_put_utf32:
+					mv.visitVarInsn(ALOAD, bit_string_builder);
+					push(arg, EINTEGER_TYPE);
+					push_int(flags);
+					mv.visitMethodInsn(INVOKEVIRTUAL, EBITSTRINGBUILDER_TYPE
+									   .getInternalName(), "put_utf32", "("+EOBJECT_DESC+"I)V");
+					return;
+
 				case bs_put_binary:
 					mv.visitVarInsn(ALOAD, bit_string_builder);
 					push(arg, EBITSTRING_TYPE);

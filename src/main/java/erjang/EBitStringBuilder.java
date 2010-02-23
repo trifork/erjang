@@ -210,4 +210,18 @@ public class EBitStringBuilder {
 		
 		throw new NotImplemented();
 	}
+	
+	public void put_utf8(EObject value, int flags) {
+		throw new NotImplemented("val="+value+";flags="+flags);
+	}
+
+	public void put_utf16(EObject value, int flags) {
+		throw new NotImplemented("val="+value+";flags="+flags);
+	}
+
+	public void put_utf32(EObject value, int flags) {
+		throw new NotImplemented("val="+value+";flags="+flags);
+	}
+
+
 }

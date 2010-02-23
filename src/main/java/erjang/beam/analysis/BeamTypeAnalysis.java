@@ -849,6 +849,16 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						break;
 					}
 						
+					case bs_put_utf8:
+					case bs_put_utf16:
+					case bs_put_utf32:
+					{
+						// {bs_put_utf32,{f,0},{field_flags,2},{x,0}}
+						int flags = insn.elm(3).testTuple().elm(2).asInt();
+						Arg value = decode_arg(insn_idx, insn.elm(4));
+						vis.visitBitStringPut(opcode, value, null, -1, flags);
+						break;
+					}
 
 					case bs_append: {
 						
@@ -1608,6 +1618,9 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					}
 
 					case bs_put_float:
+					case bs_put_utf8:
+					case bs_put_utf16:
+					case bs_put_utf32:
 					case bs_put_integer: {
 						continue next_insn;
 					}
