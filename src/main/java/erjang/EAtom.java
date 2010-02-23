@@ -153,6 +153,16 @@ public final class EAtom extends EObject implements CharSequence {
 		return res;
 	}
 
+	public static EAtom existing_atom(EString name) {
+		EAtom res = interns.get(name);
+		if (res == null) {
+			throw ERT.badarg(name);
+		}
+
+		return res;
+	}
+
+
 	@Override
 	public char charAt(int index) {
 		return value.charAt(index);

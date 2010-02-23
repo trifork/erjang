@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 
 import erjang.BIF;
+import erjang.EAtom;
 import erjang.EBinary;
 import erjang.EBitString;
 import erjang.ECons;
@@ -61,6 +62,15 @@ public class ErlConvert {
 		throw new NotImplemented();
 	}
 
+	@BIF
+	public static EAtom list_to_existing_atom(EObject obj) {
+		EString seq;
+		if ((seq = obj.testString()) == null)
+			throw ERT.badarg(obj);
+		
+		return EAtom.existing_atom(seq);
+	}
+	
 	@BIF
 	public static EInteger list_to_integer(EObject obj) {
 		EString seq;
