@@ -17,7 +17,7 @@
  **/
 
 
-package erjang.m.io;
+package erjang.mx.io;
 
 import erjang.BIF;
 import erjang.EObject;
