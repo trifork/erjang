@@ -411,15 +411,19 @@ public final class EProc extends ETask<EInternalPID> {
 				result = am_normal;
 
 			} catch (ErlangException e) {
+				if (ERT.DEBUG) {
 				System.err.print("exiting "+self_handle()+" with: ");
 				e.printStackTrace(System.err);
-				last_exception = e;
 				System.err.println("Erlang stacktrace: "+ErlProc.get_stacktrace(this));
+				}
+				last_exception = e;
 				result = e.reason();
 
 			} catch (ErlangExitSignal e) {
+				if (ERT.DEBUG) {
 				System.err.print("exiting "+self_handle()+" with: ");
 				e.printStackTrace(System.err);
+				}
 				result = e.reason();
 
 			} catch (Throwable e) {

@@ -289,7 +289,7 @@ public class ERT {
 	public static final EAtom am_try_case_clause = EAtom
 			.intern("try_case_clause");
 	public static final EAtom am_if_clause = EAtom.intern("if_clause");
-	public static final boolean DEBUG = true;
+	public static final boolean DEBUG = false;
 	public static final boolean DEBUG2 = false;
 	public static final boolean DEBUG_WAIT = false;
 	public static final EBinary EMPTY_BINARY = new EBinary(new byte[0]);
@@ -488,8 +488,10 @@ public class ERT {
 		// TODO handle ports also?
 		proc.check_exit();
 
-		System.err.println("ignored options to send: " + options);
-
+		if (ERT.DEBUG) {
+			System.err.println("ignored options to send: " + options);
+		}
+		
 		EHandle p;
 		if ((p = pid.testHandle()) != null) {
 			p.send(msg);
