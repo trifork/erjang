@@ -27,24 +27,24 @@ import java.math.BigInteger;
 public class EBitStringBuilder {
 
 	EBitString bs;
-	int bpos;
-	int extraBits;
+	int byte_pos;
+	int extra_bits;
 	byte[] data;
 	
 	/**
-	 * @param size
+	 * @param byte_size
 	 * @param flags
 	 */
-	public EBitStringBuilder(int size, int flags) {
+	public EBitStringBuilder(int byte_size, int flags) {
 		if (flags != 0) throw new NotImplemented("flags="+flags);
-		data = new byte[size];
-		bs = new EBitString(data, 0, size, 0);
+		data = new byte[byte_size];
+		bs = new EBitString(data, 0, byte_size, 0);
 	}
 
-	public EBitStringBuilder(int size, int extra, int flags) {
+	public EBitStringBuilder(int byte_size, int extra_bits, int flags) {
 		if (flags != 0) throw new NotImplemented("flags="+flags);
-		data = new byte[size+1];
-		bs = new EBitString(data, 0, size, extra);
+		data = new byte[byte_size+(extra_bits>0?1:0)];
+		bs = new EBitString(data, 0, byte_size, extra_bits);
 	}
 
 	/** return bitstring under construction */
@@ -52,11 +52,11 @@ public class EBitStringBuilder {
 		return bs;
 	}
 
-	public void put_float(EObject value, int size, int flags) {
-		if (extraBits != 0)
+	public void put_float(EObject value, int bit_size, int flags) {
+		if (extra_bits != 0)
 			throw new NotImplemented();
 
-		switch (size) {
+		switch (bit_size) {
 		case 32: {
 			ENumber en = value.testNumber();
 			if (en==null) { throw ERT.badarg(value); }
@@ -73,15 +73,15 @@ public class EBitStringBuilder {
 		}
 		} // switch
 
-		throw new NotImplemented("val="+value+";size="+size+";flags="+flags);
+		throw new NotImplemented("val="+value+";size="+bit_size+";flags="+flags);
 	}
 
 	public void put_integer(EObject value, int flags) {
 		throw new NotImplemented("val="+value+";flags="+flags);
 	}
 
-	public void put_integer(EObject value, int size, int flags) {
-		if (extraBits != 0)
+	public void put_integer(EObject value, int bit_size, int flags) {
+		if (extra_bits != 0)
 			throw new NotImplemented("Unaligned");
 
 		boolean litteEndian = (flags & EBinMatchState.BSF_LITTLE) > 0;
@@ -89,26 +89,26 @@ public class EBitStringBuilder {
 		EInteger ei = value.testInteger();
 		if (ei==null) throw ERT.badarg(value);
 
-		if (size == 8) { // Common case optimization
-			data[bpos++] = (byte)ei.intValue();
+		if (bit_size == 8 && extra_bits==0) { // Common case optimization
+			data[byte_pos++] = (byte)ei.intValue();
 			return;
 		}
 
 		ESmall sm = value.testSmall();
 
-		if (size % 8 == 0) {
-			int nBytes = size/8;
+		if ((bit_size % 8) == 0) {
+			int nBytes = bit_size/8;
 
 			// We process the bytes little-endian:
 			int pos, delta;
 			if (litteEndian) {
-				pos = bpos;
+				pos = byte_pos;
 				delta = 1;
 			} else{
-				pos = bpos + nBytes-1;
+				pos = byte_pos + nBytes-1;
 				delta = -1;
 			}
-			bpos += nBytes;
+			byte_pos += nBytes;
 
 			if (sm!=null) { // ESmall case
 				int val = sm.intValue();
@@ -134,6 +134,8 @@ public class EBitStringBuilder {
 					}
 				}
 			}
+		} else {
+			throw new NotImplemented();
 		}
 	}
 
@@ -161,10 +163,10 @@ public class EBitStringBuilder {
 		b2 = (byte)val; val >>= 8;
 		b3 = (byte)val; val >>= 8;
 		b4 = (byte)val;
-		data[bpos++] = b1;
-		data[bpos++] = b2;
-		data[bpos++] = b3;
-		data[bpos++] = b4;
+		put_byte(b1);
+		put_byte(b2);
+		put_byte(b3);
+		put_byte(b4);
 	}
 
 	protected void put_int32_big(int val) {
@@ -173,19 +175,41 @@ public class EBitStringBuilder {
 		b3 = (byte)val; val >>= 8;
 		b2 = (byte)val; val >>= 8;
 		b1 = (byte)val;
-		data[bpos++] = b1;
-		data[bpos++] = b2;
-		data[bpos++] = b3;
-		data[bpos++] = b4;
-	}
-
-	public void put_string(EString str) {
-		if (extraBits != 0)
-			throw new NotImplemented();
-		System.arraycopy(str.data, str.off, data, bpos, str.length());
-		bpos += str.length();
+		put_byte(b1);
+		put_byte(b2);
+		put_byte(b3);
+		put_byte(b4);
 	}
 	
+	private void put_byte(byte val) {
+		
+		if (extra_bits == 0) {
+			data[byte_pos++] = val;
+			return;
+			
+		} else {
+			
+			// | bits1 : bits2 |
+
+			int bits1 = extra_bits;
+			int bits2 = 8-bits1;
+
+			data[byte_pos] |= (byte)((0xff & val) >> bits1);
+			data[byte_pos+1] = (byte) ((val & ((1<<bits1)-1)) << bits2);
+			
+			byte_pos += 1;
+		}
+
+}
+
+	public void put_string(EString str) {
+		if (extra_bits != 0)
+			throw new NotImplemented();
+		System.arraycopy(str.data, str.off, data, byte_pos, str.length());
+		byte_pos += str.length();
+	}
+	
+	/** grow a bitstring by extra_size bits, and return a string builder with position at end of original bitstring */
 	public static EBitStringBuilder bs_append(EObject str_or_builder, int extra_size, int flags)
 	{
 		EBitString ebs = str_or_builder.testBitString();
@@ -197,7 +221,10 @@ public class EBitStringBuilder {
 		
 		EBitStringBuilder result = new EBitStringBuilder(size, extra, flags);
 		System.arraycopy(ebs.data, ebs.byteOffset(), result.data, 0, ebs.dataByteSize());
-		result.bpos = (int) ebs.bitSize();
+		
+		result.byte_pos = ebs.byteSize();
+		result.extra_bits = ebs.extra_bits;
+		
 		return result;
 	}
 
@@ -208,7 +235,18 @@ public class EBitStringBuilder {
 		EBitString ebs = str.testBitString();
 		if (ebs == null) throw new InternalError("bad code gen, arg is "+str.getClass());
 		
-		throw new NotImplemented();
+		if (ebs.extra_bits != 0)
+			throw new NotImplemented();
+		
+		if (extra_bits != 0)
+			throw new NotImplemented();
+		
+		if (size != -1) {
+			throw new NotImplemented();
+		}
+		
+		System.arraycopy(ebs.data, ebs.byteOffset(), data, byte_pos, ebs.byteSize());
+		byte_pos += ebs.byteSize();
 	}
 	
 	public void put_utf8(EObject value, int flags) {
