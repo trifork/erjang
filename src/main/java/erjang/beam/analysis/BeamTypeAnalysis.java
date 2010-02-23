@@ -2032,8 +2032,8 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 			private boolean isReg(EObject arg2) {
 				ETuple et = arg2.testTuple();
-				return (et != null && et.elm(1) == X_ATOM
-						|| et.elm(1) == Y_ATOM || et.elm(1) == FR_ATOM);
+				return (et != null && (et.elm(1) == X_ATOM
+						|| et.elm(1) == Y_ATOM || et.elm(1) == FR_ATOM));
 			}
 
 			public void merge_from(TypeMap typeMap) {
