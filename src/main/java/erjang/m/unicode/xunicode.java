@@ -21,7 +21,7 @@ package erjang.m.unicode;
 
 /** Dummy module.
  */
-public class unicode extends erjang.EModule {
+public class xunicode extends erjang.EModule {
 	@Override
 	public String module_name() {
 		return "unicode";
