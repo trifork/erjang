@@ -18,17 +18,18 @@
 
 package erjang.m.erlang;
 
-import erjang.ENative;
+import erjang.BIF;
+import erjang.EObject;
+import erjang.ERT;
 
 /**
- * Hook to identify classes that contain native code for this module
+ * BIFs supporting distribution
  */
-public class Native extends ENative {
+public class ErlDist {
 
-	@Override
-	protected Class<?>[] getNativeClasses() {
-		return new Class[] { BinOps.class, ErlBif.class, ErlProc.class,
-				ErlList.class, ErlConvert.class, ErlPort.class, ErlHash.class, ErlDist.class };
+	@BIF
+	public static final EObject is_alive() {
+		return ERT.FALSE;
 	}
 
 }
