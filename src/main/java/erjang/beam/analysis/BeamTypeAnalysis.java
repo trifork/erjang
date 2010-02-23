@@ -860,6 +860,17 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						break;
 					}
 
+					
+					case bs_utf8_size:
+					case bs_utf16_size: {
+						// {bs_utf16_size,{f,0},src={x,0},dst={x,2}}
+						Arg value = decode_arg(insn_idx, insn.elm(3));
+						Arg out = decode_out_arg(insn_idx, insn.elm(4));
+						vis.visitBS(opcode, value, out);
+						break;
+					}
+
+
 					case bs_append: {
 						
 						//     {bs_append,{f,0},{integer,32},0,3,8,{x,1},{field_flags,[]},{x,0}}.
@@ -1618,10 +1629,23 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					}
 
 					case bs_put_float:
+					case bs_put_integer: {
+						continue next_insn;
+					}
+
 					case bs_put_utf8:
 					case bs_put_utf16:
-					case bs_put_utf32:
-					case bs_put_integer: {
+					case bs_put_utf32: {
+						// make sure there is a source
+						getType(current, insn.elm(4));
+						continue next_insn;
+					}
+
+					case bs_utf8_size:
+					case bs_utf16_size: {
+						// {bs_utf16_size,{f,0},src={x,0},dst={x,2}}
+						getType(current, insn.elm(3));
+						current = setType(current, insn.elm(4), ESMALL_TYPE);
 						continue next_insn;
 					}
 

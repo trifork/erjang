@@ -778,7 +778,23 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 							.getInternalName(), "bs_context_to_binary", "(" +EOBJECT_DESC + ")" + EBITSTRING_TYPE.getDescriptor());
 					pop(arg, EBITSTRING_TYPE);
 					return;
+
+				case bs_utf8_size:
+					push(arg, EOBJECT_TYPE);
+					mv.visitMethodInsn(INVOKESTATIC, EBINSTRINGBUILDER_TYPE.getInternalName(), "bs_utf8_size", 
+							"(" + EOBJECT_DESC +")" + ESMALL_TYPE.getDescriptor());
+					pop(imm, ESMALL_TYPE);
+					return;
+					
+				case bs_utf16_size:
+					push(arg, EOBJECT_TYPE);
+					mv.visitMethodInsn(INVOKESTATIC, EBINSTRINGBUILDER_TYPE.getInternalName(), "bs_utf16_size", 
+							"(" + EOBJECT_DESC +")" + ESMALL_TYPE.getDescriptor());
+					pop(imm, ESMALL_TYPE);
+					return;
+					
 				}
+				
 
 				throw new Error("unhandled: " + opcode);
 			}

@@ -223,5 +223,13 @@ public class EBitStringBuilder {
 		throw new NotImplemented("val="+value+";flags="+flags);
 	}
 
-
+	// compute size of utf8 char
+	static public ESmall bs_utf8_size(EObject value) {
+		throw new NotImplemented("val="+value);
+	}
+	
+	// compute size of utf16 char
+	static public ESmall bs_utf16_size(EObject value) {
+		throw new NotImplemented("val="+value);
+	}
 }
