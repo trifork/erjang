@@ -18,6 +18,8 @@
 
 package erjang;
 
+import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -27,6 +29,8 @@ import java.util.Comparator;
 import java.util.Map;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
+
+import erjang.beam.Compiler;
 
 import kilim.Pausable;
 
@@ -125,6 +129,19 @@ public class EModuleManager {
 							}
 								
 							if (uf == null) {
+								if (!module_loaded(fun.module)) {
+									try {
+										File f = Compiler.find_and_compile(fun.module.getName());
+										EModuleManager.load_module(fun.module, f.toURI().toURL());										
+									} catch (IOException e) {
+										// we don't report this separately; it ends up causing an undefined below...
+									}
+								}
+								
+								if (resolved_value != null) {
+									return resolved_value.invoke(proc, args);
+								}
+								
 								/** this is just some debugging info to help understand downstream errors */
 								if (ERT.DEBUG) {
 									System.err.println("failed to load "+fun+" (error_handler:undefined_function/3 not found)");
