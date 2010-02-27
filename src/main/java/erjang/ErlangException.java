@@ -171,8 +171,6 @@ public abstract class ErlangException extends RuntimeException {
 	}
 
 	private static final String ERJANG_MODULES_DOT = "erjang.m.";
-	private static final Pattern ENDS_WITH_NUM = Pattern
-			.compile(".*(__[0-9]+)$");
 
 	/**
 	 * @param st
@@ -193,12 +191,22 @@ public abstract class ErlangException extends RuntimeException {
 
 		EAtom function = null;
 		int arity = -1;
-		Matcher matcher = ENDS_WITH_NUM.matcher(mname);
-		if (matcher.matches()) {
-			String method_name = mname.substring(0, matcher.start(1));
 
-			function = EAtom.intern(EUtil.decodeJavaName(method_name));
-			arity = Integer.parseInt(mname.substring(matcher.start(1) + 2));
+		{ /* Does the method name end with /__([0-9]+)/?
+		   * If so, capture arity and function name. */
+			int i;
+			char c;
+			int w=1;
+			int a=0;
+			for (i = mname.length()-1;
+				 i>=2 && (c=mname.charAt(i)) >= '0' && c <= '9';
+				 i--, w*=10)
+			{ a += w * (c-'0'); }
+			if (w>1 && mname.charAt(i) == '_' && mname.charAt(i-1) == '_') {
+				String method_name = mname.substring(0, i-1);
+				function = EAtom.intern(EUtil.decodeJavaName(method_name));
+				arity = a;
+			}
 		}
 
 		if (module != null && function != null && arity != -1) {
@@ -208,6 +216,13 @@ public abstract class ErlangException extends RuntimeException {
 			res.elem3 = new ESmall(arity);
 			return res;
 		}
+
+		// Skip superfluous slow and failing class lookups:
+		// OBS: Revisit if there ever are BIFs called 'go' or 'invoke'.
+		if (mname.endsWith("$call") ||
+			mname.equals("go") ||
+			mname.equals("invoke"))
+			return null;
 
 		Class clazz = null;
 		try {
