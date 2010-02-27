@@ -215,7 +215,6 @@ public class EUtil {
 				try {
 					chval = (char) Integer.parseInt(hex, 16);
 				} catch (NumberFormatException e) {
-					System.err.println("EU| Bad hex: "+hex+"/"+e);
 					chval = '?';
 				}
 				sb.append(chval);
