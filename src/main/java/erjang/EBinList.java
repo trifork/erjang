@@ -239,7 +239,7 @@ public class EBinList extends ECons {
 				sb.append('$');
 				sb.append((char)val);
 			} else {
-				sb.append((int)val);
+				sb.append(val & 0xFF);
 			}
 		}
 		
