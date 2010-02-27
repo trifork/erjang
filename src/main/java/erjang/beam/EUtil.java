@@ -206,15 +206,21 @@ public class EUtil {
 		int start = 0;
 		while (idx != -1) {
 			sb.append(methodName.substring(start, idx));
-			String hex = methodName.substring(idx + 1, idx + 3);
-			char chval;
-			try {
-				chval = (char) Integer.parseInt(hex, 16);
-			} catch (NumberFormatException e) {
-				chval = '?';
+			if (methodName.charAt(idx+1) == '$') {
+				sb.append('$');
+				start = idx + 2;
+			} else {
+				String hex = methodName.substring(idx + 1, idx + 3);
+				char chval;
+				try {
+					chval = (char) Integer.parseInt(hex, 16);
+				} catch (NumberFormatException e) {
+					System.err.println("EU| Bad hex: "+hex+"/"+e);
+					chval = '?';
+				}
+				sb.append(chval);
+				start = idx + 3;
 			}
-			sb.append(chval);
-			start = idx + 3;
 			idx = methodName.indexOf('$', start);
 		}
 
