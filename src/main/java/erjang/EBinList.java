@@ -54,6 +54,7 @@ public class EBinList extends ECons {
 		this.tail = tail;
 		this.shared = shared;
 
+		assert(tail!=null);
 		if (len < 1 || off + len > data.length)
 			throw ERT.badarg();
 		
@@ -162,7 +163,7 @@ public class EBinList extends ECons {
 			return ERT.NIL;
 		return null;
 	}
-	
+
 	public EString testString() {
 		EString st = tail.testString();
 		if (st == null) {
@@ -181,6 +182,10 @@ public class EBinList extends ECons {
 	 * Helper class that looks at this EBinList as a Seq.
 	 */
 	private class Seq extends ESeq {
+		@Override
+		public ECons testNonEmptyList() {
+			return EBinList.this.testNonEmptyList();
+		}
 
 		@Override
 		public ESeq cons(EObject h) {
