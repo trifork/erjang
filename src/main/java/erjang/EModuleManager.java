@@ -127,7 +127,7 @@ public class EModuleManager {
 							if (get_module_info(fun.module).is_loaded()) {
 								log.log(Level.INFO, "MISSING "+fun);
 							} else {
-								log.log(Level.FINE, "resolving"+fun);
+								log.log(Level.FINER, "resolving"+fun);
 							}
 								
 							if (uf == null) {
