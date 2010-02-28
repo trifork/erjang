@@ -476,7 +476,7 @@ public final class EProc extends ETask<EInternalPID> {
 			res = res.cons(new ETuple2(am_registered_name, reg_name));
 
 		ESeq links = links();
-		res = res.cons(new ETuple2(am_links, group_leader));
+		res = res.cons(new ETuple2(am_links, links));
 		
 		
 		if (res == ERT.NIL) return ERT.am_undefined;
@@ -517,7 +517,7 @@ public final class EProc extends ETask<EInternalPID> {
 			return new ETuple2(am_group_leader, group_leader);
 		} else if (spec == am_links) {
 			ESeq links = links();
-			return new ETuple2(am_links, group_leader);
+			return new ETuple2(am_links, links);
 		} else {
 			System.err.println(spec);
 			throw new NotImplemented();
