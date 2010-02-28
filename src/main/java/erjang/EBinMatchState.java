@@ -136,18 +136,26 @@ public class EBinMatchState extends EPseudoTerm {
 	}
 
 	public EBitString bs_get_binary2(EObject spec, int flags) {
-
+		// TODO: Take a unit argument as well.
+		long bitLength;
 		if (spec == ATOM_ALL) {
-
-			EBitString result = bin.substring(offset, bitsLeft());
-			offset += result.bitSize();
-			return result;
-
+			bitLength = bitsLeft();
+		} else {
+			ESmall len = spec.testSmall();
+			if (len != null) {
+				bitLength = len.intValue() * 8L;
+			} else {
+				throw new Error("unknown spec: " + spec);
+			}
 		}
 
-		throw new Error("unknown spec: " + spec);
-
-		// return null;
+		if (bitLength > bitsLeft()) {
+			return null;
+		} else {
+			EBitString result = bin.substring(offset, bitLength);
+			offset += bitLength;
+			return result;
+		}
 	}
 
 	public EInteger bs_get_integer2(int size, int flags) {
