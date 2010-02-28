@@ -311,8 +311,9 @@ public abstract class ETuple extends EObject implements Cloneable /* , Indexed *
 
 		mv.visitLabel(dflt);
 
+		mv.visitVarInsn(Opcodes.ALOAD, 0);
 		mv.visitVarInsn(Opcodes.ILOAD, 1);
-		mv.visitMethodInsn(Opcodes.INVOKESTATIC, ETUPLE_NAME, "bad_nth", "(I)"
+		mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, ETUPLE_NAME, "bad_nth", "(I)"
 				+ ETERM_TYPE.getDescriptor());
 		mv.visitInsn(Opcodes.ARETURN); // make compiler happy
 
@@ -352,8 +353,9 @@ public abstract class ETuple extends EObject implements Cloneable /* , Indexed *
 
 		mv.visitLabel(dflt);
 
+		mv.visitVarInsn(Opcodes.ALOAD, 0);
 		mv.visitVarInsn(Opcodes.ILOAD, 1);
-		mv.visitMethodInsn(Opcodes.INVOKESTATIC, ETUPLE_NAME, "bad_nth", "(I)"
+		mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, ETUPLE_NAME, "bad_nth", "(I)"
 				+ ETERM_TYPE.getDescriptor());
 		mv.visitInsn(Opcodes.POP);
 		mv.visitInsn(Opcodes.RETURN); // make compiler happy
