@@ -23,6 +23,8 @@ import java.util.GregorianCalendar;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import java.math.BigDecimal;
+
 import kilim.Pausable;
 import kilim.Task;
 import erjang.BIF;
@@ -733,7 +735,11 @@ public class ErlBif {
 
 	@BIF
 	@ErlFun(export = true)
-	static public EDouble trunc(EObject v1) {
+	static public EInteger trunc(EObject v1) {
+		EInteger i1;
+		if ((i1 = v1.testInteger()) != null) {
+			return i1;
+		}
 		EDouble n1;
 		if ((n1 = v1.testFloat()) != null) {
 			return trunc(n1.value);
@@ -742,13 +748,15 @@ public class ErlBif {
 	}
 
 	@BIF
-	static public EDouble trunc(double d) {
-		return ERT.box(Math.floor(d));
+	static public EInteger trunc(double d) {
+		//TODO: use (int)d or (long)d if magnitude is small
+		return ERT.box(new BigDecimal(d).toBigInteger());
 	}
 
 	@BIF
-	static public EDouble trunc(EDouble d1) {
-		return ERT.box(Math.floor(d1.value));
+	static public EInteger trunc(EDouble d1) {
+		//TODO: use (int)d.value or (long)d.value if magnitude is small
+		return ERT.box(new BigDecimal(d1.value).toBigInteger());
 	}
 
 	@BIF(name = "round")
@@ -1447,8 +1455,7 @@ public class ErlBif {
 	@BIF(name="lists:member/2")
 	public static EAtom member(EObject e, EObject l) {
 		ESeq list = l.testSeq();
-		
-		if (l == null) throw ERT.badarg(e, l);
+		if (list == null) throw ERT.badarg(e, l);
 
 		while (!list.isNil()) {
 			if (e.equals(list.head())) return ERT.TRUE;
