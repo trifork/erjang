@@ -94,7 +94,7 @@ public class ErlProc {
 	@BIF
 	public static EObject display(EProc proc, EObject obj) {
 		System.out.println(obj);
-		return obj;
+		return ERT.TRUE;
 	}
 
 	@BIF
