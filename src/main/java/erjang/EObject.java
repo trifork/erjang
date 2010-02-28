@@ -52,6 +52,10 @@ public abstract class EObject implements Comparable<EObject> {
 		return null;
 	}
 	
+	public EBigString testBigString()	{
+		return null;
+	}
+	
 	public EFun testFunction() {
 		return null;
 	}
