@@ -68,6 +68,14 @@ public abstract class ESeq extends ECons {
 		return res;
 	}
 
+	public static ESeq fromArraySkippingNulls(EObject[] args, int start, int end) {
+		ESeq res = ERT.NIL;
+		for (int i = end-1; i >= start; i--) {
+			if (args[i] != null) res = res.cons(args[i]);
+		}
+		return res;
+	}
+
 	public static ESeq fromList(List<? extends EObject> args) {
 		ESeq res = ERT.NIL;
 
