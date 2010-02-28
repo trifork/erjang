@@ -29,6 +29,8 @@ import java.util.Comparator;
 import java.util.Map;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import erjang.beam.Compiler;
 
@@ -39,6 +41,8 @@ import kilim.Pausable;
  */
 public class EModuleManager {
 
+	static Logger log = Logger.getLogger(EModuleManager.class.getName());
+	
 	static private Map<EAtom, ModuleInfo> infos = new ConcurrentHashMap<EAtom, ModuleInfo>();
 
 	static FunctionInfo undefined_function = null;
@@ -120,12 +124,10 @@ public class EModuleManager {
 							EFun uf = undefined_function.resolved_value;
 
 							/** this is just some debugging info to help understand downstream errors */
-							if (ERT.DEBUG) {
 							if (get_module_info(fun.module).is_loaded()) {
-								System.err.println("MISSING "+fun);
+								log.log(Level.INFO, "MISSING "+fun);
 							} else {
-								System.err.println("resolving "+fun);
-							}
+								log.log(Level.FINE, "resolving"+fun);
 							}
 								
 							if (uf == null) {
@@ -143,9 +145,7 @@ public class EModuleManager {
 								}
 								
 								/** this is just some debugging info to help understand downstream errors */
-								if (ERT.DEBUG) {
-									System.err.println("failed to load "+fun+" (error_handler:undefined_function/3 not found)");
-								}
+								log.log(Level.INFO, "failed to load "+fun+" (error_handler:undefined_function/3 not found)");
 								
 								throw new ErlangUndefined(fun.module,
 										fun.function, fun.arity);
