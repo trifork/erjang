@@ -158,7 +158,6 @@ public class RamFile extends EDriverInstance {
 				reply_posix_error(Posix.EINVAL);
 				return;
 			}
-			contents.rewind();
 			reply_buf(contents);
 		} break;
 
@@ -183,9 +182,9 @@ public class RamFile extends EDriverInstance {
 	}
 
 	void reply_buf(ByteBuffer buf) {
-		ByteBuffer header = ByteBuffer.allocate(1 + 4 + 4);
+		ByteBuffer header = ByteBuffer.allocate(1 + 4);
 		header.put(FILE_RESP_DATA);
-		header.putLong(buf.position());
+		header.putInt(buf.position());
 		driver_output2(header, buf);
 	}
 
