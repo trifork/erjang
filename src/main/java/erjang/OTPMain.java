@@ -19,6 +19,11 @@
 package erjang;
 
 import java.io.IOException;
+import java.util.logging.FileHandler;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import erjang.driver.Drivers;
 import erjang.driver.EDriver;
 
@@ -41,6 +46,10 @@ public class OTPMain {
 	@SuppressWarnings("unchecked")
 	public static void main(String[] args) throws ClassNotFoundException, InstantiationException, IllegalAccessException, IOException {
 		
+	    Handler fh = new FileHandler("erjang.log");
+	    Logger.getLogger("").addHandler(fh);
+	    Logger.getLogger("erjang").setLevel(Level.FINE);
+
 		for (String m : MODULES) {
 			ERT.load_module(EAtom.intern(m));
 		}
