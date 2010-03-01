@@ -329,7 +329,7 @@ public class ErlBif {
 		EInteger i = idx.testInteger();
 		ETuple t = tup.testTuple();
 		if (i == null || t == null || i.intValue() > t.arity()) {
-			throw ERT.badarg();
+			throw ERT.badarg(idx, tup);
 		}
 
 		return t.elm(i.asInt());
