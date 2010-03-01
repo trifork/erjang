@@ -43,9 +43,9 @@ import junit.framework.AssertionFailedError;
  */
 public class TestRunFile implements Test {
 
-	static final String OTP_HOME = "/home/erik/OSS/erjang/otp/otp_src_R13B01";
-	static final String ERLC_PRG = "/usr/bin/erlc";
-	static final String ERL_PRG  = "/usr/bin/erl";
+	static final String OTP_HOME = "/home/erik/OSS/otp_src_R13B02-1";
+	static final String ERLC_PRG = OTP_HOME+"/bin/erlc";
+	static final String ERL_PRG  = OTP_HOME+"/bin/erl";
 
 	static final EAtom ERJANG_ATOM = EAtom.intern("erjang");
 	static final EAtom ERLANG_ATOM = EAtom.intern("erlang");
@@ -175,7 +175,7 @@ public class TestRunFile implements Test {
 				} while (change);
 				int exitCode = p.waitFor();
 				if (exitCode != 0) {
-					System.err.println("Exitcode="+exitCode);
+					System.err.println("Exitcode="+exitCode+" for "+cmd[0]);
 					System.err.println("Err//output="+err+"//"+output);
 				}
 				assert(exitCode == 0);
