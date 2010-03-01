@@ -23,6 +23,7 @@ import erjang.EObject;
 import erjang.EAtom;
 import erjang.ETuple;
 import erjang.EBinary;
+import erjang.ESeq;
 import erjang.ERT;
 import erjang.NotImplemented;
 import erjang.CharCollector;
@@ -46,6 +47,17 @@ public class Native extends ENative {
 
 	@BIF
 	public static EObject characters_to_binary(EObject charlist, EObject encodingSpec) {
+		return characters_to(charlist, encodingSpec,
+							 CHAR_ARRAY_TO_BINARY_CONVERTER);
+	}
+
+	@BIF
+	public static EObject characters_to_list(EObject charlist, EObject encodingSpec) {
+		return characters_to(charlist, encodingSpec,
+							 CHAR_ARRAY_TO_LIST_CONVERTER);
+	}
+
+	public static EObject characters_to(EObject charlist, EObject encodingSpec, CharArrayConverter output_converter) {
 		Charset encoding = encodingSpecToCharset(encodingSpec);
 		if (encoding == null)
 			throw ERT.badarg(charlist, encodingSpec);
@@ -58,8 +70,8 @@ public class Native extends ENative {
 		} catch (CharCollector.InvalidElementException e) {
 			throw ERT.badarg(charlist, encodingSpec);
 		} catch (CharCollector.CollectingException e) {
-			EBinary bin = charArrayToUnicodeBinary(out);
-			return ETuple.make(ERROR_ATOM, bin, e.restOfInput);
+			EObject data = output_converter.convert(out);
+			return ETuple.make(ERROR_ATOM, data, e.restOfInput);
 		} catch (IOException e) {
 			throw new Error(e); // Not supposed to happen.
 		}
@@ -67,27 +79,13 @@ public class Native extends ENative {
 		try {
 			collector.end();
 		} catch (CharCollector.PartialDecodingException e) {
-			EBinary bin = charArrayToUnicodeBinary(out);
-			return ETuple.make(INCOMPLETE_ATOM, bin);
+			EObject data = output_converter.convert(out);
+			return ETuple.make(INCOMPLETE_ATOM, data);
 		} catch (IOException e) {
 			throw new Error(e); // Not supposed to happen.
 		}
 
-		EBinary bin = charArrayToUnicodeBinary(out);
-		return bin;
-	}
-
-	protected static EBinary charArrayToUnicodeBinary(CharArrayWriter caw) {
-		return charArrayToUnicodeBinary(caw.toCharArray());
-	}
-
-	protected static EBinary charArrayToUnicodeBinary(char[] chars) {
-		String s = new String(chars);
-		try {
-			return new EBinary(s.getBytes("UTF-8"));
-		} catch (java.io.UnsupportedEncodingException e) {
-			throw new Error(e); // Not supposed to happen.
-		}
+		return output_converter.convert(out);
 	}
 
 	public static Charset encodingSpecToCharset(EObject encoding) {
@@ -118,4 +116,37 @@ public class Native extends ENative {
 
 		return null;
 	}
+
+	static abstract class CharArrayConverter {
+		EObject convert(CharArrayWriter caw) {
+			return convert(caw.toCharArray());
+		}
+
+		abstract EObject convert(char[] chars);
+	}
+
+	final static CharArrayConverter CHAR_ARRAY_TO_BINARY_CONVERTER =
+	new CharArrayConverter() {
+		EObject convert(char[] chars) {
+			String s = new String(chars);
+			try {
+				return new EBinary(s.getBytes("UTF-8"));
+			} catch (java.io.UnsupportedEncodingException e) {
+				throw new Error(e); // Not supposed to happen.
+			}
+		}
+	};
+
+	final static CharArrayConverter CHAR_ARRAY_TO_LIST_CONVERTER =
+	new CharArrayConverter() {
+		// TODO: We could use something like EBinList here, just for chars:
+		EObject convert(char[] chars) {
+			ESeq res = ERT.NIL;
+			for (int i = chars.length-1; i >= 0; i--) {
+				res = res.cons(chars[i]);
+			}
+			return res;
+		}
+	};
+
 }
