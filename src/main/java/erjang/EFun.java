@@ -484,4 +484,51 @@ public abstract class EFun extends EObject implements Opcodes {
 		throw new NotImplemented();
 	}
 
+	/**
+	 * @param spec
+	 * @return
+	 */
+	public EObject info(EAtom spec) {
+		if (spec == ERT.am_arity) {
+			return new ETuple2(spec, new ESmall(arity()));
+		} else if (spec == ERT.am_module) {
+			return new ETuple2(spec, this.get_module());
+		} else if (spec == ERT.am_name) {
+			return new ETuple2(spec, this.get_name());
+		} else if (spec == ERT.am_env) {
+			return new ETuple2(spec, this.get_env());
+		} else if (spec == ERT.am_type) {
+			new ETuple2(ERT.am_type, is_local() ? ERT.am_local : ERT.am_external);
+		}
+
+		if (is_local()) {
+			
+			if (spec == ERT.am_index || spec == ERT.am_new_index
+					|| spec == ERT.am_new_uniq || spec == ERT.am_uniq 
+					|| spec == ERT.am_pid) {
+				
+				// TODO: handle index, new_index, new_uniq, uniq, and pid.
+				throw new NotImplemented();
+			}			
+		}
+			
+		return ERT.am_undefined;
+	}
+	
+	public EObject get_module() {
+		throw new NotImplemented();
+	}
+
+	public EObject get_name() {
+		throw new NotImplemented();
+	}
+
+	public EObject get_env() {
+		throw new NotImplemented();
+	}
+
+	public boolean is_local() {
+		throw new NotImplemented();
+	}
+
 }

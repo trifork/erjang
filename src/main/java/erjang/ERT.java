@@ -671,7 +671,20 @@ public class ERT {
 	static kilim.Scheduler scheduler = new kilim.Scheduler(threadPoolSize());
 	public static EAtom am_io = EAtom.intern("io");
 	public static EAtom am_attributes = EAtom.intern("attributes");
-	public static EAtom am_badfun = EAtom.intern("badfun");;
+	public static EAtom am_badfun = EAtom.intern("badfun");
+
+	public static EAtom am_name = EAtom.intern("name");
+	public static EAtom am_arity = EAtom.intern("arity");
+	public static EAtom am_env = EAtom.intern("env");
+
+	public static EAtom am_index = EAtom.intern("index");
+	public static EAtom am_new_index = EAtom.intern("new_index");
+	public static EAtom am_new_uniq = EAtom.intern("new_uniq");
+	public static EAtom am_uniq = EAtom.intern("uniq");
+	public static EAtom am_pid = EAtom.intern("pid");
+	public static EAtom am_type = EAtom.intern("type");
+	public static EAtom am_local = EAtom.intern("local");
+	public static EAtom am_external = EAtom.intern("external");
 
 	public static void run(Task task) {
 		task.setScheduler(scheduler);
