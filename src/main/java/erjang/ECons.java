@@ -114,21 +114,18 @@ public abstract class ECons extends EObject {
 	}
 
 	public boolean collectIOList(List<ByteBuffer> out) {
-
-		EObject tail = null;
-		EBinary binary;
-
-		ECons list = this;
-		while (!list.isNil()) {
-
+		ECons list;
+		EObject tail;
+		list_loop: for (tail=this; (list = tail.testNonEmptyList()) != null; tail = list.tail()) {
 			EObject head = list.head();
 
 			ESmall intval;
+			EBinary binary;
+			ECons sublist;
 			if ((intval = head.testSmall()) != null) {
 				ByteArrayOutputStream barr = new ByteArrayOutputStream();
 
 				byte_loop: do {
-
 					int byteValue = intval.value & 0xff;
 					if (intval.value != byteValue) {
 						return false;
@@ -137,27 +134,25 @@ public abstract class ECons extends EObject {
 					barr.write(byteValue);
 
 					tail = list.tail();
-					if ((list = tail.testCons()) != null) {
+					if ((list = tail.testNonEmptyList()) != null) {
 						head = list.head();
 					} else {
-						break byte_loop;
+						out.add(ByteBuffer.wrap(barr.toByteArray()));
+						break list_loop;
 					}
-					
 				} while ((intval = head.testSmall()) != null);
 
 				out.add(ByteBuffer.wrap(barr.toByteArray()));
+			}
 
-			} else if ((binary = head.testBinary()) != null) {
+			if ((binary = head.testBinary()) != null) {
 				binary.collectIOList(out);
-
+			} else if ((sublist = head.testNonEmptyList()) != null) {
+				sublist.collectIOList(out);
 			} else {
 				// not a well-formed iolist
 				return false;
 			}
-
-			tail = list.tail();
-			if ((list = tail.testCons()) == null)
-				break;
 		}
 
 		if (!tail.collectIOList(out)) {

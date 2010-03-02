@@ -335,7 +335,6 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 					// {connect, PID}
 
 					if (cmd.elem1 == EPort.am_command) {
-						
 						if (cmd.elem2.collectIOList(out)) {
 							if (out.size() == 0) {
 								instance.outputv(ERT.EMPTY_BYTEBUFFER_ARR);
@@ -437,8 +436,7 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 		} else {
 			long size = 0;
 			for (int i = 0; i < out.length; i++) {
-				size += out[i].position();
-				out[i].flip();
+				size += out[i].limit();
 			}
 			if (size > Integer.MAX_VALUE)
 				throw new IllegalArgumentException("buffer too large to flatten "+size);
@@ -447,6 +445,7 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 			for (int i = 0; i < out.length; i++) {
 				res.put(out[i]);
 			}
+			res.flip();
 			return res;
 		}
 	}

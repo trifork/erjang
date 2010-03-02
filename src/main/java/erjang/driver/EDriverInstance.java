@@ -171,22 +171,7 @@ public abstract class EDriverInstance extends EDriverControl {
 	 * @return
 	 */
 	public static ByteBuffer flatten(ByteBuffer[] out) {
-		if (out.length == 0) {
-			return ERT.EMPTY_BYTEBUFFER;
-		} else if (out.length == 1) {
-			return out[0];
-		} else {
-			int size = 0;
-			for (int i = 0; i < out.length; i++) {
-				size += out[i].position();
-				out[i].flip();
-			}
-			ByteBuffer res = ByteBuffer.allocate(size);
-			for (int i = 0; i < out.length; i++) {
-				res.put(out[i]);
-			}
-			return res;
-		}
+		return EDriverTask.flatten(out);
 	}
 
 	/*
