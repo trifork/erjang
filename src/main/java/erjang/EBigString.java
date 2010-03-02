@@ -29,8 +29,6 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
-import com.sun.xml.internal.messaging.saaj.util.CharWriter;
-
 public class EBigString extends ESeq implements CharSequence {
 
 	private static final Charset ISO_LATIN_1 = Charset.forName("ISO-8859-1");
