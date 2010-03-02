@@ -146,4 +146,15 @@ public class Native extends ENative {
 		}
 	};
 
+	@BIF
+	public static EObject bin_is_7bit(EObject o1) {
+		EBinary bin;
+		if ((bin = o1.testBinary()) != null) {
+			return ERT.box( bin.is_7bit() );
+		}
+		
+		return ERT.FALSE;
+	}
+	
+
 }
