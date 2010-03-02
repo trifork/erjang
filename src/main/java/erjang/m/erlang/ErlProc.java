@@ -482,6 +482,12 @@ public class ErlProc {
 	@BIF
 	public static EAtom is_process_alive(EObject p) {
 		EPID pid = p.testPID();
+		if (pid == null) throw ERT.badarg(p);
 		return ERT.box(pid.is_alive());
+	}
+	
+	@BIF
+	public static EObject suspend_process(EObject p) {
+		throw new NotImplemented();
 	}
 }
