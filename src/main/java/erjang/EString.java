@@ -185,7 +185,7 @@ public class EString extends ESeq implements CharSequence {
 			return false;
 		}
 
-		return compare_same((EObject) obj) == 0;
+		return compareTo((EObject) obj) == 0;
 
 	}
 
