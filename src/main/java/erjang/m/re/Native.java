@@ -51,4 +51,18 @@ public class Native extends ENative {
 		}
 		throw new NotImplemented();
 	}
+	
+	@BIF static public EObject run(EObject obj1, EObject obj2, EObject obj3) {
+		throw new NotImplemented(); 
+	}
+
+
+	@BIF static public EObject compile(EObject obj1) {
+		throw new NotImplemented(); 
+	}
+
+	@BIF static public EObject compile(EObject obj1, EObject obj2) {
+		throw new NotImplemented(); 
+	}
+
 }
