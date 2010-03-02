@@ -21,6 +21,7 @@ package erjang;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.zip.CRC32;
 
@@ -146,6 +147,17 @@ public class EBinary extends EBitString {
 		int octets = byteSize();
 		return new EInputStream(data, byteOffset(), octets,
 				EInputStream.DECODE_INT_LISTS_AS_STRINGS);
+	}
+
+	/**
+	 * @return true if this binary is all 7-bit bytes
+	 */
+	public boolean is_7bit() {
+		for (int i = 0; i < byteSize(); i++) {
+			byte b = data[byteOffset() + i];
+			if ((b & 0x80) != 0) return false;
+		}
+		return true;
 	}
 
 }
