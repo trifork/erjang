@@ -155,7 +155,8 @@ public class EBinary extends EBitString {
 	public boolean is_7bit() {
 		for (int i = 0; i < byteSize(); i++) {
 			byte b = data[byteOffset() + i];
-			if ((b & 0x80) != 0) return false;
+			if ((b & 0x80) != 0) 
+				return false;
 		}
 		return true;
 	}
