@@ -29,6 +29,7 @@ import erjang.EBitString;
 import erjang.ECons;
 import erjang.EInputStream;
 import erjang.EInteger;
+import erjang.EDouble;
 import erjang.EObject;
 import erjang.ERT;
 import erjang.ESeq;
@@ -86,6 +87,20 @@ public class ErlConvert {
 			throw ERT.badarg(obj);
 		}
 		
+	}
+
+	@BIF
+	public static EDouble list_to_float(EObject obj) {
+		EString seq;
+		if ((seq = obj.testString()) == null)
+			throw ERT.badarg(obj);
+
+		try {
+			double val = Double.parseDouble(seq.stringValue());
+			return ERT.box(val);
+		} catch (NumberFormatException e) {
+			throw ERT.badarg(obj);
+		}
 	}
 
 
