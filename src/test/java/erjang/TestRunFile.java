@@ -178,7 +178,7 @@ public class TestRunFile implements Test {
 				} while (change);
 				int exitCode = p.waitFor();
 				if (exitCode != 0) {
-					System.err.println("Exitcode="+exitCode);
+					System.err.println("Exitcode="+exitCode+" for "+cmd[0]);
 					System.err.println("Err//output="+err+"//"+output);
 				}
 				assert(exitCode == 0);

@@ -23,6 +23,7 @@ import java.io.IOException;
 
 import erjang.ETuple;
 import erjang.beam.BeamFileData;
+import erjang.beam.SymbolicBeamFileData;
 
 public class ErjangBeamDisLoader extends erjang.beam.BeamLoader {
 	public ErjangBeamDisLoader() { }
@@ -30,13 +31,13 @@ public class ErjangBeamDisLoader extends erjang.beam.BeamLoader {
 	@Override
 	public BeamFileData load(File file) throws IOException {
 		ETuple dis = erjang.beam.loader.BeamLoader.read(file.getAbsolutePath()).toSymbolic();
-		return new BeamFileData(dis);
+		return new SymbolicBeamFileData(dis);
 	}
 
 	@Override
 	public BeamFileData load(byte[] data) throws IOException {
 		ETuple dis = erjang.beam.loader.BeamLoader.parse(data).toSymbolic();
-		return new BeamFileData(dis);
+		return new SymbolicBeamFileData(dis);
 	}
 
 }

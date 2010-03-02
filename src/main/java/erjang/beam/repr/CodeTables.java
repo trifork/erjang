@@ -56,6 +56,7 @@ public class CodeTables {
 		public String toString() {
 			return moduleName()+":"+atom(fun)+"/"+arity;
 		}
+		public EAtom name()   {return atom(fun);}
 
 		public ETuple toSymbolic() {
 			return ETuple.make(moduleName(),
@@ -74,6 +75,8 @@ public class CodeTables {
 		public String toString() {
 			return mod+":"+fun+"/"+arity;
 		}
+		public EAtom module() {return  atom(mod);}
+		public EAtom name()   {return  atom(fun);}
 
 		public ETuple toSymbolic(CodeTables ct) {
 			return ETuple.make(EXTFUNC_ATOM,
