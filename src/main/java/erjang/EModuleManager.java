@@ -277,6 +277,19 @@ public class EModuleManager {
 			return res;
 		}
 
+		/**
+		 * 
+		 */
+		public void warn_about_unresolved() {
+			if (resident != null) {
+				for (FunctionInfo fi : binding_points.values()) {
+					if (fi.resolved_value == null) {
+						log.log(Level.INFO, "unresolved after load: "+fi.fun);
+					}
+				}
+			}
+		}
+
 	}
 
 	static void add_import(FunID fun, Field ref) throws Exception {
@@ -304,7 +317,8 @@ public class EModuleManager {
 	private static final EAtom AM_BADARG = EAtom.intern("badarg");
 
 	static void setup_module(EModule mod_inst) throws Error {
-		get_module_info(EAtom.intern(mod_inst.module_name())).setModule(
+		ModuleInfo module_info = get_module_info(EAtom.intern(mod_inst.module_name()));
+		module_info.setModule(
 				mod_inst);
 
 		try {
@@ -312,6 +326,8 @@ public class EModuleManager {
 		} catch (Exception e) {
 			throw new Error(e);
 		}
+		
+		module_info.warn_about_unresolved();
 	}
 
 	@SuppressWarnings("unchecked")
