@@ -1,10 +1,13 @@
 package erjang.m.erlang;
 
+import kilim.Pausable;
 import erjang.BIF;
 import erjang.EAtom;
 import erjang.EInteger;
 import erjang.ENumber;
 import erjang.EObject;
+import erjang.EProc;
+import erjang.ERT;
 import erjang.ESmall;
 import erjang.BIF.Type;
 
@@ -61,6 +64,11 @@ public class BinOps {
 	@BIF(name=">=")
 	static public EAtom ge(EObject o1, EObject o2) {
 		return o1.ge(o2);
+	}
+	
+	@BIF
+	static public EObject send(EProc proc, EObject pid, EObject msg) throws Pausable {
+		return ERT.send(proc, pid, msg);
 	}
 	
 }
