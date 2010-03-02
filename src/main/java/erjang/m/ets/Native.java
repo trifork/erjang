@@ -35,6 +35,7 @@ import erjang.ESmall;
 import erjang.ETuple;
 import erjang.ETuple2;
 import erjang.ETuple3;
+import erjang.NotImplemented;
 
 /**
  * This class implements the BIFs in ets.
@@ -315,10 +316,71 @@ public class Native extends ENative {
 		return table.select_delete(matcher);
 	}
 	
-	@BIF static EAtom delete_all_objects(EProc caller, EObject nameOrTid) {
+	@BIF static public EAtom delete_all_objects(EProc caller, EObject nameOrTid) {
 		ETable table = resolve(caller, nameOrTid, true);
 		if (table == null) throw ERT.badarg(nameOrTid);
 		table.delete_all_objects();
 		return ERT.TRUE;
 	}
+	
+	@BIF static public EObject match_spec_compile(EObject spec) {
+		ESeq lspec = spec.testSeq();
+		if (lspec == null) throw ERT.badarg(spec);
+		EMatchSpec matcher = EMatchSpec.compile(lspec);
+		return matcher;
+	}
+	
+	@BIF static public EObject is_compiled_ms(EObject spec) {
+		return ERT.box(spec instanceof EMatchSpec);
+	}
+	
+	@BIF static public EObject prev(EObject obj, EObject obj2) {
+		throw new NotImplemented(); 
+	}
+
+	@BIF static public EObject first(EObject obj) {
+		throw new NotImplemented(); 
+	}
+
+	@BIF static public EObject last(EObject obj) {
+		throw new NotImplemented(); 
+	}
+
+	@BIF static public EObject all() {
+		throw new NotImplemented(); 
+	}
+
+	@BIF static public EObject match_object(EObject obj, EObject obj2) {
+		throw new NotImplemented(); 
+	}
+
+	@BIF static public EObject next(EObject obj, EObject obj2) {
+		throw new NotImplemented(); 
+	}
+
+	@BIF static public EObject safe_fixtable(EObject obj, EObject obj2) {
+		throw new NotImplemented(); 
+	}
+
+	@BIF static public EObject select(EObject obj1) {
+		throw new NotImplemented(); 
+	}
+
+	@BIF static public EObject select(EObject obj1, EObject obj2, EObject obj3) {
+		throw new NotImplemented(); 
+	}
+
+	@BIF static public EObject match_spec_run_r(EObject obj1, EObject obj2, EObject obj3) {
+		throw new NotImplemented(); 
+	}
+
+	@BIF static public EObject info(EObject obj) {
+		throw new NotImplemented(); 
+	}
+
+	@BIF static public EObject info(EObject obj1, EObject obj2) {
+		throw new NotImplemented(); 
+	}
+
+
 }
