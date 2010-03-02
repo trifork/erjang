@@ -21,6 +21,7 @@ package erjang.m.erlang;
 import erjang.BIF;
 import erjang.EObject;
 import erjang.ERT;
+import erjang.NotImplemented;
 
 /**
  * BIFs supporting distribution
@@ -30,6 +31,21 @@ public class ErlDist {
 	@BIF
 	public static final EObject is_alive() {
 		return ERT.FALSE;
+	}
+	
+	@BIF
+	public static EObject nodes(EObject node) {
+		throw new NotImplemented();
+	}
+
+	@BIF
+	public static EObject monitor_node(EObject a1, EObject a2, EObject a3) {
+		throw new NotImplemented();
+	}
+
+	@BIF
+	public static EObject dist_exit(EObject a1, EObject a2, EObject a3) {
+		throw new NotImplemented();
 	}
 
 }

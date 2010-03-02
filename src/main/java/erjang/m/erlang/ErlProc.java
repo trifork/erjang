@@ -487,7 +487,7 @@ public class ErlProc {
 	}
 	
 	@BIF
-	public static EObject suspend_process(EObject p) {
+	public static EObject suspend_process(EObject a1, EObject a2) {
 		throw new NotImplemented();
 	}
 }

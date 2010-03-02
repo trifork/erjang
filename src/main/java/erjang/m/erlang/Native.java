@@ -28,7 +28,8 @@ public class Native extends ENative {
 	@Override
 	protected Class<?>[] getNativeClasses() {
 		return new Class[] { BinOps.class, ErlBif.class, ErlProc.class,
-				ErlList.class, ErlConvert.class, ErlPort.class, ErlHash.class, ErlDist.class };
+				ErlList.class, ErlConvert.class, ErlPort.class, ErlHash.class, ErlDist.class,
+				ErlFun.class };
 	}
 
 }

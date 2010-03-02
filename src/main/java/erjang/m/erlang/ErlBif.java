@@ -1548,4 +1548,17 @@ public class ErlBif {
 		return new ETuple2(date, time);
 	}
 	
+	@BIF
+	static public EObject localtime_to_universaltime(EObject a1, EObject a2)
+	{
+		throw new NotImplemented();
+	}
+	
+	@BIF
+	static public EObject system_flag(EObject flag_arg, EObject value)
+	{
+		throw new NotImplemented();
+	}
+	
+	
 }
