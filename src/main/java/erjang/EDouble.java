@@ -58,22 +58,29 @@ public class EDouble extends ENumber {
 		return lhs.value < value ? -1 : lhs.value == value ? 0 : 1;
 	}
 
+	public boolean equals(Object other) {
+		if (other instanceof EDouble) {
+			EDouble o = (EDouble) other;
+			return o.value == value;
+		}
+		return false;
+	}
+	
 	@Override
 	public
 	boolean equalsExactly(EObject rhs) {
-		return rhs.r_compare_same_exactly(this);
+		return rhs.r_equals_exactly(this);
 	}
 
-	boolean r_compare_same_exactly(ESmall lhs) {
-		return lhs.value == value;
+	boolean r_equals_exactly(ESmall lhs) {
+		return false;
 	}
 
-	boolean r_compare_same_exactly(EBig lhs) {
-		double doubleValue = lhs.doubleValue();
-		return doubleValue == value;
+	boolean r_equals_exactly(EBig lhs) {
+		return false;
 	}
 
-	boolean r_compare_same_exactly(EDouble lhs) {
+	boolean r_equals_exactly(EDouble lhs) {
 		return lhs.value == value;
 	}
 

@@ -276,12 +276,12 @@ public abstract class EObject implements Comparable<EObject> {
 	int r_compare_same(EInternalPID lhs) { throw new NotImplemented(); }
 	
 	public boolean equalsExactly(EObject rhs) {
-		return compare_same(rhs) == 0;
+		return compareTo(rhs) == 0;
 	}
 
-	boolean r_compare_same_exactly(ESmall lhs) { return false; }
-	boolean r_compare_same_exactly(EBig lhs) { return false; }
-	boolean r_compare_same_exactly(EDouble lhs) { return false; }
+	boolean r_equals_exactly(ESmall lhs) { return false; }
+	boolean r_equals_exactly(EBig lhs) { return false; }
+	boolean r_equals_exactly(EDouble lhs) { return false; }
 	
 	
 	/** used as compare-order for "non-erlang terms", such as 

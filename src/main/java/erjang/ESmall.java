@@ -61,19 +61,19 @@ public class ESmall extends EInteger {
 
 	@Override
 	public boolean equalsExactly(EObject rhs) {
-		return rhs.r_compare_same_exactly(this);
+		return rhs.r_equals_exactly(this);
 	}
 
-	boolean r_compare_same_exactly(ESmall lhs) {
+	boolean r_equals_exactly(ESmall lhs) {
 		return lhs.value == value;
 	}
 
-	boolean r_compare_same_exactly(EBig lhs) {
+	boolean r_equals_exactly(EBig lhs) {
 		return lhs.value.equals(BigInteger.valueOf(value));
 	}
 
-	boolean r_compare_same_exactly(EDouble lhs) {
-		return lhs.value == value;
+	boolean r_equals_exactly(EDouble lhs) {
+		return false;
 	}
 
 	/*

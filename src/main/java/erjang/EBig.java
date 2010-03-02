@@ -58,19 +58,19 @@ public class EBig extends EInteger {
 
 	@Override
 	public boolean equalsExactly(EObject rhs) {
-		return rhs.r_compare_same(this) ==0;
+		return rhs.r_equals_exactly(this);
 	}
 	
-	boolean r_compare_same_exactly(ESmall lhs) {
+	boolean r_equals_exactly(ESmall lhs) {
 		return lhs.bigintValue().equals(value);
 	}
 
-	boolean r_compare_same_exactly(EBig lhs) {
+	boolean r_equals_exactly(EBig lhs) {
 		return lhs.value.equals(value);
 	}
 
-	boolean r_compare_same_exactly(EDouble lhs) {
-		return lhs.value == value.doubleValue();
+	boolean r_equals_exactly(EDouble lhs) {
+		return false;
 	}
 
 
