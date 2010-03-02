@@ -68,7 +68,7 @@ public class ErlHash {
 			range = Math.abs(range) & 0xffffffff;
 		}
 		
-		hash = make_hash(a1) & 0xffffffff;
+		hash = make_hash(a1) & 0x7fffffff;
 		
 		if (range != 0) {
 			final_hash = 1 + (hash % range);

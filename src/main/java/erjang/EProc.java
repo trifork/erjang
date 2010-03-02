@@ -23,6 +23,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import kilim.Pausable;
 import erjang.m.erlang.ErlProc;
@@ -32,6 +34,9 @@ import erjang.util.WeakHashSet;
  * An erlang process
  */
 public final class EProc extends ETask<EInternalPID> {
+	
+	static Logger log = Logger.getLogger(EProc.class.getName());
+	
 	public static final EObject TAIL_MARKER = new ETailMarker();
 
 	public static final int ERTS_NODES_MON_OPT_TYPE_VISIBLE = 1<<0;
@@ -411,19 +416,12 @@ public final class EProc extends ETask<EInternalPID> {
 				result = am_normal;
 
 			} catch (ErlangException e) {
-				if (ERT.DEBUG) {
-				System.err.print("exiting "+self_handle()+" with: ");
-				e.printStackTrace(System.err);
-				System.err.println("Erlang stacktrace: "+ErlProc.get_stacktrace(this));
-				}
+				log.log(Level.FINE, "exiting "+self_handle(), e);
 				last_exception = e;
 				result = e.reason();
 
 			} catch (ErlangExitSignal e) {
-				if (ERT.DEBUG) {
-				System.err.print("exiting "+self_handle()+" with: ");
-				e.printStackTrace(System.err);
-				}
+				log.log(Level.FINE, "exiting "+self_handle(), e);
 				result = e.reason();
 
 			} catch (Throwable e) {
@@ -478,7 +476,7 @@ public final class EProc extends ETask<EInternalPID> {
 			res = res.cons(new ETuple2(am_registered_name, reg_name));
 
 		ESeq links = links();
-		res = res.cons(new ETuple2(am_links, group_leader));
+		res = res.cons(new ETuple2(am_links, links));
 		
 		
 		if (res == ERT.NIL) return ERT.am_undefined;
@@ -519,7 +517,7 @@ public final class EProc extends ETask<EInternalPID> {
 			return new ETuple2(am_group_leader, group_leader);
 		} else if (spec == am_links) {
 			ESeq links = links();
-			return new ETuple2(am_links, group_leader);
+			return new ETuple2(am_links, links);
 		} else {
 			System.err.println(spec);
 			throw new NotImplemented();

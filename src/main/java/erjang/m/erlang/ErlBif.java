@@ -18,12 +18,14 @@
 
 package erjang.m.erlang;
 
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import java.math.BigDecimal;
+import java.nio.ByteBuffer;
 
 import kilim.Pausable;
 import kilim.Task;
@@ -115,10 +117,32 @@ public class ErlBif {
 
 	@BIF
 	static ESmall iolist_size(EObject val) {
-		//TODO: This is a quick hack. Make into an EObject method for efficiency.
-		EString es;
-		if ((es = val.testString()) == null) throw ERT.badarg(val);
-		return ERT.box(es.length());
+
+		EBinary bin;
+		if ((bin=val.testBinary()) != null) {
+			return new ESmall(bin.byteSize());
+		}
+		
+		EString str;
+		if ((str=val.testString()) != null) {
+			return new ESmall(str.length());
+		}
+		
+		
+		ESeq seq;
+		if ((seq = val.testSeq()) == null) {
+			throw ERT.badarg(val);
+		}
+		
+		ArrayList<ByteBuffer> al = new ArrayList<ByteBuffer>();
+		seq.collectIOList(al);
+
+		int size = 0;
+		for (int i = 0; i < al.size(); i++) {
+			size += al.get(i).remaining();
+		}
+		
+		return new ESmall(size);
 	}
 
 	@BIF

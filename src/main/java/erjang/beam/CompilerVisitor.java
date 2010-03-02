@@ -75,6 +75,7 @@ import erjang.Import;
 import erjang.Module;
 import erjang.NotImplemented;
 import erjang.beam.Arg.Kind;
+import erjang.m.erlang.ErlBif;
 
 import static erjang.beam.CodeAtoms.*;
 
@@ -1717,15 +1718,27 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					return;
 
 				} else if (opcode == BeamOpcode.get_tuple_element) {
-					push(val, val.type);
-					mv.visitFieldInsn(GETFIELD, val.type.getInternalName(),
-							"elem" + (pos + 1), EOBJECT_DESC);
+					
+					int known_arity = get_known_arity(val.type);
+					if (known_arity >= pos+1) {
+						push(val, val.type);
+						mv.visitFieldInsn(GETFIELD, val.type.getInternalName(),
+								"elem" + (pos + 1), EOBJECT_DESC);
+					} else {
+						push(val, val.type);
+						mv.visitTypeInsn(CHECKCAST, ETUPLE_NAME);
+						push_int(pos + 1);
+						mv.visitMethodInsn(INVOKEVIRTUAL, ETUPLE_NAME, "elm", 
+								"(I)" + EOBJECT_DESC);
+					}
+					
 					pop(out, EOBJECT_TYPE);
 					return;
 				} else if (opcode == BeamOpcode.set_tuple_element) {
 
 					push(out, out.type);
-					mv.visitTypeInsn(CHECKCAST, ETUPLE_NAME);
+					if (get_known_arity(out.type) < 0)
+						mv.visitTypeInsn(CHECKCAST, ETUPLE_NAME);
 					push_int(pos + 1);
 					push(val, val.type);
 					mv.visitMethodInsn(INVOKEVIRTUAL, ETUPLE_NAME, "set", "(I"
@@ -1734,6 +1747,33 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				}
 
 				throw new Error();
+			}
+
+			/**
+			 * @param type
+			 * @return -1 if non-ETuple; arity [#elements] otherwise
+			 */
+			private int get_known_arity(Type type) {
+				String in = type.getInternalName();
+				if (in.startsWith(ETUPLE_NAME)) {
+					int pfx_len = ETUPLE_NAME.length();
+
+					if (in.length() == pfx_len) {
+						return 0;
+					}
+					
+					try {
+						String arity = in.substring(pfx_len);
+						return Integer.parseInt(arity);
+					} catch (NumberFormatException e) {
+						return 0;
+					}
+					
+					
+				}
+					
+				// not a tuple
+				return -1;
 			}
 
 			/**

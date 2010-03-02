@@ -152,4 +152,25 @@ public class CharCollector {
 			this.restOfInput = restOfInput;
 		}
 	}
+
+	/**
+	 * @param data
+	 * @param off
+	 * @param length
+	 * @throws PartialDecodingException 
+	 * @throws IOException 
+	 */
+	public void addIntegers(char[] data, int offset, int length) throws IOException, PartialDecodingException {
+		if (length==0) return;
+		if (dirtyDecoder) flushDecoder();
+		while (length > 0) {
+			int free = buffer.remaining();
+			while (length > 0 && free > 0) {
+				char c = (char)(data[offset] & 0xFFFF);
+				buffer.put(c);
+				offset++; length--; free--; // Could be smarter.
+			}
+			if (free==0) flushBuffer();
+		}
+	}
 }

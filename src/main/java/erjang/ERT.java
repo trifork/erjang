@@ -27,6 +27,8 @@ import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import kilim.Pausable;
 import kilim.Task;
@@ -35,11 +37,11 @@ import erjang.driver.Drivers;
 import erjang.driver.EAsync;
 import erjang.driver.EDriver;
 import erjang.driver.EDriverTask;
-import erjang.driver.efile.Driver;
 
 @Module(value = "erlang")
 public class ERT {
 
+	static Logger log = Logger.getLogger("erjang");
 	public static EAtom am_badsig = EAtom.intern("badsig");
 
 	@BIF(name = "erlang:raise/3")
@@ -488,9 +490,7 @@ public class ERT {
 		// TODO handle ports also?
 		proc.check_exit();
 
-		if (ERT.DEBUG) {
-			System.err.println("ignored options to send: " + options);
-		}
+		log.log(Level.FINER, "ignored options to send: " + options);
 		
 		EHandle p;
 		if ((p = pid.testHandle()) != null) {

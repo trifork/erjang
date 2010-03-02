@@ -17,10 +17,12 @@
  **/
 package erjang.m.unicode;
 
+import erjang.EBigString;
 import erjang.ENative;
 import erjang.BIF;
 import erjang.EObject;
 import erjang.EAtom;
+import erjang.ESeq;
 import erjang.ETuple;
 import erjang.EBinary;
 import erjang.ERT;
@@ -77,6 +79,39 @@ public class Native extends ENative {
 		return bin;
 	}
 
+	@BIF
+	public static EObject characters_to_list(EObject charlist, EObject encodingSpec) {
+		Charset encoding = encodingSpecToCharset(encodingSpec);
+		if (encoding == null)
+			throw ERT.badarg(charlist, encodingSpec);
+
+		CharArrayWriter out = new CharArrayWriter();
+		CharCollector collector = new CharCollector(encoding, out);
+
+		try {
+			charlist.collectCharList(collector);
+		} catch (CharCollector.InvalidElementException e) {
+			throw ERT.badarg(charlist, encodingSpec);
+		} catch (CharCollector.CollectingException e) {
+			ESeq seq = charArrayToList(out);
+			return ETuple.make(ERROR_ATOM, seq, e.restOfInput);
+		} catch (IOException e) {
+			throw new Error(e); // Not supposed to happen.
+		}
+
+		try {
+			collector.end();
+		} catch (CharCollector.PartialDecodingException e) {
+			ESeq seq = charArrayToList(out);
+			return ETuple.make(INCOMPLETE_ATOM, seq);
+		} catch (IOException e) {
+			throw new Error(e); // Not supposed to happen.
+		}
+
+		ESeq seq = charArrayToList(out);
+		return seq;
+	}
+
 	protected static EBinary charArrayToUnicodeBinary(CharArrayWriter caw) {
 		return charArrayToUnicodeBinary(caw.toCharArray());
 	}
@@ -88,6 +123,14 @@ public class Native extends ENative {
 		} catch (java.io.UnsupportedEncodingException e) {
 			throw new Error(e); // Not supposed to happen.
 		}
+	}
+
+	protected static ESeq charArrayToList(CharArrayWriter caw) {
+		return charArrayToList(caw.toCharArray());
+	}
+
+	protected static ESeq charArrayToList(char[] chars) {
+		return EBigString.make(chars, 0, chars.length);
 	}
 
 	public static Charset encodingSpecToCharset(EObject encoding) {

@@ -29,7 +29,7 @@ import junit.framework.TestSuite;
  */
 public class AllTests {
 
-	static final String OTP_HOME = "/Users/krab/Systems/otp_src_R13B02-1";
+	static final String OTP_HOME = "/Users/krab/Projects/otp";
 
 	public static Test suite() {
 		TestSuite suite = new TestSuite("Test for erjang");
@@ -39,7 +39,7 @@ public class AllTests {
 		find_beam_files(otpCompileSuite, new File(OTP_HOME));
 		//$JUnit-END$
  		suite.addTest(otpCompileSuite);
-
+		
 		TestSuite coverageRunSuite = new TestSuite("Coverage run tests");
 		//$JUnit-BEGIN$
 		find_erl_files(coverageRunSuite, new File("src/test/erl"));

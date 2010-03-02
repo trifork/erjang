@@ -22,6 +22,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import kilim.Mailbox;
 import kilim.Pausable;
@@ -31,6 +33,8 @@ import kilim.Pausable;
  */
 public abstract class ETask<H extends EHandle> extends kilim.Task {
 
+	static Logger log = Logger.getLogger(ETask.class.getName());
+	
 	protected static final EAtom am_normal = EAtom.intern("normal");
 	protected static final EAtom am_java_exception = EAtom
 			.intern("java_exception");
@@ -177,9 +181,7 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 	 */
 	public final void send_exit(EHandle from, EObject reason) throws Pausable {
 
-		if (ERT.DEBUG) {
-		System.err.println("exit " + from.task() + " -> " + this + ", reason="+reason);
-		}
+		log.fine("exit " + from.task() + " -> " + this + ", reason="+reason);
 		
 		// ignore exit signals from myself
 		if (from == self_handle()) {
