@@ -714,7 +714,7 @@ public class ERT {
 			} else {
 				EInteger ei;
 				if ((ei = howlong.testInteger()) == null)
-					throw badarg(howlong);
+					throw new ErlangError(EAtom.intern("timeout_value"));
 
 				proc.mbox.untilHasMessage(ei.longValue());
 				return false;
@@ -727,7 +727,7 @@ public class ERT {
 			} else {
 				EInteger ei;
 				if ((ei = howlong.testInteger()) == null)
-					throw badarg(howlong);
+					throw new ErlangError(EAtom.intern("timeout_value"));
 
 				boolean res = proc.mbox
 					.untilHasMessages(proc.midx + 1, ei.longValue());
