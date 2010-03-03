@@ -22,7 +22,7 @@ package erjang;
 /**
  * 
  */
-public class ERef extends EObject {
+public final class ERef extends EObject {
 
 	private EAtom node;
 	private int creation;
@@ -70,12 +70,31 @@ public class ERef extends EObject {
 
 	@Override
 	int compare_same(EObject rhs) {
-		if (this.equals(rhs)) return 0;
+		ERef oref = (ERef) rhs;
 		
-		// TODO: optimize
-		return toString().compareTo(rhs.toString());
+		int cmp = node.compareTo(oref.node);
+		if (cmp != 0) return cmp;
+		
+		cmp = cmp(creation, oref.creation);
+		if (cmp != 0) return cmp;
+		
+		cmp = cmp(ids.length, oref.ids.length);
+		if (cmp != 0) return cmp;
+		
+		for (int i = 0; i < ids.length; i++) {
+			cmp = cmp(ids[i], oref.ids[i]);
+			if (cmp != 0) return cmp;
+		}
+		
+		return 0;
 	}
 
+	private static int cmp(int i1, int i2) {
+		if (i1==i2) return 0;
+		if (i1<i2) return -1;
+		return 1;
+	}
+	
     /**
      * Determine if two refs are equal. Refs are equal if their components are
      * equal. New refs and old refs are considered equal if the node, creation
