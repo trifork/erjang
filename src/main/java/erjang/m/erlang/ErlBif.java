@@ -21,6 +21,8 @@ package erjang.m.erlang;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
+import java.util.List;
+import java.util.TimeZone;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -66,7 +68,11 @@ import erjang.BIF.Type;
 @Module("erlang")
 public class ErlBif {
 
-    private static Logger log = Logger.getLogger("erlang");
+    /**
+	 * 
+	 */
+	private static final TimeZone UTC_TIME_ZONE = TimeZone.getTimeZone("UTC");
+	private static Logger log = Logger.getLogger("erlang");
 
 	@BIF
 	static EObject apply(EProc proc, EObject fun, EObject args) throws Pausable {
@@ -111,8 +117,28 @@ public class ErlBif {
 	@BIF
 	static EBinary list_to_binary(EObject val) {
 		EString es;
-		if ((es = val.testString()) == null) throw ERT.badarg(val);
-		return es.asBitString();
+		if ((es = val.testString()) != null) { 
+			return es.asBitString();
+		}
+
+		ECons cons = val.testCons();
+		if (cons == null) throw ERT.badarg(val);
+		List<ByteBuffer> out = new ArrayList<ByteBuffer>();
+		cons.collectIOList(out);
+
+		int length = 0;
+		for (int i = 0; i < out.size(); i++) {
+			length += out.get(i).remaining();
+		}
+
+		byte[] all = new byte[length];
+		int pos = 0;
+		for (int i = 0; i < out.size(); i++) {
+			ByteBuffer bb = out.get(i);
+			bb.get(all, pos, bb.remaining());
+		}
+		
+		return new EBinary(all);
 	}
 
 	@BIF
@@ -359,6 +385,7 @@ public class ErlBif {
 		return t.elm(i.asInt());
 	}
 
+	/*
 	@BIF
 	@ErlFun(export = true)
 	static public EObject element(ESmall idx, EObject obj) {
@@ -376,6 +403,7 @@ public class ErlBif {
 		}
 		throw ERT.badarg(idx, tup);
 	}
+	*/
 
 	@BIF
 	static public EObject element(int idx, ETuple tup) {
@@ -1534,6 +1562,27 @@ public class ErlBif {
 	public static ETuple2 localtime()
 	{
 		Calendar c = GregorianCalendar.getInstance();
+		
+		ETuple3 date = new ETuple3();
+		date.set(1, ERT.box(c.get(Calendar.YEAR)));
+		date.set(2, ERT.box(c.get(Calendar.MONTH)-Calendar.JANUARY+1));
+		date.set(3, ERT.box(c.get(Calendar.DAY_OF_MONTH)));
+		
+		ETuple3 time = new ETuple3();
+		time.set(1, ERT.box(c.get(Calendar.HOUR_OF_DAY)));
+		time.set(2, ERT.box(c.get(Calendar.MINUTE)));
+		time.set(3, ERT.box(c.get(Calendar.SECOND)));
+		
+		return new ETuple2(date, time);
+	}
+	
+
+	@BIF
+	public static ETuple2 universaltime()
+	{
+		Calendar c = GregorianCalendar.getInstance();
+		
+		c.setTimeZone(UTC_TIME_ZONE);
 		
 		ETuple3 date = new ETuple3();
 		date.set(1, ERT.box(c.get(Calendar.YEAR)));
