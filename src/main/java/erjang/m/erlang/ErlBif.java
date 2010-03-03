@@ -18,6 +18,8 @@
 
 package erjang.m.erlang;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
@@ -1609,5 +1611,36 @@ public class ErlBif {
 		throw new NotImplemented();
 	}
 	
+	@BIF
+	public static EObject md5(EObject iolist_arg)
+	{
+		ECons iolist = iolist_arg.testCons();
+		if (iolist == null) {
+			
+			EBinary bin;
+			if ((bin = iolist_arg.testBinary()) == null) {			
+				throw ERT.badarg(iolist_arg);
+			}
+			
+			throw new NotImplemented();
+		}
+		
+		List<ByteBuffer> buf = new ArrayList<ByteBuffer>();
+		iolist.collectIOList(buf);
+		
+		MessageDigest md;
+		 try {
+			 md = MessageDigest.getInstance("MD5");
+		} catch (NoSuchAlgorithmException e) {
+			throw new NotImplemented();
+		}
+		
+		for (int i = 0; i < buf.size(); i++) {
+			md.update(buf.get(i));
+		}
+		
+		byte[] res = md.digest();
+		return EBinary.make(res, 0, res.length, 0);
+	}
 	
 }
