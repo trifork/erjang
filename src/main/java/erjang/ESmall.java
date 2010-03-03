@@ -209,6 +209,14 @@ public class ESmall extends EInteger {
 		return ERT.box(lhs.multiply(BigInteger.valueOf(value)));
 	}
 
+	/* (non-Javadoc)
+	 * @see erjang.EObject#negate()
+	 */
+	@Override
+	public ENumber negate() {
+		return new ESmall(-value);
+	}
+	
 	// integer division erlang:div/2
 
 	public EDouble divide(EObject other) {
