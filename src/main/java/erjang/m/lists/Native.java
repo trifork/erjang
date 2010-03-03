@@ -22,13 +22,36 @@ package erjang.m.lists;
 import erjang.BIF;
 import erjang.ENative;
 import erjang.EObject;
+import erjang.ERT;
+import erjang.ESeq;
+import erjang.ESmall;
+import erjang.ETuple;
 import erjang.NotImplemented;
 
 public class Native extends ENative {
 
 	@BIF
-	public static EObject keyfind(EObject o1, EObject o2, EObject o3) {
-		throw new NotImplemented();		
+	public static EObject keyfind(EObject key, EObject nth_arg, EObject list_arg) {
+		ESmall nth = nth_arg.testSmall();
+		ESeq list = list_arg.testSeq();
+		
+		if (key == null || nth == null | list == null)
+				throw ERT.badarg(key, nth_arg, list_arg);
+
+		while (!list.isNil()) {
+			EObject elm = list.head();
+			ETuple tup = elm.testTuple();
+
+			// test that it is a tuple of the right size
+			if (tup != null && tup.arity() >= nth.value) {				
+				EObject val = tup.elm(nth.value);
+				if (val.equals(key)) { return tup; }
+			}
+			
+			list = list.tail();
+		}
+
+		return ERT.FALSE;
 	}
 	
 }
