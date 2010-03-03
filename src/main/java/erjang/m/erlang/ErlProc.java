@@ -68,8 +68,8 @@ public class ErlProc {
 	private static final EAtom am_non_heap = EAtom.intern("non_heap");
 	private static final EAtom am_jvm = EAtom.intern("jvm");
 	private static final EAtom am_allocated_areas = EAtom.intern("allocated_areas");
-	private static final EAtom am_otp_version = EAtom.intern("am_otp_version");
-	private static final EAtom am_machine = EAtom.intern("am_machine");
+	private static final EAtom am_otp_version = EAtom.intern("otp_version");
+	private static final EAtom am_machine = EAtom.intern("machine");
 	private static final EAtom am_link = EAtom.intern("link");
 	private static final EAtom am_monitor = EAtom.intern("monitor");
 	private static final EAtom am_priority = EAtom.intern("priority");
@@ -371,8 +371,10 @@ public class ErlProc {
 	static EObject system_info(EProc proc, EObject type) {
 
 		if (type == am_machine) {
-			return EString.fromString("JAR");
+			// we report BEAM so that the compiler emits BEAM files
+			return EString.fromString("BEAM");
 		}
+		
 		if (type == am_allocated_areas) {
 
 			ECons res = ERT.NIL;
