@@ -339,6 +339,7 @@ public class EBitString extends EObject {
 
 			// the byte
 			int val = 0x0ff & (int) data[(int) (bitPos >> 3)];
+			res <<= bitLength;
 			res |= val >> (8 - len);
 
 			bitLength -= len;
@@ -445,6 +446,7 @@ public class EBitString extends EObject {
 
 			// the byte
 			int val = 0x0ff & (int) data[(int) (bitPos >> 3)];
+			res <<= bitLength;
 			res |= val >> (8 - len);
 
 			bitLength -= len;
