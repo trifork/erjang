@@ -226,4 +226,8 @@ public final class EAtom extends EObject implements CharSequence {
 		return ei.read_atom();
 	}
 
+	@Override
+	public void encode(EOutputStream eos) {
+		eos.write_atom(this.value);
+	}
 }

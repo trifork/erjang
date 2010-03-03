@@ -481,4 +481,19 @@ public class EString extends ESeq implements CharSequence {
 	public static ESeq read(EInputStream ei) throws IOException {
 		return ei.read_string();
 	}
+
+    public static int[] stringToCodePoints(final String s) {
+        final int m = s.codePointCount(0, s.length());
+        final int [] codePoints = new int[m];
+        for (int i = 0, j = 0;  j < m;  i = s.offsetByCodePoints(i, 1), j++) {
+            codePoints[j] = s.codePointAt(i);
+        }
+        return codePoints;
+    }
+	
+	@Override
+	public void encode(EOutputStream eos) {
+		eos.write_string(stringValue());
+	}
+
 }

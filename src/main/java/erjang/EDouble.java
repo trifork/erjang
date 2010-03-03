@@ -219,4 +219,10 @@ public class EDouble extends ENumber {
 		return new EDouble(ei.read_double());
 	}
 
+	@Override
+	public void encode(EOutputStream eos) {
+		eos.write_double(value);
+	}
+
+
 }

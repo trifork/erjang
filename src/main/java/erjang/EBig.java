@@ -327,4 +327,9 @@ public class EBig extends EInteger {
 		return value.doubleValue();
 	}
 
+	@Override
+	public void encode(EOutputStream eos) {
+		eos.write_big_integer(value);
+	}
+
 }

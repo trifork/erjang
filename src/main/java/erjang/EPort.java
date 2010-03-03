@@ -20,8 +20,13 @@ package erjang;
 
 public abstract class EPort extends EHandle {
 
+	int id;
+	int creation;
+	
 	public EPort(ENode node) {
 		super(node);
+		this.id = node.createPortID();
+		this.creation = node.creation();
 	}
 	
 	@Override
@@ -84,5 +89,15 @@ public abstract class EPort extends EHandle {
 	 */
 	public static EPort make(EAtom node, int id, int creation) {
 		throw new NotImplemented();
+	}
+	
+	@Override
+	public String toString() {
+		return "#Port<" + id + "." + creation + ">";
+	}
+	
+	@Override
+	public void encode(EOutputStream eos) {
+		eos.write_port(node.node().getName(), id, creation);
 	}
 }

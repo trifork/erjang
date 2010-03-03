@@ -369,5 +369,9 @@ public abstract class EObject implements Comparable<EObject> {
 		return null;
 	}
 
+	public void encode(EOutputStream eos) {
+		throw new NotImplemented();
+	}
+
 
 }

@@ -357,4 +357,8 @@ public class ESmall extends EInteger {
 		return ERT.box(~value);
 	}
 
+	@Override
+	public void encode(EOutputStream eos) {
+		eos.write_int(value);
+	}
 }

@@ -158,5 +158,16 @@ public final class EList extends ESeq {
         }
 	}
 
-	
+	@Override
+	public void encode(EOutputStream eos) {
+		int len = this.length();
+		eos.write_list_head(len);
+		ESeq curr = this;
+		while (!curr.isNil()) {
+			eos.write_any(curr.head());
+			curr = curr.tail();
+		}
+		eos.write_nil();
+	}
+
 }

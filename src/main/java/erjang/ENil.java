@@ -87,4 +87,9 @@ public class ENil extends ESeq {
 		if (rhs.testNil() != null) return 0;
 		return -1;
 	}
+	
+	@Override
+	public void encode(EOutputStream eos) {
+		eos.write_nil();
+	}
 }

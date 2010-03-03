@@ -96,4 +96,8 @@ public abstract class EPID extends EHandle {
 	 */
 	public abstract boolean is_alive();
 
+	public void encode(EOutputStream eos) {
+		throw new NotImplemented();
+	}
+
 }

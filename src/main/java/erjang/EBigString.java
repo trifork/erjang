@@ -446,4 +446,10 @@ public class EBigString extends ESeq implements CharSequence {
 	public static ESeq read(EInputStream ei) throws IOException {
 		return ei.read_string();
 	}
+
+	@Override
+	public void encode(EOutputStream eos) {
+		eos.write_string(stringValue());
+	}
+
 }

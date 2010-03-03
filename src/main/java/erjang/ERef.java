@@ -208,5 +208,11 @@ public final class ERef extends EObject {
 		throw new NotImplemented();
 	}
 
-
+	/* (non-Javadoc)
+	 * @see erjang.EObject#encode(erjang.EOutputStream)
+	 */
+	@Override
+	public void encode(EOutputStream eos) {
+		eos.write_ref(node.getName(), ids, creation);
+	}
 }

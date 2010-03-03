@@ -527,5 +527,18 @@ public abstract class ETuple extends EObject implements Cloneable /* , Indexed *
 		}
 		return res;
 	}
+	
+	/* (non-Javadoc)
+	 * @see erjang.EObject#encode(erjang.EOutputStream)
+	 */
+	@Override
+	public void encode(EOutputStream eos) {
+        int arity = arity();
+		eos.write_tuple_head(arity);
+
+        for (int i = 1; i <= arity; i++) {
+            eos.write_any(elm(i));
+        }
+	}
 
 }

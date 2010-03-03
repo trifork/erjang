@@ -49,7 +49,7 @@ public abstract class ESeq extends ECons {
 	public int length() {
 		int count = 0;
 		ESeq curr = this;
-		while (curr != ERT.NIL) {
+		while (!curr.isNil()) {
 			count += 1;
 			curr = curr.tail();
 		}

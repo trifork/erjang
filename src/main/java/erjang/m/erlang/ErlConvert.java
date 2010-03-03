@@ -31,6 +31,7 @@ import erjang.EInputStream;
 import erjang.EInteger;
 import erjang.EDouble;
 import erjang.EObject;
+import erjang.EOutputStream;
 import erjang.ERT;
 import erjang.ESeq;
 import erjang.ESmall;
@@ -59,8 +60,10 @@ public class ErlConvert {
 	}
 
 	@BIF
-	public static EBitString term_to_binary(EObject bin) {
-		throw new NotImplemented();
+	public static EBinary term_to_binary(EObject obj) {
+		EOutputStream eos = new EOutputStream();
+		eos.write_any(obj);
+		return eos.getBinaryContent();		
 	}
 
 	@BIF

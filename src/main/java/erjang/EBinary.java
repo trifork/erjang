@@ -161,4 +161,8 @@ public class EBinary extends EBitString {
 		return true;
 	}
 
+	@Override
+	public void encode(EOutputStream eos) {
+		eos.write_binary(getByteArray());
+	}
 }

@@ -286,4 +286,12 @@ public class EBinList extends ECons {
 		} else tail.collectCharList(out);
 	}
 
+	@Override
+	public void encode(EOutputStream eos) {
+		eos.write_list_head(len);
+		for (int i = 0; i < len; i++) {
+			eos.write_int(data[off+i]);
+		}
+		eos.write_any(tail);
+	}
 }

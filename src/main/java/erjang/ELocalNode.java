@@ -84,4 +84,12 @@ public class ELocalNode extends EAbstractNode {
 
 	}
 	
+    public synchronized int createPortID() {
+        portCount++;
+        if (portCount > 0xfffffff) { /* 28 bits */
+            portCount = 0;
+        }
+        return portCount;
+    }
+    
 }

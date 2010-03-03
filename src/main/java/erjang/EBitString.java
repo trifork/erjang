@@ -499,11 +499,8 @@ public class EBitString extends EObject {
 	 * @return
 	 */
 	public byte[] toByteArray() {
-		if (!isBinary())
-			throw ERT.badarg();
-
-		byte[] result = new byte[byteSize()];
-		System.arraycopy(data, byteOffset(), result, 0, byteSize());
+		byte[] result = new byte[dataByteSize()];
+		System.arraycopy(data, byteOffset(), result, 0, dataByteSize());
 		return result;
 	}
 
@@ -553,6 +550,11 @@ public class EBitString extends EObject {
 			int n = e.inputPos;
 			throw new CharCollector.CollectingException(new EBitString(data, data_offset+n, byte_size-n, extra_bits));
 		}
+	}
+
+	@Override
+	public void encode(EOutputStream eos) {
+		eos.write_bitstr(toByteArray(), extra_bits==0 ? 0 : 8-extra_bits);
 	}
 
 }

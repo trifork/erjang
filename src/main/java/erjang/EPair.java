@@ -87,5 +87,11 @@ public class EPair extends ECons {
 		
 		return type;
 	}
-	
+
+	@Override
+	public void encode(EOutputStream eos) {
+		eos.write_list_head(1);
+		eos.write_any(head);
+		eos.write_any(tail);
+	}
 }
