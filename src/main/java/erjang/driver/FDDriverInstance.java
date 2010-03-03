@@ -104,8 +104,13 @@ public class FDDriverInstance extends EDriverInstance {
 							}
 							
 						} catch (IOException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
+							
+							if (e.getMessage().equals("Interrupted system call")) {
+								// ignore //
+							} else {
+								// TODO: we should really just ignore this; maybe log?
+								e.printStackTrace();
+							}
 						}
 						
 					}
