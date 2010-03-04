@@ -168,7 +168,7 @@ public class EDouble extends ENumber {
 		return ERT.box(lhs.doubleValue() - value);
 	}
 
-	public ENumber multiply(EObject other) {
+	public EDouble multiply(EObject other) {
 		return other.multiply(value);
 	}
 
@@ -176,7 +176,7 @@ public class EDouble extends ENumber {
 		return ERT.box(lhs * value);
 	}
 
-	public ENumber multiply(double lhs) {
+	public EDouble multiply(double lhs) {
 		return ERT.box(lhs * value);
 	}
 

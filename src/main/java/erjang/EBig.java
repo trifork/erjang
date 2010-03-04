@@ -209,10 +209,10 @@ public class EBig extends EInteger {
 		return ERT.box(BigInteger.valueOf(lhs).multiply(value));
 	}
 
-	public ENumber multiply(double lhs) {
+	public EDouble multiply(double lhs) {
 		return ERT.box(lhs * value.doubleValue());
 	}
-
+	
 	public ENumber multiply(BigInteger lhs) {
 		return ERT.box(lhs.multiply(value));
 	}

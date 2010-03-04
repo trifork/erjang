@@ -201,7 +201,7 @@ public class ESmall extends EInteger {
 		return ERT.box((long) lhs * (long) value);
 	}
 
-	public ENumber multiply(double lhs) {
+	public EDouble multiply(double lhs) {
 		return ERT.box(lhs * value);
 	}
 
