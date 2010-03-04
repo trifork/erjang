@@ -764,14 +764,7 @@ public class ErlBif {
 
 	@BIF(name = "*")
 	static public ENumber multiply(EObject v1, EObject v2) {
-		ENumber n1;
-		if ((n1 = v1.testNumber()) != null) {
-			ENumber n2;
-			if ((n2 = v2.testNumber()) != null) {
-				return n1.multiply(n2);
-			}
-		}
-		throw ERT.badarg(v1, v2);
+		return v1.multiply(v2);
 	}
 
 	@BIF(name = "*", type=Type.GUARD)
@@ -1093,26 +1086,12 @@ public class ErlBif {
 
 	@BIF(name = "++")
 	public static ECons append(EObject l1, EObject l2) {
-		ECons c1 = as_list(l1);
-		ECons c2 = as_list(l2);
-
-		if (c1 == null || c2 == null)
-			throw ERT.badarg();
-
-		return c2.prepend(c1);
-	}
-
-	@BIF(name = "++")
-	public static ECons append(ECons l1, ECons l2) {
-		return l2.prepend(l1);
-	}
-
-	@BIF(name = "++")
-	public static ECons append(EObject o1, ECons l2) {
-		ECons l1;
-		if ((l1 = as_list(o1)) != null)
-			return l2.prepend(l1);
-		throw ERT.badarg();
+		
+		ESeq ll1 = l1.testSeq();
+		ECons r = l2.testCons();
+		if (ll1 == null||r==null) throw ERT.badarg(l1, l2);
+		
+		return r.prepend(ll1);
 	}
 
 	@BIF

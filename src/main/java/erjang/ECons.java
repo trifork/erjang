@@ -95,22 +95,23 @@ public abstract class ECons extends EObject {
 	 * @param c1
 	 * @return
 	 */
-	public ECons prepend(ECons list) {
-		if (list.testNil() != null) {
-			return this;
+	public ECons prepend(ESeq list) {
+		
+		// first, rlist=lists:reverse(list)
+		ESeq rlist = ERT.NIL;
+		while (!list.isNil()) {
+			rlist = rlist.cons(list.head());
+			list = list.tail();
 		}
-		return prepend(list.tail()).cons(list.head());
-	}
 
-	private ECons prepend(EObject o) {
-		if (o.testNil() != null) {
-			return this;
-		}
-		ECons list = o.testCons();
-		if (list == null) {
-			throw ERT.badarg();
-		}
-		return prepend(list.tail()).cons(list.head());
+		// then, prepend rlist on this
+		ECons r = this;
+		while(!rlist.isNil()) {
+			r = r.cons(rlist.head());
+			rlist = rlist.tail();
+		} 
+		
+		return r;
 	}
 
 	public boolean collectIOList(List<ByteBuffer> out) {

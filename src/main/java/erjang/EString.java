@@ -241,19 +241,33 @@ public class EString extends ESeq implements CharSequence {
 
 	@Override
 	public String toString() {
-		StringBuffer sb = new StringBuffer("\"");
+		StringBuilder sb = new StringBuilder("\"");
 
 		for (int i = 0; i < length(); i++) {
 			char c = charAt(i);
-			if (c < 0x20 || c > 0x7e) {
-				sb.append("\\x{").append(Integer.toHexString(c)).append('}');
-			} else {
-				sb.append(c);
-			}
+			appendChar(sb, c);
 		}
 		
 		sb.append('"');
 		return sb.toString();
+	}
+
+	static void appendChar(StringBuilder sb, char c) {
+		if (c < 0x20 || c > 0x7e) {
+			sb.append('\\');
+			switch(c) {
+			case '\t': sb.append('t'); break;
+			case '\r': sb.append('r'); break;
+			case '\n': sb.append('n'); break;
+			case '\b': sb.append('b'); break;
+			default:
+				sb.append('x');
+				if (c < 0x10) sb.append('0');
+				sb.append(Integer.toHexString(c).toUpperCase());
+			}
+		} else {
+			sb.append(c);
+		}
 	}
 
 	public static EString fromString(String s) {
@@ -395,7 +409,7 @@ public class EString extends ESeq implements CharSequence {
 	 * @see erjang.ECons#prepend(erjang.ECons)
 	 */
 	@Override
-	public ECons prepend(ECons list) {
+	public ECons prepend(ESeq list) {
 		EString other = list.testString();
 		if (other != null) {
 			byte[] out = new byte[length() + other.length()];
