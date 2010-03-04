@@ -241,7 +241,19 @@ public class EString extends ESeq implements CharSequence {
 
 	@Override
 	public String toString() {
-		return '"' + stringValue() + '"';
+		StringBuffer sb = new StringBuffer("\"");
+
+		for (int i = 0; i < length(); i++) {
+			char c = charAt(i);
+			if (c < 0x20 || c > 0x7e) {
+				sb.append("\\x{").append(Integer.toHexString(c)).append('}');
+			} else {
+				sb.append(c);
+			}
+		}
+		
+		sb.append('"');
+		return sb.toString();
 	}
 
 	public static EString fromString(String s) {
