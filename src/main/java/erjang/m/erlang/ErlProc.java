@@ -504,7 +504,7 @@ public class ErlProc {
 		
 		if (pid == null || mod == null) { throw ERT.badarg(pid_arg, mod_arg); }
 		
-		log.log(Level.INFO, "check_process_code not implemented (" + pid + ", " + mod + ")");
+		log.log(Level.FINE, "check_process_code not implemented (" + pid + ", " + mod + ")");
 	
 		return ERT.FALSE;
 	}
@@ -512,7 +512,7 @@ public class ErlProc {
 	@BIF
 	public static EAtom purge_module(EObject mod_arg) {
 		
-		log.log(Level.INFO, "purge_module not implemented (" + mod_arg + ")");
+		log.log(Level.FINE, "purge_module not implemented (" + mod_arg + ")");
 
 		return ERT.TRUE;
 	}
