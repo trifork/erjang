@@ -39,7 +39,7 @@ public class Native extends ENative {
 		if ((num = val.testNumber()) != null) {
 			return new EDouble(Math.log10(num.doubleValue()));
 		}
-		throw ERT.badarg();
+		throw ERT.badarg(val);
 	}
 	
 	@BIF
@@ -49,7 +49,7 @@ public class Native extends ENative {
 		if ((num = val.testNumber()) != null) {
 			return new EDouble(Math.sin(num.doubleValue()));
 		}
-		throw ERT.badarg();
+		throw ERT.badarg(val);
 	}
 	
 	@BIF
@@ -59,7 +59,7 @@ public class Native extends ENative {
 		if ((num = val.testNumber()) != null) {
 			return new EDouble(Math.cos(num.doubleValue()));
 		}
-		throw ERT.badarg();
+		throw ERT.badarg(val);
 	}
 	
 	@BIF
@@ -69,7 +69,7 @@ public class Native extends ENative {
 		if ((num = val.testNumber()) != null) {
 			return new EDouble(Math.tan(num.doubleValue()));
 		}
-		throw ERT.badarg();
+		throw ERT.badarg(val);
 	}
 	
 	@BIF
@@ -79,7 +79,7 @@ public class Native extends ENative {
 		if ((num = val.testNumber()) != null) {
 			return new EDouble(Math.asin(num.doubleValue()));
 		}
-		throw ERT.badarg();
+		throw ERT.badarg(val);
 	}
 	
 	@BIF
@@ -89,7 +89,7 @@ public class Native extends ENative {
 		if ((num = val.testNumber()) != null) {
 			return new EDouble(Math.acos(num.doubleValue()));
 		}
-		throw ERT.badarg();
+		throw ERT.badarg(val);
 	}
 	
 	@BIF
@@ -99,7 +99,7 @@ public class Native extends ENative {
 		if ((num = val.testNumber()) != null) {
 			return new EDouble(Math.atan(num.doubleValue()));
 		}
-		throw ERT.badarg();
+		throw ERT.badarg(val);
 	}
 	
 	@BIF
@@ -109,7 +109,7 @@ public class Native extends ENative {
 		if ((num = val.testNumber()) != null) {
 			return new EDouble(Math.sinh(num.doubleValue()));
 		}
-		throw ERT.badarg();
+		throw ERT.badarg(val);
 	}
 	
 	@BIF
@@ -119,7 +119,7 @@ public class Native extends ENative {
 		if ((num = val.testNumber()) != null) {
 			return new EDouble(Math.cosh(num.doubleValue()));
 		}
-		throw ERT.badarg();
+		throw ERT.badarg(val);
 	}
 	
 	@BIF
@@ -129,7 +129,7 @@ public class Native extends ENative {
 		if ((num = val.testNumber()) != null) {
 			return new EDouble(Math.tanh(num.doubleValue()));
 		}
-		throw ERT.badarg();
+		throw ERT.badarg(val);
 	}
 
 	@BIF
@@ -139,7 +139,7 @@ public class Native extends ENative {
 		if ((num = val.testNumber()) != null) {
 			return new EDouble(Math.exp(num.doubleValue()));
 		}
-		throw ERT.badarg();
+		throw ERT.badarg(val);
 	}
 
 	@BIF
@@ -149,7 +149,24 @@ public class Native extends ENative {
 		if ((num = val.testNumber()) != null) {
 			return new EDouble(Math.log(num.doubleValue()));
 		}
-		throw ERT.badarg();
+		throw ERT.badarg(val);
+	}
+
+	@BIF
+	public static EDouble atan2(EObject val1, EObject val2)
+	{
+		ENumber num1, num2;
+		if ((num1 = val1.testNumber()) != null 
+			&& (num2 = val2.testNumber()) != null) {
+			return new EDouble(Math.atan2(num1.doubleValue(), num2.doubleValue()));
+		}
+		throw ERT.badarg(val1, val2);
+	}
+
+	@BIF
+	public static EDouble pi()
+	{
+		return new EDouble(Math.PI);
 	}
 
 		
