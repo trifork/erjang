@@ -24,6 +24,8 @@ import java.lang.management.MemoryPoolMXBean;
 import java.lang.management.MemoryType;
 import java.lang.management.MemoryUsage;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import kilim.Pausable;
 import erjang.BIF;
@@ -53,6 +55,8 @@ import erjang.NotImplemented;
  * 
  */
 public class ErlProc {
+	
+	private static Logger log = Logger.getLogger(ErlProc.class.getName());
 
 	private static final EAtom am_smp_support = EAtom.intern("smp_support");
 	private static final EAtom am_threads = EAtom.intern("threads");
@@ -334,7 +338,7 @@ public class ErlProc {
 	}
 
 	@BIF
-	public static EObject exit(EProc proc, EObject a1) {
+	public static EObject exit(EObject a1) {
 		throw new ErlangExit(a1);
 	}
 
@@ -492,4 +496,25 @@ public class ErlProc {
 	public static EObject suspend_process(EObject a1, EObject a2) {
 		throw new NotImplemented();
 	}
+	
+	@BIF
+	public static EAtom check_process_code(EObject pid_arg, EObject mod_arg) {
+		EPID pid = pid_arg.testPID();
+		EAtom mod = mod_arg.testAtom();
+		
+		if (pid == null || mod == null) { throw ERT.badarg(pid_arg, mod_arg); }
+		
+		log.log(Level.INFO, "check_process_code not implemented (" + pid + ", " + mod + ")");
+	
+		return ERT.FALSE;
+	}
+	
+	@BIF
+	public static EAtom purge_module(EObject mod_arg) {
+		
+		log.log(Level.INFO, "purge_module not implemented (" + mod_arg + ")");
+
+		return ERT.TRUE;
+	}
+	
 }
