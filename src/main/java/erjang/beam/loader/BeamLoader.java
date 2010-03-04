@@ -1,36 +1,44 @@
 package erjang.beam.loader;
 
-import java.io.IOException;
+import static erjang.beam.CodeAtoms.BEAM_FILE_ATOM;
+import static erjang.beam.CodeAtoms.FUNCTION_ATOM;
+import static erjang.beam.CodeAtoms.START_ATOM;
+
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.DataInputStream;
-import java.io.ByteArrayInputStream;
-
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Collections;
-import java.util.Arrays;
-
+import java.io.IOException;
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 
-import erjang.EObject;
 import erjang.EAtom;
-import erjang.EString;
-import erjang.ETuple;
+import erjang.EInputStream;
+import erjang.EObject;
 import erjang.ESeq;
 import erjang.ESmall;
-import erjang.EInputStream;
-
+import erjang.ETuple;
 import erjang.beam.BeamOpcode;
-
 import erjang.beam.repr.CodeTables;
-import erjang.beam.repr.Operands;
 import erjang.beam.repr.Insn;
-
-import static erjang.beam.repr.Operands.*;
-import static erjang.beam.CodeAtoms.*;
+import erjang.beam.repr.Operands;
+import erjang.beam.repr.Operands.AllocList;
+import erjang.beam.repr.Operands.Atom;
+import erjang.beam.repr.Operands.BitString;
+import erjang.beam.repr.Operands.ByteString;
+import erjang.beam.repr.Operands.DestinationOperand;
+import erjang.beam.repr.Operands.FReg;
+import erjang.beam.repr.Operands.Label;
+import erjang.beam.repr.Operands.Literal;
+import erjang.beam.repr.Operands.Operand;
+import erjang.beam.repr.Operands.SelectList;
+import erjang.beam.repr.Operands.SourceOperand;
+import erjang.beam.repr.Operands.TableLiteral;
+import erjang.beam.repr.Operands.XReg;
+import erjang.beam.repr.Operands.YReg;
 
 public class BeamLoader extends CodeTables {
     static final boolean DEBUG = false;
@@ -178,7 +186,7 @@ public class BeamLoader extends CodeTables {
 	int tag;
 	try {
 	    tag = in.read4BE();
-	    if (DEBUG) System.err.println("Reading section with tag "+Integer.toHexString(tag)+" at "+in.getPos());
+	    if (DEBUG) System.err.println("Reading section with tag "+toSymbolicTag(tag)+" at "+in.getPos());
 	} catch (EOFException eof) {
 	    return false;
 	}
@@ -230,7 +238,28 @@ public class BeamLoader extends CodeTables {
 	return true;
     }
 
-    public void readAtomSection() throws IOException {
+    /**
+	 * @param tag
+	 * @return
+	 */
+	private String toSymbolicTag(int tag) {
+		char[] sym = new char[4];
+		sym[0] = (char) ((tag >> 24) & 0xff); 
+		sym[1] = (char) ((tag >> 16) & 0xff); 
+		sym[2] = (char) ((tag >> 8) & 0xff); 
+		sym[3] = (char) ((tag >> 0) & 0xff); 
+		
+		for (int i = 0; i < 4; i++) {
+			if (!Character.isJavaIdentifierPart(sym[i])) {
+				return "0x" + Integer.toHexString(tag);
+			}
+		}
+		
+		return new String(sym);
+	}
+
+
+	public void readAtomSection() throws IOException {
 	if (DEBUG) System.err.println("readAtomSection");
 	int nAtoms = in.read4BE();
 	if (DEBUG) System.err.println("Number of atoms: "+nAtoms);
