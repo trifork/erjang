@@ -170,9 +170,8 @@ public class EBinary extends EBitString {
 	public String toString() {
 		StringBuilder sb = new StringBuilder("<<\"");
 		for (int i = 0; i < byteSize(); i++) {
-			byte b = byteAt(i*8);
-			if (b < 10 && b > 127) return super.toString();
-			sb.append((char)b);
+			char b = (char) (0xff & byteAt(i*8));
+			EString.appendChar(sb, b);
 		}
 		
 		sb.append("\">>");
