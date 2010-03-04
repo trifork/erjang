@@ -137,8 +137,12 @@ public class ErlBif {
 		int pos = 0;
 		for (int i = 0; i < out.size(); i++) {
 			ByteBuffer bb = out.get(i);
-			bb.get(all, pos, bb.remaining());
+			int len = bb.remaining();
+			bb.get(all, pos, len);
+			pos += len;
 		}
+		
+		assert(pos == length);
 		
 		return new EBinary(all);
 	}
