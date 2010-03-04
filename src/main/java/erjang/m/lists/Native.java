@@ -20,6 +20,7 @@
 package erjang.m.lists;
 
 import erjang.BIF;
+import erjang.EAtom;
 import erjang.ENative;
 import erjang.EObject;
 import erjang.ERT;
@@ -78,4 +79,33 @@ public class Native extends ENative {
 		return ERT.FALSE;
 	}
 	
+	@BIF
+	public static ESeq reverse(EObject hd, EObject tl) {
+		ESeq res = tl.testSeq();
+		ESeq front = hd.testSeq();
+		
+		if (res == null) throw ERT.badarg(hd, tl);
+		
+		while (!front.isNil()) {
+			res = res.cons(front.head());
+			front = front.tail();
+		}
+		
+		return res;
+	}
+
+	@BIF
+	public static EAtom member(EObject e, EObject l) {
+		ESeq list = l.testSeq();
+		if (list == null) throw ERT.badarg(e, l);
+
+		while (!list.isNil()) {
+			if (e.equals(list.head())) return ERT.TRUE;
+			list = list.tail();
+		}
+
+		return ERT.FALSE;
+	}
+
+
 }
