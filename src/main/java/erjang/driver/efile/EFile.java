@@ -72,6 +72,7 @@ public class EFile extends EDriverInstance {
 	public int posix_errno;
 	public boolean write_error;
 	private long write_delay;
+	private int read_size;
 
 	/**
 	 * 
@@ -376,7 +377,7 @@ public class EFile extends EDriverInstance {
 		// this.read_bufsize = 0;
 		// this.read_binp = (ByteBuffer) null;
 		// this.read_offset = 0;
-		// this.read_size = 0;
+		this.read_size = 0;
 		this.write_delay = 0L;
 		this.write_bufsize = 0;
 		// this.write_error = 0;
@@ -712,6 +713,34 @@ public class EFile extends EDriverInstance {
 			cq_enq(d);
 			break;
 		}
+		
+		case FILE_WRITE: {
+			int[] errp;
+			int reply_size = ev[0].remaining();
+			
+			FileAsync d = null;
+			
+			q_mtx.lock();
+			driver_enqv(ev);
+			write_buffered += reply_size;
+			
+			if (write_buffered < write_bufsize) {
+				q_mtx.unlock();
+				reply_Uint(reply_size);
+				
+				if (timer_state == TimerState.IDLE) {
+					timer_state = TimerState.WRITE;
+					driver_set_timer(write_delay);
+				}					
+			} else if (async_write(errp = new int[1], true, reply_size) != 0){
+				reply_posix_error(errp[0]);
+				q_mtx.unlock();
+			} else {
+				q_mtx.unlock();
+			}
+				
+			break;
+		}
 
 		default:
 			// undo the get() we did to find command
@@ -891,7 +920,6 @@ public class EFile extends EDriverInstance {
 			};
 		} break;
 
-		
 		case FILE_FSTAT: 
 		case FILE_LSTAT: {
 			
@@ -1060,6 +1088,29 @@ public class EFile extends EDriverInstance {
 			break;
 		}
 		
+		case FILE_RENAME: {
+			final String from_name = IO.getstr(data, true);
+			final File to_name   = new File(IO.getstr(data, true));
+			
+			d = new SimpleFileAsync(cmd, from_name) {
+				public void run() {
+					this.result_ok = file.renameTo(to_name);
+					if (!result_ok) {
+						if (!file.exists()) {
+							posix_errno = Posix.ENOENT;
+						} else if (to_name.exists()) {
+							posix_errno = Posix.EEXIST;
+						} else {
+							posix_errno = Posix.EUNKNOWN;
+						}
+					}
+				}
+
+			};
+			break;
+		}
+		
+		
 		default:
 			throw new NotImplemented("file_output cmd:" + ((int) cmd) + " "
 					+ EBinary.make(data));
@@ -1073,6 +1124,9 @@ public class EFile extends EDriverInstance {
 
 	}
 
+	
+	
+	
 	@Override
 	protected void processExit(ERef monitor) {
 		// TODO Auto-generated method stub

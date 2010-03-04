@@ -158,6 +158,10 @@ public abstract class EDriverInstance extends EDriverControl {
 			queue[i] = null;
 		}
 	}
+	
+	protected void driver_enqv(ByteBuffer[] q) {
+		queue = q;
+	}
 
 	/*
 	 * Called on behalf of driver_select when it is safe to release 'event'. A
