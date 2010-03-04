@@ -58,7 +58,7 @@ public class Native extends ENative {
 
 
 	@BIF static public EObject compile(EObject obj1) {
-		throw new NotImplemented(); 
+		return compile(obj1, ERT.NIL);
 	}
 
 	@BIF static public EObject compile(EObject obj1, EObject obj2) {
