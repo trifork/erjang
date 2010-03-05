@@ -73,6 +73,7 @@ public class ErlProc {
 	private static final EAtom am_jvm = EAtom.intern("jvm");
 	private static final EAtom am_allocated_areas = EAtom.intern("allocated_areas");
 	private static final EAtom am_otp_version = EAtom.intern("otp_version");
+	private static final EAtom am_hipe_architecture = EAtom.intern("hipe_architecture");
 	private static final EAtom am_machine = EAtom.intern("machine");
 	private static final EAtom am_link = EAtom.intern("link");
 	private static final EAtom am_monitor = EAtom.intern("monitor");
@@ -104,7 +105,7 @@ public class ErlProc {
 	@BIF
 	public static ESeq get_stacktrace(EProc proc) {
 	    ErlangException ex = proc.getLastException();
-	    return ex != null ? ex.getTrace().tail() : ERT.NIL;
+	    return ex != null ? ex.getTrace() : ERT.NIL;
 	}
 
 	@BIF
@@ -455,6 +456,9 @@ public class ErlProc {
 			
 		} else if (type == am_wordsize) {
 			return new ESmall(32);
+			
+		} else if (type == am_hipe_architecture) {
+			return am_undefined;
 			
 		} else {
 			return am_undefined;
