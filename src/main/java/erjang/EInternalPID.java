@@ -26,7 +26,8 @@ import kilim.Pausable;
  */
 public class EInternalPID extends EPID implements ELocalHandle {
 
-	private final EProc task;
+	private EProc task;
+	private int id;
 	
 	public EInternalPID testInternalPID() {
 		return this;
@@ -35,6 +36,7 @@ public class EInternalPID extends EPID implements ELocalHandle {
 	public EInternalPID(EProc self) {
 		super(ERT.getLocalNode());
 		this.task = self;
+		this.id = task.id;
 	}
 	
 	/* (non-Javadoc)
@@ -42,7 +44,7 @@ public class EInternalPID extends EPID implements ELocalHandle {
 	 */
 	@Override
 	public boolean is_alive() {
-		return task.is_alive();
+		return task != null && task.is_alive();
 	}
 	
 	public ELocalHandle testLocalHandle() {
@@ -59,7 +61,10 @@ public class EInternalPID extends EPID implements ELocalHandle {
 	
 	@Override
 	public void send(EObject msg) throws Pausable {
-		task.mbox.put(msg);
+		EProc task = this.task;
+		if (task != null) {
+			task.mbox.put(msg);
+		}
 	}
 	
 	/* (non-Javadoc)
@@ -75,7 +80,7 @@ public class EInternalPID extends EPID implements ELocalHandle {
 	 */
 	@Override
 	int r_compare_same(EInternalPID lhs) {
-		return task.id - lhs.task.id;
+		return id - lhs.id;
 	}
 	
 
@@ -84,17 +89,24 @@ public class EInternalPID extends EPID implements ELocalHandle {
 	 */
 	@Override
 	public void link_oneway(EHandle other) throws Pausable {
-		task.link_oneway(other);
+		EProc task = this.task;
+		if (task != null)
+			task.link_oneway(other);
 	}
 	
 	public ERef add_monitor(EPID target, EObject object) {
-		// todo: check if task is alive!
-		return task.add_monitor(target, object);
+		EProc task = this.task;
+		if (task != null) 
+			return task.add_monitor(target, object);
+		else
+			throw ERT.badarg(target, object);
 	}
 	
 	@Override
 	public void remove_monitor(ERef r, boolean flush) {
-		task.remove_monitor(r, flush);
+		EProc task = this.task;
+		if (task != null) 
+			task.remove_monitor(r, flush);
 	}
 
 
@@ -103,7 +115,9 @@ public class EInternalPID extends EPID implements ELocalHandle {
 	 */
 	@Override
 	public void set_group_leader(EPID group_leader) {
-		task.set_group_leader(group_leader);
+		EProc task = this.task;
+		if (task != null) 
+			task.set_group_leader(group_leader);
 	}
 
 	/**
@@ -115,16 +129,20 @@ public class EInternalPID extends EPID implements ELocalHandle {
 	
 	@Override
 	public String toString() {
-		return "PID<" + (name==null?"":name)  + ":" + task().id + ">";
+		return "<" + (name==null?"":name)  + ":" + id + ">";
 	}
 	
 	@Override
 	public EObject process_info() {
+		EProc task = this.task;
+		if (task == null) return ERT.am_undefined;
 		return task.process_info();
 	}
 	
 	@Override
 	public EObject process_info(EObject spec) {
+		EProc task = this.task;
+		if (task == null) return ERT.am_undefined;
 		return task.process_info(spec);
 	}
 	
@@ -137,7 +155,8 @@ public class EInternalPID extends EPID implements ELocalHandle {
 	 * @param eTimerTask
 	 */
 	public void add_exit_hook(ExitHook hook) {
-		if (is_alive())
+		EProc task = this.task;
+		if (task != null && is_alive())
 			task.add_exit_hook(hook);
 	}
 
@@ -145,6 +164,15 @@ public class EInternalPID extends EPID implements ELocalHandle {
 	 * @param eTimerTask
 	 */
 	public void remove_exit_hook(ExitHook hook) {
-		task.remove_exit_hook(hook);
+		EProc task = this.task;
+		if (task != null)
+			task.remove_exit_hook(hook);
+	}
+
+	/**
+	 * 
+	 */
+	public void done() {
+		this.task = null;
 	}
 }

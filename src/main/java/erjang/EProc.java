@@ -179,7 +179,7 @@ public final class EProc extends ETask<EInternalPID> {
 			hooks[i].on_exit(self);
 		}
 		
-
+		self.done();
 	}
 	
 	protected void process_incoming_exit(EHandle from, EObject reason) throws Pausable

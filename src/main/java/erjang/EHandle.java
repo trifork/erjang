@@ -40,7 +40,8 @@ public abstract class EHandle extends EObject {
 	}
 
 	public boolean exists() {
-		return task().exists();
+		ETask<?> task = task();
+		return task != null && task.exists();
 	}
 	
 	/**
@@ -48,11 +49,17 @@ public abstract class EHandle extends EObject {
 	 * @throws Pausable 
 	 */
 	public void send(EObject msg) throws Pausable {
-		task().mbox_send(msg);
+		ETask<?> task = task();
+		if (task != null) {
+			task.mbox_send(msg);
+		}
 	}
 
 	public void sendb(EObject msg) {
-		task().mbox().putb(msg);
+		ETask<?> task = task();
+		if (task != null) {
+			task.mbox().putb(msg);
+		}
 	}
 
 	/**
@@ -61,7 +68,10 @@ public abstract class EHandle extends EObject {
 	 * @throws Pausable 
 	 */
 	public void exit_signal(EHandle from, EObject reason) throws Pausable {
-		task().send_exit(from, reason);
+		ETask<?> task = task();
+		if (task != null) {
+			task.send_exit(from, reason);
+		}
 	}
 
 	/**
