@@ -366,6 +366,10 @@ public class Native extends ENative {
 		throw new NotImplemented(); 
 	}
 
+	@BIF static public EObject select(EObject obj1, EObject obj2) {
+		throw new NotImplemented(); 
+	}
+
 	@BIF static public EObject select(EObject obj1, EObject obj2, EObject obj3) {
 		throw new NotImplemented(); 
 	}
@@ -379,6 +383,21 @@ public class Native extends ENative {
 	}
 
 	@BIF static public EObject info(EObject obj1, EObject obj2) {
+		throw new NotImplemented(); 
+	}
+
+	/** this is not documented anywhere, but referenced from the module global */
+	@BIF static public EObject member(EObject obj1, EObject obj2) {
+		throw new NotImplemented(); 
+	}
+
+	/** this is not documented anywhere, but referenced from the module global */
+	@BIF static public EObject delete_object(EObject obj1, EObject obj2) {
+		throw new NotImplemented(); 
+	}
+
+	/** this is not documented anywhere, but referenced from the module global */
+	@BIF static public EObject update_counter(EObject obj1, EObject obj2, EObject obj3) {
 		throw new NotImplemented(); 
 	}
 
