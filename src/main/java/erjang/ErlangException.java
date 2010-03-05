@@ -337,7 +337,12 @@ public abstract class ErlangException extends RuntimeException {
 		ETuple3 result = new ETuple3();
 		result.elem1 = getExClass();
 		result.elem2 = reason;
-		result.elem3 = getTrace();
+		result.elem3 = new ELazySeq() {
+			@Override
+			protected ESeq initialValue() {
+				return getTrace();
+			}
+		};
 		return result;
 	}
 
