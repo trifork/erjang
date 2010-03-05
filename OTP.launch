@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<launchConfiguration type="org.eclipse.jdt.launching.localJavaApplication">
+<stringAttribute key="bad_container_name" value="\erlang\o"/>
+<listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_PATHS">
+<listEntry value="/erlang/src/main/java/erjang/OTPMain.java"/>
+</listAttribute>
+<listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_TYPES">
+<listEntry value="1"/>
+</listAttribute>
+<listAttribute key="org.eclipse.debug.ui.favoriteGroups">
+<listEntry value="org.eclipse.debug.ui.launchGroup.debug"/>
+<listEntry value="org.eclipse.debug.ui.launchGroup.run"/>
+</listAttribute>
+<stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="erjang.OTPMain"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="-root ${env_var:OTPROOT}&#13;&#10;-progname erl&#13;&#10;--&#13;&#10;-home ${env_var:HOME}"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="erlang"/>
+<stringAttribute key="org.eclipse.jdt.launching.VM_ARGUMENTS" value="-Derj.threads=1&#13;&#10;-Derjpath=${env_var:OTP_ERTS_EBIN}"/>
+</launchConfiguration>
