@@ -1136,11 +1136,11 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				case gc_bif:
 				case bif:
 				case arithfbif:
+					
 					Type[] parameterTypes = bif.getArgumentTypes();
-					// assert (in.length == parameterTypes.length);
-					push(in, parameterTypes);
-
-					mv.visitMethodInsn(INVOKESTATIC, bif.owner
+					push(in, parameterTypes, bif.isVirtual());
+					
+					mv.visitMethodInsn(bif.isVirtual() ? INVOKEVIRTUAL : INVOKESTATIC, bif.owner
 							.getInternalName(), bif.getName(), bif
 							.getDescriptor());
 
@@ -1407,14 +1407,23 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			 * @param in
 			 * @param parameterTypes
 			 */
-			private void push(Arg[] in, Type[] parameterTypes) {
+			private void push(Arg[] in, Type[] parameterTypes, boolean isVirtual) {
+				
+				int off = 0;
+				if (isVirtual) {
+					push(in[0], EOBJECT_TYPE);
+					off = 1;
+				}
+				
 				if (in.length == parameterTypes.length - 1
 						&& EPROC_TYPE.equals(parameterTypes[0])) {
 					mv.visitVarInsn(ALOAD, 0);
 				}
 
-				for (int i = 0; i < in.length; i++) {
-					push(in[i], parameterTypes[i]);
+				for (int i = 0; i < in.length-off; i++) {
+					Arg arg = in[i+off];
+					Type pt = parameterTypes[i];
+					push(arg, pt);
 				}
 			}
 
@@ -1991,8 +2000,8 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					return;
 				}
 
-				BuiltInFunction bif = BIFUtil.getMethod(test2name(test), args,
-						true);
+				BuiltInFunction bif = BIFUtil.getMethod("erlang", test2name(test),
+						args, true);
 
 				if (bif.getArgumentTypes().length > 0
 						&& EPROC_TYPE.equals(bif.getArgumentTypes()[0])) {
@@ -2544,47 +2553,12 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 				ensure_exception_handler_in_place();
 
-				if (false /* fun.mod == ERLANG_ATOM */) {
-
-					System.err.println(fun);
-
-					// functions in module "erlang" compile to direct calls
-
-					BuiltInFunction m = BIFUtil.getMethod(fun.fun.getName(),
-							args, false);
-
-					if (m == null) {
-						throw new Error("did not find " + fun);
-					}
-
-					if (m.getArgumentTypes().length > 0
-							&& EPROC_TYPE.equals(m.getArgumentTypes()[0])) {
-						mv.visitVarInsn(ALOAD, 0);
-
-						assert (args.length + 1 == m.getArgumentTypes().length);
-					} else {
-						assert (args.length == m.getArgumentTypes().length);
-					}
-
-					push(args, m.getArgumentTypes());
-
-					mv.visitMethodInsn(INVOKESTATIC, m.owner.getInternalName(),
-							m.getName(), m.getDescriptor());
-
-					if (is_tail) {
-						emit_convert(m.getReturnType(), EOBJECT_TYPE);
-						mv.visitInsn(ARETURN);
-					} else {
-						// emit_convert(m.getReturnType(), EOBJECT_TYPE);
-						pop(new Arg(Arg.Kind.X, 0), m.getReturnType());
-					}
-
-				} else if (isExternal) {
+				if (isExternal) {
 
 					BuiltInFunction bif = null;
 
 					try {
-						bif = BIFUtil.getMethod(fun.toString(), args, false);
+						bif = BIFUtil.getMethod(fun.mod.getName(), fun.fun.getName(), args, false);
 					} catch (Error e) {
 						// ignore //
 					}
@@ -2607,6 +2581,27 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 						mv.visitMethodInsn(INVOKEVIRTUAL, funTypeName,
 								is_tail ? "invoke_tail" : "invoke", EUtil
 										.getSignature(args.length, true));
+
+					} else if (bif.isVirtual()) {
+
+						// System.err.println("DIRECT "+bif);
+						
+						push(args[0], bif.owner);
+						
+						int off = 0;
+						if (bif.getArgumentTypes().length > 0
+								&& bif.getArgumentTypes()[0].equals(EPROC_TYPE)) {
+
+							mv.visitVarInsn(ALOAD, 0);
+							off = 1;
+						}
+						for (int i = 1; i < args.length; i++) {
+							push(args[i], bif.getArgumentTypes()[off-1]);
+						}
+
+						mv.visitMethodInsn(INVOKEVIRTUAL, bif.owner
+								.getInternalName(), bif.getName(), bif
+								.getDescriptor());
 
 					} else {
 

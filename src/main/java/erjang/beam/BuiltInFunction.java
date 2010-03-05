@@ -19,6 +19,8 @@
 
 package erjang.beam;
 
+import java.lang.reflect.Modifier;
+
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
@@ -28,6 +30,7 @@ import org.objectweb.asm.commons.Method;
 public class BuiltInFunction {
 	public final Type owner;
 	public final Method method;
+	public final boolean isVirtual;
 	
 	/* (non-Javadoc)
 	 * @see java.lang.Object#toString()
@@ -37,9 +40,10 @@ public class BuiltInFunction {
 		return method.toString();
 	}
 	
-	public BuiltInFunction(Type owner, Method method) {
+	public BuiltInFunction(Type owner, Method method, boolean isVirtual) {
 		this.owner = owner;
 		this.method = method;
+		this.isVirtual = isVirtual;
 	}
 
 	/**
@@ -50,6 +54,7 @@ public class BuiltInFunction {
 		this.method = new Method(m.getName(), 
 					Type.getType(m.getReturnType()),
 					Type.getArgumentTypes(m));
+		isVirtual = !Modifier.isStatic(m.getModifiers());
 	}
 
 	/**
@@ -78,6 +83,17 @@ public class BuiltInFunction {
 	 */
 	public Type getReturnType() {
 		return method.getReturnType();
+	}
+
+	public Type getOwner() {
+		return owner;
+	}
+	
+	/**
+	 * @return
+	 */
+	public boolean isVirtual() {
+		return isVirtual;
 	}
 
 	

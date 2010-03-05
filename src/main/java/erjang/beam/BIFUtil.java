@@ -231,15 +231,20 @@ public class BIFUtil {
 		}
 
 		public void registerMethod(Method method) {
-			Args a = new Args(method.getParameterTypes());
-
+			Args a;
+			
+			Class<?>[] pt = method.getParameterTypes();
+			
+			if (!Modifier.isStatic(method.getModifiers())) {
+				Class[] all = new Class[pt.length + 1];
+				all[0] = method.getDeclaringClass();
+				System.arraycopy(pt, 0, all, 1, pt.length);
+				a = new Args(all);
+			} else {
+				a = new Args(pt);
+			}
+			
 			found.put(a, new BuiltInFunction(method));
-		}
-
-		public void registerMethod(BuiltInFunction method) {
-			Args a = new Args(method.getArgumentTypes());
-
-			found.put(a, method);
 		}
 
 		/**
@@ -331,9 +336,13 @@ public class BIFUtil {
 		Method[] m = clazz.getMethods();
 		for (int i = 0; i < m.length; i++) {
 			Method method = m[i];
-			if ((method.getModifiers() & Modifier.STATIC) != Modifier.STATIC) continue;
 			erjang.BIF ann = method.getAnnotation(erjang.BIF.class);
 			if (ann != null) {
+
+				if ((method.getModifiers() & Modifier.STATIC) != Modifier.STATIC) { 
+				//	System.out.println("non-static BIF "+method);
+				}
+
 				Map<String, BIFHandler> tab = ann.type() == erjang.BIF.Type.GUARD ? guard_bifs
 						: bifs;
 
