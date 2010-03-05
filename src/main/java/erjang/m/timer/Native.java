@@ -43,7 +43,7 @@ public class Native extends ENative {
 	 * @see erjang.ENative#getNativeClasses()
 	 */
 	@Override
-	protected Class<?>[] getNativeClasses() {
+	public Class<?>[] getNativeClasses() {
 		return new Class[] { Native.class };
 	}
 

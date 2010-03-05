@@ -464,7 +464,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						Arg[] in = decode_args(insn_idx, parms.toArray());
 						Arg out = decode_out_arg(insn_idx, insn.elm(5));
 
-						BuiltInFunction bif = BIFUtil.getMethod(name.getName(),
+						BuiltInFunction bif = BIFUtil.getMethod("erlang", name.getName(),
 								parmTypes(this.map[insn_idx], parms),
 								failLabel != 0);
 
@@ -480,7 +480,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						Arg[] in = decode_args(insn_idx, parms.toArray());
 						Arg out = decode_out_arg(insn_idx, insn.elm(5));
 
-						BuiltInFunction bif = BIFUtil.getMethod(name.getName(),
+						BuiltInFunction bif = BIFUtil.getMethod("erlang", name.getName(),
 								parmTypes(this.map[insn_idx], parms),
 								failLabel != 0);
 
@@ -496,7 +496,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						Arg[] in = decode_args(insn_idx, parms.toArray());
 						Arg out = decode_out_arg(insn_idx, insn.elm(6));
 
-						BuiltInFunction bif = BIFUtil.getMethod(name.getName(),
+						BuiltInFunction bif = BIFUtil.getMethod("erlang", name.getName(),
 								parmTypes(this.map[insn_idx], parms),
 								failLabel != 0);
 
@@ -1250,7 +1250,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 						checkArgs(current, parms, insn);
 
-						Type type = getBifResult(name.getName(), parmTypes(
+						Type type = getBifResult("erlang", name.getName(), parmTypes(
 								current, parms), false);
 
 						current = setType(current, insn.elm(5), type);
@@ -1274,7 +1274,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 						checkArgs(current, parms, insn);
 
-						Type type = getBifResult(name.getName(), parmTypes(
+						Type type = getBifResult("erlang", name.getName(), parmTypes(
 								current, parms), is_guard);
 
 						current = setType(current, insn.elm(6), type);
@@ -1292,7 +1292,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 						checkArgs(current, parms, insn);
 
-						Type type = getBifResult(name.getName(), parmTypes(
+						Type type = getBifResult("erlang", name.getName(), parmTypes(
 								current, parms), false);
 
 						current = setType(current, insn.elm(5), type);
@@ -1770,9 +1770,9 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 				}
 			}
 
-			private Type getBifResult(String name, Type[] parmTypes,
+			private Type getBifResult(String module, String name, Type[] parmTypes,
 					boolean is_guard) {
-				return BIFUtil.getBifResult(name, parmTypes, is_guard);
+				return BIFUtil.getBifResult(module, name, parmTypes, is_guard);
 			}
 
 			private Type[] parmTypes(TypeMap current, ESeq args) {

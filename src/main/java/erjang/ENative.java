@@ -38,7 +38,7 @@ public abstract class ENative {
 	 * file.
 	 */
 	
-	protected Class<?>[] getNativeClasses() {
+	public Class<?>[] getNativeClasses() {
 		return new Class[] { getClass() };
 	}
 }

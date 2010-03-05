@@ -27,6 +27,7 @@ import erjang.ERT;
 import erjang.ESeq;
 import erjang.ESmall;
 import erjang.ETuple;
+import erjang.ETuple2;
 import erjang.NotImplemented;
 
 public class Native extends ENative {
@@ -78,6 +79,35 @@ public class Native extends ENative {
 
 		return ERT.FALSE;
 	}
+	
+	@BIF
+	public static EObject keysearch(EObject k, EObject n, EObject list) {
+		ESmall idx = n.testSmall();
+		ESeq src = list.testSeq();
+		
+		if (k==null||idx==null||src==null||idx.value<1)
+			throw ERT.badarg(k, n, list);
+		
+		int index = idx.value;
+
+		while (!src.isNil()) {
+			EObject elm = src.head();
+			
+			ETuple tup;
+			if ((tup = elm.testTuple()) != null) {
+				if (tup.arity() >= index) {
+					if (tup.elm(index).equals(k)) {
+						return new ETuple2(ERT.am_value, tup);
+					}
+				}
+			}
+			
+			src = src.tail();
+		}
+		
+		return ERT.FALSE;
+	}
+
 	
 	@BIF
 	public static ESeq reverse(EObject hd, EObject tl) {

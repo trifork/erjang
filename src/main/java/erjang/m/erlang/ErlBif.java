@@ -1474,69 +1474,7 @@ public class ErlBif {
 		return i1.bsr(i2);
 	}
 
-	@BIF(name="lists:reverse/2")
-	public static ESeq reverse(EObject hd, EObject tl) {
-		ESeq res = tl.testSeq();
-		ESeq front = hd.testSeq();
-		
-		if (res == null) throw ERT.badarg(hd, tl);
-		
-		while (!front.isNil()) {
-			res = res.cons(front.head());
-			front = front.tail();
-		}
-		
-		return res;
-	}
-
-	@BIF(name="lists:member/2")
-	public static EAtom member(EObject e, EObject l) {
-		ESeq list = l.testSeq();
-		if (list == null) throw ERT.badarg(e, l);
-
-		while (!list.isNil()) {
-			if (e.equals(list.head())) return ERT.TRUE;
-			list = list.tail();
-		}
-
-		return ERT.FALSE;
-	}
-
-	/**
-	 * @see http://www.erlang.org/doc/man/lists.html#keysearch-3
-	 * @param hd
-	 * @param tl
-	 * @return
-	 */
-	@BIF(name="lists:keysearch/3")
-	public static EObject keysearch(EObject k, EObject n, EObject list) {
-		ESmall idx = n.testSmall();
-		ESeq src = list.testSeq();
-		
-		if (k==null||idx==null||src==null||idx.value<1)
-			throw ERT.badarg(k, n, list);
-		
-		int index = idx.value;
-
-		while (!src.isNil()) {
-			EObject elm = src.head();
-			
-			ETuple tup;
-			if ((tup = elm.testTuple()) != null) {
-				if (tup.arity() >= index) {
-					if (tup.elm(index).equals(k)) {
-						return new ETuple2(ERT.am_value, tup);
-					}
-				}
-			}
-			
-			src = src.tail();
-		}
-		
-		return ERT.FALSE;
-	}
-
-	@BIF(name="erlang:bump_reductions/1")
+	@BIF
 	public static EObject bump_reductions(EProc self, EObject howmuch) throws Pausable {
 		// yield?
 		Task.yield();
@@ -1624,6 +1562,12 @@ public class ErlBif {
 		
 		byte[] res = md.digest();
 		return EBinary.make(res, 0, res.length, 0);
+	}
+	
+	@BIF
+	public static EObject raise(EObject kind, EObject value, EObject trace)
+			throws ErlangException {
+		throw ERT.raise(kind, value, trace);
 	}
 	
 }

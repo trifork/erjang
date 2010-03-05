@@ -30,6 +30,7 @@ import org.objectweb.asm.Type;
 import erjang.EAtom;
 import erjang.EBig;
 import erjang.EDouble;
+import erjang.ENative;
 import erjang.EObject;
 import erjang.EProc;
 import erjang.ERT;
@@ -51,9 +52,12 @@ public class BIFUtil {
 	static Map<String, BIFHandler> guard_bifs = new HashMap<String, BIFHandler>();
 
 	static {
-		registerBifs(ErlBif.class);
-		registerBifs(BinOps.class);
-		registerBifs(ERT.class);
+		try {
+			loadBIFs(new String[]{"erlang", "error_logger", "ets", "lists", "math", 
+								  "net_kernel", "os", "re", "timer", "unicode"});
+		} catch (Exception e) {
+			throw new Error("Missing native module", e);
+		}
 	}
 
 	static class Args {
@@ -288,23 +292,42 @@ public class BIFUtil {
 
 	}
 
-	public static Type getBifResult(String name, Type[] parmTypes,
+	public static Type getBifResult(String module, String name, Type[] parmTypes,
 			boolean isGuard) {
 
 		Map<String, BIFHandler> tab = isGuard ? guard_bifs : bifs;
 
 		BIFHandler bif = null;
-		if (tab.containsKey(name)) {
-			bif = tab.get(name);
+		String key = module + ":" + name;
+		if (tab.containsKey(key)) {
+			bif = tab.get(key);
 		} else {
 			throw new Error("no " + (isGuard ? "guard" : "normal")
-					+ " bif named '" + name + "'/" + parmTypes.length );
+					+ " bif named "+module+":'" + name + "'/" + parmTypes.length );
 		}
 
 		return bif.getResult(parmTypes);
 	}
 
-	public static void registerBifs(Class<?> clazz) {
+	@SuppressWarnings("unchecked")
+	private static void loadBIFs(String[] mods) throws Exception {
+		for (String mod : mods) {
+			Class<ENative> en = 
+				(Class<ENative>) Class.forName("erjang.m." + mod + ".Native");
+			registerBifs(mod, en);
+			ENative enative = en.newInstance();
+			for (Class c : enative.getNativeClasses()) {
+				if (c != en) {
+					registerBifs(mod, c);
+				}
+			}
+		}
+
+		registerBifs("erlang", ERT.class);
+		registerBifs("erlang", EObject.class);
+	}
+	
+	public static void registerBifs(String module, Class<?> clazz) {
 		Method[] m = clazz.getMethods();
 		for (int i = 0; i < m.length; i++) {
 			Method method = m[i];
@@ -318,9 +341,12 @@ public class BIFUtil {
 				if (bifName.equals("__SELFNAME__")) {
 					bifName = method.getName();
 				}
-				BIFHandler h = tab.get(bifName);
+				
+				String key = module + ":" + bifName;
+				
+				BIFHandler h = tab.get(key);
 				if (h == null) {
-					tab.put(bifName, h = new BIFHandler(bifName));
+					tab.put(key, h = new BIFHandler(bifName));
 				}
 
 				h.registerMethod(method);
@@ -334,35 +360,37 @@ public class BIFUtil {
 	 * @param b
 	 * @return
 	 */
-	public static BuiltInFunction getMethod(String name, Type[] parmTypes,
+	public static BuiltInFunction getMethod(String module, String name, Type[] parmTypes,
 			boolean isGuard) {
 
 		Map<String, BIFHandler> tab = isGuard ? guard_bifs : bifs;
 
 		BIFHandler bif = null;
-		if (tab.containsKey(name)) {
-			bif = tab.get(name);
+		String key = module + ":" + name;
+		if (tab.containsKey(key)) {
+			bif = tab.get(key);
 		} else {
 			throw new Error("no " + (isGuard ? "guard" : "normal")
-					+ " bif named '" + name + "'/" + parmTypes.length);
+					+ " bif named " + module+ ":'" + name + "'/" + parmTypes.length);
 		}
 
 		return bif.getMethod(parmTypes);
 	}
 
 	/**
+	 * @param module TODO
 	 * @param name
 	 * @param args
 	 * @param isGuard
 	 * @return
 	 */
-	public static BuiltInFunction getMethod(String name, Arg[] args,
-			boolean isGuard) {
+	public static BuiltInFunction getMethod(String module, String name,
+			Arg[] args, boolean isGuard) {
 		Type[] parms = new Type[args.length];
 		for (int i = 0; i < args.length; i++) {
 			parms[i] = args[i].type;
 		}
-		return getMethod(name, parms, isGuard);
+		return getMethod(module, name, parms, isGuard);
 	}
 
 }

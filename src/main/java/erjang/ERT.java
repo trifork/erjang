@@ -44,12 +44,6 @@ public class ERT {
 	static Logger log = Logger.getLogger("erjang");
 	public static EAtom am_badsig = EAtom.intern("badsig");
 
-	@BIF(name = "erlang:raise/3")
-	public static EObject do_raise(EObject kind, EObject value, EObject trace)
-			throws ErlangException {
-		throw raise(kind, value, trace);
-	}
-
 	public static ErlangException raise(EObject kind, EObject value,
 			EObject trace) throws ErlangException {
 
@@ -344,7 +338,7 @@ public class ERT {
 		return v1.compareTo(v2) <= 0;
 	}
 	
-	@BIF(name = "erlang:cancel_timer/1")
+	@BIF
 	public static EObject cancel_timer(EObject ref)
 	{
 		// check arguments 
@@ -360,7 +354,7 @@ public class ERT {
 		}
 	}
 	
-	@BIF(name = "erlang:read_timer/1")
+	@BIF
 	public static EObject read_timer(EObject ref)
 	{
 		// check arguments 
@@ -376,7 +370,7 @@ public class ERT {
 		}
 	}
 	
-	@BIF(name = "erlang:send_after/3")
+	@BIF
 	public static EObject send_after(EObject time, final EObject rcv, final EObject msg)
 	{
 		// check arguments 
@@ -413,7 +407,7 @@ public class ERT {
 		return send_task.ref;
 	}
 
-	@BIF(name = "erlang:start_timer/3")
+	@BIF
 	public static EObject start_timer(EObject time, final EObject rcv, final EObject msg)
 	{
 		// check arguments 
@@ -484,7 +478,7 @@ public class ERT {
 		return msg;
 	}
 
-	@BIF(name = "erlang:send/3")
+	@BIF
 	public static EObject send(EProc proc, EObject pid, EObject msg,
 			EObject options) throws Pausable {
 		// TODO handle ports also?
