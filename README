@@ -10,23 +10,37 @@ BUILDING
 
 
 You should be able to do "ant jar", and thereafter run the sample
-with 
+like this:
 
   prompt% ant jar
   ...
-  prompt% ./ring_test.sh 
-  ...
-  loading io
-  loading timer
-  loading ring
-  loading erlang
-  io:format "~p Starting message~n" [{1259,922511,63000}]
-  io:format "~p Around ring ~p times ~n" [{1259,922512,434000},10000]
-  io:format "~p Around ring ~p times ~n" [{1259,922513,600000},20000]
-  io:format "~p Around ring ~p times ~n" [{1259,922514,763000},30000]
-  io:format "~p Around ring ~p times ~n" [{1259,922515,930000},40000]
-  io:format "~p Around ring ~p times ~n" [{1259,922517,117000},50000]
+  prompt% ./erl.sh -pa ./src/main/erl -noshell -s ring main
   ....
+  {1267,799627,843000} Starting message, cycles=10000
+  {1267,799638,52000} Around ring 10000 times 
+  10000 == 10000 ... stop 
+  Start={1267,799628,58000} Stop={1267,799638,54000} Elapsed=9996000us
+  {1267,799638,69000} Starting message, cycles=10000
+  {1267,799647,837000} Around ring 10000 times 
+  10000 == 10000 ... stop 
+  Start={1267,799638,74000} Stop={1267,799647,838000} Elapsed=9764000us
+  {1267,799647,847000} Starting message, cycles=10000
+  {1267,799657,644000} Around ring 10000 times 
+  10000 == 10000 ... stop 
+  Start={1267,799647,851000} Stop={1267,799657,649000} Elapsed=9798000us
+  {1267,799657,662000} Starting message, cycles=10000
+  {1267,799667,790000} Around ring 10000 times 
+  10000 == 10000 ... stop 
+  Start={1267,799657,665000} Stop={1267,799667,792000} Elapsed=10127000us
+  {1267,799667,806000} Starting message, cycles=10000
+  {1267,799677,486000} Around ring 10000 times 
+  10000 == 10000 ... stop 
+  Start={1267,799667,809000} Stop={1267,799677,488000} Elapsed=9679000us
+
+You can compare this to a similar run for "BEAM" by running
+
+  prompt% erl -pa ./src/main/erl -noshell -s ring main
+
 
 The source for the few samples are in src/main/erl.
 
@@ -46,23 +60,6 @@ forcing Erjang to recompile next time it runs.
 PREREQUISITES
 
 I have only been testing this with Erlang/OTP R13B02.
-
-While we are still bootstrapping, the compiler uses a remote
-erlang process to parse beam files (using beam_disasm), so you 
-need to have this running:
-
-  prompt% cd src/main/erl
-  prompt% erl -sname beam_loader@localhost -s beam_loader
-
-Otherwise you will get errors like this:
-
-Exception in thread "main" java.lang.Error: java.io.IOException: Cannot connect to peer node
-	at erjang.beam.Compiler.<clinit>(Compiler.java:55)
-	at erjang.EModule.load_module(EModule.java:429)
-	at erjang.Erj.main(Erj.java:61)
-
-Eventually this will obviously be self-hosted in Erjang.
-
 
 To run the tests, you need an OTP distribution, and go edit src/test/java/erjang/AllTests.java
 to tell it where your OTP_HOME is.
