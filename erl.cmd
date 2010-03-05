@@ -1,6 +1,6 @@
 @echo off
 
-IF "x%OTPROOT%" == "x" SET OTPROOT="C:\Program Files\erl7.5.7"
+IF "x%OTPROOT%" == "x" SET OTPROOT="C:/Program Files/erl5.7.5"
 
 java -ea -cp erjang-0.1.jar ^
     -Derj.threads=1 ^

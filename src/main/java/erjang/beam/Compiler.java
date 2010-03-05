@@ -363,7 +363,7 @@ public class Compiler implements Opcodes {
 	}
 
 	private static void add(ArrayList<File> out, String path) {
-		for (String s : path.split(":")) {
+		for (String s : path.split(File.pathSeparator)) {
 			File elem = new File(s);
 			if (elem.exists() && elem.isDirectory()) {
 				out.add(elem);
