@@ -67,11 +67,19 @@ public class EExecDriverTask extends EDriverTask {
 			this.name = name;
 			
 		// argument can be any list, ... turn it into a string
-		ECons cons;
-		if ((cons = name.elem2.testCons()) == null)
-			throw ERT.badarg();
-		EString es = EString.make(cons);
-
+		EString es = name.elem2.testString();
+		if (es == null) {		
+			ECons cons;
+			EAtom am;
+			if ((cons = name.elem2.testCons()) != null) {
+				es = EString.make(cons);
+			} else if ((am = name.elem2.testAtom()) != null) {
+				es = EString.fromString(am.getName());
+			} else {
+				throw ERT.badarg(name, portSetting);
+			}
+		}
+		
 		parseOptions(es, portSetting);
 		
 
