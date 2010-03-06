@@ -11,8 +11,6 @@ test() ->
                 {1,2}, {2,1},
 		atom, [], "abc", "ab", [a|b]],
 
-    [{catch(A==B), catch(B==A),catch(A=:=B), catch(B=:=A), catch(A<B), catch(B<A)}
-            || A <- Operands,
-	       B <- Operands].
-
-
+    [{catch(A==B), catch(A=:=B), catch(A<B)}
+	     || A <- Operands,
+		B <- Operands].
