@@ -26,7 +26,9 @@ test() ->
     {[{catch(A==B), catch(A=:=B), catch(A<B)}
 	     || A <- Operands,
 		B <- Operands],
-     [{catch(A==copy(A)), catch(A=:=copy(A)), catch(A<copy(A)), catch(A>copy(A))}
+     [{catch(A==copy(A)), catch(copy(A)==A),
+       catch(A=:=copy(A)), catch(copy(A)=:=A),
+       catch(A<copy(A)), catch(copy(A)<A)}
       || A <- Operands]}.
 
 copy(X) when is_atom(X) -> X;
