@@ -18,17 +18,22 @@ test() ->
 		"aa", "ab", "ba", "abc", "abc"++[a], ["abc"|a], % EString
 		[97.0, 98.0], % Nearly "ab"
 		unicode:characters_to_list(<<"\xC2\xA2">>, utf8), % EBigString
-		unicode:characters_to_list(<<"ab">>, utf8)
+		unicode:characters_to_list(<<"ab">>, utf8),
+
+		%% Binaries:
+		<<>>,
+		<<"aa">>, <<"ab">>, <<"abc">>, <<"\xC2\xA2">>,
+		<<"ab", 1:1>>, <<"ab", 0:2>>, <<"ab", 1:2>>, <<"ab", 2:2>>,
 
 		%% Misc.:
-%% 	self() % EPid.  DISABLED pending pid serialization.
+		self() % EPid.
 		%% TODO: Ports?
 	       ],
 
-    {[{A,B, catch(A==B), catch(A=:=B), catch(A<B)}
-      || A <- Operands,
-		B <- Operands],
-     [{A,
+    {[[{scrub(A),scrub(B), catch(A==B), catch(A=:=B), catch(A<B)}
+      || A <- Operands]
+      || B <- Operands],
+     [{scrub(A),
        catch(A==copy(A)), catch(copy(A)==A),
        catch(A=:=copy(A)), catch(copy(A)=:=A),
        catch(A<copy(A)), catch(copy(A)<A)}
@@ -41,3 +46,6 @@ copy(X) when is_tuple(X) ->
     list_to_tuple(copy(tuple_to_list(X)));
 copy(<<X, Rest/bitstring>>) -> <<X, (copy(Rest))/bitstring>>;
 copy(X) -> X.
+
+scrub(X) when is_pid(X) -> some_pid;
+scrub(X) -> X.
