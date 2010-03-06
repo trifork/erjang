@@ -235,9 +235,6 @@ public class EBitStringBuilder {
 		EBitString ebs = str.testBitString();
 		if (ebs == null) throw new InternalError("bad code gen, arg is "+str.getClass());
 		
-		if (ebs.extra_bits != 0)
-			throw new NotImplemented();
-		
 		if (extra_bits != 0)
 			throw new NotImplemented();
 		
@@ -245,8 +242,9 @@ public class EBitStringBuilder {
 			throw new NotImplemented();
 		}
 		
-		System.arraycopy(ebs.data, ebs.byteOffset(), data, byte_pos, ebs.byteSize());
+		System.arraycopy(ebs.data, ebs.byteOffset(), data, byte_pos, ebs.totalByteSize());
 		byte_pos += ebs.byteSize();
+		extra_bits += ebs.extra_bits; // TODO on extension
 	}
 	
 	public void put_utf8(EObject value, int flags) {
