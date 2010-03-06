@@ -524,7 +524,16 @@ public class EBitString extends EObject {
 	 * @return
 	 */
 	public static EBitString read(EInputStream eInputStream) throws IOException {
-		throw new NotImplemented();
+		int[] pad_bits = new int[1];
+	    byte[] data = eInputStream.read_bitstr(pad_bits);
+		int extra_bits = 8 - pad_bits[0];
+		if (extra_bits==8) {
+			return new EBinary(data); //TODO: use a make().
+		} else {
+			int len = data.length-1;
+			return make(data, 0, data.length-1, extra_bits);
+
+		}
 	}
 
 	protected int byteOffset() {
