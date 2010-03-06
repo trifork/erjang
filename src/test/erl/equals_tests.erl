@@ -15,18 +15,21 @@ test() ->
 
 		%% Lists:
 		[], [a], [a|b],
-		"ab", "abc", "abc"++[a], ["abc"|a], % EString
+		"aa", "ab", "ba", "abc", "abc"++[a], ["abc"|a], % EString
+		[97.0, 98.0], % Nearly "ab"
 		unicode:characters_to_list(<<"\xC2\xA2">>, utf8), % EBigString
+		unicode:characters_to_list(<<"ab">>, utf8)
 
 		%% Misc.:
-		self() % EPid
+%% 	self() % EPid.  DISABLED pending pid serialization.
 		%% TODO: Ports?
 	       ],
 
-    {[{catch(A==B), catch(A=:=B), catch(A<B)}
-	     || A <- Operands,
+    {[{A,B, catch(A==B), catch(A=:=B), catch(A<B)}
+      || A <- Operands,
 		B <- Operands],
-     [{catch(A==copy(A)), catch(copy(A)==A),
+     [{A,
+       catch(A==copy(A)), catch(copy(A)==A),
        catch(A=:=copy(A)), catch(copy(A)=:=A),
        catch(A<copy(A)), catch(copy(A)<A)}
       || A <- Operands]}.
@@ -35,6 +38,6 @@ copy(X) when is_atom(X) -> X;
 copy(X) when is_number(X) -> X + 0;
 copy([X|Y]) -> [copy(X) | copy(Y)];
 copy(X) when is_tuple(X) ->
-    list_to_tuple(lists:map(fun copy/1, tuple_to_list(X)));
+    list_to_tuple(copy(tuple_to_list(X)));
 copy(<<X, Rest/bitstring>>) -> <<X, (copy(Rest))/bitstring>>;
 copy(X) -> X.
