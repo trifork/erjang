@@ -1307,25 +1307,25 @@ public class ErlBif {
 	}
 
 	@BIF
-	public static ESmall byte_size(EObject tup) {
-		EBinary bin = tup.testBinary();
+	public static ESmall byte_size(EObject o) {
+		EBitString bin = o.testBitString();
 		if (bin == null)
 			throw ERT.badarg();
-		return ERT.box(bin.byteSize());
+		return ERT.box(bin.totalByteSize());
 	}
 
 	
 	@BIF(type=Type.GUARD, name="byte_size")
 	public static ESmall byte_size_guard(EObject o) {
-		EBinary bin = o.testBinary();
+		EBitString bin = o.testBitString();
 		if (bin == null)
 			return null;
-		return ERT.box(bin.byteSize());
+		return ERT.box(bin.totalByteSize());
 	}
 
 	@BIF
-	public static EInteger bit_size(EObject tup) {
-		EBitString bin = tup.testBitString();
+	public static EInteger bit_size(EObject o) {
+		EBitString bin = o.testBitString();
 		if (bin == null)
 			throw ERT.badarg();
 		return ERT.box(bin.bitSize());
@@ -1333,8 +1333,8 @@ public class ErlBif {
 
 
 	@BIF(type=Type.GUARD, name="bit_size")
-	public static EInteger bit_size_guard(EObject tup) {
-		EBitString bin = tup.testBitString();
+	public static EInteger bit_size_guard(EObject o) {
+		EBitString bin = o.testBitString();
 		if (bin == null)
 			return null;
 		return ERT.box(bin.bitSize());

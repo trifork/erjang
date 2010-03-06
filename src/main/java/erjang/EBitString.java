@@ -90,7 +90,7 @@ public class EBitString extends EObject {
 		char[] chs = new char[dataByteSize()];
 
 		for (int byteIdx = 0; byteIdx < byteSize(); byteIdx += 1) {
-			chs[byteIdx / 8] = (char)(data[byteIdx] & 0xff);
+			chs[byteIdx] = (char)(data[byteIdx] & 0xff);
 		}
 		
 		if (extra_bits != 0) {
@@ -542,6 +542,10 @@ public class EBitString extends EObject {
 
 	public int byteSize() {
 		return byte_size;
+	}
+
+	public int totalByteSize() {
+		return byte_size + (extra_bits>0 ? 1 : 0);
 	}
 
 	@Override
