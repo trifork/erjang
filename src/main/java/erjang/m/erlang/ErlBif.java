@@ -1325,7 +1325,7 @@ public class ErlBif {
 
 	@BIF
 	public static EInteger bit_size(EObject tup) {
-		EBinary bin = tup.testBinary();
+		EBitString bin = tup.testBitString();
 		if (bin == null)
 			throw ERT.badarg();
 		return ERT.box(bin.bitSize());
@@ -1334,7 +1334,7 @@ public class ErlBif {
 
 	@BIF(type=Type.GUARD, name="bit_size")
 	public static EInteger bit_size_guard(EObject tup) {
-		EBinary bin = tup.testBinary();
+		EBitString bin = tup.testBitString();
 		if (bin == null)
 			return null;
 		return ERT.box(bin.bitSize());
