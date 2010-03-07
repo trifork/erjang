@@ -30,6 +30,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import erjang.EAtom;
 import erjang.EInputStream;
@@ -123,6 +124,13 @@ public class BeamLoader extends CodeTables {
     static final int C_INF = 0x43496e66; // "CInf"
     static final int ABST  = 0x41627374; // "Abst"
 
+	static final int[] SECTION_READING_ORDER = {
+		ATOM, STR_T, LIT_T,		// Have no dependencies.
+		IMP_T, EXP_T, FUN_T, LOC_T,	// Function tables - depend on atom table.
+		CODE,					// Depends on virtually all tables.
+		C_INF, ATTR, ABST		// Less vital sections.
+	};
+
     // TODO: Take an InputStream instead of a DataInputStream (to avoid overhead when we start out with a ByteArrayInputStream).
     public BeamLoader(DataInputStream in, long actual_file_size) throws IOException {
 		if (in.readInt() != FOR1) throw new IOException("Bad header. Not an IFF1 file.");
@@ -139,7 +147,25 @@ public class BeamLoader extends CodeTables {
     }
 
     public void read() throws IOException {
-		while (readSection()) { }
+		/* We want to process sections in an order which avoids forward
+		 * references.  (For instance, many sections refer to the atoms table,
+		 * so we want to process the atoms table early on.)
+		 * For this reason, we first create a section directory, then
+		 * process the sections in a suitable order.
+		 */
+		final HashMap<Integer,SectionMetadata> section_map =
+			new HashMap<Integer,SectionMetadata>();
+
+		for (SectionMetadata smd; (smd = readSectionHeader()) != null; ) {
+			section_map.put(smd.tag, smd);
+
+			// Skip to next section header:
+			in.setPos(smd.offset + ((smd.length+3)&~3));
+		}
+		for (int tag : SECTION_READING_ORDER) {
+			SectionMetadata smd = section_map.get(tag);
+			if (smd != null) readSection(smd);
+		}
 		functionReprs = partitionCodeByFunction();
     }
 
@@ -173,24 +199,29 @@ public class BeamLoader extends CodeTables {
 		return functions;
 	}
 
-    public boolean readSection() throws IOException {
-		// Read section header:
+    public SectionMetadata readSectionHeader() throws IOException {
 		int tag;
 		try {
 			tag = in.read4BE();
 			if (DEBUG) System.err.println("Reading section with tag "+toSymbolicTag(tag)+" at "+in.getPos());
 		} catch (EOFException eof) {
-			return false;
+			return null;
 		}
 		int sectionLength = in.read4BE();
 		int startPos = in.getPos();
 
+		return new SectionMetadata(tag, startPos, sectionLength);
+	}
+
+    public void readSection(SectionMetadata section) throws IOException {
+		in.setPos(section.offset);
+
 		// Read section body:
 		try {
-			if (sectionLength>0) switch (tag) {
+			if (section.length>0) switch (section.tag) {
 			case ATOM:  readAtomSection(); break;
 			case CODE:  readCodeSection(); break;
-			case STR_T: readStringSection(sectionLength); break;
+			case STR_T: readStringSection(section.length); break;
 			case IMP_T: readImportSection(); break;
 			case EXP_T: readExportSection(); break;
 			case FUN_T: readFunctionSection(); break;
@@ -200,10 +231,10 @@ public class BeamLoader extends CodeTables {
 			case C_INF: readCompilationInfoSection(); break;
 			case ABST:  readASTSection(); break;
 			default:
-				if (DEBUG) System.err.println("Unrecognized section tag: "+Integer.toHexString(tag));
+				if (DEBUG) System.err.println("Unrecognized section tag: "+Integer.toHexString(section.tag));
 			} // switch
 		} catch (Exception e) {
-			int relPos = in.getPos()-startPos;
+			int relPos = in.getPos()-section.offset;
 			try {
 				int curPos = in.getPos();
 				in.setPos(curPos-16);
@@ -220,14 +251,13 @@ public class BeamLoader extends CodeTables {
 					}
 				}
 			} catch (Exception e2) {}
-			throw new IOException("Error occurred around "+relPos+"=0x"+Integer.toHexString(relPos)+" bytes into section "+Integer.toHexString(tag), e);
+			throw new IOException("Error occurred around "+relPos+"=0x"+Integer.toHexString(relPos)+" bytes into section "+Integer.toHexString(section.tag), e);
 		}
 
-		int readLength = in.getPos()-startPos;
-		if (readLength > sectionLength)
-			throw new IOException("Malformed section #"+Integer.toHexString(tag)+": used "+readLength+" bytes of "+sectionLength+" (pos="+in.getPos());
-		in.setPos(startPos + ((sectionLength+3)&~3));
-		return true;
+		int readLength = in.getPos()-section.offset;
+		if (readLength > section.length)
+			throw new IOException("Malformed section #"+Integer.toHexString(section.tag)+": used "+readLength+" bytes of "+section.length+" (pos="+in.getPos());
+// 		in.setPos(startPos + ((sectionLength+3)&~3));
     }
 
     /**
@@ -236,17 +266,14 @@ public class BeamLoader extends CodeTables {
 	 */
 	private String toSymbolicTag(int tag) {
 		char[] sym = new char[4];
-		sym[0] = (char) ((tag >> 24) & 0xff); 
-		sym[1] = (char) ((tag >> 16) & 0xff); 
-		sym[2] = (char) ((tag >> 8) & 0xff); 
-		sym[3] = (char) ((tag >> 0) & 0xff); 
-		
-		for (int i = 0; i < 4; i++) {
+
+		for (int i = 3, d = tag;  i >= 0;  i--, d >>>= 8) {
+			sym[i] = (char) (d & 0xff);
 			if (!Character.isJavaIdentifierPart(sym[i])) {
 				return "0x" + Integer.toHexString(tag);
 			}
 		}
-		
+
 		return new String(sym);
 	}
 
@@ -1119,4 +1146,14 @@ public class BeamLoader extends CodeTables {
 				return value.intValue();
 		}
     }
+
+	static class SectionMetadata {
+		final int tag, offset, length;
+		public SectionMetadata(int tag, int offset, int length) {
+			this.tag = tag;
+			this.offset = offset;
+			this.length = length;
+		}
+	}
 }
+
