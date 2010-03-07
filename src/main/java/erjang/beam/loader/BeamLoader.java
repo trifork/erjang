@@ -57,6 +57,7 @@ import erjang.beam.repr.Operands.SourceOperand;
 import erjang.beam.repr.Operands.TableLiteral;
 import erjang.beam.repr.Operands.XReg;
 import erjang.beam.repr.Operands.YReg;
+import erjang.beam.repr.FunctionRepr;
 
 public class BeamLoader extends CodeTables {
     static final boolean DEBUG = false;
@@ -128,11 +129,11 @@ public class BeamLoader extends CodeTables {
     }
 
     public ESeq symbolicCode() {
-		ArrayList<ETuple> functions = new ArrayList<ETuple>(exports.length +
-															localFunctions.length);
-		int fpos = 0;
+		int funCount = exports.length + localFunctions.length;
+		ArrayList<FunctionRepr> functions = new ArrayList<FunctionRepr>(funCount);
+
 		FunctionInfo fi = null;
-		ArrayList<EObject> currentFunctionBody = null;
+		ArrayList<Insn> currentFunctionBody = null;
 		for (Insn insn : code) {
 			FunctionInfo newFI = null;
 			if (insn.opcode() == BeamOpcode.label) { // We might switch to a new function
@@ -144,21 +145,22 @@ public class BeamLoader extends CodeTables {
 			}
 			if (newFI != null && newFI != fi) { // Do switch
 				if (fi != null) { // Add previous
-					ETuple fun = ETuple.make(FUNCTION_ATOM,
-											 atom(fi.fun),
-											 new ESmall(fi.arity),
-											 new ESmall(fi.label),
-											 ESeq.fromList(currentFunctionBody));
+					FunctionRepr fun = new FunctionRepr(fi, currentFunctionBody);
 					functions.add(fun);
 				}
 				fi = newFI;
-				currentFunctionBody = new ArrayList<EObject>();
+				currentFunctionBody = new ArrayList<Insn>();
 			}
 			// currentFunctionBody and fi are now updated.
-			currentFunctionBody.add(insn.toSymbolic(this));
+			currentFunctionBody.add(insn);
 		}
 
-		return ESeq.fromList(functions);
+		ArrayList<ETuple> symFunctions = new ArrayList<ETuple>(funCount);
+		for (FunctionRepr fun : functions) {
+			symFunctions.add(fun.toSymbolic(this));
+		}
+
+		return ESeq.fromList(symFunctions);
     }
 
     //======================================================================
