@@ -139,6 +139,8 @@ public class EBigString extends ESeq implements CharSequence {
 
 		EBigString str;
 		if ((str = rhs.testBigString()) != null) {
+			//TODO: We could treat all CharSequences here,
+			// or else use java.util.Arrays.equals(). --ESS
 			EBigString es = str;
 
 			if (length != es.length())
@@ -155,11 +157,7 @@ public class EBigString extends ESeq implements CharSequence {
 
 		ESeq seq;
 		if ((seq = rhs.testSeq()) != null) {
-
-			int i = 0;
-
-			while (i < length) {
-
+			for (int i = 0; i<length; i++) {
 				if (seq.testNil() != null)
 					return false;
 
@@ -168,9 +166,8 @@ public class EBigString extends ESeq implements CharSequence {
 				}
 
 				seq = seq.tail();
-
 			}
-
+			return seq.isNil();
 		}
 
 		return false;

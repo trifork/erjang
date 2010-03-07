@@ -23,21 +23,22 @@ import java.io.IOException;
 
 import erjang.ETuple;
 import erjang.beam.BeamFileData;
-import erjang.beam.SymbolicBeamFileData;
+import erjang.beam.loader.BeamLoader;
+import erjang.beam.repr.ModuleRepr;
 
 public class ErjangBeamDisLoader extends erjang.beam.BeamLoader {
 	public ErjangBeamDisLoader() { }
 
 	@Override
 	public BeamFileData load(File file) throws IOException {
-		ETuple dis = erjang.beam.loader.BeamLoader.read(file.getAbsolutePath()).toSymbolic();
-		return new SymbolicBeamFileData(dis);
+		ModuleRepr mod = BeamLoader.read(file.getAbsolutePath());
+		return mod;
 	}
 
 	@Override
 	public BeamFileData load(byte[] data) throws IOException {
-		ETuple dis = erjang.beam.loader.BeamLoader.parse(data).toSymbolic();
-		return new SymbolicBeamFileData(dis);
+		ModuleRepr mod = BeamLoader.parse(data);
+		return mod;
 	}
 
 }

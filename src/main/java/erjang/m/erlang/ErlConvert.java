@@ -37,6 +37,7 @@ import erjang.ESeq;
 import erjang.ESmall;
 import erjang.EString;
 import erjang.ETuple;
+import erjang.ERef;
 import erjang.ErlangError;
 import erjang.NotImplemented;
 
@@ -194,4 +195,13 @@ public class ErlConvert {
 		
 		return res;
 	}
+
+	@BIF
+	public static EString ref_to_list(EObject obj) {
+		ERef ref = obj.testReference();
+		if (ref == null)
+			throw ERT.badarg(obj);
+		return new EString(ref.toString());
+	}
+
 }

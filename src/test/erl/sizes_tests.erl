@@ -1,4 +1,4 @@
--module(equals_tests).
+-module(sizes_tests).
 
 -export([test/0]).
 
@@ -26,26 +26,16 @@ test() ->
 		<<"ab", 1:1>>, <<"ab", 0:2>>, <<"ab", 1:2>>, <<"ab", 2:2>>,
 
 		%% Misc.:
-		self() % EPid.
+		self() % EPid
 		%% TODO: Ports?
 	       ],
 
-    {[[{scrub(A),scrub(B), catch(A==B), catch(A=:=B), catch(A<B)}
-      || A <- Operands]
-      || B <- Operands],
-     [{scrub(A),
-       catch(A==copy(A)), catch(copy(A)==A),
-       catch(A=:=copy(A)), catch(copy(A)=:=A),
-       catch(A<copy(A)), catch(copy(A)<A)}
-      || A <- Operands]}.
-
-copy(X) when is_atom(X) -> X;
-copy(X) when is_number(X) -> X + 0;
-copy([X|Y]) -> [copy(X) | copy(Y)];
-copy(X) when is_tuple(X) ->
-    list_to_tuple(copy(tuple_to_list(X)));
-copy(<<X, Rest/bitstring>>) -> <<X, (copy(Rest))/bitstring>>;
-copy(X) -> X.
+    [{scrub(A),
+      try length(A)     catch Cls:Err -> {Cls,Err} end,
+      try tuple_size(A) catch Cls:Err -> {Cls,Err} end,
+      try byte_size(A)  catch Cls:Err -> {Cls,Err} end,
+      try bit_size(A)   catch Cls:Err -> {Cls,Err} end}
+     || A <- Operands].
 
 scrub(X) when is_pid(X) -> some_pid;
 scrub(X) -> X.

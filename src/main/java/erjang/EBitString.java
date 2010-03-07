@@ -90,7 +90,7 @@ public class EBitString extends EObject {
 		char[] chs = new char[dataByteSize()];
 
 		for (int byteIdx = 0; byteIdx < byteSize(); byteIdx += 1) {
-			chs[byteIdx / 8] = (char)(data[byteIdx] & 0xff);
+			chs[byteIdx] = (char)(data[byteIdx] & 0xff);
 		}
 		
 		if (extra_bits != 0) {
@@ -524,7 +524,16 @@ public class EBitString extends EObject {
 	 * @return
 	 */
 	public static EBitString read(EInputStream eInputStream) throws IOException {
-		throw new NotImplemented();
+		int[] pad_bits = new int[1];
+	    byte[] data = eInputStream.read_bitstr(pad_bits);
+		int extra_bits = 8 - pad_bits[0];
+		if (extra_bits==8) {
+			return new EBinary(data); //TODO: use a make().
+		} else {
+			int len = data.length-1;
+			return make(data, 0, data.length-1, extra_bits);
+
+		}
 	}
 
 	protected int byteOffset() {
@@ -533,6 +542,10 @@ public class EBitString extends EObject {
 
 	public int byteSize() {
 		return byte_size;
+	}
+
+	public int totalByteSize() {
+		return byte_size + (extra_bits>0 ? 1 : 0);
 	}
 
 	@Override
