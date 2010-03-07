@@ -123,7 +123,7 @@ public class Insn implements BeamInstruction {
 			this.anon_fun_ref = anon_fun_ref;
 		}
 		public ETuple toSymbolic(CodeTables ct) {
-			CodeTables.AnonFun f = ct.anonFun(anon_fun_ref);
+			AnonFun f = ct.anonFun(anon_fun_ref);
 			return ETuple.make(opcode.symbol,
 							   f.toSymbolic(ct),
 							   new ESmall(anon_fun_ref),

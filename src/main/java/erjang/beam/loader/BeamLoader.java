@@ -60,6 +60,7 @@ import erjang.beam.repr.Operands.TableLiteral;
 import erjang.beam.repr.Operands.XReg;
 import erjang.beam.repr.Operands.YReg;
 import erjang.beam.repr.ExtFun;
+import erjang.beam.repr.AnonFun;
 
 public class BeamLoader extends CodeTables {
     static final boolean DEBUG = false;
@@ -335,6 +336,7 @@ public class BeamLoader extends CodeTables {
 		int nFunctions = in.read4BE();
 		anonymousFuns = new AnonFun[nFunctions];
 		if (DEBUG) System.err.println("Number of function descrs: "+nFunctions);
+		EAtom mod = atom(1);
 		for (int i=0; i<nFunctions; i++) {
 			int fun_atom_nr = in.read4BE();
 			int total_arity = in.read4BE();
@@ -342,10 +344,12 @@ public class BeamLoader extends CodeTables {
 			int occur_nr  = in.read4BE();
 			int free_vars = in.read4BE();
 			int uniq      = in.read4BE();
-			anonymousFuns[i] = new AnonFun(fun_atom_nr, total_arity, free_vars, label, occur_nr, uniq);
+			EAtom fun = atom(fun_atom_nr);
+			anonymousFuns[i] = new AnonFun(mod, fun, total_arity,
+										   free_vars, label, occur_nr, uniq);
 
 			if (DEBUG && atoms != null) {
-				System.err.println("- #"+(i+1)+": "+atom(fun_atom_nr)+"/"+total_arity+" @ "+label);
+				System.err.println("- #"+(i+1)+": "+fun+"/"+total_arity+" @ "+label);
 				System.err.println("--> occur:"+occur_nr+" free:"+free_vars+" $ "+uniq);
 			}
 		}
