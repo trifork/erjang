@@ -44,7 +44,7 @@ public class AnonFun {
 		return fun+"/"+total_arity;
 	}
 
-	public ETuple toSymbolic(CodeTables _ct) {
+	public ETuple toSymbolic() {
 		return ETuple.make(mod, fun, new ESmall(total_arity));
 	}
 }

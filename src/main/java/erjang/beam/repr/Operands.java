@@ -25,6 +25,7 @@ import erjang.EBig;
 import erjang.EDouble;
 import erjang.ETuple;
 import erjang.ESeq;
+import erjang.EString;
 import erjang.EBitString;
 import erjang.ERT;
 
@@ -61,7 +62,7 @@ public class Operands {
 			throw new IllegalArgumentException("Not a Y register: "+this);
 		}
 
-		public abstract EObject toSymbolic(CodeTables ct);
+		public abstract EObject toSymbolic();
     }
 
     public static abstract class SourceOperand extends Operand {
@@ -88,7 +89,7 @@ public class Operands {
     public static class CodeInt extends Operand {
 		public final int value;
 		public CodeInt(int value) {this.value=value;}
-		public EObject toSymbolic(CodeTables ct) {
+		public EObject toSymbolic() {
 			return new ESmall(value);
 		}
     }
@@ -96,7 +97,7 @@ public class Operands {
     public static class Int extends Literal {
 		public final int value;
 		public Int(int value) {this.value=value;}
-		public EObject toSymbolic(CodeTables ct) {
+		public EObject toSymbolic() {
 			return ETuple.make(INTEGER_ATOM, new ESmall(value));
 		}
     }
@@ -104,7 +105,7 @@ public class Operands {
     public static class BigInt extends Literal {
 		public final BigInteger value;
 		public BigInt(BigInteger value) {this.value=value;}
-		public EObject toSymbolic(CodeTables ct) {
+		public EObject toSymbolic() {
 			return ETuple.make(INTEGER_ATOM, new EBig(value));
 		}
     }
@@ -112,7 +113,7 @@ public class Operands {
     public static class Float extends Literal {
 		public final double value;
 		public Float(double value) {this.value=value;}
-		public EObject toSymbolic(CodeTables ct) {
+		public EObject toSymbolic() {
 			return ETuple.make(FLOAT_ATOM, new EDouble(value));
 		}
     }
@@ -120,7 +121,7 @@ public class Operands {
     public static final Nil Nil = new Nil();
     public static class Nil extends Literal {
 		private Nil() {}
-		public EObject toSymbolic(CodeTables ct) {return NIL_ATOM;}
+		public EObject toSymbolic() {return NIL_ATOM;}
     }
 
     public static class SelectList extends Operand {
@@ -129,10 +130,10 @@ public class Operands {
 
 		@Override
 		public SelectList asSelectList() {return this;}
-		public EObject toSymbolic(CodeTables ct) {
+		public EObject toSymbolic() {
 			EObject[] elems = new EObject[list.length];
 			for (int i=0; i<list.length; i++) {
-				elems[i] = list[i].toSymbolic(ct);
+				elems[i] = list[i].toSymbolic();
 			}
 			return ETuple.make(LIST_ATOM, ESeq.fromArray(elems));
 		}
@@ -152,7 +153,7 @@ public class Operands {
 
 		@Override
 		public AllocList asAllocList() {return this;}
-		public EObject toSymbolic(CodeTables ct) {
+		public EObject toSymbolic() {
 			int len = list.length/2;
 
 			if (len==1 && list[0] == WORDS)
@@ -177,53 +178,50 @@ public class Operands {
 
 
     public static class Atom extends Literal {
-		private int idx;
-		public Atom(int idx) {this.idx=idx;}
+		private EAtom value;
+		public Atom(EAtom value) {this.value=value;}
 
 		@Override
 		public Atom asAtom() {return this;}
-		public EAtom asEAtom(CodeTables ct) {return ct.atom(idx);}
-		public EObject toSymbolic(CodeTables ct) {
-			return ETuple.make(ATOM_ATOM, ct.atom(idx));
+		public EAtom getEAtom() {return value;}
+		public EObject toSymbolic() {
+			return ETuple.make(ATOM_ATOM, value);
 		}
     }
 
     public static class BitString extends Literal {
-		protected final int start;
+		protected final EBitString value;
 		protected final int bits;
-		public BitString(int start, int bits) {
-			this.start = start;
+		public BitString(int start, int bits, CodeTables ct) {
 			this.bits = bits;
+			value = ct.bitstring(start,bits);
 		}
 		public int bitLength() {return bits;}
 
 		@Override
-		public EObject toSymbolic(CodeTables ct) {
-			int bitsRoundedUp = (bits+7) & ~7; // Just in order to match.
-			return ct.bitstring(start,bitsRoundedUp);
+		public EObject toSymbolic() {
+			return value; // OBS: beam_disasm round up to nearest byte.
 		}
     }
 
     public static class ByteString extends Literal {
-		protected final int start;
-		protected final int bytes;
-		public ByteString(int start, int bytes) {
-			this.start = start;
-			this.bytes = bytes;
-		}
-		public int byteLength() {return bytes;}
+		protected final EString value;
+		public ByteString(int start, int bytes, CodeTables ct) {
+			value = ct.string(start,bytes);
+	}
+		public int byteLength() {return value.length();}
 
 		@Override
-		public EObject toSymbolic(CodeTables ct) {
-			return ETuple.make(STRING_ATOM, ct.string(start,bytes));
+		public EObject toSymbolic() {
+			return ETuple.make(STRING_ATOM, value);
 		}
     }
 
     public static class TableLiteral extends Literal {
-		private int idx;
-		public TableLiteral(int idx) {this.idx=idx;}
-		public EObject toSymbolic(CodeTables ct) {
-			return ETuple.make(LITERAL_ATOM, ct.literal(idx));
+		private EObject value;
+		public TableLiteral(EObject value) {this.value=value;}
+		public EObject toSymbolic() {
+			return ETuple.make(LITERAL_ATOM, value);
 		}
     }
 
@@ -233,7 +231,7 @@ public class Operands {
 		@Override
 		public Label asLabel() {return this;}
 
-		public EObject toSymbolic(CodeTables ct) {
+		public EObject toSymbolic() {
 			return ETuple.make(F_ATOM, new ESmall(nr));
 		}
     }
@@ -250,7 +248,7 @@ public class Operands {
 			return cache.get(nr);
 		}
 
-		public EObject toSymbolic(CodeTables ct) {
+		public EObject toSymbolic() {
 			return ETuple.make(X_ATOM, new ESmall(nr));
 		}
     }
@@ -270,7 +268,7 @@ public class Operands {
 			return cache.get(nr);
 		}
 
-		public EObject toSymbolic(CodeTables ct) {
+		public EObject toSymbolic() {
 			return ETuple.make(Y_ATOM, new ESmall(nr));
 		}
     }
@@ -287,7 +285,7 @@ public class Operands {
 			return cache.get(nr);
 		}
 
-		public EObject toSymbolic(CodeTables ct) {
+		public EObject toSymbolic() {
 			return ETuple.make(FR_ATOM, new ESmall(nr));
 		}
     }

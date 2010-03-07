@@ -36,7 +36,7 @@ public class ExtFun {
 	public EAtom module() {return  mod;}
 	public EAtom name()   {return  fun;}
 
-	public ETuple toSymbolic(CodeTables _ct) {
+	public ETuple toSymbolic() {
 		return ETuple.make(EXTFUNC_ATOM, mod, fun, new ESmall(arity));
 	}
 }

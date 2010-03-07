@@ -547,7 +547,7 @@ public class BeamLoader extends CodeTables {
 				SourceOperand src = readSource();
 				int i2;
 				if ((peekTag() & 0x7) == ATOM4_TAG) {
-					if (readAtom().asEAtom(this) != START_ATOM)
+					if (readAtom().getEAtom() != START_ATOM)
 						throw new IOException("integer or 'start' expected");
 					i2 = -1;
 				} else i2 = readCodeInteger();
@@ -996,12 +996,12 @@ public class BeamLoader extends CodeTables {
     public BitString readBitstringRef() throws IOException {
 		int bits  = readCodeInteger();
 		int start = readCodeInteger();
-		return new BitString(start, bits);
+		return new BitString(start, bits, this);
     }
     public ByteString readBytestringRef() throws IOException {
 		int bytes  = readCodeInteger();
 		int start = readCodeInteger();
-		return new ByteString(start, bytes);
+		return new ByteString(start, bytes, this);
     }
 
     public SelectList readSelectList() throws IOException {
@@ -1020,7 +1020,7 @@ public class BeamLoader extends CodeTables {
 			return readOperand().asAllocList();
 		}
 		default:
-			throw new IOException("Expected alloc list, got "+readOperand().toSymbolic(this));
+			throw new IOException("Expected alloc list, got "+readOperand().toSymbolic());
 		} // switch
 
     }
@@ -1035,7 +1035,7 @@ public class BeamLoader extends CodeTables {
 		if (tag == CODEINT4_TAG)
 			return readSmallIntValue(d1);
 		else
-			throw new IOException("Not a code-int: "+readOperand(d1).toSymbolic(this));
+			throw new IOException("Not a code-int: "+readOperand(d1).toSymbolic());
     }
 
     public Operand readOperand() throws IOException {
@@ -1073,7 +1073,7 @@ public class BeamLoader extends CodeTables {
 		case ATOM12_TAG:
 		{
 			int nr = readSmallIntValue(d1);
-			return (nr==0)? Operands.Nil : new Operands.Atom(nr);
+			return (nr==0)? Operands.Nil : new Operands.Atom(atom(nr));
 		}
 
 		case XREG4_TAG:
@@ -1127,7 +1127,7 @@ public class BeamLoader extends CodeTables {
 			}
 			case LITERAL_TAG2: {
 				int nr = readSmallIntValue(in.read1());
-				return new TableLiteral(nr);
+				return new TableLiteral(literal(nr));
 			}
 			default:
 				System.err.println("*** Unhandled extended operand tag: "+moretag);
