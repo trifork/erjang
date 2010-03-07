@@ -72,6 +72,45 @@ public abstract class ECons extends EObject {
 		} while (true);
 	}
 
+
+	/* 
+	 * Here is a generic list-oriented equalsExactly.  If need be,
+	 * we can implement optimized versions for subclasses.
+	 */
+	@Override
+	public boolean equalsExactly(EObject rhs) {
+		if (this==rhs) 
+			return true;
+		
+		ECons ths = this;
+		ECons other = rhs.testCons();
+		do {
+			// This would have been nicer if not ENil <: ECons...:
+			boolean other_is_nil = other.isNil();
+			boolean this_is_nil = ths.isNil();
+			if (other_is_nil)
+				return this_is_nil;
+			
+			if (this_is_nil) 
+				return false;
+
+			if (!ths.head().equalsExactly(other.head())) {
+				return false;
+			}
+
+			// Iterate instead of recurse if possible:
+			EObject thisTail = ths.tail();
+			EObject otherTail = other.tail();
+
+			ths = thisTail.testCons();
+			other = otherTail.testCons();
+
+			if (ths==null || other==null)
+				return thisTail.equalsExactly(otherTail);
+			
+		} while (true);
+	}
+
 	public abstract EObject head();
 
 	public abstract EObject tail();
