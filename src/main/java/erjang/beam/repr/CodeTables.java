@@ -35,33 +35,12 @@ public class CodeTables {
 
 	public EAtom moduleName() { return atom(1); }
 
-	protected void addFunctionAtLabel(int label, int fun, int arity) {
-		assert(! functionMap.containsKey(label));
-		functionMap.put(label, new FunctionInfo(fun, arity, label));
+	protected void addFunctionAtLabel(FunctionInfo fi) {
+		assert(! functionMap.containsKey(fi.label));
+		functionMap.put(fi.label, fi);
 	}
 
 	public FunctionInfo functionAtLabel(int label) {
 		return functionMap.get(label);
-	}
-
-    //========== Function representations: ====================
-
-	public class FunctionInfo {
-		public final int fun, arity, label;
-		public FunctionInfo(int fun, int arity, int label) {
-			this.fun = fun;
-			this.arity = arity;
-			this.label = label;
-		}
-		public String toString() {
-			return moduleName()+":"+atom(fun)+"/"+arity;
-		}
-		public EAtom name()   {return atom(fun);}
-
-		public ETuple toSymbolic() {
-			return ETuple.make(moduleName(),
-					   atom(fun),
-					   new ESmall(arity));
-		}
 	}
 }

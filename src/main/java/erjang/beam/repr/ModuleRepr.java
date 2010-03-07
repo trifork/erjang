@@ -39,13 +39,13 @@ import java.util.Collections;
 public class ModuleRepr implements BeamFileData {
 	private EAtom moduleName;
 	private final CodeTables ct;
-	private final CodeTables.FunctionInfo[] exports;
+	private final FunctionInfo[] exports;
 	private final FunctionRepr[] functions;
 	private ESeq attributes;
 	private ESeq compilation_info;
 
 	public ModuleRepr(CodeTables ct,
-					  EAtom moduleName, CodeTables.FunctionInfo[] exports,
+					  EAtom moduleName, FunctionInfo[] exports,
 					  ESeq attributes, ESeq comp_info, FunctionRepr[] functions)
     {
 		this.moduleName = moduleName;
@@ -78,8 +78,8 @@ public class ModuleRepr implements BeamFileData {
 	}
 
 	private void visit_exports(ModuleVisitor v) {
-		for (CodeTables.FunctionInfo exp : exports) {
-			v.visitExport(exp.name(), exp.arity, exp.label);
+		for (FunctionInfo exp : exports) {
+			v.visitExport(exp.fun, exp.arity, exp.label);
 		}
 	}
 
@@ -104,8 +104,8 @@ public class ModuleRepr implements BeamFileData {
     public ESeq symbolicExportList() {
 		ArrayList<EObject> symExports = new ArrayList<EObject>(exports.length);
 		int i=0;
-		for (CodeTables.FunctionInfo f : exports) {
-			symExports.add(ETuple.make(ct.atom(f.fun),
+		for (FunctionInfo f : exports) {
+			symExports.add(ETuple.make(f.fun,
 									   new ESmall(f.arity),
 									   new ESmall(f.label)));
 		}

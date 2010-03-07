@@ -61,6 +61,7 @@ import erjang.beam.repr.Operands.XReg;
 import erjang.beam.repr.Operands.YReg;
 import erjang.beam.repr.ExtFun;
 import erjang.beam.repr.AnonFun;
+import erjang.beam.repr.FunctionInfo;
 
 public class BeamLoader extends CodeTables {
     static final boolean DEBUG = false;
@@ -184,7 +185,7 @@ public class BeamLoader extends CodeTables {
 				newFI = functionAtLabel(labelNr+1);
 				if (newFI==null) newFI = functionAtLabel(labelNr);
 			} else if (insn.opcode() == BeamOpcode.int_code_end) {
-				newFI = new FunctionInfo(-1,-1,-1); // Easy way to handle last function
+				newFI = new FunctionInfo(null,null,-1,-1); // Easy way to handle last function
 			}
 			if (newFI != null && newFI != fi) { // Do switch
 				if (fi != null) { // Add previous
@@ -302,12 +303,14 @@ public class BeamLoader extends CodeTables {
 		int nExports = in.read4BE();
 		exports = new FunctionInfo[nExports];
 		if (DEBUG) System.err.println("Number of exports: "+nExports);
+		EAtom mod = moduleName();
 		for (int i=0; i<nExports; i++) {
 			int fun_atom_nr = in.read4BE();
 			int arity    = in.read4BE();
 			int label    = in.read4BE();
-			exports[i] = new FunctionInfo(fun_atom_nr, arity, label);
-			addFunctionAtLabel(label, fun_atom_nr, arity);
+			EAtom fun = atom(fun_atom_nr);
+			exports[i] = new FunctionInfo(mod, fun, arity, label);
+			addFunctionAtLabel(exports[i]);
 			if (DEBUG && atoms != null) {
 				System.err.println("- #"+(i+1)+": "+atom(fun_atom_nr)+"/"+arity+" @ "+label);
 			}
@@ -319,12 +322,14 @@ public class BeamLoader extends CodeTables {
 		int nLocals = in.read4BE();
 		localFunctions = new FunctionInfo[nLocals];
 		if (DEBUG) System.err.println("Number of locals: "+nLocals);
+		EAtom mod = moduleName();
 		for (int i=0; i<nLocals; i++) {
 			int fun_atom_nr = in.read4BE();
 			int arity    = in.read4BE();
 			int label    = in.read4BE();
-			localFunctions[i] = new FunctionInfo(fun_atom_nr, arity, label);
-			addFunctionAtLabel(label, fun_atom_nr, arity);
+			EAtom fun = atom(fun_atom_nr);
+			localFunctions[i] = new FunctionInfo(mod, fun, arity, label);
+			addFunctionAtLabel(localFunctions[i]);
 			if (DEBUG && atoms != null) {
 				System.err.println("- #"+(i+1)+": "+atom(fun_atom_nr)+"/"+arity+" @ "+label);
 			}
@@ -336,7 +341,7 @@ public class BeamLoader extends CodeTables {
 		int nFunctions = in.read4BE();
 		anonymousFuns = new AnonFun[nFunctions];
 		if (DEBUG) System.err.println("Number of function descrs: "+nFunctions);
-		EAtom mod = atom(1);
+		EAtom mod = moduleName();
 		for (int i=0; i<nFunctions; i++) {
 			int fun_atom_nr = in.read4BE();
 			int total_arity = in.read4BE();

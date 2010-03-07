@@ -33,14 +33,11 @@ import erjang.ESeq;
 
 
 public class FunctionRepr {
-	protected CodeTables.FunctionInfo sig;
+	protected FunctionInfo sig;
 	protected List<Insn> body;
 	protected CodeTables ct;
 
-	public FunctionRepr(CodeTables.FunctionInfo sig,
-						List<Insn> body,
-						CodeTables ct)
-	{
+	public FunctionRepr(FunctionInfo sig, List<Insn> body, CodeTables ct) {
 		this.sig = sig;
 		this.body = body;
 		this.ct = ct;
@@ -49,7 +46,7 @@ public class FunctionRepr {
 	//==================== Visitation ====================
 	public void accept(ModuleVisitor mv) {
 		FunctionVisitor fv =
-			mv.visitFunction(ct.atom(sig.fun), sig.arity, sig.label);
+			mv.visitFunction(sig.fun, sig.arity, sig.label);
 		accept(fv);
 	}
 
@@ -79,7 +76,7 @@ public class FunctionRepr {
 		}
 
 		ETuple fun = ETuple.make(CodeAtoms.FUNCTION_ATOM,
-								 ct.atom(sig.fun),
+								 sig.fun,
 								 new ESmall(sig.arity),
 								 new ESmall(sig.label),
 								 ESeq.fromArray(symBody));
