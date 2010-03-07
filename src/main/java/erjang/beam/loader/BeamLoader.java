@@ -93,6 +93,7 @@ public class BeamLoader extends CodeTables {
     private EObject attributes, compilation_info, abstract_tree;
     private FunctionInfo[] exports, localFunctions;
     private ArrayList<Insn> code;
+	private ArrayList<FunctionRepr> functionReprs;
     //======================================================================
     public ETuple toSymbolic() {
 		return ETuple.make(BEAM_FILE_ATOM,
@@ -129,34 +130,8 @@ public class BeamLoader extends CodeTables {
     }
 
     public ESeq symbolicCode() {
-		int funCount = exports.length + localFunctions.length;
-		ArrayList<FunctionRepr> functions = new ArrayList<FunctionRepr>(funCount);
-
-		FunctionInfo fi = null;
-		ArrayList<Insn> currentFunctionBody = null;
-		for (Insn insn : code) {
-			FunctionInfo newFI = null;
-			if (insn.opcode() == BeamOpcode.label) { // We might switch to a new function
-				int labelNr = ((Insn.I)insn).i1;
-				newFI = functionAtLabel(labelNr+1);
-				if (newFI==null) newFI = functionAtLabel(labelNr);
-			} else if (insn.opcode() == BeamOpcode.int_code_end) {
-				newFI = new FunctionInfo(-1,-1,-1); // Easy way to handle last function
-			}
-			if (newFI != null && newFI != fi) { // Do switch
-				if (fi != null) { // Add previous
-					FunctionRepr fun = new FunctionRepr(fi, currentFunctionBody);
-					functions.add(fun);
-				}
-				fi = newFI;
-				currentFunctionBody = new ArrayList<Insn>();
-			}
-			// currentFunctionBody and fi are now updated.
-			currentFunctionBody.add(insn);
-		}
-
-		ArrayList<ETuple> symFunctions = new ArrayList<ETuple>(funCount);
-		for (FunctionRepr fun : functions) {
+		ArrayList<ETuple> symFunctions = new ArrayList<ETuple>(functionReprs.size());
+		for (FunctionRepr fun : functionReprs) {
 			symFunctions.add(fun.toSymbolic(this));
 		}
 
@@ -199,7 +174,38 @@ public class BeamLoader extends CodeTables {
 
     public void read() throws IOException {
 		while (readSection()) { }
+		functionReprs = partitionCodeByFunction();
     }
+
+	public ArrayList<FunctionRepr> partitionCodeByFunction() {
+		int funCount = exports.length + localFunctions.length;
+		ArrayList<FunctionRepr> functions = new ArrayList<FunctionRepr>(funCount);
+
+		FunctionInfo fi = null;
+		ArrayList<Insn> currentFunctionBody = null;
+		for (Insn insn : code) {
+			FunctionInfo newFI = null;
+			if (insn.opcode() == BeamOpcode.label) { // We might switch to a new function
+				int labelNr = ((Insn.I)insn).i1;
+				newFI = functionAtLabel(labelNr+1);
+				if (newFI==null) newFI = functionAtLabel(labelNr);
+			} else if (insn.opcode() == BeamOpcode.int_code_end) {
+				newFI = new FunctionInfo(-1,-1,-1); // Easy way to handle last function
+			}
+			if (newFI != null && newFI != fi) { // Do switch
+				if (fi != null) { // Add previous
+					FunctionRepr fun = new FunctionRepr(fi, currentFunctionBody);
+					functions.add(fun);
+				}
+				fi = newFI;
+				currentFunctionBody = new ArrayList<Insn>();
+			}
+			// currentFunctionBody and fi are now updated.
+			currentFunctionBody.add(insn);
+		}
+
+		return functions;
+	}
 
     public boolean readSection() throws IOException {
 		// Read section header:
