@@ -30,8 +30,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 
 import erjang.EAtom;
 import erjang.EInputStream;
@@ -40,7 +38,10 @@ import erjang.ESeq;
 import erjang.ESmall;
 import erjang.ETuple;
 import erjang.beam.BeamOpcode;
+
 import erjang.beam.repr.CodeTables;
+import erjang.beam.repr.ModuleRepr;
+import erjang.beam.repr.FunctionRepr;
 import erjang.beam.repr.Insn;
 import erjang.beam.repr.Operands;
 import erjang.beam.repr.Operands.AllocList;
@@ -57,7 +58,6 @@ import erjang.beam.repr.Operands.SourceOperand;
 import erjang.beam.repr.Operands.TableLiteral;
 import erjang.beam.repr.Operands.XReg;
 import erjang.beam.repr.Operands.YReg;
-import erjang.beam.repr.FunctionRepr;
 
 public class BeamLoader extends CodeTables {
     static final boolean DEBUG = false;
@@ -68,24 +68,24 @@ public class BeamLoader extends CodeTables {
     }
 
 
-    public static BeamLoader read(String filename) throws IOException {
+    public static ModuleRepr read(String filename) throws IOException {
 		long file_size = new File(filename).length();
 		DataInputStream in = null;
 		try {
 			in = new DataInputStream(new FileInputStream(filename));
 			BeamLoader bl = new BeamLoader(in, file_size);
 			bl.read();
-			return bl;
+			return bl.toModuleRepr();
 		} finally {
 			if (in != null) in.close();
 		}
     }
 
-    public static BeamLoader parse(byte[] data) throws IOException {
+    public static ModuleRepr parse(byte[] data) throws IOException {
 		ByteArrayInputStream in = new ByteArrayInputStream(data);
 		BeamLoader bl = new BeamLoader(new DataInputStream(in), data.length);
 		bl.read();
-		return bl;
+		return bl.toModuleRepr();
     }
 
     //======================================================================
@@ -95,48 +95,14 @@ public class BeamLoader extends CodeTables {
     private ArrayList<Insn> code;
 	private ArrayList<FunctionRepr> functionReprs;
     //======================================================================
-    public ETuple toSymbolic() {
-		return ETuple.make(BEAM_FILE_ATOM,
-						   symbolicModuleName(),
-						   symbolicExportList(),
-						   symbolicAttributes(),
-						   compilation_info,
-						   symbolicCode());
-    }
-
-    public EAtom symbolicModuleName() {
-		// The module name is the first atom in the table.
-		return atom(1);
-    }
-
-    public EObject symbolicAttributes() {
-		// Sort the attributes to make them comparable to beam_disasm's output:
-		ESeq attrs_as_seq = attributes.testSeq();
-		if (attrs_as_seq == null) return attributes;
-
-		EObject[] attrs = attrs_as_seq.toArray();
-		Arrays.sort(attrs);
-		return ESeq.fromArray(attrs);
-    }
-
-    public ESeq symbolicExportList() {
-		ArrayList<EObject> symExports = new ArrayList<EObject>(exports.length);
-		int i=0;
-		for (FunctionInfo f : exports) {
-			symExports.add(ETuple.make(atom(f.fun), new ESmall(f.arity), new ESmall(f.label)));
-		}
-		Collections.sort(symExports);
-		return ESeq.fromList(symExports);
-    }
-
-    public ESeq symbolicCode() {
-		ArrayList<ETuple> symFunctions = new ArrayList<ETuple>(functionReprs.size());
-		for (FunctionRepr fun : functionReprs) {
-			symFunctions.add(fun.toSymbolic(this));
-		}
-
-		return ESeq.fromList(symFunctions);
-    }
+	public ModuleRepr toModuleRepr() {
+		FunctionRepr[] functions = new FunctionRepr[functionReprs.size()];
+		functions = functionReprs.toArray(functions);
+		return new ModuleRepr(this,
+							  atom(1), exports,
+							  (ESeq)attributes, (ESeq)compilation_info,
+							  functions);
+	}
 
     //======================================================================
 
@@ -194,7 +160,7 @@ public class BeamLoader extends CodeTables {
 			}
 			if (newFI != null && newFI != fi) { // Do switch
 				if (fi != null) { // Add previous
-					FunctionRepr fun = new FunctionRepr(fi, currentFunctionBody);
+					FunctionRepr fun = new FunctionRepr(fi, currentFunctionBody, this);
 					functions.add(fun);
 				}
 				fi = newFI;

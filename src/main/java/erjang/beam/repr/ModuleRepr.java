@@ -1,0 +1,126 @@
+/** -*- tab-width: 4 -*-
+ * This file is part of Erjang - A JVM-based Erlang VM
+ *
+ * Copyright (c) 2010 by Trifork
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ **/
+
+package erjang.beam.repr;
+
+import erjang.beam.BeamFileData;
+import erjang.beam.ModuleVisitor;
+import erjang.beam.FunctionVisitor;
+import erjang.beam.BlockVisitor;
+import erjang.beam.BeamOpcode;
+import erjang.beam.CodeAtoms;
+
+import erjang.EObject;
+import erjang.EAtom;
+import erjang.ESeq;
+import erjang.ESmall;
+import erjang.ETuple;
+import erjang.ERT;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+
+public class ModuleRepr implements BeamFileData {
+	private EAtom moduleName;
+	private final CodeTables ct;
+	private final CodeTables.FunctionInfo[] exports;
+	private final FunctionRepr[] functions;
+	private ESeq attributes;
+	private ESeq compilation_info;
+
+	public ModuleRepr(CodeTables ct,
+					  EAtom moduleName, CodeTables.FunctionInfo[] exports,
+					  ESeq attributes, ESeq comp_info, FunctionRepr[] functions)
+    {
+		this.moduleName = moduleName;
+		this.ct = ct;
+		this.exports = exports;
+		this.attributes = attributes;
+		this.compilation_info = comp_info;
+		this.functions = functions;
+	}
+
+	public void accept(ModuleVisitor v) {
+		v.visitModule(moduleName);
+
+		visit_exports(v);
+
+		visit_attributes(v);
+
+		try {
+			for (FunctionRepr fun : functions) fun.accept(v);
+		} finally {
+			v.visitEnd();
+		}
+	}
+
+	private void visit_attributes(ModuleVisitor v) {
+		for (ESeq exp = (ESeq) attributes; exp != ERT.NIL; exp = exp.tail()) {
+			ETuple attr = (ETuple) exp.head();
+			v.visitAttribute((EAtom) attr.elm(1), attr.elm(2));
+		}
+	}
+
+	private void visit_exports(ModuleVisitor v) {
+		for (CodeTables.FunctionInfo exp : exports) {
+			v.visitExport(exp.name(), exp.arity, exp.label);
+		}
+	}
+
+
+	//==================== Symbolic form ====================
+    public ETuple toSymbolic() {
+		return ETuple.make(CodeAtoms.BEAM_FILE_ATOM,
+						   moduleName,
+						   symbolicExportList(),
+						   symbolicAttributes(),
+						   compilation_info,
+						   symbolicCode());
+    }
+
+    public EObject symbolicAttributes() {
+		// Sort the attributes to make them comparable to beam_disasm's output:
+		EObject[] attrs = attributes.toArray();
+		Arrays.sort(attrs);
+		return ESeq.fromArray(attrs);
+    }
+
+    public ESeq symbolicExportList() {
+		ArrayList<EObject> symExports = new ArrayList<EObject>(exports.length);
+		int i=0;
+		for (CodeTables.FunctionInfo f : exports) {
+			symExports.add(ETuple.make(ct.atom(f.fun),
+									   new ESmall(f.arity),
+									   new ESmall(f.label)));
+		}
+		Collections.sort(symExports);
+		return ESeq.fromList(symExports);
+    }
+
+    public ESeq symbolicCode() {
+		ArrayList<ETuple> symFunctions =
+			new ArrayList<ETuple>(functions.length);
+		for (FunctionRepr fun : functions) {
+			symFunctions.add(fun.toSymbolic());
+		}
+
+		return ESeq.fromList(symFunctions);
+    }
+
+}
