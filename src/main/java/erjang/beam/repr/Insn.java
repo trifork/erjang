@@ -39,17 +39,17 @@ public class Insn implements BeamInstruction {
 	public BeamOpcode opcode() {return opcode;}
 
 	public String toString() {return opcode+"(...)";}
-	public EObject toSymbolic(CodeTables ct) {
+	public EObject toSymbolic() {
 	    return opcode.symbol;
 	}
 
 
 	private static EObject NOFAIL_REPR = ETuple.make(F_ATOM, new ESmall(0));
 	private static EObject START_REPR = ETuple.make(ATOM_ATOM, START_ATOM);
-	static EObject toSymbolic(Label label, CodeTables ct) {
+	static EObject labelToSymbolic(Label label) {
 		return label==null? NOFAIL_REPR : label.toSymbolic();
 	}
-	static EObject toSymbolic_nf(Label label, CodeTables ct) {
+	static EObject labelToSymbolic_nf(Label label) {
 		return label==null? NOFAIL_ATOM : label.toSymbolic();
 	}
 
@@ -78,7 +78,7 @@ public class Insn implements BeamInstruction {
 			super(opcode);
 			this.i1 = i1;
 		}
-		public ETuple toSymbolic(CodeTables ct) {
+		public ETuple toSymbolic() {
 			return ETuple.make(opcode.symbol, new ESmall(i1));
 		}
 	}
@@ -89,7 +89,7 @@ public class Insn implements BeamInstruction {
 			super(opcode);
 			this.src = src;
 		}
-		public ETuple toSymbolic(CodeTables ct) {
+		public ETuple toSymbolic() {
 			return ETuple.make(opcode.symbol, src.toSymbolic());
 		}
 	}
@@ -100,7 +100,7 @@ public class Insn implements BeamInstruction {
 			super(opcode);
 			this.dest = dest;
 		}
-		public ETuple toSymbolic(CodeTables ct) {
+		public ETuple toSymbolic() {
 			return ETuple.make(opcode.symbol, dest.toSymbolic());
 		}
 	}
@@ -111,24 +111,25 @@ public class Insn implements BeamInstruction {
 			super(opcode);
 			this.label = label;
 		}
-		public ETuple toSymbolic(CodeTables ct) {
+		public ETuple toSymbolic() {
 			return ETuple.make(opcode.symbol, label.toSymbolic());
 		}
 	}
 
 	public static class F extends Insn { // E.g. 'make_fun2'
-		public final int anon_fun_ref;
-		public F(BeamOpcode opcode, int anon_fun_ref) {
+		public final int anon_fun_no;
+		public final AnonFun anon_fun;
+		public F(BeamOpcode opcode, int anon_fun_no, AnonFun anon_fun) {
 			super(opcode);
-			this.anon_fun_ref = anon_fun_ref;
+			this.anon_fun_no = anon_fun_no;
+			this.anon_fun = anon_fun;
 		}
-		public ETuple toSymbolic(CodeTables ct) {
-			AnonFun f = ct.anonFun(anon_fun_ref);
+		public ETuple toSymbolic() {
 			return ETuple.make(opcode.symbol,
-							   f.toSymbolic(),
-							   new ESmall(anon_fun_ref),
-							   new ESmall(f.uniq),
-							   new ESmall(f.free_vars));
+							   anon_fun.toSymbolic(),
+							   new ESmall(anon_fun_no),
+							   new ESmall(anon_fun.uniq),
+							   new ESmall(anon_fun.free_vars));
 		}
 	}
 
@@ -138,7 +139,7 @@ public class Insn implements BeamInstruction {
 			super(opcode);
 			this.y = y;
 		}
-		public ETuple toSymbolic(CodeTables ct) {
+		public ETuple toSymbolic() {
 			return ETuple.make(opcode.symbol, y.toSymbolic());
 		}
 	}
@@ -150,7 +151,7 @@ public class Insn implements BeamInstruction {
 			this.bin = bin;
 		}
 
-		public ETuple toSymbolic(CodeTables ct) {
+		public ETuple toSymbolic() {
 			return ETuple.make(opcode.symbol,
 							   new ESmall(bin.byteLength()),
 							   bin.toSymbolic());
@@ -167,7 +168,7 @@ public class Insn implements BeamInstruction {
 			this.i2 = i2;
 			this.is_saverestore = is_saverestore;
 		}
-		public ETuple toSymbolic(CodeTables ct) {
+		public ETuple toSymbolic() {
 			if (is_saverestore)
 				return ETuple.make(opcode.symbol,
 								   src.toSymbolic(),
@@ -187,7 +188,7 @@ public class Insn implements BeamInstruction {
 			this.src = src;
 			this.dest = dest;
 		}
-		public ETuple toSymbolic(CodeTables ct) {
+		public ETuple toSymbolic() {
 			return ETuple.make(opcode.symbol,
 							   src.toSymbolic(),
 							   dest.toSymbolic());
@@ -202,7 +203,7 @@ public class Insn implements BeamInstruction {
 			this.label = label;
 			this.dest = dest;
 		}
-		public ETuple toSymbolic(CodeTables ct) {
+		public ETuple toSymbolic() {
 			return ETuple.make(opcode.symbol,
 							   label.toSymbolic(),
 							   dest.toSymbolic());
@@ -217,7 +218,7 @@ public class Insn implements BeamInstruction {
 			this.y = y;
 			this.label = label;
 		}
-		public ETuple toSymbolic(CodeTables ct) {
+		public ETuple toSymbolic() {
 			return ETuple.make(opcode.symbol,
 							   y.toSymbolic(),
 							   label.toSymbolic());
@@ -234,7 +235,7 @@ public class Insn implements BeamInstruction {
 			this.src = src;
 			this.is_test = is_test;
 		}
-		public ETuple toSymbolic(CodeTables ct) {
+		public ETuple toSymbolic() {
 			if (is_test)
 				return ETuple.make(TEST_ATOM,
 								   opcode.symbol,
@@ -254,7 +255,7 @@ public class Insn implements BeamInstruction {
 			this.i1 = i1;
 			this.i2 = i2;
 		}
-		public ETuple toSymbolic(CodeTables ct) {
+		public ETuple toSymbolic() {
 			return ETuple.make(opcode.symbol,
 							   new ESmall(i1),
 							   new ESmall(i2));
@@ -265,17 +266,21 @@ public class Insn implements BeamInstruction {
 		public final int i1;
 		public final Label label;
 		public final boolean is_call;
-		public IL(BeamOpcode opcode, int i1, Label label,  boolean is_call) {
+		public final FunctionInfo functionAtLabel;
+
+		public IL(BeamOpcode opcode, int i1, Label label,  FunctionInfo fal) {
 			super(opcode);
 			this.i1 = i1;
 			this.label = label;
-			this.is_call = is_call;
+			this.is_call = true;
+			this.functionAtLabel = fal;
 		}
-		public ETuple toSymbolic(CodeTables ct) {
+
+		public ETuple toSymbolic() {
 			if (is_call)
 				return ETuple.make(opcode.symbol,
 								   new ESmall(i1),
-								   ct.functionAtLabel(label.nr).toSymbolic());
+								   functionAtLabel.toSymbolic());
 			else
 				return ETuple.make(opcode.symbol,
 								   new ESmall(i1),
@@ -290,7 +295,7 @@ public class Insn implements BeamInstruction {
 			this.src1 = src1;
 			this.src2 = src2;
 		}
-		public ETuple toSymbolic(CodeTables ct) {
+		public ETuple toSymbolic() {
 			if (opcode == BeamOpcode.raise)
 				return ETuple.make(opcode.symbol,
 								   new Label(0).toSymbolic(),
@@ -313,7 +318,7 @@ public class Insn implements BeamInstruction {
 			this.a2 = a2;
 			this.i1 = i1;
 		}
-		public ETuple toSymbolic(CodeTables ct) {
+		public ETuple toSymbolic() {
 			return ETuple.make(opcode.symbol,
 							   a1.toSymbolic(),
 							   a2.toSymbolic(),
@@ -323,16 +328,16 @@ public class Insn implements BeamInstruction {
 
 	public static class IE extends Insn { // E.g. 'call_ext'
 		public final int i1;
-		public final int ext_fun_ref;
-		public IE(BeamOpcode opcode, int i1, int ext_fun_ref) {
+		public final ExtFun ext_fun;
+		public IE(BeamOpcode opcode, int i1, ExtFun ext_fun) {
 			super(opcode);
 			this.i1 = i1;
-			this.ext_fun_ref = ext_fun_ref;
+			this.ext_fun = ext_fun;
 		}
-		public ETuple toSymbolic(CodeTables ct) {
+		public ETuple toSymbolic() {
 			return ETuple.make(opcode.symbol,
 							   new ESmall(i1),
-							   ct.extFun(ext_fun_ref).toSymbolic());
+							   ext_fun.toSymbolic());
 		}
 	}
 
@@ -344,7 +349,7 @@ public class Insn implements BeamInstruction {
 			this.i1 = i1;
 			this.dest = dest;
 		}
-		public ETuple toSymbolic(CodeTables ct) {
+		public ETuple toSymbolic() {
 			return ETuple.make(opcode.symbol,
 							   new ESmall(i1),
 							   dest.toSymbolic());
@@ -359,7 +364,7 @@ public class Insn implements BeamInstruction {
 			this.alist = alist;
 			this.i2 = i2;
 		}
-		public ETuple toSymbolic(CodeTables ct) {
+		public ETuple toSymbolic() {
 			return ETuple.make(opcode.symbol,
 							   alist.toSymbolic(),
 							   new ESmall(i2));
@@ -375,7 +380,7 @@ public class Insn implements BeamInstruction {
 			this.al = al;
 			this.i3 = i3;
 		}
-		public ETuple toSymbolic(CodeTables ct) {
+		public ETuple toSymbolic() {
 			return ETuple.make(opcode.symbol,
 							   new ESmall(i1),
 							   al.toSymbolic(),
@@ -385,27 +390,27 @@ public class Insn implements BeamInstruction {
 
 	public static class LED extends Insn { // E.g. 'bif0'
 		public final Label label;
-		public final int ext_fun_ref;
+		public final ExtFun ext_fun;
 		public final DestinationOperand dest;
 		public final boolean is_bif;
-		public LED(BeamOpcode opcode, Label label, int ext_fun_ref, DestinationOperand dest, boolean is_bif) {
+		public LED(BeamOpcode opcode, Label label, ExtFun ext_fun, DestinationOperand dest, boolean is_bif) {
 			super(opcode);
 			this.label = label;
-			this.ext_fun_ref = ext_fun_ref;
+			this.ext_fun = ext_fun;
 			this.dest = dest;
 			this.is_bif = is_bif;
 		}
-		public ETuple toSymbolic(CodeTables ct) {
+		public ETuple toSymbolic() {
 			if (is_bif)
 				return ETuple.make(BIF_ATOM,
-								   ct.extFun(ext_fun_ref).fun,
-								   toSymbolic_nf(label, ct),
+								   ext_fun.fun,
+								   labelToSymbolic_nf(label),
 								   ERT.NIL,
 								   dest.toSymbolic());
 			else
 				return ETuple.make(opcode.symbol,
-								   toSymbolic(label, ct),
-								   ct.extFun(ext_fun_ref).toSymbolic(),
+								   labelToSymbolic(label),
+								   ext_fun.toSymbolic(),
 								   dest.toSymbolic());
 		}
 	}
@@ -422,7 +427,7 @@ public class Insn implements BeamInstruction {
 			this.i1 = i1;
 			this.is_test = is_test;
 		}
-		public ETuple toSymbolic(CodeTables ct) {
+		public ETuple toSymbolic() {
 			if (is_test)
 				return ETuple.make(TEST_ATOM,
 								   opcode.symbol,
@@ -447,7 +452,7 @@ public class Insn implements BeamInstruction {
 			this.i1 = i1;
 			this.dest = dest;
 		}
-		public ETuple toSymbolic(CodeTables ct) {
+		public ETuple toSymbolic() {
 			return ETuple.make(opcode.symbol,
 							   src.toSymbolic(),
 							   new ESmall(i1),
@@ -467,7 +472,7 @@ public class Insn implements BeamInstruction {
 			this.src2 = src2;
 			this.is_test = is_test;
 		}
-		public ETuple toSymbolic(CodeTables ct) {
+		public ETuple toSymbolic() {
 			if (is_test)
 				return ETuple.make(TEST_ATOM,
 								   opcode.symbol,
@@ -492,7 +497,7 @@ public class Insn implements BeamInstruction {
 			this.src = src;
 			this.dest = dest;
 		}
-		public ETuple toSymbolic(CodeTables ct) {
+		public ETuple toSymbolic() {
 			return ETuple.make(opcode.symbol,
 							   label.toSymbolic(),
 							   src.toSymbolic(),
@@ -510,7 +515,7 @@ public class Insn implements BeamInstruction {
 			this.dest1 = dest1;
 			this.dest2 = dest2;
 		}
-		public ETuple toSymbolic(CodeTables ct) {
+		public ETuple toSymbolic() {
 			return ETuple.make(opcode.symbol,
 							   src.toSymbolic(),
 							   dest1.toSymbolic(),
@@ -528,7 +533,7 @@ public class Insn implements BeamInstruction {
 			this.src2 = src2;
 			this.dest = dest;
 		}
-		public ETuple toSymbolic(CodeTables ct) {
+		public ETuple toSymbolic() {
 			return ETuple.make(opcode.symbol,
 							   src1.toSymbolic(),
 							   src2.toSymbolic(),
@@ -546,7 +551,7 @@ public class Insn implements BeamInstruction {
 			this.dest = dest;
 			this.i = i;
 		}
-		public ETuple toSymbolic(CodeTables ct) {
+		public ETuple toSymbolic() {
 			return ETuple.make(opcode.symbol,
 							   src.toSymbolic(),
 							   dest.toSymbolic(),
@@ -559,19 +564,21 @@ public class Insn implements BeamInstruction {
 		public final int i1, i3;
 		public final Label label;
 		public final boolean is_call;
-		public ILI(BeamOpcode opcode, int i1, Label label, int i3, boolean is_call) {
+		public final FunctionInfo functionAtLabel;
+		public ILI(BeamOpcode opcode, int i1, Label label, int i3, FunctionInfo fal) {
 			super(opcode);
 			this.i1 = i1;
 			this.label = label;
 			this.i3 = i3;
-			this.is_call = is_call;
+			this.is_call = true;
+			this.functionAtLabel = fal;
 		}
 
-		public ETuple toSymbolic(CodeTables ct) {
+		public ETuple toSymbolic() {
 			if (is_call)
 				return ETuple.make(opcode.symbol,
 								   new ESmall(i1),
-								   ct.functionAtLabel(label.nr).toSymbolic(),
+								   functionAtLabel.toSymbolic(),
 								   new ESmall(i3));
 			else
 				return ETuple.make(opcode.symbol,
@@ -583,17 +590,17 @@ public class Insn implements BeamInstruction {
 
 	public static class IEI extends Insn { // E.g. 'call'
 		public final int i1, i3;
-		public final int ext_fun_ref;
-		public IEI(BeamOpcode opcode, int i1, int ext_fun_ref, int i3) {
+		public final ExtFun ext_fun;
+		public IEI(BeamOpcode opcode, int i1, ExtFun ext_fun, int i3) {
 			super(opcode);
 			this.i1 = i1;
-			this.ext_fun_ref = ext_fun_ref;
+			this.ext_fun = ext_fun;
 			this.i3 = i3;
 		}
-		public ETuple toSymbolic(CodeTables ct) {
+		public ETuple toSymbolic() {
 			return ETuple.make(opcode.symbol,
 							   new ESmall(i1),
-							   ct.extFun(ext_fun_ref).toSymbolic(),
+							   ext_fun.toSymbolic(),
 							   new ESmall(i3));
 		}
 	}
@@ -607,7 +614,7 @@ public class Insn implements BeamInstruction {
 			this.dest = dest;
 		}
 
-		public ETuple toSymbolic(CodeTables ct) {
+		public ETuple toSymbolic() {
 			return ETuple.make(opcode.symbol,
 							   new ESmall(bin.byteLength()),
 							   bin.toSymbolic(),
@@ -633,7 +640,7 @@ public class Insn implements BeamInstruction {
 			this.dest = dest;
 			this.is_arithfbif = is_arithfbif;
 		}
-		public ETuple toSymbolic(CodeTables ct) {
+		public ETuple toSymbolic() {
 			if (is_arithfbif)
 				return ETuple.make(ARITHFBIF_ATOM,
 								   opcode.symbol,
@@ -667,7 +674,7 @@ public class Insn implements BeamInstruction {
 			this.i3 = i3;
 			this.dest = dest;
 		}
-		public ETuple toSymbolic(CodeTables ct) {
+		public ETuple toSymbolic() {
 			return ETuple.make(opcode.symbol,
 							   label.toSymbolic(),
 							   EList.make(src1.toSymbolic(),
@@ -688,13 +695,13 @@ public class Insn implements BeamInstruction {
 			this.bin = bin;
 		}
 
-		public ETuple toSymbolic(CodeTables ct) {
+		public ETuple toSymbolic() {
 			if (opcode == BeamOpcode.bs_match_string)
 				return ETuple.make(TEST_ATOM,
 								   opcode.symbol,
 								   label.toSymbolic(),
 								   EList.make(src.toSymbolic(),
-											  new ESmall(bin.bitLength()),
+											  ERT.box(bin.bitLength()),
 											  bin.toSymbolic()));
 			else
 				throw new erjang.NotImplemented();
@@ -713,7 +720,7 @@ public class Insn implements BeamInstruction {
 			this.i4 = i4;
 		}
 
-		public ETuple toSymbolic(CodeTables ct) {
+		public ETuple toSymbolic() {
 			if (opcode == BeamOpcode.bs_skip_utf8 ||
 			    opcode == BeamOpcode.bs_skip_utf16 ||
 			    opcode == BeamOpcode.bs_skip_utf32)
@@ -744,7 +751,7 @@ public class Insn implements BeamInstruction {
 			this.is_bs = is_bs;
 		}
 
-		public ETuple toSymbolic(CodeTables ct) {
+		public ETuple toSymbolic() {
 			if (is_bs)
 				return ETuple.make(opcode.symbol,
 								   label.toSymbolic(),
@@ -770,7 +777,7 @@ public class Insn implements BeamInstruction {
 			this.is_bsput = is_bsput;
 		}
 
-		public ETuple toSymbolic(CodeTables ct) {
+		public ETuple toSymbolic() {
 			if (is_bsput)
 				return ETuple.make(opcode.symbol,
 								   label.toSymbolic(),
@@ -800,7 +807,7 @@ public class Insn implements BeamInstruction {
 			this.i4_is_bsflags = i4_is_bsflags;
 		}
 
-		public ETuple toSymbolic(CodeTables ct) {
+		public ETuple toSymbolic() {
 			if (is_test)
 				return ETuple.make(TEST_ATOM,
 								   opcode.symbol,
@@ -833,10 +840,10 @@ public class Insn implements BeamInstruction {
 			this.dest = dest;
 		}
 
-		public ETuple toSymbolic(CodeTables ct) {
+		public ETuple toSymbolic() {
 			if (opcode == BeamOpcode.bs_init2)
 				return ETuple.make(opcode.symbol,
-								   toSymbolic(label,ct),
+								   labelToSymbolic(label),
 								   new ESmall(i2),
 								   new ESmall(i3),
 								   new ESmall(i4),
@@ -869,10 +876,10 @@ public class Insn implements BeamInstruction {
 			this.is_bs = is_bs;
 		}
 
-		public ETuple toSymbolic(CodeTables ct) {
+		public ETuple toSymbolic() {
 			if (is_bs)
 				return ETuple.make(opcode.symbol,
-								   toSymbolic(label,ct),
+								   labelToSymbolic(label),
 								   src2.toSymbolic(),
 								   new ESmall(i3),
 								   new ESmall(i4),
@@ -885,26 +892,26 @@ public class Insn implements BeamInstruction {
 
 	public static class LESD extends Insn { // E.g. 'bif1'
 		public final Label label;
-		public final int ext_fun_ref;
+		public final ExtFun ext_fun;
 		public final SourceOperand src;
 		public final DestinationOperand dest;
-		public LESD(BeamOpcode opcode, Label label, int ext_fun_ref, SourceOperand src, DestinationOperand dest) {
+		public LESD(BeamOpcode opcode, Label label, ExtFun ext_fun, SourceOperand src, DestinationOperand dest) {
 			super(opcode);
 			this.label = label;
-			this.ext_fun_ref = ext_fun_ref;
+			this.ext_fun = ext_fun;
 			this.src = src;
 			this.dest = dest;
 		}
-		public ETuple toSymbolic(CodeTables ct) {
+		public ETuple toSymbolic() {
 			if (opcode == BeamOpcode.bif1)
 				return ETuple.make(BIF_ATOM,
-								   ct.extFun(ext_fun_ref).fun,
+								   ext_fun.fun,
 								   label.toSymbolic(),
 								   EList.make(src.toSymbolic()),
 								   dest.toSymbolic());
 			else
 				return ETuple.make(opcode.symbol,
-								   ct.extFun(ext_fun_ref).fun,
+								   ext_fun.fun,
 								   label.toSymbolic(),
 								   src.toSymbolic(),
 								   dest.toSymbolic());
@@ -913,29 +920,29 @@ public class Insn implements BeamInstruction {
 
 	public static class LESSD extends Insn { // E.g. 'bif2'
 		public final Label label;
-		public final int ext_fun_ref;
+		public final ExtFun ext_fun;
 		public final SourceOperand src1;
 		public final SourceOperand src2;
 		public final DestinationOperand dest;
-		public LESSD(BeamOpcode opcode, Label label, int ext_fun_ref, SourceOperand src1, SourceOperand src2, DestinationOperand dest) {
+		public LESSD(BeamOpcode opcode, Label label, ExtFun ext_fun, SourceOperand src1, SourceOperand src2, DestinationOperand dest) {
 			super(opcode);
 			this.label = label;
-			this.ext_fun_ref = ext_fun_ref;
+			this.ext_fun = ext_fun;
 			this.src1 = src1;
 			this.src2 = src2;
 			this.dest = dest;
 		}
-		public ETuple toSymbolic(CodeTables ct) {
+		public ETuple toSymbolic() {
 			if (opcode == BeamOpcode.bif2)
 				return ETuple.make(BIF_ATOM,
-								   ct.extFun(ext_fun_ref).fun,
+								   ext_fun.fun,
 								   label.toSymbolic(),
 								   EList.make(src1.toSymbolic(),
 											  src2.toSymbolic()),
 								   dest.toSymbolic());
 			else
 				return ETuple.make(opcode.symbol,
-								   ct.extFun(ext_fun_ref).fun,
+								   ext_fun.fun,
 								   label.toSymbolic(),
 								   src1.toSymbolic(),
 								   src2.toSymbolic(),
@@ -945,22 +952,22 @@ public class Insn implements BeamInstruction {
 
 	public static class LEISD extends Insn { // E.g. 'gc_bif1'
 		public final Label label;
-		public final int ext_fun_ref;
+		public final ExtFun ext_fun;
 		public final int i;
 		public final SourceOperand src;
 		public final DestinationOperand dest;
-		public LEISD(BeamOpcode opcode, Label label, int ext_fun_ref, int i, SourceOperand src, DestinationOperand dest) {
+		public LEISD(BeamOpcode opcode, Label label, ExtFun ext_fun, int i, SourceOperand src, DestinationOperand dest) {
 			super(opcode);
 			this.label = label;
-			this.ext_fun_ref = ext_fun_ref;
+			this.ext_fun = ext_fun;
 			this.i = i;
 			this.src = src;
 			this.dest = dest;
 		}
-		public ETuple toSymbolic(CodeTables ct) {
+		public ETuple toSymbolic() {
 			//TODO: If is_gc_bif...
 			return ETuple.make(GCBIF_ATOM,
-							   ct.extFun(ext_fun_ref).fun,
+							   ext_fun.fun,
 							   label.toSymbolic(),
 							   new ESmall(i),
 							   EList.make(src.toSymbolic()),
@@ -970,24 +977,24 @@ public class Insn implements BeamInstruction {
 
 	public static class LEISSD extends Insn { // E.g. 'gc_bif2'
 		public final Label label;
-		public final int ext_fun_ref;
+		public final ExtFun ext_fun;
 		public final int i;
 		public final SourceOperand src1;
 		public final SourceOperand src2;
 		public final DestinationOperand dest;
-		public LEISSD(BeamOpcode opcode, Label label, int ext_fun_ref, int i, SourceOperand src1, SourceOperand src2, DestinationOperand dest) {
+		public LEISSD(BeamOpcode opcode, Label label, ExtFun ext_fun, int i, SourceOperand src1, SourceOperand src2, DestinationOperand dest) {
 			super(opcode);
 			this.label = label;
-			this.ext_fun_ref = ext_fun_ref;
+			this.ext_fun = ext_fun;
 			this.i = i;
 			this.src1 = src1;
 			this.src2 = src2;
 			this.dest = dest;
 		}
-		public ETuple toSymbolic(CodeTables ct) {
+		public ETuple toSymbolic() {
 			if (opcode == BeamOpcode.gc_bif2)
 				return ETuple.make(GCBIF_ATOM,
-								   ct.extFun(ext_fun_ref).fun,
+								   ext_fun.fun,
 								   label.toSymbolic(),
 								   new ESmall(i),
 								   EList.make(src1.toSymbolic(),
@@ -995,7 +1002,7 @@ public class Insn implements BeamInstruction {
 								   dest.toSymbolic());
 			else
 				return ETuple.make(opcode.symbol,
-								   ct.extFun(ext_fun_ref).fun,
+								   ext_fun.fun,
 								   label.toSymbolic(),
 								   new ESmall(i),
 								   src1.toSymbolic(),
@@ -1021,7 +1028,7 @@ public class Insn implements BeamInstruction {
 			this.i4 = i4;
 			this.i5 = i5;
 		}
-		public ETuple toSymbolic(CodeTables ct) {
+		public ETuple toSymbolic() {
 			if (opcode == BeamOpcode.bs_skip_bits2)
 				return ETuple.make(TEST_ATOM,
 								   opcode.symbol,
@@ -1060,7 +1067,7 @@ public class Insn implements BeamInstruction {
 			this.dest = dest;
 			this.is_test = is_test;
 		}
-		public ETuple toSymbolic(CodeTables ct) {
+		public ETuple toSymbolic() {
 			if (is_test)
 				return ETuple.make(TEST_ATOM,
 								   opcode.symbol,
@@ -1092,7 +1099,7 @@ public class Insn implements BeamInstruction {
 			this.defaultLabel = defaultLabel;
 			this.jumpTable = jumpTable;
 		}
-		public ETuple toSymbolic(CodeTables ct) {
+		public ETuple toSymbolic() {
 			return ETuple.make(opcode.symbol,
 							   src.toSymbolic(),
 							   defaultLabel.toSymbolic(),
@@ -1117,7 +1124,7 @@ public class Insn implements BeamInstruction {
 			this.i7 = i7;
 			this.src8 = src8;
 		}
-		public ETuple toSymbolic(CodeTables ct) {
+		public ETuple toSymbolic() {
 			return ETuple.make(opcode.symbol,
 							   label.toSymbolic(),
 							   i2.toSymbolic(),
@@ -1145,7 +1152,7 @@ public class Insn implements BeamInstruction {
 			this.i5 = i5;
 			this.dest = dest;
 		}
-		public ETuple toSymbolic(CodeTables ct) {
+		public ETuple toSymbolic() {
 			return ETuple.make(opcode.symbol,
 							   label.toSymbolic(),
 							   src2.toSymbolic(),

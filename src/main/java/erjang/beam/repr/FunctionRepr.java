@@ -35,12 +35,10 @@ import erjang.ESeq;
 public class FunctionRepr {
 	protected FunctionInfo sig;
 	protected List<Insn> body;
-	protected CodeTables ct;
 
-	public FunctionRepr(FunctionInfo sig, List<Insn> body, CodeTables ct) {
+	public FunctionRepr(FunctionInfo sig, List<Insn> body) {
 		this.sig = sig;
 		this.body = body;
-		this.ct = ct;
 	}
 
 	//==================== Visitation ====================
@@ -57,7 +55,7 @@ public class FunctionRepr {
 				if (bv != null) bv.visitEnd();
 				bv = fv.visitLabeledBlock(((Insn.I)insn).i1);
 			} else {
-				EObject symInsn0 = insn.toSymbolic(ct);
+				EObject symInsn0 = insn.toSymbolic();
 				ETuple symInsn = (symInsn0 instanceof ETuple)?
 					((ETuple)symInsn0) : ETuple.make(symInsn0);
 				bv.visitInsn(insn.opcode, symInsn);
@@ -72,7 +70,7 @@ public class FunctionRepr {
 		EObject[] symBody = new EObject[body.size()];
 		int i = 0;
 		for (Insn insn : body) {
-			symBody[i++] = insn.toSymbolic(ct);
+			symBody[i++] = insn.toSymbolic();
 		}
 
 		ETuple fun = ETuple.make(CodeAtoms.FUNCTION_ATOM,

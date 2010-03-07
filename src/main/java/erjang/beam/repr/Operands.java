@@ -191,12 +191,10 @@ public class Operands {
 
     public static class BitString extends Literal {
 		protected final EBitString value;
-		protected final int bits;
-		public BitString(int start, int bits, CodeTables ct) {
-			this.bits = bits;
-			value = ct.bitstring(start,bits);
+		public BitString(EBitString value) {
+			this.value = value;
 		}
-		public int bitLength() {return bits;}
+		public long bitLength() {return value.bitSize();}
 
 		@Override
 		public EObject toSymbolic() {
@@ -206,8 +204,8 @@ public class Operands {
 
     public static class ByteString extends Literal {
 		protected final EString value;
-		public ByteString(int start, int bytes, CodeTables ct) {
-			value = ct.string(start,bytes);
+		public ByteString(EString value) {
+			this.value = value;
 	}
 		public int byteLength() {return value.length();}
 

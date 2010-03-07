@@ -189,7 +189,7 @@ public class BeamLoader extends CodeTables {
 			}
 			if (newFI != null && newFI != fi) { // Do switch
 				if (fi != null) { // Add previous
-					FunctionRepr fun = new FunctionRepr(fi, currentFunctionBody, this);
+					FunctionRepr fun = new FunctionRepr(fi, currentFunctionBody);
 					functions.add(fun);
 				}
 				fi = newFI;
@@ -490,7 +490,7 @@ public class BeamLoader extends CodeTables {
 			case make_fun2:
 			{
 				int fun_ref = readCodeInteger();
-				return new Insn.F(opcode, fun_ref);
+				return new Insn.F(opcode, fun_ref, anonFun(fun_ref));
 			}
 
 			case try_end:
@@ -530,7 +530,8 @@ public class BeamLoader extends CodeTables {
 			{
 				int i1 = readCodeInteger();
 				Label label = readLabel();
-				return new Insn.IL(opcode, i1, label, true);
+				return new Insn.IL(opcode, i1, label,
+								   functionAtLabel(label.nr));
 			}
 
 			case call_ext:
@@ -538,7 +539,7 @@ public class BeamLoader extends CodeTables {
 			{
 				int i1 = readCodeInteger();
 				int ext_fun_ref = readCodeInteger();
-				return new Insn.IE(opcode, i1, ext_fun_ref);
+				return new Insn.IE(opcode, i1, extFun(ext_fun_ref));
 			}
 
 			case bs_save2:
@@ -648,9 +649,9 @@ public class BeamLoader extends CodeTables {
 			case call_ext_last:
 			{
 				int arity = readCodeInteger();
-				int fun_ref = readCodeInteger();
+				int ext_fun_ref = readCodeInteger();
 				int save = readCodeInteger();
-				return new Insn.IEI(opcode, arity, fun_ref, save);
+				return new Insn.IEI(opcode, arity, extFun(ext_fun_ref), save);
 			}
 
 			case put_list:
@@ -724,7 +725,8 @@ public class BeamLoader extends CodeTables {
 				int i1 = readCodeInteger();
 				Label label = readLabel();
 				int i3 = readCodeInteger();
-				return new Insn.ILI(opcode, i1, label, i3, true);
+				return new Insn.ILI(opcode, i1, label, i3,
+									functionAtLabel(label.nr));
 			}
 
 			case fadd:
@@ -887,14 +889,14 @@ public class BeamLoader extends CodeTables {
 				Label optLabel = readOptionalLabel();
 				int ext_fun_ref = readCodeInteger();
 				DestinationOperand dest = readDestination();
-				return new Insn.LED(opcode, optLabel, ext_fun_ref, dest, true);
+				return new Insn.LED(opcode, optLabel, extFun(ext_fun_ref), dest, true);
 			}
 			case bif1: {
 				Label optLabel = readOptionalLabel();
 				int ext_fun_ref = readCodeInteger();
 				SourceOperand arg = readSource();
 				DestinationOperand dest = readDestination();
-				return new Insn.LESD(opcode, optLabel, ext_fun_ref, arg, dest);
+				return new Insn.LESD(opcode, optLabel, extFun(ext_fun_ref), arg, dest);
 			}
 			case bif2: {
 				Label optLabel = readOptionalLabel();
@@ -902,7 +904,7 @@ public class BeamLoader extends CodeTables {
 				SourceOperand arg1 = readSource();
 				SourceOperand arg2 = readSource();
 				DestinationOperand dest = readDestination();
-				return new Insn.LESSD(opcode, optLabel, ext_fun_ref, arg1, arg2, dest);
+				return new Insn.LESSD(opcode, optLabel, extFun(ext_fun_ref), arg1, arg2, dest);
 			}
 
 			case gc_bif1: {
@@ -911,7 +913,7 @@ public class BeamLoader extends CodeTables {
 				int ext_fun_ref = readCodeInteger();
 				SourceOperand arg = readSource();
 				DestinationOperand dest = readDestination();
-				return new Insn.LEISD(opcode, optLabel, ext_fun_ref, save, arg, dest);
+				return new Insn.LEISD(opcode, optLabel, extFun(ext_fun_ref), save, arg, dest);
 			}
 			case gc_bif2: {
 				Label optLabel = readOptionalLabel();
@@ -920,7 +922,7 @@ public class BeamLoader extends CodeTables {
 				SourceOperand arg1 = readSource();
 				SourceOperand arg2 = readSource();
 				DestinationOperand dest = readDestination();
-				return new Insn.LEISSD(opcode, optLabel, ext_fun_ref, save, arg1, arg2, dest);
+				return new Insn.LEISSD(opcode, optLabel, extFun(ext_fun_ref), save, arg1, arg2, dest);
 			}
 
 			default:
@@ -996,12 +998,12 @@ public class BeamLoader extends CodeTables {
     public BitString readBitstringRef() throws IOException {
 		int bits  = readCodeInteger();
 		int start = readCodeInteger();
-		return new BitString(start, bits, this);
+		return new BitString(bitstring(start,bits));
     }
     public ByteString readBytestringRef() throws IOException {
 		int bytes  = readCodeInteger();
 		int start = readCodeInteger();
-		return new ByteString(start, bytes, this);
+		return new ByteString(string(start,bytes));
     }
 
     public SelectList readSelectList() throws IOException {
