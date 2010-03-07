@@ -59,6 +59,7 @@ import erjang.beam.repr.Operands.SourceOperand;
 import erjang.beam.repr.Operands.TableLiteral;
 import erjang.beam.repr.Operands.XReg;
 import erjang.beam.repr.Operands.YReg;
+import erjang.beam.repr.ExtFun;
 
 public class BeamLoader extends CodeTables {
     static final boolean DEBUG = false;
@@ -350,6 +351,8 @@ public class BeamLoader extends CodeTables {
 		}
     }
 
+	/** readImportSection
+	 *  Depends on atom table. */
     public void readImportSection() throws IOException {
 		if (DEBUG) System.err.println("readImportSection");
 		int nImports = in.read4BE();
@@ -359,9 +362,10 @@ public class BeamLoader extends CodeTables {
 			int m_atm_no = in.read4BE();
 			int f_atm_no = in.read4BE();
 			int arity    = in.read4BE();
-			externalFuns[i] = new ExtFun(m_atm_no, f_atm_no, arity);
+			EAtom mod = atom(m_atm_no), fun = atom(f_atm_no);
+			externalFuns[i] = new ExtFun(mod, fun, arity);
 			if (DEBUG && atoms != null) {
-				System.err.println("- #"+(i+1)+": "+atom(m_atm_no)+":"+atom(f_atm_no)+"/"+arity);
+				System.err.println("- #"+(i+1)+": "+mod+":"+fun+"/"+arity);
 			}
 		}
     }

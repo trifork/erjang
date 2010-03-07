@@ -398,7 +398,7 @@ public class Insn implements BeamInstruction {
 		public ETuple toSymbolic(CodeTables ct) {
 			if (is_bif)
 				return ETuple.make(BIF_ATOM,
-								   ct.atom(ct.extFun(ext_fun_ref).fun),
+								   ct.extFun(ext_fun_ref).fun,
 								   toSymbolic_nf(label, ct),
 								   ERT.NIL,
 								   dest.toSymbolic(ct));
@@ -898,13 +898,13 @@ public class Insn implements BeamInstruction {
 		public ETuple toSymbolic(CodeTables ct) {
 			if (opcode == BeamOpcode.bif1)
 				return ETuple.make(BIF_ATOM,
-								   ct.atom(ct.extFun(ext_fun_ref).fun),
+								   ct.extFun(ext_fun_ref).fun,
 								   label.toSymbolic(ct),
 								   EList.make(src.toSymbolic(ct)),
 								   dest.toSymbolic(ct));
 			else
 				return ETuple.make(opcode.symbol,
-								   ct.atom(ct.extFun(ext_fun_ref).fun),
+								   ct.extFun(ext_fun_ref).fun,
 								   label.toSymbolic(ct),
 								   src.toSymbolic(ct),
 								   dest.toSymbolic(ct));
@@ -928,14 +928,14 @@ public class Insn implements BeamInstruction {
 		public ETuple toSymbolic(CodeTables ct) {
 			if (opcode == BeamOpcode.bif2)
 				return ETuple.make(BIF_ATOM,
-								   ct.atom(ct.extFun(ext_fun_ref).fun),
+								   ct.extFun(ext_fun_ref).fun,
 								   label.toSymbolic(ct),
 								   EList.make(src1.toSymbolic(ct),
 											  src2.toSymbolic(ct)),
 								   dest.toSymbolic(ct));
 			else
 				return ETuple.make(opcode.symbol,
-								   ct.atom(ct.extFun(ext_fun_ref).fun),
+								   ct.extFun(ext_fun_ref).fun,
 								   label.toSymbolic(ct),
 								   src1.toSymbolic(ct),
 								   src2.toSymbolic(ct),
@@ -960,7 +960,7 @@ public class Insn implements BeamInstruction {
 		public ETuple toSymbolic(CodeTables ct) {
 			//TODO: If is_gc_bif...
 			return ETuple.make(GCBIF_ATOM,
-							   ct.atom(ct.extFun(ext_fun_ref).fun),
+							   ct.extFun(ext_fun_ref).fun,
 							   label.toSymbolic(ct),
 							   new ESmall(i),
 							   EList.make(src.toSymbolic(ct)),
@@ -987,7 +987,7 @@ public class Insn implements BeamInstruction {
 		public ETuple toSymbolic(CodeTables ct) {
 			if (opcode == BeamOpcode.gc_bif2)
 				return ETuple.make(GCBIF_ATOM,
-								   ct.atom(ct.extFun(ext_fun_ref).fun),
+								   ct.extFun(ext_fun_ref).fun,
 								   label.toSymbolic(ct),
 								   new ESmall(i),
 								   EList.make(src1.toSymbolic(ct),
@@ -995,7 +995,7 @@ public class Insn implements BeamInstruction {
 								   dest.toSymbolic(ct));
 			else
 				return ETuple.make(opcode.symbol,
-								   ct.atom(ct.extFun(ext_fun_ref).fun),
+								   ct.extFun(ext_fun_ref).fun,
 								   label.toSymbolic(ct),
 								   new ESmall(i),
 								   src1.toSymbolic(ct),
