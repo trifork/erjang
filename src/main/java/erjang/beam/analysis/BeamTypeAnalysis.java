@@ -72,6 +72,7 @@ import erjang.beam.ModuleVisitor;
 import erjang.beam.Arg.Kind;
 
 import erjang.beam.repr.Insn;
+import erjang.beam.repr.ExtFun;
 
 import static erjang.beam.CodeAtoms.*;
 
@@ -420,11 +421,13 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 				for (int insn_idx = 0; insn_idx < insns.size(); insn_idx++) {
 					Insn insn_ = insns.get(insn_idx);
-					ETuple insn = insn_.toSymbolicTuple();
 					BeamOpcode opcode = insn_.opcode();
 					TypeMap type_map = this.map[insn_idx];
 
 					switch (opcode) {
+					default: // Fall back to symbolic form:
+						ETuple insn = insn_.toSymbolicTuple();
+						switch (opcode) {
 					case func_info:
 						// System.err.print("go: " + insn);
 						vis.visitInsn(opcode, (Arg) new ExtFunc(insn.elm(2)
@@ -600,8 +603,9 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 					case call_ext:
 						do_call(vis, insn_idx, insn, false, true);
-						if (is_exceptional_call(insn))
+						if (is_exceptional_call(insn_)) {
 							vis.visitUnreachablePoint();
+						}
 						break;
 
 					case call:
@@ -953,7 +957,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					
 					default:
 						throw new Error("unhandled insn: " + insn);
-					}
+					}}
 
 				}
 			}
@@ -1231,7 +1235,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 			public void analyze0() {
 				TypeMap current = initial;
 				BeamOpcode last_opcode = BeamOpcode.NONE;
-				ETuple last_insn = null;
+				Insn last_insn = null;
 
 				map = new TypeMap[insns.size()];
 
@@ -1246,9 +1250,8 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 					map[insn_idx] = current;
 					Insn insn_ = insns.get(insn_idx);
-					ETuple insn = insn_.toSymbolicTuple();
 					BeamOpcode code = insn_.opcode();
-					last_opcode = code; last_insn = insn;
+					last_opcode = code; last_insn = insn_;
 					/*
 					 * System.out.println(name + "(" + bb_label + "):" + i +
 					 * " :: " + current + "" + insn);
@@ -1258,6 +1261,9 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						addExceptionEdge(current);
 
 					switch (code) {
+					default: // Fall back to symbolic form:
+						ETuple insn = insn_.toSymbolicTuple();
+						switch (code) {
 					case fmove:
 					case move: {
 						EObject src = insn.elm(2);
@@ -1776,7 +1782,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 					default:
 						throw new Error("unhandled: " + insn + "::" + current);
-					}
+					}}
 				}
 
 				update_max_regs(current);
@@ -1848,18 +1854,15 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 				}
 			}
 
-			boolean is_exceptional_call(ETuple insn) {
-				BeamOpcode opcode = BeamOpcode.get(insn.elm(1).testAtom());
+			boolean is_exceptional_call(Insn insn) {
+				BeamOpcode opcode = insn.opcode();
 				if (opcode == BeamOpcode.call_ext) {
-				    ETuple ft = insn.elm(3).testTuple();
-				    if (ft.elm(1) != EXTFUNC_ATOM) {
-					EAtom module   = ft.elm(1).testAtom();
-					EAtom function = ft.elm(2).testAtom();
-					int arity      = ft.elm(3).asInt();
-					if (module == ERLANG_ATOM &&
-					    function == ERROR_ATOM &&
-					    arity == 1) return true;
-				    }
+					Insn.IE spec_insn = (Insn.IE)insn;
+					ExtFun ext_fun = spec_insn.ext_fun;
+
+					if (ext_fun.mod == ERLANG_ATOM &&
+					    ext_fun.fun == ERROR_ATOM &&
+					    ext_fun.arity == 1) return true;
 				}
 				return false;
 			}
