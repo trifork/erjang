@@ -42,7 +42,12 @@ public class Insn implements BeamInstruction {
 	public EObject toSymbolic() {
 	    return opcode.symbol;
 	}
-
+	public final ETuple toSymbolicTuple() {
+		EObject symInsn0 = toSymbolic();
+		ETuple symInsn = (symInsn0 instanceof ETuple)?
+			((ETuple)symInsn0) : ETuple.make(symInsn0);
+		return symInsn;
+	}
 
 	private static EObject NOFAIL_REPR = ETuple.make(F_ATOM, new ESmall(0));
 	private static EObject START_REPR = ETuple.make(ATOM_ATOM, START_ATOM);

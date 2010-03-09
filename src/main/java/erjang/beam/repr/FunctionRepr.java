@@ -55,9 +55,6 @@ public class FunctionRepr {
 				if (bv != null) bv.visitEnd();
 				bv = fv.visitLabeledBlock(((Insn.I)insn).i1);
 			} else {
-				EObject symInsn0 = insn.toSymbolic();
-				ETuple symInsn = (symInsn0 instanceof ETuple)?
-					((ETuple)symInsn0) : ETuple.make(symInsn0);
 				bv.visitInsn(insn);
 			}
 		}

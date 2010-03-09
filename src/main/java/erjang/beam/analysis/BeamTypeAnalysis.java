@@ -262,7 +262,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 			for (int i : labels) {
 				lb = lbs.get(i);
 				if (lb.isDeadCode()) {
-					if (BeamOpcode.get(lb.insns.get(0).elm(1).testAtom()) == BeamOpcode.func_info) {
+					if (lb.insns.get(0).opcode() == BeamOpcode.func_info) {
 						// ignore this
 					} else {
 						System.err.println("UNREACHABLE " + lb.block_label);
@@ -405,8 +405,8 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 				throw new erjang.NotImplemented();
 				/*
 				for (int i = 0; i < insns.size(); i++) {
-					ETuple insn = insns.get(i);
-					BeamOpcode opcode = BeamOpcode.get(insn.elm(1).testAtom());
+					Insn insn = insns.get(i);
+					BeamOpcode opcode = insn.opcode();
 					vis.visitInsn(opcode, insn);
 				}
 				*/
@@ -419,8 +419,9 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 				vis.visitBegin(exh);
 
 				for (int insn_idx = 0; insn_idx < insns.size(); insn_idx++) {
-					ETuple insn = insns.get(insn_idx);
-					BeamOpcode opcode = BeamOpcode.get(insn.elm(1).testAtom());
+					Insn insn_ = insns.get(insn_idx);
+					ETuple insn = insn_.toSymbolicTuple();
+					BeamOpcode opcode = insn_.opcode();
 					TypeMap type_map = this.map[insn_idx];
 
 					switch (opcode) {
@@ -461,7 +462,11 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						break;
 					}
 
-					case arithfbif: {
+					case fadd:
+					case fsub:
+					case fmul:
+					case fdiv:
+					{
 						// System.err.println("gen: " + insn);
 						EAtom name = insn.elm(2).testAtom();
 						int failLabel = decode_labelref(insn.elm(3), type_map.exh);
@@ -477,7 +482,10 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						break;
 					}
 
-					case bif: {
+					case bif0:
+					case bif1:
+					case bif2:
+					{
 						// System.err.println("gen: " + insn);
 						EAtom name = insn.elm(2).testAtom();
 						int failLabel = decode_labelref(insn.elm(3), type_map.exh);
@@ -493,7 +501,9 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						break;
 					}
 
-					case gc_bif: {
+ 					case gc_bif1:
+ 					case gc_bif2:
+					{
 						// System.err.println("gen: " + insn);
 						EAtom name = insn.elm(2).testAtom();
 						int failLabel = decode_labelref(insn.elm(3), type_map.exh);
@@ -509,7 +519,52 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						break;
 					}
 
-					case test:
+						// Tests:
+						// LS:
+					case is_integer:
+					case is_float:
+					case is_number:
+					case is_atom:
+					case is_pid:
+					case is_reference:
+					case is_port:
+					case is_nil:
+					case is_binary:
+					case is_list:
+					case is_nonempty_list:
+					case is_tuple:
+					case is_function:
+					case is_boolean:
+					case is_bitstr:
+						// LSI:
+					case test_arity:
+					case bs_test_tail2:
+					case bs_test_unit:
+						// LSS:
+					case is_lt:
+					case is_ge:
+					case is_eq:
+					case is_ne:
+					case is_eq_exact:
+					case is_ne_exact:
+					case is_function2:
+						// LSBi:
+					case bs_match_string:
+						// LSII:
+					case bs_skip_utf8:
+					case bs_skip_utf16:
+					case bs_skip_utf32:
+						// LSIID:
+					case bs_start_match2:
+					case bs_get_utf8:
+					case bs_get_utf16:
+					case bs_get_utf32:
+						// LSSII:
+					case bs_skip_bits2:
+						// LSISIID:
+					case bs_get_integer2:
+					case bs_get_float2:
+					case bs_get_binary2:
 						accept_2_test(vis, insn, insn_idx);
 						break;
 
@@ -1190,8 +1245,9 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					}
 
 					map[insn_idx] = current;
-					ETuple insn = insns.get(insn_idx);
-					BeamOpcode code = BeamOpcode.get(insn.elm(1).testAtom());
+					Insn insn_ = insns.get(insn_idx);
+					ETuple insn = insn_.toSymbolicTuple();
+					BeamOpcode code = insn_.opcode();
 					last_opcode = code; last_insn = insn;
 					/*
 					 * System.out.println(name + "(" + bb_label + "):" + i +
@@ -1248,7 +1304,11 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						continue next_insn;
 					}
 
-					case arithfbif: {
+					case fadd:
+					case fsub:
+					case fmul:
+					case fdiv:
+					{
 						// System.err.println(insn);
 						EAtom name = insn.elm(2).testAtom();
 						ESeq parms = insn.elm(4).testSeq();
@@ -1263,7 +1323,9 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						continue next_insn;
 					}
 
-					case gc_bif: {
+ 					case gc_bif1:
+ 					case gc_bif2:
+					{
 						// {gc_bif,BifName,F,Live,[A1,A2?],Reg};
 
 						boolean is_guard = false;
@@ -1288,7 +1350,10 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						continue next_insn;
 					}
 
-					case bif: {
+					case bif0:
+					case bif1:
+					case bif2:
+					{
 						// System.err.println(insn);
 						current = branch(current, insn.elm(3), insn_idx);
 
@@ -1305,13 +1370,59 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						continue next_insn;
 					}
 
-					case test: {
+						// Tests:
+						// LS:
+					case is_integer:
+					case is_float:
+					case is_number:
+					case is_atom:
+					case is_pid:
+					case is_reference:
+					case is_port:
+					case is_nil:
+					case is_binary:
+					case is_list:
+					case is_nonempty_list:
+					case is_tuple:
+					case is_function:
+					case is_boolean:
+					case is_bitstr:
+						// LSI:
+					case test_arity:
+					case bs_test_tail2:
+					case bs_test_unit:
+						// LSS:
+					case is_lt:
+					case is_ge:
+					case is_eq:
+					case is_ne:
+					case is_eq_exact:
+					case is_ne_exact:
+					case is_function2:
+						// LSBi:
+					case bs_match_string:
+						// LSII:
+					case bs_skip_utf8:
+					case bs_skip_utf16:
+					case bs_skip_utf32:
+						// LSIID:
+					case bs_start_match2:
+					case bs_get_utf8:
+					case bs_get_utf16:
+					case bs_get_utf32:
+						// LSSII:
+					case bs_skip_bits2:
+						// LSISIID:
+					case bs_get_integer2:
+					case bs_get_float2:
+					case bs_get_binary2:
+					{
 						try {
 							current = analyze_test(current, insn, insn_idx);
 						} catch (Error e) {
 							throw new Error(" at "
-									+ LabeledBlock.this.block_label + ":"
-									+ insn_idx, e);
+											+ LabeledBlock.this.block_label + ":"
+											+ insn_idx, e);
 						}
 						assert (current != null);
 						continue next_insn;
@@ -2065,7 +2176,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 				typeMap.add_succ(initial.bb);
 			}
 
-			List<ETuple> insns = new ArrayList<ETuple>();
+			List<Insn> insns = new ArrayList<Insn>();
 
 			@Override
 			public void visitEnd() {
@@ -2073,10 +2184,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 			@Override
 			public void visitInsn(Insn insn) {
-				EObject symInsn0 = insn.toSymbolic();
-				ETuple symInsn = (symInsn0 instanceof ETuple)?
-					((ETuple)symInsn0) : ETuple.make(symInsn0);
-				insns.add(symInsn);
+				insns.add(insn);
 			}
 
 			private TypeMap setType(TypeMap current, EObject dd, Type type) {
@@ -2155,17 +2263,17 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 			class BInsn implements BeamInstruction {
 
-				private final ETuple insn;
+				private final Insn insn;
 				private final TypeMap current;
 
-				public BInsn(ETuple insn, TypeMap current) {
+				public BInsn(Insn insn, TypeMap current) {
 					this.insn = insn;
 					this.current = current;
 				}
 
 				@Override
 				public BeamOpcode opcode() {
-					return BeamOpcode.get(insn.elm(1).testAtom());
+					return insn.opcode();
 				}
 
 				@Override

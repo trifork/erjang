@@ -1135,10 +1135,17 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				ensure_exception_handler_in_place();
 
 				switch (opcode) {
-				case gc_bif:
-				case bif:
-				case arithfbif:
-					
+				case bif0:
+				case bif1:
+				case bif2:
+
+				case gc_bif1:
+				case gc_bif2:
+
+				case fadd:
+				case fsub:
+				case fmul:
+				case fdiv:
 					Type[] parameterTypes = bif.getArgumentTypes();
 					push(in, parameterTypes, bif.isVirtual());
 					
