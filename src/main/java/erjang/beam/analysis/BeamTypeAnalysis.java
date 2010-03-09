@@ -73,6 +73,9 @@ import erjang.beam.Arg.Kind;
 
 import erjang.beam.repr.Insn;
 import erjang.beam.repr.ExtFun;
+import erjang.beam.repr.Operands;
+import static erjang.beam.repr.Operands.SourceOperand;
+import static erjang.beam.repr.Operands.DestinationOperand;
 
 import static erjang.beam.CodeAtoms.*;
 
@@ -1261,32 +1264,32 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						addExceptionEdge(current);
 
 					switch (code) {
-					default: // Fall back to symbolic form:
-						ETuple insn = insn_.toSymbolicTuple();
-						switch (code) {
 					case fmove:
 					case move: {
-						EObject src = insn.elm(2);
-						EObject dst = insn.elm(3);
+						Insn.SD sinsn = (Insn.SD) insn_;
+						SourceOperand src = sinsn.src;
+						DestinationOperand dst = sinsn.dest;
 
 						Type srcType = getType(current, src);
 
 						boolean boxed = false;
 						if (sizeof(current, src) > sizeof(current, dst)) {
-							// System.err.println(insn);
 							if (getType(current, src).equals(Type.DOUBLE_TYPE)) {
 								current = setType(current, dst, EDOUBLE_TYPE);
 								boxed = true;
 							} else {
-								throw new Error("why?" + insn);
+								throw new Error("why?" + insn_.toSymbolic());
 							}
 						}
 
 						if (!boxed) {
-							current = setType(current, (ETuple2) dst, srcType);
+							current = setType(current, dst, srcType);
 						}
 						continue next_insn;
 					}
+					default: // Fall back to symbolic form:
+						ETuple insn = insn_.toSymbolicTuple();
+						switch (code) {
 
 					case put_string: {
 						ETuple2 src = (ETuple2) insn.elm(3);
@@ -1889,6 +1892,21 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 				}
 			}
 
+			private int sizeof(TypeMap current, Operands.SourceOperand cell) {
+				if (cell instanceof Operands.XReg ||
+					cell instanceof Operands.YReg)
+					return 32;
+				if (cell instanceof Operands.FReg)
+					return 64;
+
+				Type t = getType(current, cell);
+				if (t == Type.DOUBLE_TYPE) {
+					return 64;
+				} else {
+					return 32;
+				}
+			}
+
 			private Type getBifResult(String module, String name, Type[] parmTypes,
 					boolean is_guard) {
 				return BIFUtil.getBifResult(module, name, parmTypes, is_guard);
@@ -2210,6 +2228,29 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 				return current;
 			}
 
+			private TypeMap setType(TypeMap current, DestinationOperand dst, Type type) {
+				{
+					Operands.FReg freg;
+					if ((freg = dst.testFReg()) != null) {
+						return current.setf(freg.nr, type);
+					}
+				}
+				type = type == Type.DOUBLE_TYPE ? EDOUBLE_TYPE : type;
+				{
+					Operands.XReg xreg;
+					if ((xreg = dst.testXReg()) != null) {
+						return current.setx(xreg.nr, type);
+					}
+				}
+				{
+					Operands.YReg yreg;
+					if ((yreg = dst.testYReg()) != null) {
+						return current.sety(yreg.nr, type);
+					}
+				}
+				throw new Error("unknown " + dst);
+			}
+
 			private Type getType(TypeMap current, EObject src) {
 
 				if (src instanceof ETuple2) {
@@ -2247,6 +2288,42 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 				throw new Error("unknown " + src);
 			}
+
+			private Type getType(TypeMap current, SourceOperand src) {
+				{
+					Operands.XReg xreg;
+					if ((xreg = src.testXReg()) != null)
+						return current.getx(xreg.nr);
+				}
+				{
+					Operands.YReg yreg;
+					if ((yreg = src.testYReg()) != null)
+						return current.gety(yreg.nr);
+				}
+				{
+					Operands.FReg freg;
+					if ((freg = src.testFReg()) != null)
+						return current.getf(freg.nr);
+				}
+				if ((src.testAtom()) != null)
+					return EATOM_TYPE;
+				else if ((src.testInt()) != null)
+					return ESMALL_TYPE;
+				else if ((src.testBigInt()) != null)
+						return EBIG_TYPE;
+				else if ((src.testFloat()) != null)
+						return Type.DOUBLE_TYPE;
+				else if (src instanceof Operands.Nil)
+					return ENIL_TYPE;
+				{
+					Operands.TableLiteral lit;
+					if ((lit = src.testTableLiteral()) != null)
+						return Type.getType(lit.value.getClass());
+				}
+
+				throw new Error("unknown " + src);
+			}
+
 
 			@Override
 			public BeamInstruction[] getInstructions() {
