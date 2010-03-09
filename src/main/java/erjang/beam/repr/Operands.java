@@ -56,11 +56,22 @@ public class Operands {
 			throw new IllegalArgumentException("Not a select list: "+this);
 		}
 		public AllocList asAllocList() {
-			throw new IllegalArgumentException("Not a alloc list: "+this);
+			throw new IllegalArgumentException("Not an alloc list: "+this);
 		}
 		public YReg asYReg() {
 			throw new IllegalArgumentException("Not a Y register: "+this);
 		}
+
+		public TableLiteral testTableLiteral() { return null; }
+		public Atom testAtom() { return null; }
+		public Int testInt() { return null; }
+		public BigInt testBigInt() { return null; }
+		public Float testFloat() { return null; }
+		public SelectList testSelectList() { return null; }
+		public AllocList testAllocList() { return null; }
+		public XReg testXReg() { return null; }
+		public YReg testYReg() { return null; }
+		public FReg testFReg() { return null; }
 
 		public abstract EObject toSymbolic();
     }
@@ -97,6 +108,8 @@ public class Operands {
     public static class Int extends Literal {
 		public final int value;
 		public Int(int value) {this.value=value;}
+		@Override
+		public Int testInt() {return this;}
 		public EObject toSymbolic() {
 			return ETuple.make(INTEGER_ATOM, new ESmall(value));
 		}
@@ -105,6 +118,8 @@ public class Operands {
     public static class BigInt extends Literal {
 		public final BigInteger value;
 		public BigInt(BigInteger value) {this.value=value;}
+		@Override
+		public BigInt testBigInt() {return this;}
 		public EObject toSymbolic() {
 			return ETuple.make(INTEGER_ATOM, new EBig(value));
 		}
@@ -113,6 +128,8 @@ public class Operands {
     public static class Float extends Literal {
 		public final double value;
 		public Float(double value) {this.value=value;}
+		@Override
+		public Float testFloat() {return this;}
 		public EObject toSymbolic() {
 			return ETuple.make(FLOAT_ATOM, new EDouble(value));
 		}
@@ -183,6 +200,8 @@ public class Operands {
 
 		@Override
 		public Atom asAtom() {return this;}
+		@Override
+		public Atom testAtom() {return this;}
 		public EAtom getEAtom() {return value;}
 		public EObject toSymbolic() {
 			return ETuple.make(ATOM_ATOM, value);
@@ -190,7 +209,7 @@ public class Operands {
     }
 
     public static class BitString extends Literal {
-		protected final EBitString value;
+		public  final EBitString value;
 		public BitString(EBitString value) {
 			this.value = value;
 		}
@@ -203,7 +222,7 @@ public class Operands {
     }
 
     public static class ByteString extends Literal {
-		protected final EString value;
+		public final EString value;
 		public ByteString(EString value) {
 			this.value = value;
 	}
@@ -216,8 +235,10 @@ public class Operands {
     }
 
     public static class TableLiteral extends Literal {
-		private EObject value;
+		public final EObject value;
 		public TableLiteral(EObject value) {this.value=value;}
+		@Override
+		public TableLiteral testTableLiteral() {return this;}
 		public EObject toSymbolic() {
 			return ETuple.make(LITERAL_ATOM, value);
 		}
@@ -238,6 +259,9 @@ public class Operands {
 		public final int nr;
 		public XReg(int nr) {this.nr=nr;}
 
+		@Override
+		public XReg testXReg() {return this;}
+
 		private static ArrayList<XReg> cache = new ArrayList();
 		public static XReg get(int nr) {
 			while (cache.size() <= nr) {
@@ -257,6 +281,8 @@ public class Operands {
 
 		@Override
 		public YReg asYReg() {return this;}
+		@Override
+		public YReg testYReg() {return this;}
 
 		private static ArrayList<YReg> cache = new ArrayList();
 		public static YReg get(int nr) {
@@ -274,6 +300,9 @@ public class Operands {
     public static class FReg extends DestinationOperand {
 		public final int nr;
 		public FReg(int nr) {this.nr=nr;}
+
+		@Override
+		public FReg testFReg() {return this;}
 
 		private static ArrayList<FReg> cache = new ArrayList();
 		public static FReg get(int nr) {
