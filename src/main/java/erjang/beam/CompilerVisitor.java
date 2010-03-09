@@ -1186,7 +1186,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			public void visitUnreachablePoint() {
 				mv.visitLdcInsn("Reached unreachable point.");
 				mv.visitInsn(DUP);
-				mv.visitMethodInsn(INVOKESPECIAL, "Ljava/lang/RuntimeException;", "<init>", "(Ljava/lang/String;)");
+				mv.visitMethodInsn(INVOKESPECIAL, "java/lang/RuntimeException", "<init>", "(Ljava/lang/String;)V");
 				mv.visitInsn(ATHROW);
 			}
 
