@@ -25,6 +25,7 @@ import erjang.ERT;
 import erjang.ESeq;
 import erjang.ESmall;
 import erjang.ETuple;
+import erjang.NotImplemented;
 
 import erjang.beam.repr.CodeTables;
 import erjang.beam.repr.Insn;
@@ -87,7 +88,8 @@ public class SymbolicBeamFileData implements BeamFileData {
 	}
 
 	private void visit_insns(EList insns, FunctionVisitor fv) {
-
+		throw new NotImplemented();
+		/*
 		BlockVisitor bbv = null;
 
 		for (ESeq insn = (ESeq) insns; insn != ERT.NIL; insn = insn.tail()) {
@@ -120,6 +122,7 @@ public class SymbolicBeamFileData implements BeamFileData {
 		if (bbv != null) {
 			bbv.visitEnd();
 		}
+		*/
 	}
 
 	private void visit_attributes(ModuleVisitor v) {

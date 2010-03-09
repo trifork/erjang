@@ -77,6 +77,8 @@ import erjang.NotImplemented;
 import erjang.beam.Arg.Kind;
 import erjang.m.erlang.ErlBif;
 
+import erjang.beam.repr.Insn;
+
 import static erjang.beam.CodeAtoms.*;
 
 /**
@@ -1825,7 +1827,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			 * erjang.ETuple)
 			 */
 			@Override
-			public void visitInsn(BeamOpcode opcode, ETuple et) {
+			public void visitInsn(Insn insn) {
 				throw new Error();
 			}
 

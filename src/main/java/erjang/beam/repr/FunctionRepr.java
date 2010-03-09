@@ -58,7 +58,7 @@ public class FunctionRepr {
 				EObject symInsn0 = insn.toSymbolic();
 				ETuple symInsn = (symInsn0 instanceof ETuple)?
 					((ETuple)symInsn0) : ETuple.make(symInsn0);
-				bv.visitInsn(insn.opcode, symInsn);
+				bv.visitInsn(insn);
 			}
 		}
 		if (bv != null) bv.visitEnd();

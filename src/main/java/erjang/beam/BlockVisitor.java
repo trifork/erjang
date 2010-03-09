@@ -19,11 +19,11 @@
 
 package erjang.beam;
 
-import erjang.ETuple;
+import erjang.beam.repr.Insn;
 
 public interface BlockVisitor {
 
-	public void visitInsn(BeamOpcode opcode, ETuple et);
+ 	public void visitInsn(Insn insn);
 	public void visitEnd();
 
 }
