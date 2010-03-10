@@ -1296,7 +1296,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 					case jump: {
 						Insn.L insn = (Insn.L) insn_;
-						current = branch(current, insn.label.nr, insn_idx);
+						current = branch(current, insn.label, insn_idx);
 						continue next_insn;
 
 					}
@@ -1324,34 +1324,24 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						continue next_insn;
 					}
 
-					default: // Fall back to symbolic form:
-						ETuple insn = insn_.toSymbolicTuple();
-						switch (code) {
-
  					case gc_bif1:
  					case gc_bif2:
 					{
 						// {gc_bif,BifName,F,Live,[A1,A2?],Reg};
 
-						boolean is_guard = false;
-						if (insn.elm(3).testTuple().elm(2).asInt() != 0) {
-							is_guard = true;
-						}
+						Insn.GcBif insn = (Insn.GcBif) insn_;
+						boolean is_guard = (insn.label.nr != 0);
 
-						// System.err.println(insn);
-						current = branch(current, insn.elm(3), insn_idx);
+						current = branch(current, insn.label, insn_idx);
 
-						EAtom name = insn.elm(2).testAtom();
-						ESeq parms = insn.elm(5).testSeq();
+						EAtom name = insn.ext_fun.fun;
+						SourceOperand[] parms = insn.argList();
 
-						checkArgs(current, parms, insn);
+						Type type = getBifResult("erlang", name.getName(),
+												 parmTypes(current, parms), is_guard);
 
-						Type type = getBifResult("erlang", name.getName(), parmTypes(
-								current, parms), is_guard);
+						current = setType(current, insn.dest, type);
 
-						current = setType(current, insn.elm(6), type);
-
-						// dump();
 						continue next_insn;
 					}
 
@@ -1359,21 +1349,24 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					case bif1:
 					case bif2:
 					{
-						// System.err.println(insn);
-						current = branch(current, insn.elm(3), insn_idx);
+						Insn.Bif insn = (Insn.Bif) insn_;
+						current = branch(current, insn.label, insn_idx);
 
-						EAtom name = insn.elm(2).testAtom();
-						ESeq parms = insn.elm(4).testSeq();
+						EAtom name = insn.ext_fun.fun;
+						SourceOperand[] parms = insn.argList();
 
-						checkArgs(current, parms, insn);
+						Type type = getBifResult("erlang", name.getName(),
+												 parmTypes(current, parms), false);
 
-						Type type = getBifResult("erlang", name.getName(), parmTypes(
-								current, parms), false);
-
-						current = setType(current, insn.elm(5), type);
+						current = setType(current, insn.dest, type);
 
 						continue next_insn;
 					}
+
+
+					default: // Fall back to symbolic form:
+						ETuple insn = insn_.toSymbolicTuple();
+						switch (code) {
 
 						// Tests:
 						// LS:
@@ -2147,6 +2140,10 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					target = tuple.elm(2).asInt();
 				} else target = -1;
 				return branch(current, target, idx);
+			}
+
+			private TypeMap branch(TypeMap current, Operands.Label target, int idx) {
+				return branch(current, target.nr, idx);
 			}
 
 			private TypeMap branch(TypeMap current, int target, int idx) {
