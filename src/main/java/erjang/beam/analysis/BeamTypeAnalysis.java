@@ -1266,9 +1266,9 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					switch (code) {
 					case fmove:
 					case move: {
-						Insn.SD sinsn = (Insn.SD) insn_;
-						SourceOperand src = sinsn.src;
-						DestinationOperand dst = sinsn.dest;
+						Insn.SD insn = (Insn.SD) insn_;
+						SourceOperand src = insn.src;
+						DestinationOperand dst = insn.dest;
 
 						Type srcType = getType(current, src);
 
@@ -1278,7 +1278,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 								current = setType(current, dst, EDOUBLE_TYPE);
 								boxed = true;
 							} else {
-								throw new Error("why?" + insn_.toSymbolic());
+								throw new Error("why?" + insn.toSymbolic());
 							}
 						}
 
@@ -1287,22 +1287,16 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						}
 						continue next_insn;
 					}
-					default: // Fall back to symbolic form:
-						ETuple insn = insn_.toSymbolicTuple();
-						switch (code) {
-
 					case put_string: {
-						ETuple2 src = (ETuple2) insn.elm(3);
-						assert(src.elm(1) == STRING_ATOM);
-						ESmall length = (ESmall) insn.elm(2);
-						EString value = (EString) src.elm(2);
-						EObject dst = insn.elm(4);
-						current = setType(current, (ETuple2) dst, ESEQ_TYPE);
+						Insn.ByD insn = (Insn.ByD) insn_;
+						DestinationOperand dst = insn.dest;
+						current = setType(current, dst, ESEQ_TYPE);
 						continue next_insn;
 					}
 
 					case jump: {
-						current = branch(current, insn.elm(2), insn_idx);
+						Insn.L insn = (Insn.L) insn_;
+						current = branch(current, insn.label.nr, insn_idx);
 						continue next_insn;
 
 					}
@@ -1318,19 +1312,21 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					case fmul:
 					case fdiv:
 					{
-						// System.err.println(insn);
-						EAtom name = insn.elm(2).testAtom();
-						ESeq parms = insn.elm(4).testSeq();
-
-						checkArgs(current, parms, insn);
-
-						Type type = getBifResult("erlang", name.getName(), parmTypes(
-								current, parms), false);
-
-						current = setType(current, insn.elm(5), type);
+						Insn.LSSD insn = (Insn.LSSD) insn_;
+						EAtom name = insn.opcode().symbol;
+						SourceOperand[] parms = new SourceOperand[] {
+							insn.src1, insn.src2
+						};
+						Type type = getBifResult("erlang", name.getName(),
+												 parmTypes(current, parms), false);
+						current = setType(current, insn.dest, type);
 
 						continue next_insn;
 					}
+
+					default: // Fall back to symbolic form:
+						ETuple insn = insn_.toSymbolicTuple();
+						switch (code) {
 
  					case gc_bif1:
  					case gc_bif2:
@@ -1938,6 +1934,21 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 				}
 			}
 
+			private Type[] parmTypes(TypeMap current, SourceOperand[] args) {
+				Type[] res = new Type[args.length];
+
+				for (int i=0; i<args.length; i++) {
+					SourceOperand arg = args[i];
+					Type argType = getType(current, arg);
+					if (argType == null) {
+						throw new Error("uninitialized " + arg);
+					}
+					res[i] = argType;
+				}
+
+				return res;
+			}
+
 			private TypeMap analyze_test(TypeMap current, ETuple insn,
 					int insn_idx) {
 
@@ -2127,18 +2138,21 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 			}
 
 			private TypeMap branch(TypeMap current, EObject nth, int idx) {
+				int target;
 				if (nth != NOFAIL_ATOM) {
-
 					ETuple tuple = nth.testTuple();
 					if (tuple.elm(1) != F_ATOM)
 						throw new Error("not a branch target: " + nth);
 
-					int target = tuple.elm(2).asInt();
-					if (target != 0) {
-						get_lb(target, false).merge_from(current);
-					}
-				}
+					target = tuple.elm(2).asInt();
+				} else target = -1;
+				return branch(current, target, idx);
+			}
 
+			private TypeMap branch(TypeMap current, int target, int idx) {
+				if (target > 0) {
+					get_lb(target, false).merge_from(current);
+				}
 				return current.clearLive(makeBasicBlock(block_label, idx + 1));
 			}
 
