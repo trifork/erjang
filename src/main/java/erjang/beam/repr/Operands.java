@@ -76,6 +76,15 @@ public class Operands {
 		public abstract EObject toSymbolic();
     }
 
+	public static ESeq toSymbolicList(Operand[] args) {
+		ESeq res = ERT.NIL;
+		for (int i = args.length-1; i >= 0; i--) {
+			res = res.cons(args[i].toSymbolic());
+		}
+		return res;
+	}
+
+
     public static abstract class SourceOperand extends Operand {
 		@Override
 		public SourceOperand asSource() {return this;}

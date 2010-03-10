@@ -889,14 +889,14 @@ public class BeamLoader extends CodeTables {
 				Label optLabel = readOptionalLabel();
 				int ext_fun_ref = readCodeInteger();
 				DestinationOperand dest = readDestination();
-				return new Insn.LED(opcode, optLabel, extFun(ext_fun_ref), dest, true);
+				return new Insn.Bif(opcode, optLabel, extFun(ext_fun_ref), dest);
 			}
 			case bif1: {
 				Label optLabel = readOptionalLabel();
 				int ext_fun_ref = readCodeInteger();
 				SourceOperand arg = readSource();
 				DestinationOperand dest = readDestination();
-				return new Insn.LESD(opcode, optLabel, extFun(ext_fun_ref), arg, dest);
+				return new Insn.Bif(opcode, optLabel, extFun(ext_fun_ref), arg, dest);
 			}
 			case bif2: {
 				Label optLabel = readOptionalLabel();
@@ -904,7 +904,7 @@ public class BeamLoader extends CodeTables {
 				SourceOperand arg1 = readSource();
 				SourceOperand arg2 = readSource();
 				DestinationOperand dest = readDestination();
-				return new Insn.LESSD(opcode, optLabel, extFun(ext_fun_ref), arg1, arg2, dest);
+				return new Insn.Bif(opcode, optLabel, extFun(ext_fun_ref), arg1, arg2, dest);
 			}
 
 			case gc_bif1: {
@@ -913,7 +913,7 @@ public class BeamLoader extends CodeTables {
 				int ext_fun_ref = readCodeInteger();
 				SourceOperand arg = readSource();
 				DestinationOperand dest = readDestination();
-				return new Insn.LEISD(opcode, optLabel, extFun(ext_fun_ref), save, arg, dest);
+				return new Insn.GcBif(opcode, optLabel, extFun(ext_fun_ref), save, arg, dest);
 			}
 			case gc_bif2: {
 				Label optLabel = readOptionalLabel();
@@ -922,7 +922,7 @@ public class BeamLoader extends CodeTables {
 				SourceOperand arg1 = readSource();
 				SourceOperand arg2 = readSource();
 				DestinationOperand dest = readDestination();
-				return new Insn.LEISSD(opcode, optLabel, extFun(ext_fun_ref), save, arg1, arg2, dest);
+				return new Insn.GcBif(opcode, optLabel, extFun(ext_fun_ref), save, arg1, arg2, dest);
 			}
 
 			default:

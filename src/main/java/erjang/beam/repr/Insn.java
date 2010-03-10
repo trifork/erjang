@@ -393,33 +393,6 @@ public class Insn implements BeamInstruction {
 		}
 	}
 
-	public static class LED extends Insn { // E.g. 'bif0'
-		public final Label label;
-		public final ExtFun ext_fun;
-		public final DestinationOperand dest;
-		public final boolean is_bif;
-		public LED(BeamOpcode opcode, Label label, ExtFun ext_fun, DestinationOperand dest, boolean is_bif) {
-			super(opcode);
-			this.label = label;
-			this.ext_fun = ext_fun;
-			this.dest = dest;
-			this.is_bif = is_bif;
-		}
-		public ETuple toSymbolic() {
-			if (is_bif)
-				return ETuple.make(BIF_ATOM,
-								   ext_fun.fun,
-								   labelToSymbolic_nf(label),
-								   ERT.NIL,
-								   dest.toSymbolic());
-			else
-				return ETuple.make(opcode.symbol,
-								   labelToSymbolic(label),
-								   ext_fun.toSymbolic(),
-								   dest.toSymbolic());
-		}
-	}
-
 	public static class LSI extends Insn { // E.g. 'test_arity'
 		public final Label label;
 		public final SourceOperand src;
@@ -895,127 +868,6 @@ public class Insn implements BeamInstruction {
 		}
 	}
 
-	public static class LESD extends Insn { // E.g. 'bif1'
-		public final Label label;
-		public final ExtFun ext_fun;
-		public final SourceOperand src;
-		public final DestinationOperand dest;
-		public LESD(BeamOpcode opcode, Label label, ExtFun ext_fun, SourceOperand src, DestinationOperand dest) {
-			super(opcode);
-			this.label = label;
-			this.ext_fun = ext_fun;
-			this.src = src;
-			this.dest = dest;
-		}
-		public ETuple toSymbolic() {
-			if (opcode == BeamOpcode.bif1)
-				return ETuple.make(BIF_ATOM,
-								   ext_fun.fun,
-								   label.toSymbolic(),
-								   EList.make(src.toSymbolic()),
-								   dest.toSymbolic());
-			else
-				return ETuple.make(opcode.symbol,
-								   ext_fun.fun,
-								   label.toSymbolic(),
-								   src.toSymbolic(),
-								   dest.toSymbolic());
-		}
-	}
-
-	public static class LESSD extends Insn { // E.g. 'bif2'
-		public final Label label;
-		public final ExtFun ext_fun;
-		public final SourceOperand src1;
-		public final SourceOperand src2;
-		public final DestinationOperand dest;
-		public LESSD(BeamOpcode opcode, Label label, ExtFun ext_fun, SourceOperand src1, SourceOperand src2, DestinationOperand dest) {
-			super(opcode);
-			this.label = label;
-			this.ext_fun = ext_fun;
-			this.src1 = src1;
-			this.src2 = src2;
-			this.dest = dest;
-		}
-		public ETuple toSymbolic() {
-			if (opcode == BeamOpcode.bif2)
-				return ETuple.make(BIF_ATOM,
-								   ext_fun.fun,
-								   label.toSymbolic(),
-								   EList.make(src1.toSymbolic(),
-											  src2.toSymbolic()),
-								   dest.toSymbolic());
-			else
-				return ETuple.make(opcode.symbol,
-								   ext_fun.fun,
-								   label.toSymbolic(),
-								   src1.toSymbolic(),
-								   src2.toSymbolic(),
-								   dest.toSymbolic());
-		}
-	}
-
-	public static class LEISD extends Insn { // E.g. 'gc_bif1'
-		public final Label label;
-		public final ExtFun ext_fun;
-		public final int i;
-		public final SourceOperand src;
-		public final DestinationOperand dest;
-		public LEISD(BeamOpcode opcode, Label label, ExtFun ext_fun, int i, SourceOperand src, DestinationOperand dest) {
-			super(opcode);
-			this.label = label;
-			this.ext_fun = ext_fun;
-			this.i = i;
-			this.src = src;
-			this.dest = dest;
-		}
-		public ETuple toSymbolic() {
-			//TODO: If is_gc_bif...
-			return ETuple.make(GCBIF_ATOM,
-							   ext_fun.fun,
-							   label.toSymbolic(),
-							   new ESmall(i),
-							   EList.make(src.toSymbolic()),
-							   dest.toSymbolic());
-		}
-	}
-
-	public static class LEISSD extends Insn { // E.g. 'gc_bif2'
-		public final Label label;
-		public final ExtFun ext_fun;
-		public final int i;
-		public final SourceOperand src1;
-		public final SourceOperand src2;
-		public final DestinationOperand dest;
-		public LEISSD(BeamOpcode opcode, Label label, ExtFun ext_fun, int i, SourceOperand src1, SourceOperand src2, DestinationOperand dest) {
-			super(opcode);
-			this.label = label;
-			this.ext_fun = ext_fun;
-			this.i = i;
-			this.src1 = src1;
-			this.src2 = src2;
-			this.dest = dest;
-		}
-		public ETuple toSymbolic() {
-			if (opcode == BeamOpcode.gc_bif2)
-				return ETuple.make(GCBIF_ATOM,
-								   ext_fun.fun,
-								   label.toSymbolic(),
-								   new ESmall(i),
-								   EList.make(src1.toSymbolic(),
-											  src2.toSymbolic()),
-								   dest.toSymbolic());
-			else
-				return ETuple.make(opcode.symbol,
-								   ext_fun.fun,
-								   label.toSymbolic(),
-								   new ESmall(i),
-								   src1.toSymbolic(),
-								   src2.toSymbolic(),
-								   dest.toSymbolic());
-		}
-	}
-
 	public static class LSSII extends Insn { // E.g. 'bs_skip_bits2'
 		public final Label label;
 		public final SourceOperand src2;
@@ -1089,6 +941,77 @@ public class Insn implements BeamInstruction {
 	}
 
 	//============================================================
+
+	public static class Bif extends Insn { // 'bif0-2'
+		public final Label label;
+		public final ExtFun ext_fun;
+		public final SourceOperand[] args;
+		public final DestinationOperand dest;
+		protected Bif(BeamOpcode opcode, Label label, ExtFun ext_fun, SourceOperand[] args, DestinationOperand dest) {
+			super(opcode);
+			this.label = label;
+			this.ext_fun = ext_fun;
+			this.dest = dest;
+			this.args = args;
+		}
+
+		private static SourceOperand[] NO_ARGS = new SourceOperand[] {};
+		public Bif(BeamOpcode opcode, Label label, ExtFun ext_fun, DestinationOperand dest) {
+			this(opcode, label, ext_fun, NO_ARGS, dest);
+		}
+		public Bif(BeamOpcode opcode, Label label, ExtFun ext_fun, SourceOperand src, DestinationOperand dest) {
+			this(opcode, label, ext_fun, new SourceOperand[] {src}, dest);
+		}
+		public Bif(BeamOpcode opcode, Label label, ExtFun ext_fun, SourceOperand src1, SourceOperand src2, DestinationOperand dest) {
+			this(opcode, label, ext_fun, new SourceOperand[] {src1, src2}, dest);
+		}
+
+		public SourceOperand[] argList() {return args;}
+
+		public ETuple toSymbolic() {
+			return ETuple.make(BIF_ATOM,
+							   ext_fun.fun,
+							   labelToSymbolic_nf(label),
+							   Operands.toSymbolicList(args),
+							   dest.toSymbolic());
+		}
+	}
+
+
+
+	public static class GcBif extends Insn { // 'gc_bif1-2'
+		public final Label label;
+		public final ExtFun ext_fun;
+		public final int i;
+		public final SourceOperand[] args;
+		public final DestinationOperand dest;
+		protected GcBif(BeamOpcode opcode, Label label, ExtFun ext_fun, int i, SourceOperand[] args, DestinationOperand dest) {
+			super(opcode);
+			this.label = label;
+			this.ext_fun = ext_fun;
+			this.i = i;
+			this.args = args;
+			this.dest = dest;
+		}
+
+		public GcBif(BeamOpcode opcode, Label label, ExtFun ext_fun, int i, SourceOperand src, DestinationOperand dest) {
+			this(opcode, label, ext_fun, i, new SourceOperand[]{src}, dest);
+		}
+		public GcBif(BeamOpcode opcode, Label label, ExtFun ext_fun, int i, SourceOperand src1, SourceOperand src2, DestinationOperand dest) {
+			this(opcode, label, ext_fun, i, new SourceOperand[]{src1,src2}, dest);
+		}
+
+		public SourceOperand[] argList() {return args;}
+
+		public ETuple toSymbolic() {
+			return ETuple.make(GCBIF_ATOM,
+							   ext_fun.fun,
+							   label.toSymbolic(),
+							   new ESmall(i),
+							   Operands.toSymbolicList(args),
+							   dest.toSymbolic());
+		}
+	}
 
 	public static class Select extends Insn { // E.g. 'select_val'
 		public final SourceOperand src;
@@ -1167,5 +1090,4 @@ public class Insn implements BeamInstruction {
 							   dest.toSymbolic());
 		}
 	}
-
 }
