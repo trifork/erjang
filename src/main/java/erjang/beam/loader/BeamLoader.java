@@ -545,14 +545,15 @@ public class BeamLoader extends CodeTables {
 			case bs_save2:
 			case bs_restore2:
 			{
-				SourceOperand src = readSource();
+				DestinationOperand dest = readDestination();
+
 				int i2;
 				if ((peekTag() & 0x7) == ATOM4_TAG) {
 					if (readAtom().getEAtom() != START_ATOM)
 						throw new IOException("integer or 'start' expected");
 					i2 = -1;
 				} else i2 = readCodeInteger();
-				return new Insn.SI(opcode, src, i2, true);
+				return new Insn.DI(opcode, dest, i2, true);
 			}
 
 			case move:
@@ -817,21 +818,18 @@ public class BeamLoader extends CodeTables {
 			case bs_init_bits:
 			{
 				Label label = readOptionalLabel();
+				SourceOperand src2;
 				if ((peekTag() & 0x7) == CODEINT4_TAG) {
 					int i2 = readCodeInteger();
-					int i3 = readCodeInteger();
-					int i4 = readCodeInteger();
-					int i5 = readCodeInteger();
-					DestinationOperand dest = readDestination();
-					return new Insn.LIIIID(opcode, label, i2, i3, i4, i5, dest);
+					src2 = new Operands.Int(i2);
 				} else {
-					SourceOperand src2 = readSource();
-					int i3 = readCodeInteger();
-					int i4 = readCodeInteger();
-					int i5 = readCodeInteger();
-					DestinationOperand dest = readDestination();
-					return new Insn.LSIIID(opcode, label, src2, i3, i4, i5, dest, true);
+					src2 = readSource();
 				}
+				int i3 = readCodeInteger();
+				int i4 = readCodeInteger();
+				int i5 = readCodeInteger();
+				DestinationOperand dest = readDestination();
+				return new Insn.LSIIID(opcode, label, src2, i3, i4, i5, dest, true);
 			}
 
 			case bs_skip_bits2:
@@ -867,8 +865,8 @@ public class BeamLoader extends CodeTables {
 				int i5 = readCodeInteger();
 				SourceOperand src6 = readSource();
 				int i7 = readCodeInteger();
-				SourceOperand src8 = readSource();
-				return new Insn.BSAppend(opcode, label, src2, i3, i4, i5, src6, i7, src8);
+				DestinationOperand dest8 = readDestination();
+				return new Insn.BSAppend(opcode, label, src2, i3, i4, i5, src6, i7, dest8);
 			}
 
 			case bs_private_append: // LSISID

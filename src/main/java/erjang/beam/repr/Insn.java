@@ -163,24 +163,24 @@ public class Insn implements BeamInstruction {
 		}
 	}
 
-	public static class SI extends Insn { // E.g. 'bs_save2'
-		public final SourceOperand src;
+	public static class DI extends Insn { // E.g. 'bs_save2'
+		public final DestinationOperand dest;
 		public final int i2;
 		public final boolean is_saverestore;
-		public SI(BeamOpcode opcode, SourceOperand src, int i2, boolean is_saverestore) {
+		public DI(BeamOpcode opcode, DestinationOperand dest, int i2, boolean is_saverestore) {
 			super(opcode);
-			this.src = src;
+			this.dest = dest;
 			this.i2 = i2;
 			this.is_saverestore = is_saverestore;
 		}
 		public ETuple toSymbolic() {
 			if (is_saverestore)
 				return ETuple.make(opcode.symbol,
-								   src.toSymbolic(),
+								   dest.toSymbolic(),
 								   (i2==-1 ? START_REPR : new ESmall(i2)));
 			else
 				return ETuple.make(opcode.symbol,
-								   src.toSymbolic(),
+								   dest.toSymbolic(),
 								   new ESmall(i2));
 		}
 	}
@@ -275,15 +275,13 @@ public class Insn implements BeamInstruction {
 		}
 	}
 
-	public static class IL extends Insn { // E.g. 'call'
-		public final int i1;
+	public static class IL extends I { // E.g. 'call'
 		public final Label label;
 		public final boolean is_call;
 		public final FunctionInfo functionAtLabel;
 
 		public IL(BeamOpcode opcode, int i1, Label label,  FunctionInfo fal) {
-			super(opcode);
-			this.i1 = i1;
+			super(opcode, i1);
 			this.label = label;
 			this.is_call = true;
 			this.functionAtLabel = fal;
@@ -339,12 +337,10 @@ public class Insn implements BeamInstruction {
 		}
 	}
 
-	public static class IE extends Insn { // E.g. 'call_ext'
-		public final int i1;
+	public static class IE extends I { // E.g. 'call_ext'
 		public final ExtFun ext_fun;
 		public IE(BeamOpcode opcode, int i1, ExtFun ext_fun) {
-			super(opcode);
-			this.i1 = i1;
+			super(opcode, i1);
 			this.ext_fun = ext_fun;
 		}
 		public ETuple toSymbolic() {
@@ -558,18 +554,13 @@ public class Insn implements BeamInstruction {
 	}
 
 
-	public static class ILI extends Insn { // E.g. 'call'
-		public final int i1, i3;
-		public final Label label;
+	public static class ILI extends IL { // E.g. 'call'
+		public final int i3;
 		public final boolean is_call;
-		public final FunctionInfo functionAtLabel;
 		public ILI(BeamOpcode opcode, int i1, Label label, int i3, FunctionInfo fal) {
-			super(opcode);
-			this.i1 = i1;
-			this.label = label;
+			super(opcode, i1, label, fal);
 			this.i3 = i3;
 			this.is_call = true;
-			this.functionAtLabel = fal;
 		}
 
 		public ETuple toSymbolic() {
@@ -586,12 +577,11 @@ public class Insn implements BeamInstruction {
 		}
 	}
 
-	public static class IEI extends Insn { // E.g. 'call'
-		public final int i1, i3;
+	public static class IEI extends I { // E.g. 'call'
+		public final int i3;
 		public final ExtFun ext_fun;
 		public IEI(BeamOpcode opcode, int i1, ExtFun ext_fun, int i3) {
-			super(opcode);
-			this.i1 = i1;
+			super(opcode, i1);
 			this.ext_fun = ext_fun;
 			this.i3 = i3;
 		}
@@ -796,38 +786,7 @@ public class Insn implements BeamInstruction {
 		}
 	}
 
-	public static class LIIIID extends Insn { // E.g. 'bs_init2'
-		public final Label label;
-		public final int i2, i3, i4,i5;
-		public final DestinationOperand dest;
-		public LIIIID(BeamOpcode opcode, Label label,
-					  int i2, int i3, int i4, int i5,
-					  DestinationOperand dest)
-		{
-			super(opcode);
-			this.label = label;
-			this.i2 = i2;
-			this.i3 = i3;
-			this.i4 = i4;
-			this.i5 = i5;
-			this.dest = dest;
-		}
-
-		public ETuple toSymbolic() {
-			if (opcode == BeamOpcode.bs_init2)
-				return ETuple.make(opcode.symbol,
-								   labelToSymbolic(label),
-								   new ESmall(i2),
-								   new ESmall(i3),
-								   new ESmall(i4),
-								   bsFieldFlagsToSymbolic(i5),
-								   dest.toSymbolic());
-			else
-				throw new erjang.NotImplemented();
-		}
-	}
-
-	public static class LSIIID extends Insn { // E.g. 'bs_init2' v2
+	public static class LSIIID extends Insn { // E.g. 'bs_init2'
 		public final Label label;
 		public final SourceOperand src2;
 		public final int i3, i4,i5;
@@ -1017,12 +976,13 @@ public class Insn implements BeamInstruction {
 	}
 
 	public static class BSAppend extends Insn { // E.g. 'bs_append'
-		// LSIIISIS
+		// LSIIISID
 		public final Label label;
 		public final SourceOperand i2;
 		public final int i3, i4, i5, i7;
-		public final SourceOperand src6, src8;
-		public BSAppend(BeamOpcode opcode, Label label, SourceOperand i2, int i3, int i4, int i5, SourceOperand src6, int i7, SourceOperand src8) {
+		public final SourceOperand src6;
+		public final DestinationOperand dest8;
+		public BSAppend(BeamOpcode opcode, Label label, SourceOperand i2, int i3, int i4, int i5, SourceOperand src6, int i7, DestinationOperand dest8) {
 			super(opcode);
 			this.label = label;
 			this.i2 = i2;
@@ -1031,7 +991,7 @@ public class Insn implements BeamInstruction {
 			this.i5 = i5;
 			this.src6 = src6;
 			this.i7 = i7;
-			this.src8 = src8;
+			this.dest8 = dest8;
 		}
 		public ETuple toSymbolic() {
 			return ETuple.make(opcode.symbol,
@@ -1042,7 +1002,7 @@ public class Insn implements BeamInstruction {
 							   new ESmall(i5),
 							   src6.toSymbolic(),
 							   bsFieldFlagsToSymbolic(i7),
-							   src8.toSymbolic());
+							   dest8.toSymbolic());
 		}
 	}
 
