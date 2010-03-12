@@ -1652,18 +1652,12 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						continue next_insn;
 					}
 
-					default: // Fall back to symbolic form:
-						ETuple insn = insn_.toSymbolicTuple();
-						switch (code) {
-
 						// we loose the type of the result
-
-					case apply_last:
-						is_tail_recursive = true;
 					case apply:
 					case call:
 					case call_ext: {
-						int argCount = insn.elm(2).asInt();
+						Insn.I insn = (Insn.I) insn_;
+						int argCount = insn.i1;
 						current.touchx(0, argCount);
 						current = current.setx(0, EOBJECT_TYPE);
 						continue next_insn;
@@ -1674,14 +1668,17 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						getType(current, X0_REG);
 						continue next_insn;
 
+					case apply_last:
 					case call_last:
 					case call_only:
 					case call_ext_last:
-					case call_ext_only:
-						is_tail_recursive = true;
-						int argCount = insn.elm(2).asInt();
+					case call_ext_only: {
+						Insn.I insn = (Insn.I) insn_;
+						int argCount = insn.i1;
 						current.touchx(0, argCount);
+						is_tail_recursive = true;
 						continue next_insn;
+					}
 
 					case func_info:
 						continue next_insn;
@@ -1692,15 +1689,16 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						continue next_insn;
 
 					case bs_add: {
-						EObject[] args = insn.elm(3).testSeq().toArray();
-						Type in1 = getType(current, args[0]);
-						Type in2 = getType(current, args[1]);
-						current = setType(current, insn.elm(4), Type.INT_TYPE);
+						Insn.LSSID insn = (Insn.LSSID) insn_;
+						checkArg(current, insn.src1);
+						checkArg(current, insn.src2);
+						current = setType(current, insn.dest, Type.INT_TYPE);
 						continue next_insn;
 					}
-						
+
 					case bs_context_to_binary: {
-						Type ctx = getType(current, insn.elm(2));
+						Insn.D insn = (Insn.D) insn_;
+						checkArg(current, insn.dest);
 						current = current.setx(0, EBINARY_TYPE);
 						continue next_insn;
 					}
@@ -1708,49 +1706,42 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					case bs_save2: {
 						continue next_insn;
 					}
-					
-					case bs_restore2: {
-						current = setType(current, insn.elm(2), EMATCHSTATE_TYPE);
-						continue next_insn;
-					}					
 
+					case bs_restore2: {
+						Insn.DI insn = (Insn.DI) insn_;
+						current = setType(current, insn.dest, EMATCHSTATE_TYPE);
+						continue next_insn;
+					}
 
 					case bs_init2: {
+						Insn.LSIIID insn = (Insn.LSIIID) insn_;
 						// int size = insn.elm(3).asInt();
-						current = setType(current, insn.elm(7), EBINARY_TYPE);
+						current = setType(current, insn.dest, EBINARY_TYPE);
 						continue next_insn;
 					}
 
 					case bs_init_bits: {
+						Insn.LSIIID insn = (Insn.LSIIID) insn_;
 						// int size = insn.elm(3).asInt();
-						current = setType(current, insn.elm(7), EBITSTRING_TYPE);
+						current = setType(current, insn.dest, EBITSTRING_TYPE);
 						continue next_insn;
 					}
 
 					case bs_append: {
-						
-						//     {bs_append,{f,0},{integer,32},0,3,8,{x,1},{field_flags,[]},{x,0}}.
-
+						// {bs_append,{f,0},{integer,32},0,3,8,{x,1},{field_flags,[]},{x,0}}.
+						Insn.BSAppend insn = (Insn.BSAppend)insn_;
 						// Arg extra_size = decode_arg(insn_idx, insn.elm(3));
 						// Arg src = decode_arg(insn_idx, insn.elm(7));
 						// Arg flags = decode_arg(insn_idx, insn.elm(8));
 						// Arg dst = decode_out_arg(insn_idx, insn.elm(9));
 
-						getType(current, insn.elm(3));
-						getType(current, insn.elm(7));
-						
-						current = setType(current, insn.elm(9), EBITSTRING_TYPE);
-						continue next_insn;
-					}
-					
-					case bs_put_string: {
+						checkArg(current, insn.src6);
+						current = setType(current, insn.dest8, EBITSTRING_TYPE);
 						continue next_insn;
 					}
 
-					case bs_put_binary: {
-						continue next_insn;
-					}
-
+					case bs_put_string:
+					case bs_put_binary:
 					case bs_put_float:
 					case bs_put_integer: {
 						continue next_insn;
@@ -1759,31 +1750,37 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					case bs_put_utf8:
 					case bs_put_utf16:
 					case bs_put_utf32: {
+						Insn.LIS insn = (Insn.LIS)insn_;
 						// make sure there is a source
-						getType(current, insn.elm(4));
+						checkArg(current, insn.src);
 						continue next_insn;
 					}
 
 					case bs_utf8_size:
 					case bs_utf16_size: {
 						// {bs_utf16_size,{f,0},src={x,0},dst={x,2}}
-						getType(current, insn.elm(3));
-						current = setType(current, insn.elm(4), ESMALL_TYPE);
+						Insn.LSD insn = (Insn.LSD)insn_;
+						checkArg(current, insn.src);
+						current = setType(current, insn.dest, ESMALL_TYPE);
 						continue next_insn;
 					}
 
 					case call_fun: {
-						int nargs = insn.elm(2).asInt();
+						Insn.I insn = (Insn.I)insn_;
+						int nargs = insn.i1;
 						for (int i = 0; i < nargs; i++) {
-							current.getx(i);
+							if (current.getx(i) == null)
+								throw new Error("uninitialized x" + i);
 						}
 						current = current.setx(0, EOBJECT_TYPE);
 						continue next_insn;
 					}
 
-					default:
+					default: {
+						ETuple insn = insn_.toSymbolicTuple();
 						throw new Error("unhandled: " + insn + "::" + current);
-					}}
+					}
+					}//switch
 				}
 
 				update_max_regs(current);
@@ -1868,6 +1865,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 				return false;
 			}
 
+			/** @deprecated */
 			private int sizeof(TypeMap current, EObject cell) {
 
 				ETuple at;
@@ -1910,6 +1908,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 				return BIFUtil.getBifResult(module, name, parmTypes, is_guard);
 			}
 
+			/** @deprecated */
 			private Type[] parmTypes(TypeMap current, ESeq args) {
 				ArrayList<Type> res = new ArrayList<Type>();
 
@@ -1922,6 +1921,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 				return res.toArray(new Type[res.size()]);
 			}
 
+			/** @deprecated */
 			private void checkArgs(TypeMap current, EObject eTerm, ETuple insn) {
 				ESeq args = eTerm.testSeq();
 
@@ -2127,12 +2127,14 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 				}//switch
 			}
 
+			/** @deprecated */
 			private void check(TypeMap current, EObject src) {
 				if (getType(current, src) == null) {
 					throw new Error("argument has no type");
 				}
 			}
 
+			/** @deprecated */
 			private TypeMap branch(TypeMap current, EObject nth, int idx) {
 				int target;
 				if (nth != NOFAIL_ATOM) {
@@ -2156,6 +2158,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 				return current.clearLive(makeBasicBlock(block_label, idx + 1));
 			}
 
+			/** @deprecated */
 			private TypeMap installExceptionHandler(TypeMap current, EObject nth, int idx) {
 				 ETuple tuple = nth.testTuple();
 				 if (tuple.elm(1) != F_ATOM)
@@ -2187,6 +2190,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 				return Type.getType(tt);
 			}
 
+			/** @deprecated */
 			private boolean isReg(EObject arg2) {
 				ETuple et = arg2.testTuple();
 				return (et != null && (et.elm(1) == X_ATOM
