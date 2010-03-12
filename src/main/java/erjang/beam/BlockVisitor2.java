@@ -23,6 +23,8 @@ package erjang.beam;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
+import erjang.beam.repr.ExtFun;
+
 /**
  * 
  */
@@ -46,6 +48,8 @@ public interface BlockVisitor2 extends BlockVisitor {
 	void visitTest(BeamOpcode test, int failLabel, Arg arg1, Type out);
 
 	void visitInsn(BeamOpcode opcode, Arg arg);
+
+	void visitInsn(BeamOpcode opcode, ExtFun ext_fun);
 
 	/**
 	 * @param test

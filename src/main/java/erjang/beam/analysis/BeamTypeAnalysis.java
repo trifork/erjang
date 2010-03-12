@@ -428,16 +428,16 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					TypeMap type_map = this.map[insn_idx];
 
 					switch (opcode) {
+					case func_info: {
+						Insn.AAI insn = (Insn.AAI)insn_;
+						// System.err.print("go: " + insn);
+						vis.visitInsn(opcode, insn.getExtFun());
+						break;
+					}
+
 					default: // Fall back to symbolic form:
 						ETuple insn = insn_.toSymbolicTuple();
 						switch (opcode) {
-					case func_info:
-						// System.err.print("go: " + insn);
-						vis.visitInsn(opcode, (Arg) new ExtFunc(insn.elm(2)
-								.testTuple().elm(2).testAtom(), insn.elm(3)
-								.testTuple().elm(2).testAtom(), insn.elm(4)
-								.asInt()));
-						break;
 
 					case fconv:
 					case fmove:
@@ -1946,10 +1946,11 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 					if (!t1.equals(t2)) {
 						//TODO: Is this correct for is_eq on integer vs. double?
+						// Also, for reg-vs-reg, we should really use the GLB.
 						DestinationOperand reg;
 						if ((reg = insn.src1.testDestination()) != null) {
 							current = setType(current, reg, t2);
-						} else //??
+						}
 						if ((reg = insn.src2.testDestination()) != null) {
 							current = setType(current, reg, t1);
 						}

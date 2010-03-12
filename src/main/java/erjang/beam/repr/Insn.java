@@ -322,18 +322,23 @@ public class Insn implements BeamInstruction {
 
 	public static class AAI extends Insn { // E.g. 'func_info'
 		public final Atom a1,a2;
-		public final int i1;
-		public AAI(BeamOpcode opcode, Atom a1, Atom a2, int i1) {
+		public final int i3;
+		public AAI(BeamOpcode opcode, Atom a1, Atom a2, int i3) {
 			super(opcode);
 			this.a1 = a1;
 			this.a2 = a2;
-			this.i1 = i1;
+			this.i3 = i3;
 		}
+
+		public ExtFun getExtFun() {
+			return new ExtFun(a1.getEAtom(), a2.getEAtom(), i3);
+		}
+
 		public ETuple toSymbolic() {
 			return ETuple.make(opcode.symbol,
 							   a1.toSymbolic(),
 							   a2.toSymbolic(),
-							   new ESmall(i1));
+							   new ESmall(i3));
 		}
 	}
 

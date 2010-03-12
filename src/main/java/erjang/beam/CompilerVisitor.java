@@ -78,6 +78,7 @@ import erjang.beam.Arg.Kind;
 import erjang.m.erlang.ErlBif;
 
 import erjang.beam.repr.Insn;
+import erjang.beam.repr.ExtFun;
 
 import static erjang.beam.CodeAtoms.*;
 
@@ -1852,24 +1853,6 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					mv.visitInsn(ARETURN);
 					return;
 
-				case func_info:
-					ExtFunc f = (ExtFunc) arg;
-					push_immediate(f.mod, EATOM_TYPE);
-					push_immediate(f.fun, EATOM_TYPE);
-
-					push_immediate(ERT.NIL, ENIL_TYPE);
-					for (int i=arg.no-1; i>=0; i--) {
-						push(new Arg(Kind.X, i), EOBJECT_TYPE);
-						mv.visitMethodInsn(INVOKEVIRTUAL, ESEQ_NAME, "cons", "("
-										   + EOBJECT_DESC + ")"
-										   + ESEQ_DESC);
-					}
-
-					mv.visitMethodInsn(INVOKESTATIC, ERT_NAME, "func_info", "("
-							+ EATOM_DESC + EATOM_DESC + ESEQ_DESC +")" + EOBJECT_DESC);
-					mv.visitInsn(ARETURN);
-					return;
-
 				case init:
 					push_immediate(ERT.NIL, ENIL_TYPE);
 					pop(arg, ENIL_TYPE);
@@ -1899,6 +1882,27 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				}
 
 				throw new Error("unhandled " + opcode);
+			}
+
+			public void visitInsn(BeamOpcode opcode, ExtFun f) {
+				switch (opcode) {
+				case func_info:
+					push_immediate(f.mod, EATOM_TYPE);
+					push_immediate(f.fun, EATOM_TYPE);
+
+					push_immediate(ERT.NIL, ENIL_TYPE);
+					for (int i=f.arity-1; i>=0; i--) {
+						push(new Arg(Kind.X, i), EOBJECT_TYPE);
+						mv.visitMethodInsn(INVOKEVIRTUAL, ESEQ_NAME, "cons", "("
+										   + EOBJECT_DESC + ")"
+										   + ESEQ_DESC);
+					}
+
+					mv.visitMethodInsn(INVOKESTATIC, ERT_NAME, "func_info", "("
+							+ EATOM_DESC + EATOM_DESC + ESEQ_DESC +")" + EOBJECT_DESC);
+					mv.visitInsn(ARETURN);
+					return;
+				}//switch
 			}
 
 			/*
