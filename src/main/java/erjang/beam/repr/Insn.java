@@ -200,18 +200,29 @@ public class Insn implements BeamInstruction {
 		}
 	}
 
-	public static class LD extends Insn { // E.g. 'loop_rec'
-		public final Label label;
+	public static class LD extends L { // E.g. 'loop_rec'
 		public final DestinationOperand dest;
+		public final boolean is_test;
 		public LD(BeamOpcode opcode, Label label, DestinationOperand dest) {
-			super(opcode);
-			this.label = label;
+			super(opcode, label);
 			this.dest = dest;
+			this.is_test = false;
+		}
+		public LD(BeamOpcode opcode, Label label, DestinationOperand dest, boolean is_test) {
+			super(opcode, label);
+			this.dest = dest;
+			this.is_test = is_test;
 		}
 		public ETuple toSymbolic() {
-			return ETuple.make(opcode.symbol,
-							   label.toSymbolic(),
-							   dest.toSymbolic());
+			if (is_test)
+				return ETuple.make(TEST_ATOM,
+								   opcode.symbol,
+								   label.toSymbolic(),
+								   EList.make(dest.toSymbolic()));
+			else
+				return ETuple.make(opcode.symbol,
+								   label.toSymbolic(),
+								   dest.toSymbolic());
 		}
 	}
 
@@ -230,13 +241,11 @@ public class Insn implements BeamInstruction {
 		}
 	}
 
-	public static class LS extends Insn { // E.g. 'is_nil'
-		public final Label label;
+	public static class LS extends L { // E.g. 'is_nil'
 		public final SourceOperand src;
 		public final boolean is_test;
 		public LS(BeamOpcode opcode, Label label, SourceOperand src, boolean is_test) {
-			super(opcode);
-			this.label = label;
+			super(opcode, label);
 			this.src = src;
 			this.is_test = is_test;
 		}
@@ -393,29 +402,23 @@ public class Insn implements BeamInstruction {
 		}
 	}
 
-	public static class LSI extends Insn { // E.g. 'test_arity'
-		public final Label label;
-		public final SourceOperand src;
+	public static class LDI extends LD { // E.g. 'test_arity'
 		public final int i1;
-		public final boolean is_test;
-		public LSI(BeamOpcode opcode, Label label, SourceOperand src, int i1, boolean is_test) {
-			super(opcode);
-			this.label = label;
-			this.src = src;
+		public LDI(BeamOpcode opcode, Label label, DestinationOperand dest, int i1, boolean is_test) {
+			super(opcode, label, dest, is_test);
 			this.i1 = i1;
-			this.is_test = is_test;
 		}
 		public ETuple toSymbolic() {
 			if (is_test)
 				return ETuple.make(TEST_ATOM,
 								   opcode.symbol,
 								   label.toSymbolic(),
-								   EList.make(src.toSymbolic(),
+								   EList.make(dest.toSymbolic(),
 											  new ESmall(i1)));
 			else
 				return ETuple.make(opcode.symbol,
 								   label.toSymbolic(),
-								   src.toSymbolic(),
+								   dest.toSymbolic(),
 								   new ESmall(i1));
 		}
 	}
@@ -438,14 +441,11 @@ public class Insn implements BeamInstruction {
 		}
 	}
 
-	public static class LSS extends Insn { // E.g. 'is_eq_exact'
-		public final Label label;
-		public final SourceOperand src1;
-		public final SourceOperand src2;
+	public static class LSS extends L { // E.g. 'is_eq_exact'
+		public final SourceOperand src1, src2;
 		public final boolean is_test;
 		public LSS(BeamOpcode opcode, Label label, SourceOperand src1, SourceOperand src2, boolean is_test) {
-			super(opcode);
-			this.label = label;
+			super(opcode, label);
 			this.src1 = src1;
 			this.src2 = src2;
 			this.is_test = is_test;
@@ -462,6 +462,31 @@ public class Insn implements BeamInstruction {
 								   label.toSymbolic(),
 								   src1.toSymbolic(),
 								   src2.toSymbolic());
+		}
+	}
+
+	public static class LDS extends L { // E.g. 'is_function2'
+		public final DestinationOperand dest;
+		public final SourceOperand src;
+		public final boolean is_test;
+		public LDS(BeamOpcode opcode, Label label, DestinationOperand dest, SourceOperand src, boolean is_test) {
+			super(opcode, label);
+			this.dest = dest;
+			this.src = src;
+			this.is_test = is_test;
+		}
+		public ETuple toSymbolic() {
+			if (is_test)
+				return ETuple.make(TEST_ATOM,
+								   opcode.symbol,
+								   label.toSymbolic(),
+								   EList.make(dest.toSymbolic(),
+											  src.toSymbolic()));
+			else
+				return ETuple.make(opcode.symbol,
+								   label.toSymbolic(),
+								   dest.toSymbolic(),
+								   src.toSymbolic());
 		}
 	}
 
@@ -662,54 +687,38 @@ public class Insn implements BeamInstruction {
 		}
 	}
 
-	public static class LSBi extends Insn { // E.g. 'bs_match_string'
-		public final Label label;
-		public final SourceOperand src;
+	public static class LDBi extends LD { // E.g. 'bs_match_string'
 		public final BitString bin;
-		public LSBi(BeamOpcode opcode, Label label, SourceOperand src, BitString bin) {
-			super(opcode);
-			this.label = label;
-			this.src = src;
+		public LDBi(BeamOpcode opcode, Label label, DestinationOperand dest, BitString bin) {
+			super(opcode, label, dest, true);
 			this.bin = bin;
 		}
 
 		public ETuple toSymbolic() {
-			if (opcode == BeamOpcode.bs_match_string)
-				return ETuple.make(TEST_ATOM,
-								   opcode.symbol,
-								   label.toSymbolic(),
-								   EList.make(src.toSymbolic(),
-											  ERT.box(bin.bitLength()),
-											  bin.toSymbolic()));
-			else
-				throw new erjang.NotImplemented();
+			return ETuple.make(TEST_ATOM,
+							   opcode.symbol,
+							   label.toSymbolic(),
+							   EList.make(dest.toSymbolic(),
+										  ERT.box(bin.bitLength()),
+										  bin.toSymbolic()));
 		}
 	}
 
-	public static class LSII extends Insn { // E.g. 'bs_skip_utf8'
-		public final Label label;
-		public final SourceOperand src;
+	public static class LDII extends LD { // E.g. 'bs_skip_utf8'
 		public final int i3, i4;
-		public LSII(BeamOpcode opcode, Label label, SourceOperand src, int i3, int i4) {
-			super(opcode);
-			this.label = label;
-			this.src = src;
+		public LDII(BeamOpcode opcode, Label label, DestinationOperand dest, int i3, int i4) {
+			super(opcode, label, dest, true);
 			this.i3 = i3;
 			this.i4 = i4;
 		}
 
 		public ETuple toSymbolic() {
-			if (opcode == BeamOpcode.bs_skip_utf8 ||
-			    opcode == BeamOpcode.bs_skip_utf16 ||
-			    opcode == BeamOpcode.bs_skip_utf32)
-				return ETuple.make(TEST_ATOM,
-								   opcode.symbol,
-								   label.toSymbolic(),
-								   EList.make(src.toSymbolic(),
-											  new ESmall(i3),
-											  bsFieldFlagsToSymbolic(i4)));
-			else
-				throw new erjang.NotImplemented();
+			return ETuple.make(TEST_ATOM,
+							   opcode.symbol,
+							   label.toSymbolic(),
+							   EList.make(dest.toSymbolic(),
+										  new ESmall(i3),
+										  bsFieldFlagsToSymbolic(i4)));
 		}
 	}
 
@@ -767,37 +776,28 @@ public class Insn implements BeamInstruction {
 	}
 
 
-	public static class LSIID extends Insn { // E.g. 'bs_start_match2'
-		public final Label label;
-		public final SourceOperand src;
+	public static class LDIID extends LD { // E.g. 'bs_start_match2'
 		public final int i3, i4;
-		public final DestinationOperand dest;
-		public final boolean is_test;
+		public final DestinationOperand dest5;
 		public final boolean i4_is_bsflags;
-		public LSIID(BeamOpcode opcode, Label label, SourceOperand src, int i3, int i4, DestinationOperand dest, boolean is_test, boolean i4_is_bsflags) {
-			super(opcode);
-			this.label = label;
-			this.src = src;
+		public LDIID(BeamOpcode opcode, Label label, DestinationOperand dest2, int i3, int i4, DestinationOperand dest5, boolean i4_is_bsflags) {
+			super(opcode, label, dest2, true);
 			this.i3 = i3;
 			this.i4 = i4;
-			this.dest = dest;
-			this.is_test = is_test;
+			this.dest5 = dest5;
 			this.i4_is_bsflags = i4_is_bsflags;
 		}
 
 		public ETuple toSymbolic() {
-			if (is_test)
-				return ETuple.make(TEST_ATOM,
-								   opcode.symbol,
-								   label.toSymbolic(),
-								   EList.make(src.toSymbolic(),
-											  new ESmall(i3),
-											  i4_is_bsflags
-											  ? bsFieldFlagsToSymbolic(i4)
-											  : new ESmall(i4),
-											  dest.toSymbolic()));
-			else
-				throw new erjang.NotImplemented();
+			return ETuple.make(TEST_ATOM,
+							   opcode.symbol,
+							   label.toSymbolic(),
+							   EList.make(dest.toSymbolic(),
+										  new ESmall(i3),
+										  i4_is_bsflags
+										  ? bsFieldFlagsToSymbolic(i4)
+										  : new ESmall(i4),
+										  dest5.toSymbolic()));
 		}
 	}
 
@@ -868,73 +868,59 @@ public class Insn implements BeamInstruction {
 		}
 	}
 
-	public static class LSSII extends Insn { // E.g. 'bs_skip_bits2'
-		public final Label label;
-		public final SourceOperand src2;
+	public static class LDSII extends LD { // E.g. 'bs_skip_bits2'
 		public final SourceOperand src3;
 		public final int i4, i5;
 
-		public LSSII(BeamOpcode opcode, Label label,
-					 SourceOperand src2, SourceOperand src3,
+		public LDSII(BeamOpcode opcode, Label label,
+					 DestinationOperand dest, SourceOperand src3,
 					 int i4, int i5)
 		{
-			super(opcode);
-			this.label = label;
-			this.src2 = src2;
+			super(opcode, label, dest, true);
 			this.src3 = src3;
 			this.i4 = i4;
 			this.i5 = i5;
 		}
 		public ETuple toSymbolic() {
-			if (opcode == BeamOpcode.bs_skip_bits2)
-				return ETuple.make(TEST_ATOM,
-								   opcode.symbol,
-								   label.toSymbolic(),
-								   EList.make(src2.toSymbolic(),
-											  src3.toSymbolic(),
-											  new ESmall(i4),
-											  bsFieldFlagsToSymbolic(i5)));
-			else
-				throw new erjang.NotImplemented();
+			return ETuple.make(TEST_ATOM,
+							   opcode.symbol,
+							   label.toSymbolic(),
+							   EList.make(dest.toSymbolic(),
+										  src3.toSymbolic(),
+										  new ESmall(i4),
+										  bsFieldFlagsToSymbolic(i5)));
 		}
 	}
 
-	public static class LSISIID extends Insn { // E.g. 'bs_get_integer2'
-		public final Label label;
-		public final SourceOperand src2;
+	public static class LDISIID extends LD { // E.g. 'bs_get_integer2'
 		public final int i3;
 		public final SourceOperand src4;
 		public final int i5, i6;
-		public final DestinationOperand dest;
-		public final boolean is_test;
+		public final DestinationOperand dest7;
 
-		public LSISIID(BeamOpcode opcode, Label label,
-					   SourceOperand src2, int i3,
+		public LDISIID(BeamOpcode opcode, Label label,
+					   DestinationOperand dest2, int i3,
 					   SourceOperand src4, int i5, int i6,
-					   DestinationOperand dest,
-					   boolean is_test)
+					   DestinationOperand dest7)
 		{
-			super(opcode);
-			this.label = label;
-			this.src2 = src2;
+			super(opcode, label, dest2, true);
 			this.i3 = i3;
 			this.src4 = src4;
 			this.i5 = i5;
 			this.i6 = i6;
-			this.dest = dest;
-			this.is_test = is_test;
+			this.dest7 = dest7;
 		}
 		public ETuple toSymbolic() {
 			if (is_test)
 				return ETuple.make(TEST_ATOM,
 								   opcode.symbol,
 								   label.toSymbolic(),
-								   EList.make(src2.toSymbolic(),
+								   EList.make(dest.toSymbolic(),
 											  new ESmall(i3),
 											  src4.toSymbolic(),
 											  new ESmall(i5),
 											  bsFieldFlagsToSymbolic(i6),
-											  dest.toSymbolic()));
+											  dest7.toSymbolic()));
 			else
 				throw new erjang.NotImplemented();
 		}

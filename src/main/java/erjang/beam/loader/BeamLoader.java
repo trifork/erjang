@@ -603,8 +603,8 @@ public class BeamLoader extends CodeTables {
 			case is_bitstr:
 			{
 				Label label = readLabel();
-				SourceOperand src = readSource();
-				return new Insn.LS(opcode, label, src, true);
+				DestinationOperand src = readDestination();
+				return new Insn.LD(opcode, label, src, true);
 			}
 
 			case wait_timeout:
@@ -691,9 +691,9 @@ public class BeamLoader extends CodeTables {
 			case bs_test_unit:
 			{
 				Label label = readLabel();
-				SourceOperand src = readSource();
+				DestinationOperand dest = readDestination();
 				int i1 = readCodeInteger();
-				return new Insn.LSI(opcode, label, src, i1, true);
+				return new Insn.LDI(opcode, label, dest, i1, true);
 			}
 
 			case is_lt:
@@ -702,12 +702,19 @@ public class BeamLoader extends CodeTables {
 			case is_ne:
 			case is_eq_exact:
 			case is_ne_exact:
-			case is_function2:
 			{
 				Label label = readLabel();
 				SourceOperand src1 = readSource();
 				SourceOperand src2 = readSource();
 				return new Insn.LSS(opcode, label, src1, src2, true);
+			}
+
+			case is_function2:
+			{
+				Label label = readLabel();
+				DestinationOperand dest = readDestination();
+				SourceOperand src = readSource();
+				return new Insn.LDS(opcode, label, dest, src, true);
 			}
 
 			case fnegate:
@@ -756,18 +763,18 @@ public class BeamLoader extends CodeTables {
 			case bs_skip_utf32:
 			{
 				Label label = readLabel();
-				SourceOperand src = readSource();
+				DestinationOperand dest = readDestination();
 				int i3 = readCodeInteger();
 				int i4 = readCodeInteger();
-				return new Insn.LSII(opcode, label, src, i3, i4);
+				return new Insn.LDII(opcode, label, dest, i3, i4);
 			}
 
 			case bs_match_string:
 			{
 				Label label = readLabel();
-				SourceOperand src = readSource();
+				DestinationOperand dest = readDestination();
 				BitString bin = readBitstringRef();
-				return new Insn.LSBi(opcode, label, src, bin);
+				return new Insn.LDBi(opcode, label, dest, bin);
 			}
 
 			case bs_put_utf8:
@@ -786,11 +793,11 @@ public class BeamLoader extends CodeTables {
 			case bs_get_utf32:
 			{
 				Label label = readLabel();
-				SourceOperand src = readSource();
+				DestinationOperand dest1 = readDestination();
 				int i3 = readCodeInteger();
 				int i4 = readCodeInteger();
-				DestinationOperand dest = readDestination();
-				return new Insn.LSIID(opcode, label, src, i3, i4, dest, true,
+				DestinationOperand dest2 = readDestination();
+				return new Insn.LDIID(opcode, label, dest1, i3, i4, dest2,
 									  opcode != BeamOpcode.bs_start_match2);
 			}
 
@@ -830,11 +837,11 @@ public class BeamLoader extends CodeTables {
 			case bs_skip_bits2:
 			{
 				Label label = readLabel();
-				SourceOperand src1 = readSource();
-				SourceOperand src2 = readSource();
+				DestinationOperand dest = readDestination();
+				SourceOperand src = readSource();
 				int i3 = readCodeInteger();
 				int i4 = readCodeInteger();
-				return new Insn.LSSII(opcode, label, src1, src2, i3, i4);
+				return new Insn.LDSII(opcode, label, dest, src, i3, i4);
 			}
 
 			case bs_get_integer2:
@@ -842,13 +849,13 @@ public class BeamLoader extends CodeTables {
 			case bs_get_binary2:
 			{
 				Label label = readLabel();
-				SourceOperand src2 = readSource();
+				DestinationOperand dest2 = readDestination();
 				int i3 = readCodeInteger();
 				SourceOperand src4 = readSource();
 				int i5 = readCodeInteger();
 				int i6 = readCodeInteger();
 				DestinationOperand dest = readDestination();
-				return new Insn.LSISIID(opcode, label, src2, i3, src4, i5, i6, dest, true);
+				return new Insn.LDISIID(opcode, label, dest2, i3, src4, i5, i6, dest);
 			}
 
 			case bs_append: // LSIIISIS

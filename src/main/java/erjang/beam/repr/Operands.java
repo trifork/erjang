@@ -69,6 +69,7 @@ public class Operands {
 		public Float testFloat() { return null; }
 		public SelectList testSelectList() { return null; }
 		public AllocList testAllocList() { return null; }
+		public DestinationOperand testDestination() {return null;}
 		public XReg testXReg() { return null; }
 		public YReg testYReg() { return null; }
 		public FReg testFReg() { return null; }
@@ -84,7 +85,6 @@ public class Operands {
 		return res;
 	}
 
-
     public static abstract class SourceOperand extends Operand {
 		@Override
 		public SourceOperand asSource() {return this;}
@@ -92,6 +92,8 @@ public class Operands {
     public static abstract class DestinationOperand extends SourceOperand {
 		@Override
 		public DestinationOperand asDestination() {return this;}
+		@Override
+		public DestinationOperand testDestination() {return this;}
     }
     public static abstract class Literal extends SourceOperand {
 		@Override

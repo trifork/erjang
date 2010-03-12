@@ -1364,10 +1364,6 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					}
 
 
-					default: // Fall back to symbolic form:
-						ETuple insn = insn_.toSymbolicTuple();
-						switch (code) {
-
 						// Tests:
 						// LS:
 					case is_integer:
@@ -1416,7 +1412,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					case bs_get_binary2:
 					{
 						try {
-							current = analyze_test(current, insn, insn_idx);
+							current = analyze_test(current, (Insn.L)insn_, insn_idx);
 						} catch (Error e) {
 							throw new Error(" at "
 											+ LabeledBlock.this.block_label + ":"
@@ -1425,6 +1421,10 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						assert (current != null);
 						continue next_insn;
 					}
+
+					default: // Fall back to symbolic form:
+						ETuple insn = insn_.toSymbolicTuple();
+						switch (code) {
 
 					case fconv: {
 						// unbox and convert to DOUBLE
@@ -1942,159 +1942,183 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 				return res;
 			}
 
-			private TypeMap analyze_test(TypeMap current, ETuple insn,
-					int insn_idx) {
+			private void checkArg(TypeMap current, SourceOperand arg) {
+				Type argType = getType(current, arg);
+				if (argType == null) {
+					throw new Error("uninitialized " + arg);
+				}
+			}
 
-				current = branch(current, insn.elm(3), insn_idx);
+			private TypeMap analyze_test(TypeMap current, Insn.L insn_, int insn_idx) {
+				current = branch(current, insn_.label, insn_idx);
 
-				EObject[] args = insn.elm(4).testSeq().toArray();
-				EObject arg1 = args[0];
-				EObject arg2 = (args.length > 1) ? args[1] : null;
-
-				BeamOpcode test = BeamOpcode.get(insn.elm(2).testAtom());
-				switch (test) {
+				switch (insn_.opcode()) {
 				case is_nil: {
-					checkArgs(current, insn.elm(4), insn);
-					return setType(current, arg1.testTuple(), ENIL_TYPE);
+					Insn.LD insn = (Insn.LD) insn_;
+					checkArg(current, insn.dest);
+					return setType(current, insn.dest, ENIL_TYPE);
 				}
 
 				case is_list:
 				case is_nonempty_list: {
-					checkArgs(current, insn.elm(4), insn);
-					return setType(current, arg1.testTuple(), ECONS_TYPE);
+					Insn.LD insn = (Insn.LD) insn_;
+					checkArg(current, insn.dest);
+					return setType(current, insn.dest, ECONS_TYPE);
 				}
 
 				case is_binary: {
-					checkArgs(current, insn.elm(4), insn);
-					return setType(current, arg1.testTuple(), EBINARY_TYPE);
+					Insn.LD insn = (Insn.LD) insn_;
+					checkArg(current, insn.dest);
+					return setType(current, insn.dest, EBINARY_TYPE);
 				}
 				case is_tuple: {
-					checkArgs(current, insn.elm(4), insn);
-					return setType(current, arg1.testTuple(), ETUPLE_TYPE);
+					Insn.LD insn = (Insn.LD) insn_;
+					checkArg(current, insn.dest);
+					return setType(current, insn.dest, ETUPLE_TYPE);
 				}
 
+
 				case test_arity: {
-					checkArgs(current, insn.elm(4), insn);
-					return setType(current, arg1.testTuple(), getTupleType(arg2
-							.asInt()));
+					Insn.LDI insn = (Insn.LDI) insn_;
+					checkArg(current, insn.dest);
+					return setType(current, insn.dest, getTupleType(insn.i1));
 				}
 
 				case is_boolean:
 				case is_atom: {
-					checkArgs(current, insn.elm(4), insn);
-					return setType(current, arg1.testTuple(), EATOM_TYPE);
+					Insn.LD insn = (Insn.LD) insn_;
+					checkArg(current, insn.dest);
+					return setType(current, insn.dest, EATOM_TYPE);
 				}
 
 				case is_integer: {
-					checkArgs(current, insn.elm(4), insn);
-					return setType(current, arg1, EINTEGER_TYPE);
+					Insn.LD insn = (Insn.LD) insn_;
+					checkArg(current, insn.dest);
+					return setType(current, insn.dest, EINTEGER_TYPE);
 				}
 
 				case is_bitstr: {
-					checkArgs(current, insn.elm(4), insn);
-					return setType(current, arg1, EBITSTRING_TYPE);
+					Insn.LD insn = (Insn.LD) insn_;
+					checkArg(current, insn.dest);
+					return setType(current, insn.dest, EBITSTRING_TYPE);
 				}
 
 				case is_number: {
-					checkArgs(current, insn.elm(4), insn);
-					return setType(current, arg1, ENUMBER_TYPE);
+					Insn.LD insn = (Insn.LD) insn_;
+					checkArg(current, insn.dest);
+					return setType(current, insn.dest, ENUMBER_TYPE);
 				}
 
 				case is_pid: {
-					checkArgs(current, insn.elm(4), insn);
-					return setType(current, arg1, EPID_TYPE);
+					Insn.LD insn = (Insn.LD) insn_;
+					checkArg(current, insn.dest);
+					return setType(current, insn.dest, EPID_TYPE);
 				}
 
 				case is_port: {
-					checkArgs(current, insn.elm(4), insn);
-					return setType(current, arg1, EPORT_TYPE);
+					Insn.LD insn = (Insn.LD) insn_;
+					checkArg(current, insn.dest);
+					return setType(current, insn.dest, EPORT_TYPE);
 				}
 
 				case is_reference: {
-					checkArgs(current, insn.elm(4), insn);
-					return setType(current, arg1, EREFERENCE_TYPE);
+					Insn.LD insn = (Insn.LD) insn_;
+					checkArg(current, insn.dest);
+					return setType(current, insn.dest, EREFERENCE_TYPE);
 				}
 
 				case is_float: {
-					checkArgs(current, insn.elm(4), insn);
-					return setType(current, arg1, EDOUBLE_TYPE);
+					Insn.LD insn = (Insn.LD) insn_;
+					checkArg(current, insn.dest);
+					return setType(current, insn.dest, EDOUBLE_TYPE);
 				}
 
-				case is_function2:
 				case is_function: {
-					checkArgs(current, insn.elm(4), insn);
-					return setType(current, arg1, EFUN_TYPE);
+					Insn.LD insn = (Insn.LD) insn_;
+					checkArg(current, insn.dest);
+					return setType(current, insn.dest, EFUN_TYPE);
 				}
 
-				case is_ge:
-				case is_ne:
-				case is_ne_exact:
-					checkArgs(current, insn.elm(4), insn);
-					return current;
-
-				case is_eq:
-				case is_eq_exact: {
-					checkArgs(current, insn.elm(4), insn);
-					Type t1 = getType(current, arg1);
-					Type t2 = getType(current, arg2);
-
-					if (!t1.equals(t2)) {
-						if (isReg(arg1)) {
-							current = setType(current, arg1.testTuple(), t2);
-						} else if (isReg(arg2)) {
-							current = setType(current, arg2.testTuple(), t1);
-						}
-					}
-
-					return current;
+				case is_function2: {
+					Insn.LDS insn = (Insn.LDS) insn_;
+					checkArg(current, insn.dest);
+					checkArg(current, insn.src);
+					// TODO: Use more specific type when arity is known?
+					return setType(current, insn.dest, EFUN_TYPE);
 				}
 
 				case is_lt:
-					checkArgs(current, insn.elm(4), insn);
+				case is_ge:
+				case is_ne:
+				case is_ne_exact: {
+					Insn.LSS insn = (Insn.LSS) insn_;
+					checkArg(current, insn.src1);
+					checkArg(current, insn.src2);
 					return current;
+				}
 
-				case bs_start_match2:
-					check(current, args[0]);
-					current = setType(current, args[3], EMATCHSTATE_TYPE);
-					return current;
+				case is_eq:
+				case is_eq_exact: {
+					Insn.LSS insn = (Insn.LSS) insn_;
+					checkArg(current, insn.src1);
+					checkArg(current, insn.src2);
 
-				case bs_get_integer2: {
-					if (!EMATCHSTATE_TYPE.equals(getType(current, args[0]))) {
-						throw new Error("matching without a state");
-					}
+					Type t1 = getType(current, insn.src1);
+					Type t2 = getType(current, insn.src2);
 
-					ETuple tup;
-					if ((tup = args[3].testTuple()) != null) {
-						if (tup.elm(1) == INTEGER_ATOM
-								&& tup.elm(2).asInt() <= 32) {
-							current = setType(current, args[5], Type.INT_TYPE);
-							return current;
+					if (!t1.equals(t2)) {
+						//TODO: Is this correct for is_eq on integer vs. double?
+						DestinationOperand reg;
+						if ((reg = insn.src1.testDestination()) != null) {
+							current = setType(current, reg, t2);
+						} else //??
+						if ((reg = insn.src2.testDestination()) != null) {
+							current = setType(current, reg, t1);
 						}
 					}
 
-					current = setType(current, args[5], ENUMBER_TYPE);
 					return current;
+				}
+
+				case bs_start_match2: {
+					Insn.LDIID insn = (Insn.LDIID) insn_;
+					checkArg(current, insn.dest);
+					return setType(current, insn.dest5, EMATCHSTATE_TYPE);
+				}
+
+				case bs_get_integer2: {
+					Insn.LDISIID insn = (Insn.LDISIID) insn_;
+					if (!EMATCHSTATE_TYPE.equals(getType(current, insn.dest))) {
+						throw new Error("matching without a state");
+					}
+
+					/* DISABLED because it triggers a get_test_bif()-related bug
+					if (insn.i5 <= 32) {
+						return setType(current, insn.dest7, Type.INT_TYPE);
+					}
+					*/
+
+					return setType(current, insn.dest7, EINTEGER_TYPE);
 				}
 
 				case bs_get_binary2: {
-					if (!EMATCHSTATE_TYPE.equals(getType(current, args[0]))) {
+					Insn.LDISIID insn = (Insn.LDISIID) insn_;
+					if (!EMATCHSTATE_TYPE.equals(getType(current, insn.dest))) {
 						throw new Error("matching without a state");
 					}
 
-					current = setType(current, args[5], EBINARY_TYPE);
-					return current;
+					return setType(current, insn.dest7, EBINARY_TYPE);
 				}
+
 
 				case bs_get_float2: {
-					if (!EMATCHSTATE_TYPE.equals(getType(current, args[0]))) {
+					Insn.LDISIID insn = (Insn.LDISIID) insn_;
+					if (!EMATCHSTATE_TYPE.equals(getType(current, insn.dest))) {
 						throw new Error("matching without a state");
 					}
 
-					current = setType(current, args[5], Type.DOUBLE_TYPE);
-					return current;
+					return setType(current, insn.dest7, Type.DOUBLE_TYPE);
 				}
-
-					// these bit string matchers don't modify registers
 
 				case bs_test_tail2:
 				case bs_test_unit:
@@ -2102,25 +2126,30 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 				case bs_match_string:
 				case bs_skip_utf8:
 				case bs_skip_utf16:
-				case bs_skip_utf32:
-					if (!EMATCHSTATE_TYPE.equals(getType(current, args[0]))) {
+				case bs_skip_utf32: {
+					// These bit string matchers don't modify registers.
+					Insn.LD insn = (Insn.LD) insn_;
+					if (!EMATCHSTATE_TYPE.equals(getType(current, insn.dest))) {
 						throw new Error("matching without a state");
 					}
 
 					return current;
+				}
 
 				case bs_get_utf8:
 				case bs_get_utf16:
-				case bs_get_utf32:
-					if (!EMATCHSTATE_TYPE.equals(getType(current, args[0]))) {
+				case bs_get_utf32: {
+					// These bit string matchers don't modify registers.
+					Insn.LDIID insn = (Insn.LDIID) insn_;
+					if (!EMATCHSTATE_TYPE.equals(getType(current, insn.dest))) {
 						throw new Error("matching without a state");
 					}
-					current = setType(current, args[3], Type.INT_TYPE);
-					return current;
+					return setType(current, insn.dest5, Type.INT_TYPE);
+				}
 
 				default:
-					throw new Error("unhandled test: " + insn);
-				}
+					throw new Error("unhandled test: " + insn_.toSymbolic());
+				}//switch
 
 			}
 
@@ -2143,7 +2172,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 			}
 
 			private TypeMap branch(TypeMap current, Operands.Label target, int idx) {
-				return branch(current, target.nr, idx);
+				return branch(current, target==null? -1 : target.nr, idx);
 			}
 
 			private TypeMap branch(TypeMap current, int target, int idx) {
