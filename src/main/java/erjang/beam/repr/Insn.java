@@ -262,11 +262,10 @@ public class Insn implements BeamInstruction {
 		}
 	}
 
-	public static class II extends Insn { // E.g. 'allocate'
-		public final int i1, i2;
+	public static class II extends I { // E.g. 'allocate'
+		public final int i2;
 		public II(BeamOpcode opcode, int i1, int i2) {
-			super(opcode);
-			this.i1 = i1;
+			super(opcode, i1);
 			this.i2 = i2;
 		}
 		public ETuple toSymbolic() {
@@ -385,12 +384,11 @@ public class Insn implements BeamInstruction {
 		}
 	}
 
-	public static class IWI extends Insn { // E.g. 'allocate_heap'
-		public final int i1, i3;
+	public static class IWI extends I { // E.g. 'allocate_heap'
+		public final int i3;
 		public final AllocList al;
 		public IWI(BeamOpcode opcode, int i1, AllocList al, int i3) {
-			super(opcode);
-			this.i1 = i1;
+			super(opcode, i1);
 			this.al = al;
 			this.i3 = i3;
 		}

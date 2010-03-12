@@ -52,6 +52,9 @@ public class Operands {
 		public Atom asAtom() {
 			throw new IllegalArgumentException("Not an atom: "+this);
 		}
+		public CodeInt asCodeInt() {
+			throw new IllegalArgumentException("Not a code integer: "+this);
+		}
 		public SelectList asSelectList() {
 			throw new IllegalArgumentException("Not a select list: "+this);
 		}
@@ -111,6 +114,10 @@ public class Operands {
     public static class CodeInt extends Operand {
 		public final int value;
 		public CodeInt(int value) {this.value=value;}
+
+		@Override
+		public CodeInt asCodeInt() {return this;}
+
 		public EObject toSymbolic() {
 			return new ESmall(value);
 		}
@@ -158,6 +165,11 @@ public class Operands {
 
 		@Override
 		public SelectList asSelectList() {return this;}
+
+		public int size() {return list.length / 2;}
+		public Operand getValue(int i) {return list[2*i];}
+		public Label getLabel(int i)   {return (Label)list[2*i+1];}
+
 		public EObject toSymbolic() {
 			EObject[] elems = new EObject[list.length];
 			for (int i=0; i<list.length; i++) {

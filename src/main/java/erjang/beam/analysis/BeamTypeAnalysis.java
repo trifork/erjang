@@ -1503,50 +1503,51 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						continue next_insn;
 					}
 
-					default: // Fall back to symbolic form:
-						ETuple insn = insn_.toSymbolicTuple();
-						switch (code) {
-
-					case try_case:
-						getType(current, insn.elm(2));
+					case try_case: {
+						Insn.Y insn = (Insn.Y) insn_;
+						getType(current, insn.y);
 						current = current.popExceptionHandler();
 						current = current.setx(0, EATOM_TYPE); // reason
 						current = current.setx(1, EOBJECT_TYPE); // value
 						current = current.setx(2, EOBJECT_TYPE); // trace
 						continue next_insn;
+					}
 
 					case try_case_end:
 						continue next_insn;
 
-					case raise:
-						boolean is_guard = false;
-						if (insn.elm(2).testTuple().elm(2).asInt() != 0) {
-							is_guard = true;
-						}
+					case raise: {
+						Insn.SS insn = (Insn.SS) insn_;
 
-						checkArgs(current, insn.elm(3), insn);
-						current = setType(current, insn.elm(4), EOBJECT_TYPE);
-
+						checkArg(current, insn.src1);
+						checkArg(current, insn.src2);
+						current = setType(current, Operands.XReg.get(0), EOBJECT_TYPE);
 						continue next_insn;
+					}
 
-					case K_catch:
-						current = installExceptionHandler(current, insn.elm(3), insn_idx);
+					case K_catch: {
+						Insn.YL insn = (Insn.YL) insn_;
+						current = installExceptionHandler(current, insn.label, insn_idx);
 						continue next_insn;
+					}
 
-					case catch_end:
+					case catch_end: {
 						current = current.popExceptionHandler();
 						current = current.setx(0, EOBJECT_TYPE); // value
 						continue next_insn;
+					}
 
 					case make_fun2: {
-						current.touchx(0, insn.elm(5).asInt());
+						Insn.F insn = (Insn.F) insn_;
+						current.touchx(0, insn.anon_fun.free_vars);
 						current = current.setx(0, EFUN_TYPE);
 						continue next_insn;
 					}
 
 					case loop_rec: {
-						current = branch(current, insn.elm(2), insn_idx);
-						current = setType(current, insn.elm(3), EOBJECT_TYPE);
+						Insn.LD insn = (Insn.LD) insn_;
+						current = branch(current, insn.label, insn_idx);
+						current = setType(current, insn.dest, EOBJECT_TYPE);
 						continue next_insn;
 					}
 
@@ -1562,16 +1563,18 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					}
 
 					case wait_timeout: {
-						Type timeout_type = getType(current, insn.elm(3));
-					}
+						checkArg(current, ((Insn.LS)insn_).src);
+					} // fall-through
 					case wait: {
-						current = branch(current, insn.elm(2), insn_idx);
+						Insn.L insn = (Insn.L) insn_;
+						current = branch(current, insn.label, insn_idx);
 						continue next_insn;
 					}
 
 					case deallocate:
 					case trim: {
-						int howmuch = insn.elm(2).asInt();
+						Insn.I insn = (Insn.I) insn_;
+						int howmuch = insn.i1;
 						current = current.trim_y(howmuch);
 						continue next_insn;
 					}
@@ -1583,7 +1586,8 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 					case allocate_zero:
 					case allocate_heap_zero: {
-						int slots = insn.elm(2).asInt();
+						Insn.I insn = (Insn.I) insn_;
+						int slots = insn.i1;
 						current = current.alloc_y(slots);
 						for (int slot = 0; slot < slots; slot++) {
 							current = current.sety(slot, ENIL_TYPE);
@@ -1593,7 +1597,8 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 					case allocate:
 					case allocate_heap: {
-						current = current.alloc_y(insn.elm(2).asInt());
+						Insn.I insn = (Insn.I) insn_;
+						current = current.alloc_y(insn.i1);
 						continue next_insn;
 					}
 
@@ -1601,50 +1606,55 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					case fclearerror:
 						continue next_insn;
 
-					case put:
-						getType(current, insn.elm(2));
+					case put: {
+						Insn.S insn = (Insn.S) insn_;
+						checkArg(current, insn.src);
 						continue next_insn;
+					}
 
 					case select_tuple_arity: {
-						current = branch(current, insn.elm(3), insn_idx);
+						Insn.Select insn = (Insn.Select) insn_;
+						current = branch(current, insn.defaultLabel, insn_idx);
 
-						// touch select reg
-						getType(current, insn.elm(2));
+						checkArg(current, insn.src);
 
-						ESeq cases = insn.elm(4).testTuple().elm(2).testSeq();
-						while (cases != ERT.NIL) {
-							EObject value = cases.head();
-							EObject target = cases.tail().head();
+						DestinationOperand dest = insn.src.testDestination();
+						Operands.SelectList jumpTable = insn.jumpTable;
+						int len = jumpTable.size();
+						for (int i=0; i<len; i++) {
+							Operands.Operand value = jumpTable.getValue(i);
+							Operands.Label target = jumpTable.getLabel(i);
 
-							current = setType(current, insn.elm(2),
-									getTupleType(value.asInt()));
-
+							if (dest != null) {
+								int arity = value.asCodeInt().value;
+								current = setType(current, dest, getTupleType(arity));
+							}
 							current = branch(current, target, insn_idx);
-
-							cases = cases.tail().tail();
 						}
 
 						continue next_insn;
 					}
 
 					case select_val: {
-						current = branch(current, insn.elm(3), insn_idx);
+						Insn.Select insn = (Insn.Select) insn_;
+						current = branch(current, insn.defaultLabel, insn_idx);
 
-						// touch select reg
-						getType(current, insn.elm(2));
+						checkArg(current, insn.src);
 
-						ESeq cases = insn.elm(4).testTuple().elm(2).testSeq();
-						while (cases != ERT.NIL) {
-							EObject value = cases.head();
-							EObject target = cases.tail().head();
-
+						Operands.SelectList jumpTable = insn.jumpTable;
+						int len = jumpTable.size();
+						for (int i=0; i<len; i++) {
+							Operands.Label target = jumpTable.getLabel(i);
+							//TODO: Set the known type of 'src'
 							current = branch(current, target, insn_idx);
-
-							cases = cases.tail().tail();
 						}
 
 						continue next_insn;
 					}
+
+					default: // Fall back to symbolic form:
+						ETuple insn = insn_.toSymbolicTuple();
+						switch (code) {
 
 						// we loose the type of the result
 
