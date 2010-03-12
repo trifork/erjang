@@ -463,16 +463,13 @@ public class Insn implements BeamInstruction {
 		}
 	}
 
-	public static class LDS extends L { // E.g. 'is_function2'
-		public final DestinationOperand dest;
+	public static class LDS extends LD { // E.g. 'is_function2'
 		public final SourceOperand src;
-		public final boolean is_test;
 		public LDS(BeamOpcode opcode, Label label, DestinationOperand dest, SourceOperand src, boolean is_test) {
-			super(opcode, label);
-			this.dest = dest;
+			super(opcode, label, dest, is_test);
 			this.src = src;
-			this.is_test = is_test;
 		}
+
 		public ETuple toSymbolic() {
 			if (is_test)
 				return ETuple.make(TEST_ATOM,
