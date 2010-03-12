@@ -1865,29 +1865,6 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 				return false;
 			}
 
-			/** @deprecated */
-			private int sizeof(TypeMap current, EObject cell) {
-
-				ETuple at;
-				if ((at = cell.testTuple()) != null) {
-					if (at.arity() == 2) {
-						if (at.elm(1) == X_ATOM)
-							return 32;
-						if (at.elm(1) == Y_ATOM)
-							return 32;
-						if (at.elm(1) == FR_ATOM)
-							return 64;
-					}
-				}
-
-				Type t = getType(current, cell);
-				if (t == Type.DOUBLE_TYPE) {
-					return 64;
-				} else {
-					return 32;
-				}
-			}
-
 			private int sizeof(TypeMap current, Operands.SourceOperand cell) {
 				if (cell instanceof Operands.XReg ||
 					cell instanceof Operands.YReg)
@@ -1908,7 +1885,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 				return BIFUtil.getBifResult(module, name, parmTypes, is_guard);
 			}
 
-			/** @deprecated */
+			@Deprecated
 			private Type[] parmTypes(TypeMap current, ESeq args) {
 				ArrayList<Type> res = new ArrayList<Type>();
 
@@ -1919,21 +1896,6 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 				}
 
 				return res.toArray(new Type[res.size()]);
-			}
-
-			/** @deprecated */
-			private void checkArgs(TypeMap current, EObject eTerm, ETuple insn) {
-				ESeq args = eTerm.testSeq();
-
-				while (args != ERT.NIL) {
-					EObject arg = args.head();
-
-					if (getType(current, arg) == null) {
-						throw new Error("uninitialized " + arg + " in " + insn);
-					}
-
-					args = args.tail();
-				}
 			}
 
 			private Type[] parmTypes(TypeMap current, SourceOperand[] args) {
@@ -2127,26 +2089,6 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 				}//switch
 			}
 
-			/** @deprecated */
-			private void check(TypeMap current, EObject src) {
-				if (getType(current, src) == null) {
-					throw new Error("argument has no type");
-				}
-			}
-
-			/** @deprecated */
-			private TypeMap branch(TypeMap current, EObject nth, int idx) {
-				int target;
-				if (nth != NOFAIL_ATOM) {
-					ETuple tuple = nth.testTuple();
-					if (tuple.elm(1) != F_ATOM)
-						throw new Error("not a branch target: " + nth);
-
-					target = tuple.elm(2).asInt();
-				} else target = -1;
-				return branch(current, target, idx);
-			}
-
 			private TypeMap branch(TypeMap current, Operands.Label target, int idx) {
 				return branch(current, target==null? -1 : target.nr, idx);
 			}
@@ -2156,18 +2098,6 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					get_lb(target, false).merge_from(current);
 				}
 				return current.clearLive(makeBasicBlock(block_label, idx + 1));
-			}
-
-			/** @deprecated */
-			private TypeMap installExceptionHandler(TypeMap current, EObject nth, int idx) {
-				 ETuple tuple = nth.testTuple();
-				 if (tuple.elm(1) != F_ATOM)
-					  throw new Error("not a branch target: " + nth);
-
-				 int target = tuple.elm(2).asInt();
-				 TypeMap afterPush = current.pushExceptionHandler(target);
-
-				 return afterPush.clearLive(makeBasicBlock(block_label, idx + 1));
 			}
 
 			private TypeMap installExceptionHandler(TypeMap current, Operands.Label target, int idx) {
@@ -2188,13 +2118,6 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 				String tt = "L" + ETUPLE_TYPE.getInternalName() + arity + ";";
 				return Type.getType(tt);
-			}
-
-			/** @deprecated */
-			private boolean isReg(EObject arg2) {
-				ETuple et = arg2.testTuple();
-				return (et != null && (et.elm(1) == X_ATOM
-						|| et.elm(1) == Y_ATOM || et.elm(1) == FR_ATOM));
 			}
 
 			public void merge_from(TypeMap typeMap) {
@@ -2275,6 +2198,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 				throw new Error("unknown " + dst);
 			}
 
+			@Deprecated
 			private Type getType(TypeMap current, EObject src) {
 
 				if (src instanceof ETuple2) {
