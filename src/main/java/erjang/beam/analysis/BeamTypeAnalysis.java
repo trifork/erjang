@@ -1422,91 +1422,90 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						continue next_insn;
 					}
 
-					default: // Fall back to symbolic form:
-						ETuple insn = insn_.toSymbolicTuple();
-						switch (code) {
-
 					case fconv: {
 						// unbox and convert to DOUBLE
-						getType(current, insn.elm(2));
-						current = setType(current, insn.elm(3),
-								Type.DOUBLE_TYPE);
+						Insn.SD insn = (Insn.SD) insn_;
+						getType(current, insn.src);
+						current = setType(current, insn.dest,
+										  Type.DOUBLE_TYPE);
 						continue next_insn;
 					}
 
 					case init: {
-						current = setType(current, insn.elm(2), ENIL_TYPE);
+						Insn.D insn = (Insn.D) insn_;
+						current = setType(current, insn.dest, ENIL_TYPE);
 						continue next_insn;
 					}
 
 					case set_tuple_element: {
-						getType(current, insn.elm(2));
-						getType(current, insn.elm(3));
+						Insn.SDI insn = (Insn.SDI) insn_;
+						getType(current, insn.src);
+						getType(current, insn.dest);
 						continue next_insn;
 					}
 
 					case get_tuple_element: {
-						EObject src = insn.elm(2);
-						int idx = insn.elm(3).asInt();
-						EObject dst = insn.elm(4);
-						getType(current, src);
-						current = setType(current, dst, EOBJECT_TYPE);
+						Insn.SID insn = (Insn.SID) insn_;
+						getType(current, insn.src);
+						current = setType(current, insn.dest, EOBJECT_TYPE);
 						continue next_insn;
 					}
 
 					case get_list: {
-						EObject from = insn.elm(2);
-						EObject head_into = insn.elm(3);
-						EObject tail_into = insn.elm(4);
+						Insn.SDD insn = (Insn.SDD) insn_;
+						current = setType(current, insn.dest1, EOBJECT_TYPE);
 
-						current = setType(current, head_into, EOBJECT_TYPE);
-
-						Type srctype = getType(current, from);
-						if (srctype == ELIST_TYPE || srctype == ESEQ_TYPE) {
-							current = setType(current, tail_into, ESEQ_TYPE);
-						} else {
-							current = setType(current, tail_into, EOBJECT_TYPE);
-						}
+						Type list_type = getType(current, insn.src);
+						Type tail_type =
+							(list_type == ELIST_TYPE || list_type == ESEQ_TYPE)
+							? ESEQ_TYPE : EOBJECT_TYPE;
+						current = setType(current, insn.dest2, tail_type);
 
 						continue next_insn;
 					}
 
 					case put_list: {
+						Insn.SSD insn = (Insn.SSD) insn_;
 
-						Type head_type = getType(current, insn.elm(2));
-						Type tail_type = getType(current, insn.elm(3));
+						Type head_type = getType(current, insn.src1);
+						Type tail_type = getType(current, insn.src2);
 
 						if (tail_type == null) {
-							throw new Error("value: " + insn.elm(3)
+							throw new Error("value: " + insn.src2.toSymbolic()
 									+ " has no type");
 						}
 
-						if (tail_type.equals(ENIL_TYPE)
-								|| tail_type.equals(ESEQ_TYPE)
-								|| tail_type.equals(ELIST_TYPE)) {
-							current = setType(current, insn.elm(4), ELIST_TYPE);
-						} else {
-							current = setType(current, insn.elm(4), ECONS_TYPE);
-						}
+						Type list_type = (tail_type.equals(ENIL_TYPE)
+										  || tail_type.equals(ESEQ_TYPE)
+										  || tail_type.equals(ELIST_TYPE))
+							? ELIST_TYPE : ECONS_TYPE;
+						current = setType(current, insn.dest, list_type);
+
 						continue next_insn;
 					}
 
 					case put_tuple: {
-						int arity = insn.elm(2).asInt();
-						ETuple reg = insn.elm(3).testTuple();
-
-						current = setType(current, reg, getTupleType(arity));
+						Insn.ID insn = (Insn.ID) insn_;
+						int arity = insn.i1;
+						current = setType(current, insn.dest, getTupleType(arity));
 						continue next_insn;
 					}
 
-					case K_try:
-						current = setType(current, insn.elm(2), EOBJECT_TYPE);
-						current = installExceptionHandler(current, insn.elm(3), insn_idx);
+					case K_try: {
+						Insn.YL insn = (Insn.YL) insn_;
+						current = setType(current, insn.y, EOBJECT_TYPE);
+						current = installExceptionHandler(current, insn.label, insn_idx);
 						continue next_insn;
+					}
 
-					case try_end:
+					case try_end: {
 						current = current.popExceptionHandler();
 						continue next_insn;
+					}
+
+					default: // Fall back to symbolic form:
+						ETuple insn = insn_.toSymbolicTuple();
+						switch (code) {
 
 					case try_case:
 						getType(current, insn.elm(2));
@@ -2189,6 +2188,12 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 				 int target = tuple.elm(2).asInt();
 				 TypeMap afterPush = current.pushExceptionHandler(target);
+
+				 return afterPush.clearLive(makeBasicBlock(block_label, idx + 1));
+			}
+
+			private TypeMap installExceptionHandler(TypeMap current, Operands.Label target, int idx) {
+				 TypeMap afterPush = current.pushExceptionHandler(target.nr);
 
 				 return afterPush.clearLive(makeBasicBlock(block_label, idx + 1));
 			}
