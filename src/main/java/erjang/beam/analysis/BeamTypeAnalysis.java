@@ -1961,101 +1961,8 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 			private TypeMap analyze_test(TypeMap current, Insn.L insn_, int insn_idx) {
 				current = branch(current, insn_.label, insn_idx);
 
-				switch (insn_.opcode()) {
-				case is_nil: {
-					Insn.LD insn = (Insn.LD) insn_;
-					checkArg(current, insn.dest);
-					return setType(current, insn.dest, ENIL_TYPE);
-				}
-
-				case is_list:
-				case is_nonempty_list: {
-					Insn.LD insn = (Insn.LD) insn_;
-					checkArg(current, insn.dest);
-					return setType(current, insn.dest, ECONS_TYPE);
-				}
-
-				case is_binary: {
-					Insn.LD insn = (Insn.LD) insn_;
-					checkArg(current, insn.dest);
-					return setType(current, insn.dest, EBINARY_TYPE);
-				}
-				case is_tuple: {
-					Insn.LD insn = (Insn.LD) insn_;
-					checkArg(current, insn.dest);
-					return setType(current, insn.dest, ETUPLE_TYPE);
-				}
-
-
-				case test_arity: {
-					Insn.LDI insn = (Insn.LDI) insn_;
-					checkArg(current, insn.dest);
-					return setType(current, insn.dest, getTupleType(insn.i1));
-				}
-
-				case is_boolean:
-				case is_atom: {
-					Insn.LD insn = (Insn.LD) insn_;
-					checkArg(current, insn.dest);
-					return setType(current, insn.dest, EATOM_TYPE);
-				}
-
-				case is_integer: {
-					Insn.LD insn = (Insn.LD) insn_;
-					checkArg(current, insn.dest);
-					return setType(current, insn.dest, EINTEGER_TYPE);
-				}
-
-				case is_bitstr: {
-					Insn.LD insn = (Insn.LD) insn_;
-					checkArg(current, insn.dest);
-					return setType(current, insn.dest, EBITSTRING_TYPE);
-				}
-
-				case is_number: {
-					Insn.LD insn = (Insn.LD) insn_;
-					checkArg(current, insn.dest);
-					return setType(current, insn.dest, ENUMBER_TYPE);
-				}
-
-				case is_pid: {
-					Insn.LD insn = (Insn.LD) insn_;
-					checkArg(current, insn.dest);
-					return setType(current, insn.dest, EPID_TYPE);
-				}
-
-				case is_port: {
-					Insn.LD insn = (Insn.LD) insn_;
-					checkArg(current, insn.dest);
-					return setType(current, insn.dest, EPORT_TYPE);
-				}
-
-				case is_reference: {
-					Insn.LD insn = (Insn.LD) insn_;
-					checkArg(current, insn.dest);
-					return setType(current, insn.dest, EREFERENCE_TYPE);
-				}
-
-				case is_float: {
-					Insn.LD insn = (Insn.LD) insn_;
-					checkArg(current, insn.dest);
-					return setType(current, insn.dest, EDOUBLE_TYPE);
-				}
-
-				case is_function: {
-					Insn.LD insn = (Insn.LD) insn_;
-					checkArg(current, insn.dest);
-					return setType(current, insn.dest, EFUN_TYPE);
-				}
-
-				case is_function2: {
-					Insn.LDS insn = (Insn.LDS) insn_;
-					checkArg(current, insn.dest);
-					checkArg(current, insn.src);
-					// TODO: Use more specific type when arity is known?
-					return setType(current, insn.dest, EFUN_TYPE);
-				}
-
+				BeamOpcode opcode = insn_.opcode();
+				switch (opcode) {
 				case is_lt:
 				case is_ge:
 				case is_ne:
@@ -2156,10 +2063,68 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					return setType(current, insn.dest5, Type.INT_TYPE);
 				}
 
-				default:
-					throw new Error("unhandled test: " + insn_.toSymbolic());
-				}//switch
+				default: { // All type tests:
+					Insn.LD insn = (Insn.LD) insn_;
+					checkArg(current, insn.dest);
+					switch (opcode) {
+					case is_nil:
+						return setType(current, insn.dest, ENIL_TYPE);
 
+					case is_list:
+					case is_nonempty_list:
+						return setType(current, insn.dest, ECONS_TYPE);
+
+					case is_binary:
+						return setType(current, insn.dest, EBINARY_TYPE);
+
+					case is_tuple:
+						return setType(current, insn.dest, ETUPLE_TYPE);
+
+					case test_arity: {
+						int arity = ((Insn.LDI)insn).i1;
+						return setType(current, insn.dest, getTupleType(arity));
+					}
+
+					case is_boolean:
+					case is_atom:
+						return setType(current, insn.dest, EATOM_TYPE);
+
+					case is_integer:
+						return setType(current, insn.dest, EINTEGER_TYPE);
+
+					case is_bitstr:
+						return setType(current, insn.dest, EBITSTRING_TYPE);
+
+					case is_number:
+						return setType(current, insn.dest, ENUMBER_TYPE);
+
+					case is_pid:
+						return setType(current, insn.dest, EPID_TYPE);
+
+					case is_port:
+						return setType(current, insn.dest, EPORT_TYPE);
+
+					case is_reference:
+						return setType(current, insn.dest, EREFERENCE_TYPE);
+
+					case is_float:
+						return setType(current, insn.dest, EDOUBLE_TYPE);
+
+					case is_function:
+						return setType(current, insn.dest, EFUN_TYPE);
+
+					case is_function2: {
+						Insn.LDS insn2 = (Insn.LDS) insn;
+						checkArg(current, insn2.src);
+						// TODO: Use more specific type when arity is known?
+						return setType(current, insn.dest, EFUN_TYPE);
+					}
+
+					default:
+						throw new Error("unhandled test: " + insn_.toSymbolic());
+					}//switch
+				}
+				}//switch
 			}
 
 			private void check(TypeMap current, EObject src) {
