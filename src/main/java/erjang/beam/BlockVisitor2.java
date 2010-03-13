@@ -87,7 +87,7 @@ public interface BlockVisitor2 extends BlockVisitor {
 	 * @param efun
 	 * @param freevars
 	 */
-	void visitInsn(BeamOpcode opcode, ExtFunc efun, Arg[] freevars);
+	void visitInsn(BeamOpcode opcode, ExtFun efun, Arg[] freevars);
 
 	/**
 	 * @param opcode

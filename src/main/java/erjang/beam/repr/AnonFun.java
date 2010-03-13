@@ -40,6 +40,10 @@ public class AnonFun {
 		this.uniq=uniq;
 	}
 
+	public ExtFun asExtFun() {
+		return new ExtFun(mod, fun, total_arity);
+	}
+
 	public String toString() {
 		return fun+"/"+total_arity;
 	}

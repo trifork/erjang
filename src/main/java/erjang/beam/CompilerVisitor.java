@@ -2275,13 +2275,13 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			 * erjang.beam.ExtFunc, int)
 			 */
 			@Override
-			public void visitInsn(BeamOpcode opcode, ExtFunc efun,
+			public void visitInsn(BeamOpcode opcode, ExtFun efun,
 					Arg[] freevars) {
 				ensure_exception_handler_in_place();
 
 				if (opcode == BeamOpcode.make_fun2) {
 
-					CompilerVisitor.this.register_lambda(efun.fun, efun.no,
+					CompilerVisitor.this.register_lambda(efun.fun, efun.arity,
 							freevars.length);
 
 					String inner = EUtil.getFunClassName(self_type, efun);

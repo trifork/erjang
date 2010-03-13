@@ -632,13 +632,10 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						break;
 					}
 
-					default: // Fall back to symbolic form:
-						ETuple insn = insn_.toSymbolicTuple();
-						switch (opcode) {
-
 					case make_fun2: {
-						ExtFunc efun = new ExtFunc(insn.elm(2).testTuple());
-						int numfree = insn.elm(5).asInt();
+						Insn.F insn = (Insn.F) insn_;
+						ExtFun efun = insn.anon_fun.asExtFun();
+						int numfree = insn.anon_fun.free_vars;
 						Arg[] free = new Arg[numfree];
 						for (int i = 0; i < numfree; i++) {
 							free[i] = new Arg(Arg.Kind.X, i, map[insn_idx]
@@ -648,42 +645,46 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						break;
 					}
 
-					case init:
-						vis.visitInsn(opcode, decode_out_arg(insn_idx, insn
-								.elm(2)));
+					case init: {
+						Insn.D insn = (Insn.D) insn_;
+						vis.visitInsn(opcode, dest_arg(insn_idx, insn.dest));
 						break;
+					}
 
 					case put_list: {
+						Insn.SSD insn = (Insn.SSD) insn_;
 						Arg[] in = new Arg[] {
-								decode_arg(insn_idx, insn.elm(2)),
-								decode_arg(insn_idx, insn.elm(3)) };
-						Arg out = decode_out_arg(insn_idx, insn.elm(4));
+							src_arg(insn_idx, insn.src1),
+							src_arg(insn_idx, insn.src2)
+						};
+						Arg out = dest_arg(insn_idx, insn.dest);
 
 						vis.visitInsn(opcode, in, out);
 						break;
 					}
 
 					case put_tuple: {
-
-						int arity = insn.elm(2).asInt();
-						Type tupleType = getTupleType(arity);
-						tuple_reg = new Arg(decode_out_arg(insn_idx, insn
-								.elm(3)), tupleType);
+						Insn.ID insn = (Insn.ID) insn_;
+						int arity = insn.i1;
+						tuple_reg = new Arg(dest_arg(insn_idx, insn.dest),
+											getTupleType(arity));
 						vis.visitInsn(opcode, arity, tuple_reg);
 						tuple_pos = 1;
 						break;
 					}
 
 					case put: {
-						Arg val = decode_arg(insn_idx, insn.elm(2));
+						Insn.S insn = (Insn.S) insn_;
+						Arg val = src_arg(insn_idx, insn.src);
 						vis.visitInsn(opcode, val, tuple_reg, tuple_pos++);
 						break;
 					}
 
 					case set_tuple_element: {
-						Arg in = decode_arg(insn_idx, insn.elm(2));
-						Arg out = decode_arg(insn_idx, insn.elm(3));
-						int idx = insn.elm(4).asInt();
+						Insn.SDI insn = (Insn.SDI) insn_;
+						Arg in  = src_arg(insn_idx, insn.src);
+						Arg out = src_arg(insn_idx, insn.dest);
+						int idx = insn.i;
 
 						vis.visitInsn(opcode, in, out, idx);
 
@@ -696,6 +697,10 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						// need to zero out refs?
 						break;
 					}
+
+					default: // Fall back to symbolic form:
+						ETuple insn = insn_.toSymbolicTuple();
+						switch (opcode) {
 
 					case select_tuple_arity: {
 						int failLabel = decode_labelref(insn.elm(3), type_map.exh);

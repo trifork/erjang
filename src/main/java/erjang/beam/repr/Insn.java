@@ -543,7 +543,7 @@ public class Insn implements BeamInstruction {
 	public static class SDI extends Insn { // E.g. 'set_tuple_element'
 		public final SourceOperand src;
 		public final DestinationOperand dest;
-		int i;
+		public final int i;
 		public SDI(BeamOpcode opcode, SourceOperand src, DestinationOperand dest, int i) {
 			super(opcode);
 			this.src = src;
