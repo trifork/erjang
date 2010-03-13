@@ -28,6 +28,7 @@ import java.util.regex.Pattern;
 import org.objectweb.asm.Type;
 
 import erjang.EAtom;
+import erjang.beam.repr.ExtFun;
 
 /**
  * 
@@ -152,8 +153,8 @@ public class EUtil {
 	 * @param fun
 	 * @return
 	 */
-	public static String getJavaName(ExtFunc fun) {
-		return toJavaIdentifier(fun.mod) + "__" + getJavaName(fun.fun, fun.no);
+	public static String getJavaName(ExtFun fun) {
+		return toJavaIdentifier(fun.mod) + "__" + getJavaName(fun.fun, fun.arity);
 	}
 
 	/**

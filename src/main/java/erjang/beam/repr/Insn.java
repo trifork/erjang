@@ -582,12 +582,10 @@ public class Insn implements BeamInstruction {
 		}
 	}
 
-	public static class IEI extends I { // E.g. 'call'
+	public static class IEI extends IE { // E.g. 'call'
 		public final int i3;
-		public final ExtFun ext_fun;
 		public IEI(BeamOpcode opcode, int i1, ExtFun ext_fun, int i3) {
-			super(opcode, i1);
-			this.ext_fun = ext_fun;
+			super(opcode, i1, ext_fun);
 			this.i3 = i3;
 		}
 		public ETuple toSymbolic() {

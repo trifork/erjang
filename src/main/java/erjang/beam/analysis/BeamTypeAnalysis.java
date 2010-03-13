@@ -574,10 +574,6 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						accept_2_test(vis, (Insn.L)insn_, insn_idx);
 						break;
 
-					default: // Fall back to symbolic form:
-						ETuple insn = insn_.toSymbolicTuple();
-						switch (opcode) {
-
 					case K_return:
 						vis.visitInsn(opcode, new Arg(Arg.Kind.X, 0,
 								type_map.getx(0)));
@@ -585,15 +581,15 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 					case allocate_heap_zero:
 					case allocate_zero: {
+						Insn.I insn = (Insn.I)insn_;
 						int depth = type_map.stacksize;
-						int count = insn.elm(2).asInt();
+						int count = insn.i1;
 						Arg[] ys = new Arg[count];
 						for (int i = 0; i < count; i++) {
 							ys[i] = new Arg(Arg.Kind.Y, depth + i, null);
 						}
 						vis.visitInsn(opcode, (Arg[]) ys);
 						break;
-
 					}
 
 					case test_heap:
@@ -605,36 +601,40 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 					case call_ext_last:
 					case call_ext_only:
-						do_call(vis, insn_idx, insn, true, true);
+						do_call(vis, insn_idx, (Insn.I)insn_, true, true);
 						break;
 
 					case call_ext:
-						do_call(vis, insn_idx, insn, false, true);
+						do_call(vis, insn_idx, (Insn.I)insn_, false, true);
 						if (is_exceptional_call(insn_)) {
 							vis.visitUnreachablePoint();
 						}
 						break;
 
 					case call:
-						do_call(vis, insn_idx, insn, false, false);
+						do_call(vis, insn_idx, (Insn.I)insn_, false, false);
 						break;
 
 					case call_last:
 					case call_only:
-						do_call(vis, insn_idx, insn, true, false);
+						do_call(vis, insn_idx, (Insn.I)insn_, true, false);
 						break;
 
 					case apply_last:
 					case apply: {
-						Arg[] args = new Arg[2 + insn.elm(2).asInt()];
+						Insn.I insn = (Insn.I) insn_;
+						Arg[] args = new Arg[2 + insn.i1];
 						for (int i = 0; i < args.length; i++) {
 							args[i] = new Arg(Arg.Kind.X, i, map[insn_idx]
 									.getx(i));
 						}
 						vis.visitInsn(opcode, args);
 						break;
-
 					}
+
+					default: // Fall back to symbolic form:
+						ETuple insn = insn_.toSymbolicTuple();
+						switch (opcode) {
 
 					case make_fun2: {
 						ExtFunc efun = new ExtFunc(insn.elm(2).testTuple());
@@ -969,22 +969,22 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 				}
 			}
 
-			private void do_call(BlockVisitor2 vis, int insn_idx, ETuple insn,
+			private void do_call(BlockVisitor2 vis, int insn_idx, Insn.I insn,
 					boolean is_tail, boolean is_external) throws Error {
-				int arg_count = insn.elm(2).asInt();
+				int arg_count = insn.i1;
 				Arg[] args = new Arg[arg_count];
 				for (int i = 0; i < arg_count; i++) {
 					args[i] = new Arg(Kind.X, i, this.map[insn_idx].getx(i));
 				}
 
-				ETuple ft = insn.elm(3).testTuple();
-				ExtFunc fun;
-				if (ft.elm(1) != EXTFUNC_ATOM)
-					fun = new ExtFunc(ft.elm(1).testAtom(), ft.elm(2)
-							.testAtom(), ft.elm(3).asInt());
-				else
-					fun = new ExtFunc(ft.elm(2).testAtom(), ft.elm(3)
-							.testAtom(), ft.elm(4).asInt());
+				ExtFun fun;
+				if (insn instanceof Insn.IE) {
+					fun = ((Insn.IE)insn).ext_fun;
+				} else if (insn instanceof Insn.IL) {
+					fun = ((Insn.IL)insn).functionAtLabel.asExtFun();
+				} else
+					throw new Error("unexpected in do_call: "+insn);
+
 				vis.visitCall(fun, args, is_tail, is_external);
 			}
 

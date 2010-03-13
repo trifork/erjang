@@ -36,6 +36,9 @@ public class FunctionInfo {
 		return mod+":"+fun+"/"+arity;
 	}
 
+	public ExtFun asExtFun() {
+		return new ExtFun(mod, fun, arity);
+	}
 
 	public ETuple toSymbolic() {
 		return ETuple.make(mod, fun, new ESmall(arity));

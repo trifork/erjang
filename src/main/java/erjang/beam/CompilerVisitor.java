@@ -245,18 +245,18 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 		// wow, this is where we generate <clinit>
 
-		for (Map.Entry<String, ExtFunc> ent : imported.entrySet()) {
+		for (Map.Entry<String, ExtFun> ent : imported.entrySet()) {
 			String field_name = ent.getKey();
-			ExtFunc f = ent.getValue();
+			ExtFun f = ent.getValue();
 
 			FieldVisitor fv = cv.visitField(ACC_STATIC, ent.getKey(), "L"
-					+ EFUN_NAME + f.no + ";", null, null);
-			EFun.ensure(f.no);
+					+ EFUN_NAME + f.arity + ";", null, null);
+			EFun.ensure(f.arity);
 			AnnotationVisitor av = fv.visitAnnotation(IMPORT_ANN_TYPE
 					.getDescriptor(), true);
 			av.visit("module", f.mod.getName());
 			av.visit("fun", f.fun.getName());
-			av.visit("arity", f.no);
+			av.visit("arity", f.arity);
 			av.visitEnd();
 			fv.visitEnd();
 		}
@@ -2561,23 +2561,22 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			 * erjang.beam.Arg[], boolean, boolean)
 			 */
 			@Override
-			public void visitCall(ExtFunc fun, Arg[] args, boolean is_tail,
+			public void visitCall(ExtFun fun, Arg[] args, boolean is_tail,
 					boolean isExternal) {
 
 				ensure_exception_handler_in_place();
 
 				if (isExternal) {
-
 					BuiltInFunction bif = null;
 
 					try {
-						bif = BIFUtil.getMethod(fun.mod.getName(), fun.fun.getName(), args, false);
+						bif = BIFUtil.getMethod(fun.mod.getName(),
+												fun.fun.getName(), args, false);
 					} catch (Error e) {
 						// ignore //
 					}
 
 					if (bif == null) {
-
 						String field = CompilerVisitor.this
 								.getExternalFunction(fun);
 
@@ -2596,11 +2595,10 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 										.getSignature(args.length, true));
 
 					} else if (bif.isVirtual()) {
-
 						// System.err.println("DIRECT "+bif);
-						
+
 						push(args[0], bif.owner);
-						
+
 						int off = 0;
 						if (bif.getArgumentTypes().length > 0
 								&& bif.getArgumentTypes()[0].equals(EPROC_TYPE)) {
@@ -2646,7 +2644,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				} else {
 
 					// are we self-recursive?
-					if (is_tail && fun.no == ASMFunctionAdapter.this.arity
+					if (is_tail && fun.arity == ASMFunctionAdapter.this.arity
 							&& fun.fun == ASMFunctionAdapter.this.fun_name) {
 
 						mv.visitVarInsn(ALOAD, 0);
@@ -2667,7 +2665,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 					mv.visitMethodInsn(INVOKESTATIC, self_type
 							.getInternalName(), EUtil.getJavaName(fun.fun,
-							fun.no)
+							fun.arity)
 							+ (is_tail ? "$tail" : "$call"), EUtil
 							.getSignature(args.length, true));
 
@@ -2684,7 +2682,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			 * @param fun
 			 * @return
 			 */
-			private boolean isExitFunc(ExtFunc fun) {
+			private boolean isExitFunc(ExtFun fun) {
 				if (fun.mod == ERLANG_ATOM) {
 					if (fun.fun.getName().equals("exit"))
 						return true;
@@ -2727,13 +2725,13 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 	static Method IS_FUNCTION2_TEST = Method
 			.getMethod("erjang.EFun testFunction(int nargs)");
 
-	Map<String, ExtFunc> imported = new HashMap<String, ExtFunc>();
+	Map<String, ExtFun> imported = new HashMap<String, ExtFun>();
 
 	/**
 	 * @param fun
 	 * @return
 	 */
-	public String getExternalFunction(ExtFunc fun) {
+	public String getExternalFunction(ExtFun fun) {
 
 		String name = EUtil.getJavaName(fun);
 		if (!imported.containsKey(name)) {

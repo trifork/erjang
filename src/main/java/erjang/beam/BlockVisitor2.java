@@ -74,7 +74,7 @@ public interface BlockVisitor2 extends BlockVisitor {
 	 * @param isTail
 	 * @param isExternal
 	 */
-	void visitCall(ExtFunc fun, Arg[] args, boolean isTail, boolean isExternal);
+	void visitCall(ExtFun fun, Arg[] args, boolean isTail, boolean isExternal);
 
 	/**
 	 * @param opcode
