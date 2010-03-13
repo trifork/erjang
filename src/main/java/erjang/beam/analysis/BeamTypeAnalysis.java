@@ -488,24 +488,19 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						break;
 					}
 
-
-					default: // Fall back to symbolic form:
-						ETuple insn = insn_.toSymbolicTuple();
-						switch (opcode) {
-
 					case bif0:
 					case bif1:
 					case bif2:
 					{
-						// System.err.println("gen: " + insn);
-						EAtom name = insn.elm(2).testAtom();
-						int failLabel = decode_labelref(insn.elm(3), type_map.exh);
-						ESeq parms = insn.elm(4).testSeq();
-						Arg[] in = decode_args(insn_idx, parms.toArray());
-						Arg out = decode_out_arg(insn_idx, insn.elm(5));
+						Insn.Bif insn = (Insn.Bif)insn_;
+						EAtom name = insn.ext_fun.fun;
+						int failLabel = decode_labelref(insn.label, type_map.exh);
+						SourceOperand[] srcs = insn.args;
+						Arg[] in = src_args(insn_idx, srcs);
+						Arg out  = dest_arg(insn_idx, insn.dest);
 
 						BuiltInFunction bif = BIFUtil.getMethod("erlang", name.getName(),
-								parmTypes(type_map, parms),
+								parmTypes(type_map, srcs),
 								failLabel != 0);
 
 						vis.visitInsn(opcode, failLabel, in, out, bif);
@@ -515,15 +510,15 @@ public class BeamTypeAnalysis extends ModuleAdapter {
  					case gc_bif1:
  					case gc_bif2:
 					{
-						// System.err.println("gen: " + insn);
-						EAtom name = insn.elm(2).testAtom();
-						int failLabel = decode_labelref(insn.elm(3), type_map.exh);
-						ESeq parms = insn.elm(5).testSeq();
-						Arg[] in = decode_args(insn_idx, parms.toArray());
-						Arg out = decode_out_arg(insn_idx, insn.elm(6));
+						Insn.GcBif insn = (Insn.GcBif)insn_;
+						EAtom name = insn.ext_fun.fun;
+						int failLabel = decode_labelref(insn.label, type_map.exh);
+						SourceOperand[] srcs = insn.args;
+						Arg[] in = src_args(insn_idx, srcs);
+						Arg out  = dest_arg(insn_idx, insn.dest);
 
 						BuiltInFunction bif = BIFUtil.getMethod("erlang", name.getName(),
-								parmTypes(type_map, parms),
+								parmTypes(type_map, srcs),
 								failLabel != 0);
 
 						vis.visitInsn(opcode, failLabel, in, out, bif);
@@ -576,8 +571,12 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					case bs_get_integer2:
 					case bs_get_float2:
 					case bs_get_binary2:
-						accept_2_test(vis, insn, insn_idx);
+						accept_2_test(vis, (Insn.L)insn_, insn_idx);
 						break;
+
+					default: // Fall back to symbolic form:
+						ETuple insn = insn_.toSymbolicTuple();
+						switch (opcode) {
 
 					case K_return:
 						vis.visitInsn(opcode, new Arg(Arg.Kind.X, 0,
@@ -989,73 +988,26 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 				vis.visitCall(fun, args, is_tail, is_external);
 			}
 
-			private void accept_2_test(BlockVisitor2 vis, ETuple insn,
-					int insn_idx) {
+			private void accept_2_test(BlockVisitor2 vis, Insn.L insn_, int insn_idx) {
 
-				int failLabel = decode_labelref(insn.elm(3), this.map[insn_idx].exh);
+				int failLabel = decode_labelref(insn_.label, this.map[insn_idx].exh);
+				BeamOpcode test = insn_.opcode();
 
+				if (insn_ instanceof Insn.LD) {
+					Insn.LD insn = (Insn.LD)insn_;
+					Arg arg = src_arg(insn_idx, insn.dest);
+					Type test_type = type_tested_for(insn);
+					if (test_type != null) {
+						vis.visitTest(test, failLabel, arg, test_type);
+						return;
+					}
+				}
+
+				ETuple insn = insn_.toSymbolicTuple();
 				EObject[] argExprs = insn.elm(4).testSeq().toArray();
 				Arg[] args = decode_args(insn_idx, argExprs);
 
-				BeamOpcode test = BeamOpcode.get(insn.elm(2).testAtom());
 				switch (test) {
-				case is_boolean:
-				case is_atom:
-					vis.visitTest(test, failLabel, args[0], EATOM_TYPE);
-					break;
-
-				case is_integer:
-					vis.visitTest(test, failLabel, args[0], EINTEGER_TYPE);
-					break;
-
-				case is_float:
-					vis.visitTest(test, failLabel, args[0], EDOUBLE_TYPE);
-					break;
-
-				case is_binary:
-					vis.visitTest(test, failLabel, args[0], EBINARY_TYPE);
-					break;
-
-				case is_list:
-					vis.visitTest(test, failLabel, args[0], ECONS_TYPE);
-					break;
-
-				case is_nonempty_list:
-					vis.visitTest(test, failLabel, args[0], ESEQ_TYPE);
-					break;
-
-				case is_tuple:
-					vis.visitTest(test, failLabel, args[0], ETUPLE_TYPE);
-					break;
-
-				case is_nil:
-					vis.visitTest(test, failLabel, args[0], ENIL_TYPE);
-					break;
-
-				case is_number:
-					vis.visitTest(test, failLabel, args[0], ENUMBER_TYPE);
-					break;
-
-				case is_bitstr:
-					vis.visitTest(test, failLabel, args[0], EBITSTRING_TYPE);
-					break;
-
-				case is_pid:
-					vis.visitTest(test, failLabel, args[0], EPID_TYPE);
-					break;
-
-				case is_port:
-					vis.visitTest(test, failLabel, args[0], EPORT_TYPE);
-					break;
-
-				case is_reference:
-					vis.visitTest(test, failLabel, args[0], EREFERENCE_TYPE);
-					break;
-
-				case is_function:
-					vis.visitTest(test, failLabel, args[0], EFUN_TYPE);
-					break;
-
 				case is_function2:
 					vis.visitTest(test, failLabel, args[0], argExprs[1]
 							.testTuple().elm(2).asInt(), EFUN_TYPE);
@@ -1154,6 +1106,14 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 				// return null;
 
+			}
+
+			private Arg[] src_args(int insn_idx, SourceOperand[] args) {
+				Arg[] res = new Arg[args.length];
+				for (int i=0; i<args.length; i++) {
+					res[i] = src_arg(insn_idx, args[i]);
+				}
+				return res;
 			}
 
 			private Arg src_arg(int insn_idx, SourceOperand src) {
@@ -2094,51 +2054,10 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					Insn.LD insn = (Insn.LD) insn_;
 					checkArg(current, insn.dest);
 					switch (opcode) {
-					case is_nil:
-						return setType(current, insn.dest, ENIL_TYPE);
-
-					case is_list:
-					case is_nonempty_list:
-						return setType(current, insn.dest, ECONS_TYPE);
-
-					case is_binary:
-						return setType(current, insn.dest, EBINARY_TYPE);
-
-					case is_tuple:
-						return setType(current, insn.dest, ETUPLE_TYPE);
-
 					case test_arity: {
 						int arity = ((Insn.LDI)insn).i1;
 						return setType(current, insn.dest, getTupleType(arity));
 					}
-
-					case is_boolean:
-					case is_atom:
-						return setType(current, insn.dest, EATOM_TYPE);
-
-					case is_integer:
-						return setType(current, insn.dest, EINTEGER_TYPE);
-
-					case is_bitstr:
-						return setType(current, insn.dest, EBITSTRING_TYPE);
-
-					case is_number:
-						return setType(current, insn.dest, ENUMBER_TYPE);
-
-					case is_pid:
-						return setType(current, insn.dest, EPID_TYPE);
-
-					case is_port:
-						return setType(current, insn.dest, EPORT_TYPE);
-
-					case is_reference:
-						return setType(current, insn.dest, EREFERENCE_TYPE);
-
-					case is_float:
-						return setType(current, insn.dest, EDOUBLE_TYPE);
-
-					case is_function:
-						return setType(current, insn.dest, EFUN_TYPE);
 
 					case is_function2: {
 						Insn.LDS insn2 = (Insn.LDS) insn;
@@ -2147,10 +2066,43 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						return setType(current, insn.dest, EFUN_TYPE);
 					}
 
-					default:
+					default: {
+						if (insn instanceof Insn.LD) {
+							Type test_type = type_tested_for((Insn.LD)insn);
+							if (test_type != null)
+								return setType(current, insn.dest, test_type);
+						}
 						throw new Error("unhandled test: " + insn_.toSymbolic());
+					}
 					}//switch
 				}
+				}//switch
+			}
+
+			private Type type_tested_for(Insn.LD insn) {
+				switch (insn.opcode()) {
+				case is_nil:       return ENIL_TYPE;
+				case is_binary:    return EBINARY_TYPE;
+				case is_tuple:     return ETUPLE_TYPE;
+				case is_integer:   return EINTEGER_TYPE;
+				case is_bitstr:    return EBITSTRING_TYPE;
+				case is_number:    return ENUMBER_TYPE;
+				case is_pid:       return EPID_TYPE;
+				case is_port:      return EPORT_TYPE;
+				case is_reference: return EREFERENCE_TYPE;
+				case is_float:     return EDOUBLE_TYPE;
+				case is_function:  return EFUN_TYPE;
+
+				case is_list:
+				case is_nonempty_list:
+					return ECONS_TYPE;
+
+				case is_boolean:
+				case is_atom:
+					return EATOM_TYPE;
+
+				default:
+					return null;
 				}//switch
 			}
 
