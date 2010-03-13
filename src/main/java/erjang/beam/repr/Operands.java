@@ -101,6 +101,7 @@ public class Operands {
     public static abstract class Literal extends SourceOperand {
 		@Override
 		public Literal asLiteral() {return this;}
+		public abstract EObject literalValue();
     }
 
     public static Literal makeInt(byte[] d) {
@@ -126,8 +127,13 @@ public class Operands {
     public static class Int extends Literal {
 		public final int value;
 		public Int(int value) {this.value=value;}
+
 		@Override
 		public Int testInt() {return this;}
+
+		@Override
+		public EObject literalValue() {return new ESmall(value);}
+
 		public EObject toSymbolic() {
 			return ETuple.make(INTEGER_ATOM, new ESmall(value));
 		}
@@ -136,8 +142,13 @@ public class Operands {
     public static class BigInt extends Literal {
 		public final BigInteger value;
 		public BigInt(BigInteger value) {this.value=value;}
+
 		@Override
 		public BigInt testBigInt() {return this;}
+
+		@Override
+		public EObject literalValue() {return new EBig(value);}
+
 		public EObject toSymbolic() {
 			return ETuple.make(INTEGER_ATOM, new EBig(value));
 		}
@@ -146,8 +157,13 @@ public class Operands {
     public static class Float extends Literal {
 		public final double value;
 		public Float(double value) {this.value=value;}
+
 		@Override
 		public Float testFloat() {return this;}
+
+		@Override
+		public EObject literalValue() {return new EDouble(value);}
+
 		public EObject toSymbolic() {
 			return ETuple.make(FLOAT_ATOM, new EDouble(value));
 		}
@@ -156,6 +172,10 @@ public class Operands {
     public static final Nil Nil = new Nil();
     public static class Nil extends Literal {
 		private Nil() {}
+
+		@Override
+		public EObject literalValue() {return ERT.NIL;}
+
 		public EObject toSymbolic() {return NIL_ATOM;}
     }
 
@@ -223,8 +243,13 @@ public class Operands {
 
 		@Override
 		public Atom asAtom() {return this;}
+
 		@Override
 		public Atom testAtom() {return this;}
+
+		@Override
+		public EObject literalValue() {return value;}
+
 		public EAtom getEAtom() {return value;}
 		public EObject toSymbolic() {
 			return ETuple.make(ATOM_ATOM, value);
@@ -236,6 +261,10 @@ public class Operands {
 		public BitString(EBitString value) {
 			this.value = value;
 		}
+
+		@Override
+		public EObject literalValue() {return value;}
+
 		public long bitLength() {return value.bitSize();}
 
 		@Override
@@ -248,7 +277,11 @@ public class Operands {
 		public final EString value;
 		public ByteString(EString value) {
 			this.value = value;
-	}
+		}
+
+		@Override
+		public EObject literalValue() {return value;}
+
 		public int byteLength() {return value.length();}
 
 		@Override
@@ -260,8 +293,13 @@ public class Operands {
     public static class TableLiteral extends Literal {
 		public final EObject value;
 		public TableLiteral(EObject value) {this.value=value;}
+
+		@Override
+		public EObject literalValue() {return value;}
+
 		@Override
 		public TableLiteral testTableLiteral() {return this;}
+
 		public EObject toSymbolic() {
 			return ETuple.make(LITERAL_ATOM, value);
 		}

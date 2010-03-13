@@ -435,30 +435,30 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						break;
 					}
 
-					default: // Fall back to symbolic form:
-						ETuple insn = insn_.toSymbolicTuple();
-						switch (opcode) {
-
 					case fconv:
 					case fmove:
 					case move: {
-						// System.err.println(insn);
-						Arg arg1 = decode_arg(insn_idx, insn.elm(2));
-						Arg arg2 = decode_out_arg(insn_idx, insn.elm(3));
+						Insn.SD insn = (Insn.SD)insn_;
+						Arg src  = src_arg(insn_idx, insn.src);
+						Arg dest = dest_arg(insn_idx, insn.dest);
 
-						if (arg2.kind != Kind.F) {
-							if (arg1.kind == Kind.F) {
-								arg2 = new Arg(arg2, EDOUBLE_TYPE);
+						if (dest.kind != Kind.F) {
+							if (src.kind == Kind.F) {
+								dest = new Arg(dest, EDOUBLE_TYPE);
 							} else {
-								arg2 = new Arg(arg2, arg1.type);
+								dest = new Arg(dest, src.type);
 							}
 						} else {
 							// arg2.kind == F
 						}
 
-						vis.visitInsn(opcode, arg1, arg2);
+						vis.visitInsn(opcode, src, dest);
 						break;
 					}
+
+					default: // Fall back to symbolic form:
+						ETuple insn = insn_.toSymbolicTuple();
+						switch (opcode) {
 
 					case put_string: {
 						Arg arg1 = decode_arg(insn_idx, insn.elm(3));
@@ -1149,6 +1149,60 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 				// return null;
 
+			}
+
+			private Arg src_arg(int insn_idx, SourceOperand src) {
+				TypeMap current = this.map[insn_idx];
+
+				if (src instanceof Operands.XReg)
+					return src_arg((Operands.XReg) src, current);
+				if (src instanceof Operands.YReg)
+					return src_arg((Operands.YReg) src, current);
+				if (src instanceof Operands.FReg)
+					return arg((Operands.FReg) src);
+				if (src instanceof Operands.Float)
+					return arg((Operands.Float) src);
+				if (src instanceof Operands.Literal)
+					return arg((Operands.Literal) src);
+
+				throw new Error("Unhandled src_arg: "+src.toSymbolic());
+			}
+
+			private Arg dest_arg(int insn_idx, DestinationOperand dest) {
+				TypeMap current = this.map[insn_idx];
+
+				if (dest instanceof Operands.XReg)
+					return dest_arg((Operands.XReg) dest);
+				if (dest instanceof Operands.YReg)
+					return dest_arg((Operands.YReg) dest, current);
+				if (dest instanceof Operands.FReg)
+					return arg((Operands.FReg) dest);
+
+				throw new Error("Unhandled dest_arg: "+dest.toSymbolic());
+			}
+
+			private Arg src_arg(Operands.XReg xreg, TypeMap tm) {
+				return new Arg(Kind.X, xreg.nr, tm.getx(xreg.nr));
+			}
+			private Arg src_arg(Operands.YReg yreg, TypeMap tm) {
+				return new Arg(Kind.Y, tm.get_ypos(yreg.nr), tm.gety(yreg.nr));
+			}
+
+			private Arg dest_arg(Operands.XReg xreg) {
+				return new Arg(Kind.X, xreg.nr);
+			}
+			private Arg dest_arg(Operands.YReg yreg, TypeMap tm) {
+				return new Arg(Kind.Y, tm.get_ypos(yreg.nr));
+			}
+
+			private Arg arg(Operands.FReg freg) {
+				return new Arg(Kind.F, freg.nr);
+			}
+			private Arg arg(Operands.Float flt) {
+				return new Arg(flt.literalValue(), Type.DOUBLE_TYPE);
+			}
+			private Arg arg(Operands.Literal lit) {
+				return new Arg(lit.literalValue());
 			}
 
 			/**
