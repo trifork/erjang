@@ -551,7 +551,7 @@ public class ErlBif {
 	@BIF(type = Type.GUARD, name = "node")
 	@ErlFun(export = true)
 	static public EAtom node$p(EObject name) {
-		return null;
+		return EAtom.intern("nonode@nohost"); // Until we go online
 	}
 
 	// process dict

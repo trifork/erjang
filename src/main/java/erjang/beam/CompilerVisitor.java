@@ -86,6 +86,7 @@ import static erjang.beam.CodeAtoms.*;
  * 
  */
 public class CompilerVisitor implements ModuleVisitor, Opcodes {
+	public static boolean PARANOIA_MODE = false;
 
 	ECons atts = ERT.NIL;
 	private Set<String> exported = new HashSet<String>();
@@ -1174,6 +1175,14 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 							mv.visitJumpInsn(IFNULL, getLabel(failLabel));
 						}
 					} else {
+						if (PARANOIA_MODE && bif.getReturnType().getSort() == Type.OBJECT) {
+							// Expect non-guards to return non-null.
+							mv.visitInsn(DUP);
+							mv.visitLdcInsn(bif.toString());
+							mv.visitMethodInsn(INVOKESTATIC, ERT_NAME,
+											   "paranoiaCheck", "(Lerjang/EObject;Ljava/lang/String;)V");
+						}
+
 						pop(out, bif.getReturnType());
 					}
 

@@ -642,6 +642,10 @@ public class ERT {
 		throw new ErlangError(new ETuple2(am_badmatch, val));
 	}
 
+	public static void paranoiaCheck(final EObject e, String details) {
+		if (e == null) throw new Error("Bif returned null: "+details);
+	}
+
 	public static EObject decode_exception2(final ErlangException e) {
 		return e.getCatchValue();
 	}
