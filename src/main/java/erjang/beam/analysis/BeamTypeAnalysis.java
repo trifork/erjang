@@ -456,15 +456,14 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						break;
 					}
 
-					default: // Fall back to symbolic form:
-						ETuple insn = insn_.toSymbolicTuple();
-						switch (opcode) {
-
 					case put_string: {
-						Arg arg1 = decode_arg(insn_idx, insn.elm(3));
-						Arg arg2 = decode_out_arg(insn_idx, insn.elm(4));
-						arg2 = new Arg(arg2, ESEQ_TYPE);
-						vis.visitInsn(BeamOpcode.move, arg1, arg2);
+						Insn.ByD insn = (Insn.ByD)insn_;
+						Arg src  = src_arg(insn_idx, insn.bin);
+						Arg dest = dest_arg(insn_idx, insn.dest);
+// 						Arg arg1 = decode_arg(insn_idx, insn.elm(3));
+// 						Arg arg2 = decode_out_arg(insn_idx, insn.elm(4));
+						dest = new Arg(dest, ESEQ_TYPE);
+						vis.visitInsn(BeamOpcode.move, src, dest);
 						break;
 					}
 
@@ -473,20 +472,26 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					case fmul:
 					case fdiv:
 					{
-						// System.err.println("gen: " + insn);
-						EAtom name = insn.elm(2).testAtom();
-						int failLabel = decode_labelref(insn.elm(3), type_map.exh);
-						ESeq parms = insn.elm(4).testSeq();
-						Arg[] in = decode_args(insn_idx, parms.toArray());
-						Arg out = decode_out_arg(insn_idx, insn.elm(5));
+						Insn.LSSD insn = (Insn.LSSD)insn_;
+						EAtom name = opcode.symbol;
+						int failLabel = decode_labelref(insn.label, type_map.exh);
+						Arg[] in = new Arg[] {src_arg(insn_idx, insn.src1),
+											  src_arg(insn_idx, insn.src2)};
+						Type[] inTypes = new Type[] {in[0].type,
+													 in[1].type};
+						Arg out = dest_arg(insn_idx, insn.dest);
 
-						BuiltInFunction bif = BIFUtil.getMethod("erlang", name.getName(),
-								parmTypes(type_map, parms),
+						BuiltInFunction bif = BIFUtil.getMethod("erlang", name.getName(), inTypes,
 								failLabel != 0);
 
 						vis.visitInsn(opcode, failLabel, in, out, bif);
 						break;
 					}
+
+
+					default: // Fall back to symbolic form:
+						ETuple insn = insn_.toSymbolicTuple();
+						switch (opcode) {
 
 					case bif0:
 					case bif1:
@@ -1263,6 +1268,11 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					return 0;
 				assert (f_tup.testTuple().elm(1) == F_ATOM);
 				return extendedLabel(f_tup.testTuple().elm(2).asInt(), exh);
+			}
+
+			private int decode_labelref(Operands.Label label, ExceptionHandler exh) {
+				if (label == null) return 0;
+				return extendedLabel(label.nr, exh);
 			}
 
 			public boolean isDeadCode() {
