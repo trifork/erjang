@@ -762,11 +762,6 @@ public class ErlBif {
 		return null;
 	}
 
-	@BIF(name = "*")
-	static public ENumber multiply(EObject v1, EObject v2) {
-		return v1.multiply(v2);
-	}
-
 	@BIF(name = "*", type=Type.GUARD)
 	static public ENumber multiply$g(EObject v1, EObject v2) {
 		ENumber n1;
@@ -861,14 +856,13 @@ public class ErlBif {
 	}
 
 	@BIF
-	@ErlFun(export = true)
 	static public ENumber rem(EObject v1, EObject v2) {
 		return v1.irem(v2);
 	}
 
 	@BIF(name = "rem", type = Type.GUARD)
 	static public EInteger rem$p(EObject v1, EObject v2) {
-		if (v2.equals(ESmall.ZERO)) {
+		if (v2.equals(ESmall.ZERO) || v1.testNumber()==null || v2.testNumber()==null) {
 			return null;
 		} else {
 			return v1.irem(v2);
@@ -1031,12 +1025,12 @@ public class ErlBif {
 
 	@BIF(name = "/=")
 	public static final EAtom is_ne(EObject a1, EObject a2) {
-		return ERT.box(a1.compareTo(a2) != 0);
+		return ERT.box(!a1.equals(a2));
 	}
 
 	@BIF(name = "/=", type = Type.GUARD)
 	public static final EAtom is_ne$g(EObject a1, EObject a2) {
-		return ERT.guard(a1.compareTo(a2) != 0);
+		return ERT.guard(!a1.equals(a2));
 	}
 
 	@BIF(name = "<", type = Type.GUARD)

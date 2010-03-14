@@ -178,7 +178,7 @@ public class EBig extends EInteger {
 	}
 
 	EInteger r_irem(int lhs) {
-		return ERT.box(BigInteger.valueOf(lhs).divide(value));
+		return ERT.box(BigInteger.valueOf(lhs).remainder(value));
 	}
 
 	EInteger r_irem(BigInteger lhs) {
