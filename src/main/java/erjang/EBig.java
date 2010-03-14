@@ -307,6 +307,13 @@ public class EBig extends EInteger {
 		return ERT.box(value.not());
 	}
 
+
+	@Override
+	public ENumber negate() {
+               return ERT.box(value.negate());
+	}
+	
+
 	/*
 	 * (non-Javadoc)
 	 * 
