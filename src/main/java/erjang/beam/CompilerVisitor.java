@@ -811,15 +811,9 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			 * erjang.beam.Arg, erjang.beam.Arg)
 			 */
 			@Override
-			public void visitInitBitString(Arg size, Arg flags, Arg out, boolean unit_is_bits) {
-
-				ETuple tflags = flags.value.testTuple();
-				if (tflags.elm(1) != ATOM_field_flags)
-					throw new Error("unhandled flags: " + flags.value);
-				int iflags = tflags.elm(2).asInt();
-
+			public void visitInitBitString(Arg size, int flags, Arg out, boolean unit_is_bits) {
 				push(size, Type.INT_TYPE);
-				mv.visitLdcInsn(new Integer(iflags));
+				mv.visitLdcInsn(new Integer(flags));
 				String methodName = unit_is_bits? "bs_initBits" : "bs_init";
 				mv.visitMethodInsn(INVOKESTATIC, ERT_NAME, methodName, "(II)"
 						+ EBITSTRINGBUILDER_TYPE.getDescriptor());
@@ -834,18 +828,16 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				pop(out, EBITSTRING_TYPE);
 
 				return;
-
 			}
 
 			@Override
-			public void visitBitStringAppend(BeamOpcode opcode, Arg extra_size, Arg src, Arg flags, Arg dst) {
-
+			public void visitBitStringAppend(BeamOpcode opcode, Arg extra_size, Arg src, int flags, Arg dst) {
 				push(src, EOBJECT_TYPE);
 				push(extra_size, Type.INT_TYPE);
-				push(flags, Type.INT_TYPE);
+				push_int(flags);
 				mv.visitMethodInsn(INVOKESTATIC, EBITSTRINGBUILDER_TYPE.getInternalName(),
 							"bs_append", "("+ EOBJECT_DESC +"II)"+EBITSTRINGBUILDER_TYPE.getDescriptor());
-				
+
 				mv.visitInsn(DUP);
 				mv.visitVarInsn(ASTORE, bit_string_builder);
 
@@ -856,7 +848,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				pop(dst, EBITSTRING_TYPE);
 				return;
 			}
-			
+
 			/*
 			 * (non-Javadoc)
 			 * 
@@ -941,133 +933,32 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				throw new Error("unhandled: " + opcode);
 			}
 
-			/*
-			 * (non-Javadoc)
-			 * 
-			 * @see
-			 * erjang.beam.BlockVisitor2#visitBitStringTest(erjang.beam.BeamOpcode
-			 * , int, erjang.beam.Arg[])
-			 */
 			@Override
-			public void visitBitStringTest(BeamOpcode test, int failLabel,
-					Arg[] args) {
-
+			public void visitBitStringTest(BeamOpcode test, int failLabel, Arg in, int intg, Arg dst) {
 				switch (test) {
 				case bs_start_match2: {
-					Arg in = args[0];
-					Arg out = args[3];
-
 					push(in, EOBJECT_TYPE);
-					push(args[2], Type.INT_TYPE);
+					push_int(intg); // Slots
 					mv.visitMethodInsn(INVOKESTATIC, EBINMATCHSTATE_TYPE
 							.getInternalName(), test.name(), "(" + EOBJECT_DESC
 							+ "I)" + EMATCHSTATE_TYPE.getDescriptor());
 
 					mv.visitInsn(DUP);
 					mv.visitVarInsn(ASTORE, bit_string_matcher);
-
 					mv.visitJumpInsn(IFNULL, getLabel(failLabel));
-
 					mv.visitVarInsn(ALOAD, bit_string_matcher);
 
-					pop(out, EBINMATCHSTATE_TYPE);
+					pop(dst, EBINMATCHSTATE_TYPE);
 					return;
 				}
-
-					// {test,bs_test_unit,{f,41},[{x,2},8]}
-				case bs_test_unit:
-					push(args[0], EBINMATCHSTATE_TYPE);
-					push(args[1], Type.INT_TYPE);
-					mv.visitMethodInsn(INVOKEVIRTUAL, EBINMATCHSTATE_TYPE
-							.getInternalName(), test.name(), "(I)"
-							+ EOBJECT_DESC);
-					mv.visitJumpInsn(IFNULL, getLabel(failLabel));
-					return;
-
-				case bs_match_string:
-					push(args[0], EBINMATCHSTATE_TYPE);
-					push(args[1], Type.INT_TYPE);
-					push(args[2], EBITSTRING_TYPE);
-					mv.visitMethodInsn(INVOKEVIRTUAL, EBINMATCHSTATE_TYPE
-							.getInternalName(), test.name(), "(I"
-							+ EBITSTRING_TYPE.getDescriptor() + ")"
-							+ EBITSTRING_TYPE);
-					mv.visitJumpInsn(IFNULL, getLabel(failLabel));
-					return;
-
-					// {test,bs_skip_bits2, {f,39},
-					// [{x,1},{x,0},8,{field_flags,0}]}
-				case bs_skip_bits2:
-					push(args[0], EBINMATCHSTATE_TYPE);
-					push(args[1], EINTEGER_TYPE);
-					push(args[2], Type.INT_TYPE);
-					push_immediate(args[3].value.testTuple().elm(2),
-							Type.INT_TYPE);
-					mv.visitMethodInsn(INVOKEVIRTUAL, EBINMATCHSTATE_TYPE
-							.getInternalName(), test.name(), "(" + EOBJECT_DESC
-							+ "II)" + EOBJECT_DESC);
-					mv.visitJumpInsn(IFNULL, getLabel(failLabel));
-					return;
-
-					// {test,bs_get_binary2,{f,348},[{x,3},5,{atom,all},8,{field_flags,0},{x,3}]}
-				case bs_get_binary2:
-
-					push(args[0], EBINMATCHSTATE_TYPE);
-					push(args[2], EOBJECT_TYPE);
-					push_immediate(args[4].value.testTuple().elm(2),
-							Type.INT_TYPE);
-					mv.visitMethodInsn(INVOKEVIRTUAL, EBINMATCHSTATE_TYPE
-							.getInternalName(), test.name(), "(" + EOBJECT_DESC
-							+ "I)" + EBITSTRING_TYPE);
-
-					mv.visitInsn(DUP);
-					mv.visitVarInsn(ASTORE, scratch_reg);
-
-					mv.visitJumpInsn(IFNULL, getLabel(failLabel));
-
-					mv.visitVarInsn(ALOAD, scratch_reg);
-
-					pop(args[5], EBITSTRING_TYPE);
-					return;
-
-					// {test,bs_get_integer2,{f,348},[{x,3},4,{integer,32},1,{field_flags,0},{x,4}]}
-				case bs_get_integer2:
-
-					push(args[0], EBINMATCHSTATE_TYPE);
-					push(args[2], Type.INT_TYPE);
-					push(args[4], Type.INT_TYPE);
-					mv.visitMethodInsn(INVOKEVIRTUAL, EBINMATCHSTATE_TYPE
-							.getInternalName(), test.name(), "(II)"
-							+ EINTEGER_TYPE.getDescriptor());
-					mv.visitInsn(DUP);
-					mv.visitVarInsn(ASTORE, scratch_reg);
-
-					mv.visitJumpInsn(IFNULL, getLabel(failLabel));
-
-					mv.visitVarInsn(ALOAD, scratch_reg);
-
-					pop(args[5], EOBJECT_TYPE);
-					return;
-
-				/*{test,bs_skip_utf8,{f,275},[{x,6},7,{field_flags,0}]} */
-				case bs_skip_utf8:
-				case bs_skip_utf16:
-				case bs_skip_utf32:
-					push(args[0], EBINMATCHSTATE_TYPE);
-					push_immediate(args[2].value.testTuple().elm(2),
-							Type.INT_TYPE);
-					mv.visitMethodInsn(INVOKEVIRTUAL, EBINMATCHSTATE_TYPE
-							.getInternalName(), test.name(), "(I)Z");
-					mv.visitJumpInsn(IFEQ, getLabel(failLabel));
-					return;
 
 				/* {test,bs_get_utf8,{f,6},[{x,0},1,
 				   {field_flags,[...,unsigned,big]},{x,1}]}. */
 				case bs_get_utf8:
 				case bs_get_utf16:
-				case bs_get_utf32:
-					push(args[0], EBINMATCHSTATE_TYPE);
-					push(args[2], Type.INT_TYPE);
+				case bs_get_utf32: {
+					push(in, EBINMATCHSTATE_TYPE);
+					push_int(intg); // Flags
 					mv.visitMethodInsn(INVOKEVIRTUAL, EBINMATCHSTATE_TYPE
 							.getInternalName(), test.name(), "(I)I");
 					mv.visitInsn(DUP);
@@ -1076,20 +967,105 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					mv.visitJumpInsn(IFLT, getLabel(failLabel));
 					mv.visitVarInsn(ILOAD, scratch_reg);
 
-					pop(args[3], Type.INT_TYPE);
+					pop(dst, Type.INT_TYPE);
 					return;
+				}
+				default:
+					throw new Error("unhandled bit string test: " + test);
+				}
+			}
 
-				case bs_test_tail2:
-					push(args[0], EBINMATCHSTATE_TYPE);
+			@Override
+			public void visitBitStringTest(BeamOpcode test, int failLabel, Arg in, EBitString bin) {
+				switch (test) {
+				case bs_match_string: {
+					push(in, EBINMATCHSTATE_TYPE);
+					push_immediate(bin, EBITSTRING_TYPE);
 					mv.visitMethodInsn(INVOKEVIRTUAL, EBINMATCHSTATE_TYPE
-							.getInternalName(), test.name(), "()"
-							+ EOBJECT_DESC);
+							.getInternalName(), test.name(), "("
+							+ EBITSTRING_TYPE.getDescriptor() + ")"
+							+ EBITSTRING_TYPE);
 					mv.visitJumpInsn(IFNULL, getLabel(failLabel));
 					return;
-
 				}
+				default:
+					throw new Error("unhandled bit string test: " + test);
+				}
+			}
 
-				throw new Error("unhandled bit string test: " + test);
+			@Override
+			public void visitBitStringTest(BeamOpcode test, int failLabel, Arg in, Arg bits, int unit, int flags) {
+				switch (test) {
+				case bs_skip_bits2: {
+					// {test,bs_skip_bits2, {f,39},
+					// [{x,1},{x,0},8,{field_flags,0}]}
+					push(in, EBINMATCHSTATE_TYPE);
+					push(bits, EINTEGER_TYPE);
+					push_int(unit); // TODO: Scale here instead?
+					push_int(flags);
+					mv.visitMethodInsn(INVOKEVIRTUAL, EBINMATCHSTATE_TYPE
+							.getInternalName(), test.name(), "(" + EOBJECT_DESC
+							+ "II)" + EOBJECT_DESC);
+					mv.visitJumpInsn(IFNULL, getLabel(failLabel));
+					return;
+				}
+				default:
+					throw new Error("unhandled bit string test: " + test);
+				}
+			}
+
+			@Override
+			public void visitBitStringTest(BeamOpcode test, int failLabel, Arg in, Arg bits, int unit, int flags, Arg dst) {
+				switch (test) {
+				case bs_get_binary2: {
+					push(in, EBINMATCHSTATE_TYPE);
+					push(bits, EOBJECT_TYPE); //TODO: scale by unit, handling 'all'
+					push_int(flags);
+					mv.visitMethodInsn(INVOKEVIRTUAL, EBINMATCHSTATE_TYPE
+							.getInternalName(), test.name(), "(" + EOBJECT_DESC
+							+ "I)" + EBITSTRING_TYPE);
+
+					mv.visitInsn(DUP);
+					mv.visitVarInsn(ASTORE, scratch_reg);
+					mv.visitJumpInsn(IFNULL, getLabel(failLabel));
+					mv.visitVarInsn(ALOAD, scratch_reg);
+
+					pop(dst, EBITSTRING_TYPE);
+					return;
+				}
+					// {test,bs_get_integer2,{f,348},[{x,3},4,{integer,32},1,{field_flags,0},{x,4}]}
+				case bs_get_integer2: {
+					push(in, EBINMATCHSTATE_TYPE);
+					push(bits, Type.INT_TYPE);
+					push_int(flags);
+					mv.visitMethodInsn(INVOKEVIRTUAL, EBINMATCHSTATE_TYPE
+							.getInternalName(), test.name(), "(II)"
+							+ EINTEGER_TYPE.getDescriptor());
+
+					mv.visitInsn(DUP);
+					mv.visitVarInsn(ASTORE, scratch_reg);
+					mv.visitJumpInsn(IFNULL, getLabel(failLabel));
+					mv.visitVarInsn(ALOAD, scratch_reg);
+
+					pop(dst, EOBJECT_TYPE);
+					return;
+				}
+				default:
+					throw new Error("unhandled bit string test: " + test);
+				}
+			}
+
+			@Override
+			public void visitBitStringTest(BeamOpcode test, int failLabel, Arg in, int intg) {
+				// case bs_test_tail2: // intg == expected bits left
+				// case bs_test_unit:  // intg == unit
+				// case bs_skip_utfXX: // intg == flags
+					push(in, EBINMATCHSTATE_TYPE);
+					push_int(intg);
+					mv.visitMethodInsn(INVOKEVIRTUAL, EBINMATCHSTATE_TYPE
+							.getInternalName(), test.name(), "(I)Z");
+					mv.visitJumpInsn(IFEQ, getLabel(failLabel));
+					return;
 			}
 
 			/*
@@ -1981,13 +1957,20 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					pop(arg, getTubleType(arity));
 					return;
 				}
+				}//switch
+			}
 
+			@Override
+			public void visitTest(BeamOpcode test, int failLabel, Arg arg,
+					Arg arity, Type funType) {
+
+				switch (test) {
 				case is_function2:
 
 					// push object to test
 					push(arg, EOBJECT_TYPE);
 					// push arity
-					push_int(arity);
+					push(arity, Type.INT_TYPE);
 					// call object.testFunction2(nargs)
 					mv.visitMethodInsn(INVOKEVIRTUAL, EOBJECT_NAME,
 							"testFunction2", "(I)" + EFUN_DESCRIPTOR);
@@ -1998,7 +1981,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					mv.visitJumpInsn(IFNULL, getLabel(failLabel));
 
 					mv.visitVarInsn(ALOAD, scratch_reg);
-					pop(arg, EFUN_TYPE);
+					pop(arg, funType);
 					return;
 				}
 			}

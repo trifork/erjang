@@ -402,10 +402,10 @@ public class Insn implements BeamInstruction {
 	}
 
 	public static class LDI extends LD { // E.g. 'test_arity'
-		public final int i1;
-		public LDI(BeamOpcode opcode, Label label, DestinationOperand dest, int i1, boolean is_test) {
+		public final int i;
+		public LDI(BeamOpcode opcode, Label label, DestinationOperand dest, int i, boolean is_test) {
 			super(opcode, label, dest, is_test);
-			this.i1 = i1;
+			this.i = i;
 		}
 		public ETuple toSymbolic() {
 			if (is_test)
@@ -413,29 +413,29 @@ public class Insn implements BeamInstruction {
 								   opcode.symbol,
 								   label.toSymbolic(),
 								   EList.make(dest.toSymbolic(),
-											  new ESmall(i1)));
+											  new ESmall(i)));
 			else
 				return ETuple.make(opcode.symbol,
 								   label.toSymbolic(),
 								   dest.toSymbolic(),
-								   new ESmall(i1));
+								   new ESmall(i));
 		}
 	}
 
 	public static class SID extends Insn { // E.g. 'get_tuple_element'
 		public final SourceOperand src;
-		public final int i1;
+		public final int i;
 		public final DestinationOperand dest;
-		public SID(BeamOpcode opcode, SourceOperand src, int i1, DestinationOperand dest) {
+		public SID(BeamOpcode opcode, SourceOperand src, int i, DestinationOperand dest) {
 			super(opcode);
 			this.src = src;
-			this.i1 = i1;
+			this.i = i;
 			this.dest = dest;
 		}
 		public ETuple toSymbolic() {
 			return ETuple.make(opcode.symbol,
 							   src.toSymbolic(),
-							   new ESmall(i1),
+							   new ESmall(i),
 							   dest.toSymbolic());
 		}
 	}
@@ -981,14 +981,14 @@ public class Insn implements BeamInstruction {
 	public static class BSAppend extends Insn { // E.g. 'bs_append'
 		// LSIIISID
 		public final Label label;
-		public final SourceOperand i2;
+		public final SourceOperand src2;
 		public final int i3, i4, i5, i7;
 		public final SourceOperand src6;
 		public final DestinationOperand dest8;
-		public BSAppend(BeamOpcode opcode, Label label, SourceOperand i2, int i3, int i4, int i5, SourceOperand src6, int i7, DestinationOperand dest8) {
+		public BSAppend(BeamOpcode opcode, Label label, SourceOperand src2, int i3, int i4, int i5, SourceOperand src6, int i7, DestinationOperand dest8) {
 			super(opcode);
 			this.label = label;
-			this.i2 = i2;
+			this.src2 = src2;
 			this.i3 = i3;
 			this.i4 = i4;
 			this.i5 = i5;
@@ -999,7 +999,7 @@ public class Insn implements BeamInstruction {
 		public ETuple toSymbolic() {
 			return ETuple.make(opcode.symbol,
 							   label.toSymbolic(),
-							   i2.toSymbolic(),
+							   src2.toSymbolic(),
 							   new ESmall(i3),
 							   new ESmall(i4),
 							   new ESmall(i5),

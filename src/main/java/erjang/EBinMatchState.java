@@ -241,7 +241,7 @@ public class EBinMatchState extends EPseudoTerm {
 		return ERT.box(bi);
 	}
 
-	public EBitString bs_match_string(int bits, EBitString ebs) {
+	public EBitString bs_match_string(EBitString ebs) {
 		long size = ebs.bitSize();
 
 		// do we have bits enough in the input
@@ -284,17 +284,13 @@ public class EBinMatchState extends EPseudoTerm {
 		return ERT.TRUE;
 	}
 	
-	public EObject bs_test_unit(int size) {
-		if (offset % size == 0)
-			return ERT.TRUE;
-		return null;
+	public boolean bs_test_unit(int size) {
+		return (offset % size == 0);
 	}
 
-	/** yields TRUE if we are at the end */
-	public EObject bs_test_tail2() {
-		if (offset == bin.bitSize())
-			return ERT.TRUE;
-		return null;
+	/** Tests whether there is exactly expected_left bits left. */
+	public boolean bs_test_tail2(int expected_left) {
+		return (offset + (long)expected_left == bin.bitSize());
 	}
 
     //==================== UTF-related operations ====================

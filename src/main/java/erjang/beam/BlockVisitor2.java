@@ -24,6 +24,7 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
 import erjang.beam.repr.ExtFun;
+import erjang.EBitString;
 
 /**
  * 
@@ -136,6 +137,8 @@ public interface BlockVisitor2 extends BlockVisitor {
 	 */
 	void visitTest(BeamOpcode test, int failLabel, Arg arg, int arity,
 			Type tupleType);
+	void visitTest(BeamOpcode test, int failLabel, Arg arg, Arg arity,
+			Type funType);
 
 	/**
 	 * @param decodeLabelref
@@ -162,14 +165,18 @@ public interface BlockVisitor2 extends BlockVisitor {
 	 * @param failLabel
 	 * @param args
 	 */
-	void visitBitStringTest(BeamOpcode test, int failLabel, Arg[] args);
+	void visitBitStringTest(BeamOpcode test, int failLabel, Arg in, int intg, Arg dst);
+	void visitBitStringTest(BeamOpcode test, int failLabel, Arg in, EBitString bin);
+	void visitBitStringTest(BeamOpcode test, int failLabel, Arg in, Arg bits, int unit, int flags);
+	void visitBitStringTest(BeamOpcode test, int failLabel, Arg in, Arg bits, int unit, int flags, Arg dst);
+	void visitBitStringTest(BeamOpcode test, int failLabel, Arg in, int intg);
 
 	/**
 	 * @param size
 	 * @param flags
 	 * @param out
 	 */
-	void visitInitBitString(Arg size, Arg flags, Arg out, boolean unit_is_bits);
+	void visitInitBitString(Arg size, int flags, Arg out, boolean unit_is_bits);
 
 	/**
 	 * @param opcode
@@ -177,7 +184,7 @@ public interface BlockVisitor2 extends BlockVisitor {
 	 */
 	void visitBitStringPut(BeamOpcode opcode, Arg value, Arg size, int unit, int flags);
 
-	void visitBitStringAppend(BeamOpcode opcode, Arg extra_size, Arg src, Arg flags, Arg dst);
+	void visitBitStringAppend(BeamOpcode opcode, Arg extra_size, Arg src, int flags, Arg dst);
 
 	/**
 	 * @param opcode

@@ -698,29 +698,24 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						break;
 					}
 
-					default: // Fall back to symbolic form:
-						ETuple insn = insn_.toSymbolicTuple();
-						switch (opcode) {
-
 					case select_tuple_arity: {
-						int failLabel = decode_labelref(insn.elm(3), type_map.exh);
-						Arg in = decode_arg(insn_idx, insn.elm(2));
+						Insn.Select insn = (Insn.Select) insn_;
+						int failLabel = decode_labelref(insn.defaultLabel,
+														type_map.exh);
+						Arg in = src_arg(insn_idx, insn.src);
 
-						ESeq cases = insn.elm(4).testTuple().elm(2).testSeq();
-						int len = cases.length() / 2;
+						Operands.SelectList jumpTable = insn.jumpTable;
+						int len = jumpTable.size();
 
 						int[] arities = new int[len];
 						int[] targets = new int[len];
 
-						int idx = 0;
+						for (int i=0; i<len; i++) {
+							Operands.Operand value = jumpTable.getValue(i);
+							Operands.Label target = jumpTable.getLabel(i);
 
-						while (cases != ERT.NIL) {
-							arities[idx] = cases.head().asInt();
-							EObject target = cases.tail().head();
-							targets[idx] = decode_labelref(target, type_map.exh);
-
-							cases = cases.tail().tail();
-							idx += 1;
+							arities[i] = value.asCodeInt().value;
+							targets[i] = decode_labelref(target, type_map.exh);
 						}
 
 						vis.visitSelectTuple(in, failLabel, arities, targets);
@@ -729,23 +724,23 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					}
 
 					case select_val: {
-						Arg in = decode_arg(insn_idx, insn.elm(2));
-						int failLabel = decode_labelref(insn.elm(3), type_map.exh);
-						ESeq cases = insn.elm(4).testTuple().elm(2).testSeq();
-						int len = cases.length() / 2;
+						Insn.Select insn = (Insn.Select) insn_;
+						int failLabel = decode_labelref(insn.defaultLabel,
+														type_map.exh);
+						Arg in = src_arg(insn_idx, insn.src);
+
+						Operands.SelectList jumpTable = insn.jumpTable;
+						int len = jumpTable.size();
 
 						Arg[] values = new Arg[len];
 						int[] targets = new int[len];
 
-						int idx = 0;
+						for (int i=0; i<len; i++) {
+							Operands.Operand value = jumpTable.getValue(i);
+							Operands.Label target = jumpTable.getLabel(i);
 
-						while (cases != ERT.NIL) {
-							values[idx] = decode_value(cases.head());
-							EObject target = cases.tail().head();
-							targets[idx] = decode_labelref(target, type_map.exh);
-
-							cases = cases.tail().tail();
-							idx += 1;
+							values[i] = arg(value.asLiteral());
+							targets[i] = decode_labelref(target, type_map.exh);
 						}
 
 						vis.visitSelectValue(in, failLabel, values, targets);
@@ -754,35 +749,41 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					}
 
 					case get_tuple_element: {
+						Insn.SID insn = (Insn.SID) insn_;
 
-						Arg in = decode_arg(insn_idx, insn.elm(2));
-						int idx = insn.elm(3).asInt();
-						Arg out = decode_out_arg(insn_idx, insn.elm(4));
+						Arg in  = src_arg(insn_idx, insn.src);
+						int idx = insn.i;
+						Arg out = dest_arg(insn_idx, insn.dest);
 
 						vis.visitInsn(opcode, in, out, idx);
-
 						break;
 					}
 
-					case jump:
-						vis.visitJump(decode_labelref(insn.elm(2), type_map.exh));
+					case jump: {
+						Insn.L insn = (Insn.L) insn_;
+						vis.visitJump(decode_labelref(insn.label, type_map.exh));
 						break;
+					}
 
 					case trim:
 						break;
 
-					case get_list:
+					case get_list: {
+						Insn.SDD insn = (Insn.SDD) insn_;
 						vis.visitInsn(opcode, new Arg[] {
-								decode_arg(insn_idx, insn.elm(2)),
-								decode_out_arg(insn_idx, insn.elm(3)),
-								decode_out_arg(insn_idx, insn.elm(4)) });
+								src_arg(insn_idx, insn.src),
+								dest_arg(insn_idx, insn.dest1),
+								dest_arg(insn_idx, insn.dest2) });
 						break;
+					}
 
 					case try_case_end:
 					case badmatch:
-					case case_end:
-						vis.visitInsn(opcode, decode_arg(insn_idx, insn.elm(2)));
+					case case_end: {
+						Insn.S insn = (Insn.S) insn_;
+						vis.visitInsn(opcode, src_arg(insn_idx, insn.src));
 						break;
+					}
 
 					case if_end:
 						vis.visitInsn(opcode);
@@ -797,60 +798,68 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 					case K_try:
 					case K_catch: {
+						Insn.YL insn = (Insn.YL) insn_;
 						TypeMap type_map_after = this.map[insn_idx+1];
-						vis.visitCatchBlockStart(opcode, decode_labelref(insn.elm(3), type_map.exh),
-												 decode_arg(insn_idx, insn.elm(2)),
+						vis.visitCatchBlockStart(opcode,
+												 decode_labelref(insn.label, type_map.exh),
+												 src_arg(insn_idx, insn.y),
 												 type_map_after.exh);
 						break;
 					}
 
 					case raise: {
-						EObject[] argExprs = insn.elm(3).testSeq().toArray();
-						Arg[] in = decode_args(insn_idx, argExprs);
-						Arg ex = decode_arg(insn_idx, insn.elm(4));
-						int failLabel = decode_labelref(insn.elm(2), type_map.exh);
-						
+						Insn.SS insn = (Insn.SS) insn_;
+						Arg[] in = {src_arg(insn_idx, insn.src1),
+									src_arg(insn_idx, insn.src2) };
+						Arg ex = new Arg(Arg.Kind.X, 0);
+						int failLabel = 0;
+
+						// Half of the args are constants...
 						vis.visitInsn(opcode, failLabel, in, ex);
 						break;
 					}
-					
+
 					case try_end:
 					case try_case:
-					case catch_end:
+					case catch_end: {
+						Insn.Y insn = (Insn.Y) insn_;
 						vis.visitCatchBlockEnd(opcode,
-								       decode_arg(insn_idx, insn.elm(2)),
+								       src_arg(insn_idx, insn.y),
 								       type_map.exh);
 						break;
+					}
 
-					case loop_rec: /* loop receive */
-						vis.visitReceive(opcode, decode_labelref(insn.elm(2), type_map.exh),
-								decode_out_arg(insn_idx, insn.elm(3)));
+					case loop_rec: { /* loop receive */
+						Insn.LD insn = (Insn.LD) insn_;
+						vis.visitReceive(opcode,
+										 decode_labelref(insn.label, type_map.exh),
+										 dest_arg(insn_idx, insn.dest));
 						break;
+					}
 
 					case remove_message:
-						vis.visitInsn(opcode);
-						break;
-
 					case timeout:
 						vis.visitInsn(opcode);
 						break;
 
 					case loop_rec_end:
-						vis.visitInsn(opcode, decode_labelref(insn.elm(2), type_map.exh), null);
+					case wait: {
+						Insn.L insn = (Insn.L) insn_;
+						vis.visitInsn(opcode, decode_labelref(insn.label, type_map.exh), null);
 						break;
+					}
 
-					case wait:
-						vis.visitInsn(opcode, decode_labelref(insn.elm(2), type_map.exh),
-								null);
+					case wait_timeout: {
+						Insn.LS insn = (Insn.LS) insn_;
+						vis.visitInsn(opcode,
+									  decode_labelref(insn.label, type_map.exh),
+									  src_arg(insn_idx, insn.src));
 						break;
-
-					case wait_timeout:
-						vis.visitInsn(opcode, decode_labelref(insn.elm(2), type_map.exh),
-								decode_arg(insn_idx, insn.elm(3)));
-						break;
+					}
 
 					case call_fun: {
-						int nargs = insn.elm(2).asInt();
+						Insn.I insn = (Insn.I) insn_;
+						int nargs = insn.i1;
 						Arg[] args = new Arg[nargs + 1];
 						for (int i = 0; i < args.length; i++) {
 							args[i] = new Arg(Arg.Kind.X, i, map[insn_idx]
@@ -860,116 +869,110 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 								new Arg(Arg.Kind.X, 0, null));
 						break;
 					}
-					
+
 					// {bs_add,{f,0},[{x,3},{x,4},1],{x,3}}
 					case bs_add: {
-						EObject[] args = insn.elm(3).testSeq().toArray();
-						Arg[] in = decode_args(insn_idx, args);
-						Arg out = decode_out_arg(insn_idx, insn.elm(4));
+						Insn.LSSID insn = (Insn.LSSID) insn_;
+						Arg[] in = {src_arg(insn_idx, insn.src1),
+									src_arg(insn_idx, insn.src2),
+									new Arg(new ESmall(insn.i3))};
+						Arg out = dest_arg(insn_idx, insn.dest);
 						vis.visitBSAdd(in, out);
 						break;
 					}
-						
 
-					
-					case bs_context_to_binary:
-						vis.visitBS(opcode, decode_arg(insn_idx, insn.elm(2)), null);
+					case bs_context_to_binary: {
+						Insn.D insn = (Insn.D) insn_;
+						vis.visitBS(opcode, dest_arg(insn_idx, insn.dest), null);
 						// do nothing for now
 						break;
+					}
 
 					case bs_restore2:
 					case bs_save2: {
-						vis.visitBS(opcode, decode_arg(insn_idx, insn.elm(2)), decode_arg(insn_idx, insn.elm(3)));
-						// do nothing for now
+						Insn.DI insn = (Insn.DI) insn_;
+						vis.visitBS(opcode, src_arg(insn_idx, insn.dest),
+									//TODO: streamline - change API
+									insn.i2 == -1
+									? new Arg(EAtom.intern("start"))
+									: new Arg(new ESmall(insn.i2))
+							);
 						break;
 					}
-					
 
-					case bs_init2: {
-						Arg size = decode_arg(insn_idx, insn.elm(3));
-						Arg flags = decode_arg(insn_idx, insn.elm(6));
-						Arg out = decode_out_arg(insn_idx, insn.elm(7));
-						
-						vis.visitInitBitString(size, flags, out, false);
-						
-						break;
-					}
-					
-
-					// TODO: we don't use all args here, why?
+					case bs_init2:
 					case bs_init_bits: {
-						Arg size = decode_arg(insn_idx, insn.elm(3));
-						Arg flags = decode_arg(insn_idx, insn.elm(6));
-						Arg out = decode_out_arg(insn_idx, insn.elm(7));
-						
-						vis.visitInitBitString(size, flags, out, true);
-						
+						Insn.LSIIID insn = (Insn.LSIIID) insn_;
+						Arg size  = src_arg(insn_idx, insn.src2);
+						int flags = insn.i5;
+						Arg out   = dest_arg(insn_idx, insn.dest);
+						boolean unit_is_bits = (opcode == BeamOpcode.bs_init_bits);
+
+						vis.visitInitBitString(size, flags, out,
+											   unit_is_bits);
 						break;
 					}
-					
+
 					case bs_put_string: {
-						Arg str = decode_arg(insn_idx, insn.elm(3));
+						Insn.By insn = (Insn.By) insn_;
+						Arg str = arg(insn.bin);
 						vis.visitBitStringPut(opcode, str, null,-1,-1);
 						break;
 					}
-						
+
 					case bs_put_binary:
 					case bs_put_integer:
 					case bs_put_float:
 					{
-						Arg size = decode_arg(insn_idx, insn.elm(3));
-						int unit = insn.elm(4).asInt();
-						int flags = insn.elm(5).testTuple().elm(2).asInt();
-						Arg value = decode_arg(insn_idx, insn.elm(6));
+						Insn.LSIIS insn = (Insn.LSIIS) insn_;
+						Arg size = src_arg(insn_idx, insn.src2);
+						int unit = insn.i3;
+						int flags = insn.i4;
+						Arg value = src_arg(insn_idx, insn.src5);
 						vis.visitBitStringPut(opcode, value, size, unit, flags);
 						break;
 					}
-						
+
 					case bs_put_utf8:
 					case bs_put_utf16:
 					case bs_put_utf32:
 					{
-						// {bs_put_utf32,{f,0},{field_flags,2},{x,0}}
-						int flags = insn.elm(3).testTuple().elm(2).asInt();
-						Arg value = decode_arg(insn_idx, insn.elm(4));
+						Insn.LIS insn = (Insn.LIS) insn_;
+						int flags = insn.i2;
+						Arg value = src_arg(insn_idx, insn.src);
+						//TODO: is the label always 0? (Op may fail on bad chars)
 						vis.visitBitStringPut(opcode, value, null, -1, flags);
 						break;
 					}
 
-					
 					case bs_utf8_size:
 					case bs_utf16_size: {
-						// {bs_utf16_size,{f,0},src={x,0},dst={x,2}}
-						Arg value = decode_arg(insn_idx, insn.elm(3));
-						Arg out = decode_out_arg(insn_idx, insn.elm(4));
+						Insn.LSD insn = (Insn.LSD) insn_;
+						Arg value = src_arg(insn_idx, insn.src);
+						Arg out   = dest_arg(insn_idx, insn.dest);
+						//TODO: is the label always 0? (Op may fail)
 						vis.visitBS(opcode, value, out);
 						break;
 					}
 
-
 					case bs_append: {
-						
+						Insn.BSAppend insn = (Insn.BSAppend) insn_;
 						//     {bs_append,{f,0},{integer,32},0,3,8,{x,1},{field_flags,[]},{x,0}}.
-
 						//   * tmp_arg1 = Number of bytes to build
 						//   * tmp_arg2 = Source binary
 						//   * Operands: Fail ExtraHeap Live Unit Dst
-						
-						Arg extra_size = decode_arg(insn_idx, insn.elm(3));
-						Arg src = decode_arg(insn_idx, insn.elm(7));
-						Arg flags = decode_arg(insn_idx, insn.elm(8));
-						Arg dst = decode_out_arg(insn_idx, insn.elm(9));
-						
+
+						Arg extra_size = src_arg(insn_idx, insn.src2);
+						Arg src = src_arg(insn_idx, insn.src6);
+						int flags = insn.i7;
+						Arg dst = dest_arg(insn_idx, insn.dest8);
+
 						vis.visitBitStringAppend(opcode, extra_size, src, flags, dst);
-						
 						break;
 					}
-					
-
-					
 					default:
-						throw new Error("unhandled insn: " + insn);
-					}}
+						throw new Error("unhandled insn: " + insn_.toSymbolicTuple());
+					}
 
 				}
 			}
@@ -998,7 +1001,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 				int failLabel = decode_labelref(insn_.label, this.map[insn_idx].exh);
 				BeamOpcode test = insn_.opcode();
 
-				if (insn_ instanceof Insn.LD) {
+				if (insn_ instanceof Insn.LD) { // Handle simple type tests:
 					Insn.LD insn = (Insn.LD)insn_;
 					Arg arg = src_arg(insn_idx, insn.dest);
 					Type test_type = type_tested_for(insn);
@@ -1008,52 +1011,104 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					}
 				}
 
-				ETuple insn = insn_.toSymbolicTuple();
-				EObject[] argExprs = insn.elm(4).testSeq().toArray();
-				Arg[] args = decode_args(insn_idx, argExprs);
-
 				switch (test) {
-				case is_function2:
-					vis.visitTest(test, failLabel, args[0], argExprs[1]
-							.testTuple().elm(2).asInt(), EFUN_TYPE);
+				case is_function2: {
+					Insn.LDS insn = (Insn.LDS) insn_;
+					vis.visitTest(test, failLabel,
+								  dest_arg(insn_idx, insn.dest),
+								  src_arg(insn_idx,insn.src),
+								  EFUN_TYPE);
 					break;
+				}
 
 				case is_lt:
 				case is_ge:
 				case is_eq_exact:
 				case is_ne_exact:
 				case is_ne:
-				case is_eq:
+				case is_eq: {
+					Insn.LSS insn = (Insn.LSS) insn_;
+					Arg[] args = new Arg[] {
+						src_arg(insn_idx, insn.src1),
+						src_arg(insn_idx, insn.src2) };
 					vis.visitTest(test, failLabel, args, (Arg) null,
 							Type.VOID_TYPE);
 					break;
+				}
 
-				case test_arity:
-					int arity = argExprs[1].asInt();
-					vis.visitTest(test, failLabel, args[0], arity,
+				case test_arity: {
+					Insn.LDI insn = (Insn.LDI) insn_;
+					int arity = insn.i;
+					Arg reg = src_arg(insn_idx, insn.dest);
+					vis.visitTest(test, failLabel, reg, arity,
 							getTupleType(arity));
 					break;
+				}
 
 				case bs_start_match2:
-				case bs_match_string:
-				case bs_get_integer2:
-				case bs_test_tail2:
-				case bs_get_binary2:
-				case bs_skip_bits2:
-				case bs_test_unit:
-				case bs_skip_utf8:
-				case bs_skip_utf16:
-				case bs_skip_utf32:
 				case bs_get_utf8:
 				case bs_get_utf16:
-				case bs_get_utf32:
-					vis.visitBitStringTest(test, failLabel, args);
+				case bs_get_utf32: {
+					Insn.LDIID insn = (Insn.LDIID) insn_;
+					vis.visitBitStringTest(test, failLabel,
+										   src_arg(insn_idx, insn.dest),
+										   insn.i4,
+										   dest_arg(insn_idx, insn.dest5));
 					break;
-
-				default:
-					throw new Error("unhandled test: " + insn + " at index "
-							+ insn_idx + " // " + test + ":" + test.ordinal());
 				}
+
+				case bs_match_string: {
+					Insn.LDBi insn = (Insn.LDBi) insn_;
+					vis.visitBitStringTest(test, failLabel,
+										   src_arg(insn_idx, insn.dest),
+										   insn.bin.value);
+					break;
+				}
+
+				case bs_get_integer2:
+				case bs_get_float2:
+				case bs_get_binary2: {
+					Insn.LDISIID insn = (Insn.LDISIID) insn_;
+					vis.visitBitStringTest(test, failLabel,
+										   src_arg(insn_idx, insn.dest),
+										   src_arg(insn_idx, insn.src4),
+										   insn.i5,
+										   insn.i6,
+										   dest_arg(insn_idx, insn.dest7));
+					break;
+				}
+				case bs_skip_bits2: {
+					Insn.LDSII insn = (Insn.LDSII) insn_;
+					vis.visitBitStringTest(test, failLabel,
+										   src_arg(insn_idx, insn.dest),
+										   src_arg(insn_idx, insn.src3),
+										   insn.i4,
+										   insn.i5);
+					break;
+				}
+				case bs_test_unit:
+				case bs_test_tail2: {
+					Insn.LDI insn = (Insn.LDI) insn_;
+					vis.visitBitStringTest(test, failLabel,
+										   src_arg(insn_idx, insn.dest),
+										   insn.i);
+					break;
+				}
+
+				case bs_skip_utf8:
+				case bs_skip_utf16:
+				case bs_skip_utf32: {
+					Insn.LDII insn = (Insn.LDII) insn_;
+					vis.visitBitStringTest(test, failLabel,
+										   src_arg(insn_idx, insn.dest),
+										   insn.i4);
+					break;
+				}
+				default:
+					throw new Error("unhandled test: " + insn_.toSymbolic() +
+									" at index " + insn_idx +
+									" // " + test + ":" + test.ordinal());
+				}//switch
 
 			}
 
@@ -2060,7 +2115,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					checkArg(current, insn.dest);
 					switch (opcode) {
 					case test_arity: {
-						int arity = ((Insn.LDI)insn).i1;
+						int arity = ((Insn.LDI)insn).i;
 						return setType(current, insn.dest, getTupleType(arity));
 					}
 
