@@ -1,0 +1,144 @@
+/** -*- mode:java; tab-width: 4 -*-
+ * This file is part of Erjang - A JVM-based Erlang VM
+ *
+ * Copyright (c) 2010 by Trifork
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ **/
+
+package erjang.beam.interpreter;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+
+import erjang.ERT;
+import erjang.EObject;
+import erjang.EAtom;
+import erjang.ESeq;
+
+import erjang.beam.BeamFileData;
+import erjang.beam.ModuleVisitor;
+import erjang.beam.FunctionVisitor;
+import erjang.beam.BlockVisitor;
+
+import erjang.beam.repr.Insn;
+import erjang.beam.repr.Operands;
+// import static erjang.beam.repr.Insn.*;
+
+public class Interpreter {
+#ENUM#
+	public static class Encoder implements ModuleVisitor {
+		private EAtom moduleName;
+		final HashMap<Integer,Insn> insn_start = new HashMap<Integer,Insn>();
+		final ArrayList<Short>     code      = new ArrayList<Short>();
+		final ArrayList<EObject>   consts    = new ArrayList<EObject>();
+		final HashMap<EObject,Integer>	const_map = new HashMap<EObject,Integer>();
+		final HashMap<Integer,Integer>	label_map = new HashMap<Integer,Integer>();
+
+
+		public void visitModule(EAtom name) {
+			System.err.println("Interpreter.Encoder| doing module "+name);
+			this.moduleName = name;
+		}
+
+		public void visitExport(EAtom fun, int arity, int entry) {}
+
+		public void visitAttribute(EAtom att, EObject value) {}
+
+		public void visitEnd() {
+			System.err.println("Interpreter code for module '"+moduleName+"':");
+			for (int i=0; i<code.size(); i++) {
+				Insn insn = insn_start.get(i);
+				System.err.println((insn!=null? "*" : " ") + i +
+								   ": " + code.get(i) +
+								   (insn!=null ? ("\t"+insn.toSymbolic().toString()) : ""));
+			}
+		}
+
+		public FunctionVisitor visitFunction(EAtom name, int arity, int startLabel) {
+			return new FunctionEncoder(name, arity, startLabel);
+		}
+
+		//---------- Utility functions: --------------------
+		protected int codePos() {return code.size();}
+
+		protected void emit(short val) {code.add(val);}
+		protected void emitAt(int pos, short val) {code.set(pos,val);}
+
+		protected void emit(int intval) {
+			short val = (short) intval;
+			if (val!=intval) throw new Error("Value too large to be encoded: "+intval);
+			code.add(val);
+		}
+
+		protected int encodeLiteral(Operands.Literal lit) {
+			EObject value = lit.literalValue();
+			Integer key = const_map.get(value);
+			if (key == null) {
+				key = const_map.size();
+				consts.add(value);
+				const_map.put(value, key);
+			}
+			return key;
+		}
+
+		protected void registerLabel(int beamLabel) {
+			assert(! label_map.containsKey(beamLabel));
+			label_map.put(beamLabel, codePos());
+		}
+
+		public ESeq xregs(EObject[] stack, int x0, int arity) {
+			ESeq res = ERT.NIL;
+			for (int i=arity-1; i>=0; i--) {
+				res = res.cons(stack[x0 + i]);
+			}
+			return res;
+		}
+
+		//--------------------------------------------------
+
+		class FunctionEncoder implements FunctionVisitor, BlockVisitor {
+			final EAtom name;
+			final int arity;
+			final int startLabel;
+
+			public FunctionEncoder(EAtom name, int arity, int startLabel) {
+				this.name = name;
+				this.arity = arity;
+				this.startLabel = startLabel;
+			}
+
+			/** Common for FunctionVisitor and BlockVisitor... */
+			public void visitEnd() {}
+
+			public BlockVisitor visitLabeledBlock(int label) {
+				registerLabel(label);
+				return this;
+			}
+
+			public void visitInsn(Insn insn) {
+				int opcode_pos = codePos();
+				emit(-12345); // Place holder.
+				insn_start.put(opcode_pos, insn);
+
+				//System.err.println("@ "+opcode_pos+": "+insn.toSymbolic());
+				switch (insn.opcode()) {
+#ENCODE#
+				} // switch
+			}
+		}
+	}
+
+    public static class Module {
+    }
+}

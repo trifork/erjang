@@ -12,6 +12,7 @@ my %TYPES_OPERAND_CLASS =
      'x' => "Operands.XReg",
      'y' => "Operands.YReg",
      'c' => "Operands.Literal",
+     'I' => "int",
      'L' => "Operands.Label"
      );
 my %TYPES_DECODE =
@@ -19,13 +20,15 @@ my %TYPES_DECODE =
      'c' => "consts[#]",
      'x' => "stack[x0 + (#)]",
      'y' => "stack[fp - (#)]",
+     'I' => "(#)",
      'L' => "(#)"
      );
 my %TYPES_ENCODE =
 (
- 'c' => "encode_literal(#)",
+ 'c' => "encodeLiteral(#)",
  'x' => "#.nr",
  'y' => "#.nr",
+ 'I' => "#",
  'L' => "#.nr"
  );
 # my %TYPES_JAVATYPE =
@@ -40,15 +43,18 @@ my %TYPES_ALLOWED_OPS =
      'x' => {'GET'=>1, 'SET'=>1},
      'y' => {'GET'=>1, 'SET'=>1},
      'c' => {'GET'=>1},
+     'I' => {'GET'=>1},
      'L' => {'GOTO'=>1}
      );
 
+my %PRIMITIVE_TYPES = ('I' => 1);
 
 my @METAS = ('GET', 'SET', 'GOTO');
 
 my $enum_code  = "";
 my $interp_code = "";
 my $encoder_code = "";
+my $enum_count = 0;
 
 sub reverse_map {
     my @a = @_;
@@ -60,6 +66,12 @@ sub reverse_map {
 sub subst {
     my ($template, $arg) = @_;
     $template =~ s/\#/$arg/g;
+    return $template;
+}
+
+sub multi_subst {
+    my ($template, $map) = @_;
+    $template =~ s/\#(\w+)\#/$map->{$1} or die "Don't know what to substitute for #$1#"/ge;
     return $template;
 }
 
@@ -113,11 +125,17 @@ sub process_instruction {
 	    for my $base_type (@bts) {
 		my $opClass = $TYPES_OPERAND_CLASS{$base_type};
 		$encoder_code .= $eindent if ($first_bt);
-		$encoder_code .= "if (typed_insn.$arg_src_name instanceof $opClass) {\n";
-		$encoder_code .= $eindent."\t$opClass typed_$arg = ($opClass)typed_insn.$arg_src_name;\n";
+		if (exists $PRIMITIVE_TYPES{$base_type}) {
+		    $encoder_code .= "/*Prim: $base_type*/";
+		    $encoder_code .= "\t$opClass typed_$arg = ($opClass)typed_insn.$arg_src_name;\n";
+		} else {
+		    $encoder_code .= "/*Nonprim: $base_type*/";
+		    $encoder_code .= "if (typed_insn.$arg_src_name instanceof $opClass) {\n";
+		    $encoder_code .= $eindent."\t$opClass typed_$arg = ($opClass)typed_insn.$arg_src_name;\n";
+		}
 		my $encoding_exp_code = subst($TYPES_ENCODE{$base_type},
 					      "typed_$arg");
-		$encoder_code .= $eindent."\tcode[pos++] = $encoding_exp_code;\n";
+		$encoder_code .= $eindent."\temit($encoding_exp_code);\n";
 
 		# Setup args for recursive call:
 		my %new_varmap = %{$varmap};
@@ -130,15 +148,22 @@ sub process_instruction {
 		process_instruction("${insname}_$argno1$base_type", $directives,
 				    $argmap, $cls_arg_names, $cls_arg_types,
 				    $action, $new_code_acc, \%new_varmap);
-		$encoder_code .= $eindent."} else ";
+		if (exists $PRIMITIVE_TYPES{$base_type}) {
+		    $encoder_code .= $eindent."// ";
+		} else {
+		    $encoder_code .= $eindent."} else ";
+		}
 		$first_bt = 0;
 	    }
-	    $encoder_code .= "throw new Exception(\"Unrecognized operand\");\n";
+	    $encoder_code .= "throw new Error(\"Unrecognized operand\");\n";
 	}
     } else {
-	$enum_code .= "$insname,\n";
-	$interp_code .= "\tcase $insname: {\n\t\t$code_acc$action\n\t} break;\n";
-	$encoder_code .= "${eindent}code.set(opcode_pos, $insname);\n";
+#	$enum_code .= "$insname,\n";
+	$enum_code .= "\tpublic static final short $insname = $enum_count;\n"; $enum_count++;
+	$interp_code .= "\tcase $insname: {\n".
+	    "\t\t$code_acc$action\n".
+	    "\t} break;\n";
+	$encoder_code .= "${eindent}emitAt(opcode_pos, $insname);\n";
 	print "DB| process_instruction $insname: Leaf: $code_acc$action.\n";
     }
 }
@@ -155,16 +180,17 @@ sub parse() {
 	    next;
 	} elsif (/^%class (\w+)\(([^\)]*)\)$/) {
 	    $cur_ins_class = $1;
+	    $cur_ins_class = "Insn.$cur_ins_class" unless ($cur_ins_class eq 'Insn');
 	    my $tmp = $2;
 	    @cls_arg_names = @cls_arg_types = ();
 	    for my $arg (split(/\s+/, $tmp)) {
-		die "Bad class field syntax" unless ($arg =~ /(\w+):(\w)/);
+		die "Bad class field syntax ($tmp)" unless ($arg =~ /(\w+):(\w)/);
 # 	    print "DB| arg: $arg => $1/$2\n";
 		push(@cls_arg_names, $1);
 		push(@cls_arg_types, $2);
 	    }
 	    print "DB| class: $cur_ins_class, @cls_arg_names, @cls_arg_types\n";
-	} elsif (/^(\w+)\s+([\w\s]*):(.*)$/) {
+	} elsif (/^(\w+)\s*([\w\s]*):(.*)$/) {
 	    my $insname = $1;
 	    my $directives = $3;
 	    my @args = split(/\s+/, $2);
@@ -174,22 +200,45 @@ sub parse() {
 	    my $action = <>; chomp $action;
 	    die unless ($action =~ /^\s/);
 	    $action =~ s/^\s+//;
-	    $encoder_code .= "case $insname: {\n";
+	    $encoder_code .= "case $insname: {\n".
+		"\t$cur_ins_class typed_insn = ($cur_ins_class) insn;\n";
 	    process_instruction($insname, $directives,
 				\%argmap, \@cls_arg_names, \@cls_arg_types,
 				$action,
 				"", {});
 	    $encoder_code .= "\n} break;\n";
+	    $enum_count = int($enum_count/100+1)*100;# DEBUG
 	} else {
 	    die "Does not understand this line:\n\t$_\n";
 	}
     }} while (<>);
 }
 
+sub readFile {
+    my ($filename) = @_;
+    open FIL,$filename or die "Error opening file: $!";
+    local $/;
+    my $data = <FIL>;
+    close FIL;
+    return $data;
+}
+
+sub writeFile($$) {
+    my ($filename,$data) = @_;
+    open FIL,">",$filename or die "Error opening file: $!";
+    print FIL $data;
+    close FIL;
+}
+
 sub emit {
+    my $encoder_template = readFile("Interpreter.template");
     print "ENUM:\n$enum_code\n";
     print "INTERPRETER:\n$interp_code\n";
-    print "ENCODER:\n$encoder_code\n";
+    print("ENCODER:\n".subst($encoder_template,$encoder_code)."\n");
+    my $subst_map = {'ENCODE' => $encoder_code,
+		     'ENUM' => $enum_code,
+		     'INTERPRET' => $interp_code};
+    writeFile("Interpreter.java", multi_subst($encoder_template,$subst_map));
 }
 
 parse();
