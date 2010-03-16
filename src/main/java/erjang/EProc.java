@@ -70,6 +70,11 @@ public final class EProc extends ETask<EInternalPID> {
 	private static final EObject am_kill = EAtom.intern("kill");
 	private static final EObject am_killed = EAtom.intern("killed");
 
+	private static final EObject am_status = EAtom.intern("status");
+	private static final EObject am_waiting = EAtom.intern("waiting");
+	private static final EObject am_running = EAtom.intern("running");
+	private static final EObject am_runnable = EAtom.intern("runnable");
+
 	public EFun tail;
 	public EObject arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10;
 	public ErlangException last_exception;
@@ -518,6 +523,14 @@ public final class EProc extends ETask<EInternalPID> {
 		} else if (spec == am_links) {
 			ESeq links = links();
 			return new ETuple2(am_links, links);
+		} else if (spec == am_status) {
+			if (this.running) {
+				return new ETuple2(am_status, am_running);
+			} else if (this.pauseReason != null) {
+				return new ETuple2(am_status, am_waiting);
+			} else {
+				return new ETuple2(am_status, am_runnable);
+			}
 		} else {
 			System.err.println(spec);
 			throw new NotImplemented();
