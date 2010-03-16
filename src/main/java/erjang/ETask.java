@@ -130,7 +130,7 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 
 
 
-	protected Mailbox<EObject> mbox = new Mailbox<EObject>();
+	protected Mailbox<EObject> mbox = new Mailbox<EObject>(10, 1000);
 
 	protected static enum State {
 		INIT, // has not started yet
