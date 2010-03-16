@@ -379,5 +379,28 @@ public abstract class EObject implements Comparable<EObject> {
 		throw new NotImplemented();
 	}
 
-
+	final public boolean is_eq(EObject other) {
+		return equals(other);
+	}
+	
+	final public boolean is_eq_exact(EObject other) {
+		return equalsExactly(other);
+	}
+	
+	final public boolean is_ne(EObject other) {
+		return !equals(other);
+	}
+	
+	final public boolean is_ne_exact(EObject other) {
+		return !equalsExactly(other);
+	}
+	
+	final public boolean is_lt(EObject other) {
+		return this.compareTo(other) < 0;
+	}
+	
+	final public boolean is_ge(EObject other) {
+		return this.compareTo(other) >= 0;
+	}
+	
 }

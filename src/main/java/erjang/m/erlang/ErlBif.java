@@ -922,7 +922,7 @@ public class ErlBif {
 
 	@BIF(name = "==", type = Type.GUARD)
 	public static final EAtom is_eq$p(EObject a1, EObject a2) {
-		return ERT.guard(a1.compareTo(a2) == 0);
+		return ERT.guard(a1.equals(a2));
 	}
 
 	@BIF(name = "=/=", type = Type.GUARD)
@@ -995,7 +995,7 @@ public class ErlBif {
 
 	@BIF(name = "==", type = Type.GUARD)
 	public static final EAtom is_eq_op$g(EObject a1, EObject a2) {
-		return ERT.guard(a1.compareTo(a2) == 0);
+		return ERT.guard(a1.equals(a2));
 	}
 
 	@BIF(name = "==")
@@ -1005,32 +1005,34 @@ public class ErlBif {
 
 	@BIF(name = "=/=", type = Type.GUARD)
 	public static final EAtom is_ne_exact$g(EObject a1, EObject a2) {
-		return !a1.equals(a2) ? ERT.TRUE : null;
+		return ERT.guard( !a1.equalsExactly(a2) );
 	}
 
 	@BIF(name = ">=", type = Type.GUARD)
 	public static final EAtom is_ge$g2(EObject a1, EObject a2) {
-		return a1.compareTo(a2) >= 0 ? ERT.TRUE : null;
+		return ERT.guard( a1.compareTo(a2) >= 0 );
 	}
 
 	@BIF(name = ">", type = Type.GUARD)
 	public static final EAtom is_gt$g(EObject a1, EObject a2) {
-		return a1.compareTo(a2) > 0 ? ERT.TRUE : null;
+		return ERT.guard( a1.compareTo(a2) > 0 );
 	}
 
 	@BIF(name = "is_ge", type = Type.GUARD)
 	public static final EAtom is_ge$g(EObject a1, EObject a2) {
-		return a1.compareTo(a2) >= 0 ? ERT.TRUE : null;
+		return ERT.guard(a1.compareTo(a2) >= 0);
 	}
 
 	@BIF(name = "/=")
 	public static final EAtom is_ne(EObject a1, EObject a2) {
-		return ERT.box(!a1.equals(a2));
+		boolean eq = a1.equals(a2);
+		return ERT.box(!eq);
 	}
 
 	@BIF(name = "/=", type = Type.GUARD)
 	public static final EAtom is_ne$g(EObject a1, EObject a2) {
-		return ERT.guard(!a1.equals(a2));
+		boolean eq = a1.equals(a2);
+		return ERT.guard(!eq);
 	}
 
 	@BIF(name = "<", type = Type.GUARD)
@@ -1123,7 +1125,7 @@ public class ErlBif {
 
 	@BIF(name = "is_atom", type = Type.GUARD)
 	public static EAtom is_atom$p(EObject obj) {
-		return obj == null ? null : obj.testAtom();
+		return ERT.guard(obj.testAtom() != null);
 	}
 
 	@BIF
@@ -1132,13 +1134,13 @@ public class ErlBif {
 	}
 
 	@BIF(name = "is_list", type = Type.GUARD)
-	public static ECons is_list$p(EObject obj) {
-		return obj.testCons();
+	public static EAtom is_list$p(EObject obj) {
+		return ERT.guard(obj.testCons() != null);
 	}
 
 	@BIF(name = "is_tuple", type = Type.GUARD)
-	public static ETuple is_tuple$p(EObject obj) {
-		return obj == null ? null : obj.testTuple();
+	public static EAtom is_tuple$p(EObject obj) {
+		return ERT.guard(obj.testTuple() != null);
 	}
 
 	@BIF

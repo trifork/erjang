@@ -48,7 +48,11 @@ public class ESmall extends EInteger {
 	}
 
 	int r_compare_same(ESmall lhs) {
-		return lhs.value < value ? -1 : lhs.value == value ? 0 : 1;
+		if (lhs.value < value)
+			return -1;
+		if (lhs.value == value) 
+			return 0;
+		return 1;
 	}
 
 	int r_compare_same(EBig lhs) {
@@ -209,9 +213,6 @@ public class ESmall extends EInteger {
 		return ERT.box(lhs.multiply(BigInteger.valueOf(value)));
 	}
 
-	/* (non-Javadoc)
-	 * @see erjang.EObject#negate()
-	 */
 	@Override
 	public ENumber negate() {
 		return new ESmall(-value);

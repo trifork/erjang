@@ -1888,6 +1888,9 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					mv.visitInsn(ARETURN);
 					return;
 				}//switch
+				
+				throw new Error("unhandled " + opcode);
+
 			}
 
 			/*
@@ -1944,20 +1947,25 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				switch (test) {
 				case test_arity: {
 					Type tt = getTubleType(arity);
-					push(arg, EOBJECT_TYPE);
-					mv.visitMethodInsn(INVOKESTATIC, tt.getInternalName(),
-							"cast", "(" + arg.type.getDescriptor() + ")"
-									+ tt.getDescriptor());
-					mv.visitInsn(DUP);
-
-					mv.visitVarInsn(ASTORE, scratch_reg);
-					mv.visitJumpInsn(IFNULL, getLabel(failLabel));
-
-					mv.visitVarInsn(ALOAD, scratch_reg);
-					pop(arg, getTubleType(arity));
+					if (tt.equals(arg.type)) {
+						// do nothing //
+					} else {
+						push(arg, EOBJECT_TYPE);
+						mv.visitMethodInsn(INVOKESTATIC, tt.getInternalName(),
+								"cast", "(" + arg.type.getDescriptor() + ")"
+										+ tt.getDescriptor());
+						mv.visitInsn(DUP);
+	
+						mv.visitVarInsn(ASTORE, scratch_reg);
+						mv.visitJumpInsn(IFNULL, getLabel(failLabel));
+	
+						mv.visitVarInsn(ALOAD, scratch_reg);
+						pop(arg, getTubleType(arity));
+					}
 					return;
 				}
 				}//switch
+				throw new Error("unhandled " + test);
 			}
 
 			@Override
@@ -1984,6 +1992,9 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					pop(arg, funType);
 					return;
 				}
+				
+				throw new Error("unhandled " + test);
+
 			}
 
 			/*
@@ -1994,55 +2005,45 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			 */
 			@Override
 			public void visitTest(BeamOpcode test, int failLabel, Arg[] args,
-					Arg out, Type outType) {
+					Type outType) {
 
-				if (test == BeamOpcode.is_eq_exact
-						&& (args[0].type.equals(EATOM_TYPE) || args[1].type
-								.equals(EATOM_TYPE))) {
-					push(args[0], EOBJECT_TYPE);
-					push(args[1], EOBJECT_TYPE);
-					mv.visitJumpInsn(IF_ACMPNE, getLabel(failLabel));
-					return;
-				}
-
-				BuiltInFunction bif = BIFUtil.getMethod("erlang", test2name(test),
-						args, true);
-
-				if (bif.getArgumentTypes().length > 0
-						&& EPROC_TYPE.equals(bif.getArgumentTypes()[0])) {
-					mv.visitVarInsn(ALOAD, 0);
-				}
-
-				for (int i = 0; i < args.length; i++) {
-					push(args[i], bif.getArgumentTypes()[i]);
-				}
-
-				mv.visitMethodInsn(INVOKESTATIC, bif.owner.getInternalName(),
-						bif.getName(), bif.getDescriptor());
-
-				if (failLabel != 0) {
-					// guard
-					switch (bif.getReturnType().getSort()) {
-
-					case Type.OBJECT:
-
-						if (out != null) {
-							pop(out, bif.getReturnType());
-							push(out, bif.getReturnType());
-						}
-
-						mv.visitJumpInsn(IFNULL, getLabel(failLabel));
-						break;
-					default:
-						throw new Error("guards must return object type: "
-								+ bif);
+				switch (test) {
+				case is_lt:
+				case is_ge:
+				case is_eq_exact:
+				case is_ne_exact:
+				case is_ne:
+				case is_eq: {
+				
+					// this particular case can be coded as a java instruction instruction
+					if ((test == BeamOpcode.is_eq_exact || test == BeamOpcode.is_eq)
+							&& (args[0].type.equals(EATOM_TYPE) || args[1].type
+									.equals(EATOM_TYPE))) {
+						push(args[0], EOBJECT_TYPE);
+						push(args[1], EOBJECT_TYPE);
+						mv.visitJumpInsn(IF_ACMPNE, getLabel(failLabel));
+						return;
 					}
-
-				} else {
-					pop(out, bif.getReturnType());
+	
+					for (int i = 0; i < args.length; i++) {
+						push(args[i], EOBJECT_TYPE);
+					}
+	
+					mv.visitMethodInsn(INVOKEVIRTUAL, EOBJECT_NAME,
+							test.name(), "(" + EOBJECT_DESC + ")Z");
+	
+					if (failLabel != 0) {
+						mv.visitJumpInsn(IFEQ, getLabel(failLabel));
+					} else {
+						throw new Error("test with no fail label?");
+					}
+	
+					return;
+					}
+				
 				}
-
-				return;
+				
+				throw new Error("unhandled " + test);
 
 			}
 
@@ -2051,20 +2052,6 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			 * @return
 			 */
 			private String test2name(BeamOpcode test) {
-				switch (test) {
-				case is_eq:
-					return "==";
-				case is_eq_exact:
-					return "=:=";
-				case is_ne:
-					return "/=";
-				case is_ne_exact:
-					return "=/=";
-				case is_ge:
-					return ">=";
-				case is_lt:
-					return "<";
-				}
 				return test.name();
 			}
 

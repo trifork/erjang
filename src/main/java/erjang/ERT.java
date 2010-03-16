@@ -268,7 +268,7 @@ public class ERT {
 	 * @return
 	 */
 	public static EAtom guard(boolean bool) {
-		return bool ? TRUE : null;
+		return bool ? TRUE : FALSE;
 	}
 
 	public static final ENil NIL = new ENil();

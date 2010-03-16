@@ -1031,8 +1031,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					Arg[] args = new Arg[] {
 						src_arg(insn_idx, insn.src1),
 						src_arg(insn_idx, insn.src2) };
-					vis.visitTest(test, failLabel, args, (Arg) null,
-							Type.VOID_TYPE);
+					vis.visitTest(test, failLabel, args, Type.VOID_TYPE);
 					break;
 				}
 
@@ -2012,6 +2011,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 				case is_lt:
 				case is_ge:
 				case is_ne:
+				case is_eq:
 				case is_ne_exact: {
 					Insn.LSS insn = (Insn.LSS) insn_;
 					checkArg(current, insn.src1);
@@ -2019,7 +2019,6 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					return current;
 				}
 
-				case is_eq:
 				case is_eq_exact: {
 					Insn.LSS insn = (Insn.LSS) insn_;
 					checkArg(current, insn.src1);
@@ -2029,8 +2028,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					Type t2 = getType(current, insn.src2);
 
 					if (!t1.equals(t2)) {
-						//TODO: Is this correct for is_eq on integer vs. double?
-						// Also, for reg-vs-reg, we should really use the GLB.
+						//TODO: for reg-vs-reg, we should really use the GLB.
 						DestinationOperand reg;
 						if ((reg = insn.src1.testDestination()) != null) {
 							current = setType(current, reg, t2);
