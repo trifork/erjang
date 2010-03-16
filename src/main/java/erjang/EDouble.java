@@ -20,6 +20,7 @@ package erjang;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Formatter;
 
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -129,11 +130,15 @@ public class EDouble extends ENumber {
 		return type;
 	}
 
+	
 	/**
 	 * @return
 	 */
 	public EString to_list() {
-		return new EString(String.valueOf(value));
+		Formatter form = new Formatter();
+		form = form.format("%.20e", value);
+		String value = form.toString();
+		return new EString(value);
 	}
 
 	public ENumber add(EObject other, boolean guard) {

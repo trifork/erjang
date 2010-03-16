@@ -46,6 +46,11 @@ import erjang.NotImplemented;
  */
 public class ErlConvert {
 
+	/**
+	 * 
+	 */
+	private static final ESmall PLUS_SIGN = ERT.box((int)'+');
+
 	@BIF
 	public static EObject binary_to_term(EObject arg) {
 		EBinary bin;
@@ -81,9 +86,19 @@ public class ErlConvert {
 		EString seq;
 		if ((seq = obj.testString()) == null)
 			throw ERT.badarg(obj);
-		
+
+		// remove leading +
+		if (!seq.isNil()) {
+			if (seq.head().equals(PLUS_SIGN)) {
+				seq = seq.tail().testString();
+				
+				if (seq == null) {
+					throw ERT.badarg(obj);
+				}
+			}
+		}		
+
 		try {
-			
 			BigInteger val = new BigInteger(seq.stringValue());
 			return ERT.box(val);
 			
