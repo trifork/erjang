@@ -1567,7 +1567,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					ensure_exception_handler_in_place();
 					
 					mv.visitVarInsn(ALOAD, 0);
-					mv.visitMethodInsn(INVOKESTATIC, ERT_NAME, "receive_peek",
+					mv.visitMethodInsn(INVOKESTATIC, ERT_NAME, "loop_rec",
 							"(" + EPROC_TYPE.getDescriptor() + ")"
 									+ EOBJECT_DESC);
 					mv.visitInsn(DUP);
@@ -1640,9 +1640,10 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					return;
 
 				case timeout:
+					mv.visitVarInsn(ALOAD, 0);
 					mv
 							.visitMethodInsn(INVOKESTATIC, ERT_NAME, "timeout",
-									"()V");
+									"("+EPROC_DESC+")V");
 					return;
 
 				case remove_message:
@@ -1696,7 +1697,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 				case wait: {
 					mv.visitVarInsn(ALOAD, 0);
-					mv.visitMethodInsn(INVOKESTATIC, ERT_NAME, "wait_forever",
+					mv.visitMethodInsn(INVOKESTATIC, ERT_NAME, "wait",
 							"(" + EPROC_TYPE.getDescriptor() + ")V");
 
 					mv.visitJumpInsn(GOTO, getLabel(val));

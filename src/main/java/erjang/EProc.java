@@ -152,7 +152,7 @@ public final class EProc extends ETask<EInternalPID> {
 
 	private EAtom trap_exit = ERT.FALSE;
 
-	public int midx;
+	public int midx = 0;
 
 	/** monitor nodes[option] -> true/false */
 	private Map<Integer,EAtom> monitor_nodes = new HashMap<Integer, EAtom>();
