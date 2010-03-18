@@ -458,6 +458,8 @@ public class ERT {
 			throws Pausable {
 		// TODO handle ports also?
 		proc.check_exit();
+		
+		//System.out.println(""+proc+" :: "+pid+" ! "+msg);
 
 		EHandle p;
 		if ((p = pid.testHandle()) != null) {
@@ -711,7 +713,9 @@ public class ERT {
 
 	/** peek mbox at current index (proc.midx), which is 0 upon entry to the loop. */
 	public static EObject loop_rec(EProc proc) {
-		EObject msg = proc.mbox.peek(proc.midx);		
+		int idx = proc.midx;
+		EObject msg = proc.mbox.peek(idx);		
+		if (DEBUG_WAIT) System.err.println("WAIT| entered loop #"+idx+" message="+msg);
 		return msg;
 	}
 
@@ -748,13 +752,15 @@ public class ERT {
 
 	/** wait forever, for one more message to be available */
 	public static void wait(EProc proc) throws Pausable {
-		if (DEBUG_WAIT) System.err.println("WAIT| "+proc+" waits for messages");
-		proc.mbox.untilHasMessages(proc.midx + 1);
-		if (DEBUG_WAIT) System.err.println("WAIT| "+proc+" wakes up after timeout");
+		int idx = proc.midx + 1;
+		if (DEBUG_WAIT) System.err.println("WAIT| "+proc+" waits for "+idx+" messages");
+		proc.mbox.untilHasMessages(idx);
+		if (DEBUG_WAIT) System.err.println("WAIT| "+proc+" wakes up after timeout; now has "+(idx));
 	}
 
 	/** message reception timed out, reset message index */
 	public static void timeout(EProc proc) {
+		if (DEBUG_WAIT) System.err.println("WAIT| "+proc+" timed out");
 		proc.midx = 0;
 	}
 

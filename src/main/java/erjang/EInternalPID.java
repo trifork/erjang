@@ -20,6 +20,7 @@
 package erjang;
 
 import kilim.Pausable;
+import kilim.Task;
 
 /**
  * This is a PID on this node
@@ -63,6 +64,13 @@ public class EInternalPID extends EPID implements ELocalHandle {
 	public void send(EObject msg) throws Pausable {
 		EProc task = this.task;
 		if (task != null) {
+			
+			task.reds += task.mbox.size();
+			if (task.reds > 1000) {
+				task.reds = 0;
+				Task.yield();
+			}
+
 			task.mbox.put(msg);
 		}
 	}
