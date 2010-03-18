@@ -44,4 +44,8 @@ public abstract class EModule {
 		return ERT.NIL;
 	}
 
+	/**
+	 * This method is used by EModuleManager in function resolution.
+	 */
+	public abstract void registerImportsAndExports() throws Exception;
 }

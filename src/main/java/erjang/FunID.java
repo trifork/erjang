@@ -22,11 +22,11 @@ package erjang;
  * This is just a function identifier
  */
 public class FunID implements Comparable<FunID> {
-	final EAtom module;
-	final EAtom function;
-	final int arity;
+	public final EAtom module;
+	public final EAtom function;
+	public final int arity;
 
-	FunID(String module, String function, int arity) {
+	public FunID(String module, String function, int arity) {
 		this(EAtom.intern(module), EAtom.intern(function), arity);
 	}
 

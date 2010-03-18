@@ -54,7 +54,6 @@ import erjang.EDouble;
 import erjang.EFun;
 import erjang.EInteger;
 import erjang.EList;
-import erjang.EModule;
 import erjang.ENil;
 import erjang.ENumber;
 import erjang.EObject;
@@ -74,7 +73,10 @@ import erjang.Export;
 import erjang.Import;
 import erjang.Module;
 import erjang.NotImplemented;
+
+import erjang.beam.ECompiledModule;
 import erjang.beam.Arg.Kind;
+
 import erjang.m.erlang.ErlBif;
 
 import erjang.beam.repr.Insn;
@@ -108,11 +110,11 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 	static final Type ERT_TYPE = Type.getType(ERT.class);
 	static final Type EINTEGER_TYPE = Type.getType(EInteger.class);
 	static final Type ESTRING_TYPE = Type.getType(EString.class);
-	static final Type EMODULE_TYPE = Type.getType(EModule.class);
+	static final Type ECOMPILEDMODULE_TYPE = Type.getType(ECompiledModule.class);
 	/**
 	 * 
 	 */
-	static final String EMODULE_NAME = EMODULE_TYPE.getInternalName();
+	static final String ECOMPILEDMODULE_NAME = ECOMPILEDMODULE_TYPE.getInternalName();
 	static final Type ENUMBER_TYPE = Type.getType(ENumber.class);
 	static final Type EOBJECT_TYPE = Type.getType(EObject.class);
 	static final String EOBJECT_DESC = EOBJECT_TYPE.getDescriptor();
@@ -195,7 +197,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 		this.self_type = Type.getType("L" + getInternalClassName() + ";");
 
 		cv.visit(V1_6, ACC_PUBLIC, self_type.getInternalName(), null,
-				EMODULE_NAME, null);
+				ECOMPILEDMODULE_NAME, null);
 
 		add_module_annotation(cv);
 
@@ -333,7 +335,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 		mv = cv.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
 		mv.visitCode();
 		mv.visitVarInsn(ALOAD, 0);
-		mv.visitMethodInsn(INVOKESPECIAL, EMODULE_NAME, "<init>", "()V");
+		mv.visitMethodInsn(INVOKESPECIAL, ECOMPILEDMODULE_NAME, "<init>", "()V");
 		mv.visitInsn(RETURN);
 		mv.visitMaxs(1, 1);
 		mv.visitEnd();
