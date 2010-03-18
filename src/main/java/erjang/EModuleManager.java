@@ -192,14 +192,12 @@ public class EModuleManager {
 
 	static class ModuleInfo {
 
-		private final EAtom name;
 		private EModule resident;
 
 		/**
 		 * @param module
 		 */
 		public ModuleInfo(EAtom module) {
-			this.name = module;
 		}
 
 		Map<FunID, FunctionInfo> binding_points = new ConcurrentHashMap<FunID, FunctionInfo>();
@@ -314,8 +312,6 @@ public class EModuleManager {
 	// static private Map<EAtom, EModule> modules = new HashMap<EAtom,
 	// EModule>();
 
-	private static final EAtom AM_BADARG = EAtom.intern("badarg");
-
 	static void setup_module(EModule mod_inst) throws Error {
 		ModuleInfo module_info = get_module_info(EAtom.intern(mod_inst.module_name()));
 		module_info.setModule(
@@ -347,9 +343,8 @@ public class EModuleManager {
 			Import imp = field.getAnnotation(Import.class);
 			if (imp != null) {
 				field.setAccessible(true);
-				FunID f;
 
-				add_import(f = new FunID(imp), field);
+				add_import(new FunID(imp), field);
 
 				// System.out.println("  import " + f
 				// + (resolved ? "resolved" : ""));
@@ -370,8 +365,7 @@ public class EModuleManager {
 				if (value == null)
 					throw new Error("field " + field + " not initialized");
 
-				FunID f;
-				add_export(mod_inst, f = new FunID(exp), value);
+				add_export(mod_inst, new FunID(exp), value);
 
 				// System.out.println("  export " + f);
 
@@ -408,7 +402,7 @@ public class EModuleManager {
 
 	}
 
-	private static void process_native_annotations(Class nat, EModule mod_inst)
+	private static void process_native_annotations(Class<?> nat, EModule mod_inst)
 			throws Exception {
 		for (Field field : nat.getDeclaredFields()) {
 			if (!Modifier.isStatic(field.getModifiers()))
@@ -417,8 +411,7 @@ public class EModuleManager {
 			Import imp = field.getAnnotation(Import.class);
 			if (imp != null) {
 				field.setAccessible(true);
-				FunID f;
-				add_import(f = new FunID(imp), field);
+				add_import(new FunID(imp), field);
 
 				// System.out.println("N import " + f);
 
@@ -467,6 +460,7 @@ public class EModuleManager {
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	public static EModule load_module(EAtom mod, URL url) {
 		String internalName = erjang.beam.Compiler.moduleClassName(mod
 				.getName());
