@@ -18,23 +18,19 @@
 
 package erjang.beam.repr;
 
-import erjang.beam.BeamFileData;
-import erjang.beam.ModuleVisitor;
-import erjang.beam.FunctionVisitor;
-import erjang.beam.BlockVisitor;
-import erjang.beam.BeamOpcode;
-import erjang.beam.CodeAtoms;
-
-import erjang.EObject;
-import erjang.EAtom;
-import erjang.ESeq;
-import erjang.ESmall;
-import erjang.ETuple;
-import erjang.ERT;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+
+import erjang.EAtom;
+import erjang.EObject;
+import erjang.ERT;
+import erjang.ESeq;
+import erjang.ESmall;
+import erjang.ETuple;
+import erjang.beam.BeamFileData;
+import erjang.beam.CodeAtoms;
+import erjang.beam.ModuleVisitor;
 
 public class ModuleRepr implements BeamFileData {
 	private EAtom moduleName;

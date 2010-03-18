@@ -323,7 +323,7 @@ public class Operands {
 		@Override
 		public XReg testXReg() {return this;}
 
-		private static ArrayList<XReg> cache = new ArrayList();
+		private static ArrayList<XReg> cache = new ArrayList<XReg>();
 		public static XReg get(int nr) {
 			while (cache.size() <= nr) {
 				cache.add(new XReg(cache.size()));
@@ -345,7 +345,7 @@ public class Operands {
 		@Override
 		public YReg testYReg() {return this;}
 
-		private static ArrayList<YReg> cache = new ArrayList();
+		private static ArrayList<YReg> cache = new ArrayList<YReg>();
 		public static YReg get(int nr) {
 			while (cache.size() <= nr) {
 				cache.add(new YReg(cache.size()));
@@ -365,7 +365,7 @@ public class Operands {
 		@Override
 		public FReg testFReg() {return this;}
 
-		private static ArrayList<FReg> cache = new ArrayList();
+		private static ArrayList<FReg> cache = new ArrayList<FReg>();
 		public static FReg get(int nr) {
 			while (cache.size() <= nr) {
 				cache.add(new FReg(cache.size()));
