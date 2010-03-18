@@ -129,10 +129,9 @@ public class EString extends ESeq implements CharSequence {
 	}
 
 	public boolean equalsExactly(EObject rhs) {
-		ENil nil;
 		int length = length();
 
-		if ((nil = rhs.testNil()) != null) {
+		if ((rhs.testNil()) != null) {
 			return length == 0;
 		}
 
