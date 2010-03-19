@@ -411,8 +411,7 @@ public final class EProc extends ETask<EInternalPID> {
 			try {
 				this.pstate = State.RUNNING;
 
-				EObject tmp;
-				while((tmp = this.tail.go(this)) == TAIL_MARKER) {
+				while(this.tail.go(this) == TAIL_MARKER) {
 					/* skip */
 				}
 				 

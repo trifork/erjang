@@ -24,7 +24,6 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import erjang.driver.Drivers;
 import erjang.driver.EDriver;
 
 /**
@@ -43,7 +42,6 @@ public class OTPMain {
 	    new erjang.driver.ram_file.Driver()
 	};
 
-	@SuppressWarnings("unchecked")
 	public static void main(String[] args) throws ClassNotFoundException, InstantiationException, IllegalAccessException, IOException {
 		
 	    Handler fh = new FileHandler("erjang.log");
@@ -57,12 +55,7 @@ public class OTPMain {
 			erjang.driver.Drivers.register(d);
 		}
 
-		// EErrorLogger.start();
-		
-		// args=new String[] {"-boot", "start", "-root", "/sw/lib/erlang"};
-		
-		
-		EAtom ring = EAtom.intern("otp_ring0");
+		EAtom am_otp_ring0 = EAtom.intern("otp_ring0");
 		EAtom am_start = EAtom.intern("start");
 		ESeq env = ERT.NIL;
 		ESeq argv = ERT.NIL;
@@ -71,9 +64,7 @@ public class OTPMain {
 			argv = argv.cons(EBinary.fromString(args[i]));
 		}
 		
-		String s = argv.toString();
-		
-		EProc proc = new EProc(null, ring, am_start, ERT.NIL.cons(argv).cons(env));
+		EProc proc = new EProc(null, am_otp_ring0, am_start, ERT.NIL.cons(argv).cons(env));
 
 		ERT.run(proc);
 		proc.joinb();
