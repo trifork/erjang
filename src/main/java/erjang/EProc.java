@@ -300,7 +300,7 @@ public final class EProc extends ETask<EInternalPID> {
 	 * @return
 	 * @throws Pausable 
 	 */
-	public EObject process_flag(EAtom flag, EObject value) throws Pausable {
+	public EObject process_flag(EAtom flag, EObject value) {
 
 		if (flag == am_trap_exit) {
 			EAtom old = this.trap_exit;

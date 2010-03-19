@@ -720,7 +720,7 @@ public class ERT {
 	}
 
 	/** remove current message, and reset message index */
-	public static void remove_message(EProc proc) throws Pausable {
+	public static void remove_message(EProc proc) {
 		proc.mbox.remove(proc.midx);
 		proc.midx = 0;
 	}

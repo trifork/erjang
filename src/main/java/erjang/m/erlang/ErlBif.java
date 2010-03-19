@@ -196,7 +196,7 @@ public class ErlBif {
 	
 	@BIF
 	@ErlFun(export = true)
-	static public EPID self(EProc proc) throws Pausable {
+	static public EPID self(EProc proc) {
 		if (proc == null) {
 			System.out.println("Houston, we have a problem.");
 		}
@@ -1120,7 +1120,7 @@ public class ErlBif {
 	}
 
 	@BIF
-	public static EObject process_flag(EProc proc, EObject a1, EObject a2) throws Pausable {
+	public static EObject process_flag(EProc proc, EObject a1, EObject a2) {
 		return proc.process_flag(a1.testAtom(), a2);
 	}
 
@@ -1249,7 +1249,7 @@ public class ErlBif {
 
 	@BIF
 	@ErlFun(export = true)
-	public static ETuple2 load_module(EProc proc, EAtom mod, EBinary bin) throws Pausable {
+	public static ETuple2 load_module(EProc proc, EAtom mod, EBinary bin) {
 		if (mod == null || bin == null)
 			throw ERT.badarg();
 
