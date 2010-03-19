@@ -779,6 +779,12 @@ public class ErlBif {
 		return ERT.box((long) v1 * (long) v2);
 	}
 
+
+	@BIF(name = "*")
+	static public ENumber multiply(EObject v1, EObject v2) {
+		return v1.multiply(v2);
+	}
+
 	@BIF
 	@ErlFun(export = true)
 	static public EInteger trunc(EObject v1) {
