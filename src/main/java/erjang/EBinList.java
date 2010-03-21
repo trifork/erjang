@@ -48,6 +48,9 @@ public class EBinList extends ECons {
 
 	/** create list as sublist of data given */
 	private EBinList(byte[] data, int off, int len, EObject tail, boolean shared) {
+		
+		assert len != 0;
+		
 		this.data = data;
 		this.off = off;
 		this.len = len;
@@ -152,9 +155,11 @@ public class EBinList extends ECons {
 		return new EBinList(data, off + 1, len - 1, tail, true);
 	}
 
+	// TODO: Remote this method all together
 	@Override
 	public boolean isNil() {
-		return len == 0 && tail.isNil();
+		assert len != 0;
+		return false;
 	}
 
 	@Override

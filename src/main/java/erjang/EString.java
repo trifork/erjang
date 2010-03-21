@@ -82,7 +82,7 @@ public class EString extends ESeq implements CharSequence {
 	/**
 	 * @param list
 	 */
-	public static EString make(ECons list) {
+	public static ESeq make(ECons list) {
 		EString s;
 		if ((s = list.testString()) != null) {
 			return s;
@@ -432,7 +432,7 @@ public class EString extends ESeq implements CharSequence {
 	 * @param eObject
 	 * @return
 	 */
-	public static EString make(EObject eObject) {
+	public static ESeq make(EObject eObject) {
 		ESeq str;
 		if ((str = eObject.testSeq()) != null)
 			return make(str);

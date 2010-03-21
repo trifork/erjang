@@ -38,6 +38,10 @@ public class ENil extends ESeq {
 		return true;
 	}
 
+	public String stringValue() {
+		return "";
+	}
+
 
 	@Override
 	public EObject head() {

@@ -118,7 +118,7 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 	 * @param cmd
 	 * @param portSetting
 	 */
-	protected void parseOptions(EString command, EObject portSetting) {
+	protected void parseOptions(ESeq command, EObject portSetting) {
 		// TODO: most of this is way too expensive for non-exec ports
 
 		// set by options

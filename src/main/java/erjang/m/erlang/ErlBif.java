@@ -230,7 +230,7 @@ public class ErlBif {
 	static public EPID list_to_pid(EObject obj) {
 		ECons list;
 		if ((list = obj.testCons()) != null) {
-			EString s = EString.make(list);
+			ESeq s = EString.make(list);
 			return ERT.loopkup_pid(s);
 		}
 		throw ERT.badarg();

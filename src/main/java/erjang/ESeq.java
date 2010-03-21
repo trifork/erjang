@@ -30,6 +30,10 @@ public abstract class ESeq extends ECons {
 	public ESeq testSeq() {
 		return this;
 	}	
+	
+	public String stringValue() {
+		throw ERT.badarg(this);
+	}
 
 	@Override
 	public abstract ESeq tail();

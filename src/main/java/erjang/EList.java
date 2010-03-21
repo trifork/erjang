@@ -67,7 +67,9 @@ public final class EList extends ESeq {
 	public String toString() {
 		
 		try {
-			EString str = EString.make(this);
+			// TODO: make this faster, we generate too many exceptions
+			// on account of this piece of code!
+			ESeq str = EString.make(this);
 			return str.toString();
 		} catch (ErlangException e) {
 			// ignor e//
