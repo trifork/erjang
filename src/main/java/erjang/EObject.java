@@ -222,7 +222,7 @@ public abstract class EObject implements Comparable<EObject> {
 	
 	@BIF(name="band")
 	public EInteger band(EObject rhs) { throw ERT.badarith(this, rhs); }
-	public EInteger band(int lhs) { throw ERT.badarith(lhs, this); }
+	public ESmall band(int lhs) { throw ERT.badarith(lhs, this); }
 	public EInteger band(BigInteger lhs) { throw ERT.badarith(lhs, this); }
 
 	@BIF(name="bor")
