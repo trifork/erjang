@@ -23,17 +23,17 @@ bs_init_writable:
 
 %class AAI(a1:A, a2:A, i3:I)
 func_info mod fun arity:
-	return ERT.func_info(GET(mod), GET(fun), xregs(stack, x0, GET(arity)));
+	return ERT.func_info((EAtom)GET(mod), (EAtom)GET(fun), xregs(reg, GET(arity)));
 
 ##########==========        ALLOCATION      	  ==========##########
 
 %class I(i1:I)
 allocate slots:
-	stack = pushStackFrame(stack, GET(slots));
+	stack = ensureCapacity(stack, sp+GET(slots), sp); sp += GET(slots);
 
 %class II(i1:I, i2:I)
 allocate_zero slots _live:
-	stack = pushStackFrame(stack, GET(slots));
+	stack = ensureCapacity(stack, sp+GET(slots), sp); sp += GET(slots);
 
 %class WI(al:W, i2:I)
 test_heap alloc_size _live:
@@ -48,19 +48,19 @@ move src dst:
 
 %class SSD(src1:S src2:S dest:D)
 put_list h t dst:
-	SET(dst, ER.cons(h,t));
+	SET(dst, ERT.cons(GET(h), GET(t)));
 
 %class SID(src:S i:I dest:D)
 get_tuple_element src pos dst:
-	SET(dst, ((ETuple)GET(src)).get(pos));
+	SET(dst, ((ETuple)GET(src)).elm(GET(pos)));
 
 %class ID(i1:I dest:D)
-put_tuple size dst:
-	SET(dst, curtuple = ETuple.make(size)); tuplepos=0;
+put_tuple size dst: encoder_side_effect(tuple_pos=0;)
+	SET(dst, curtuple = ETuple.make(GET(size)));
 
 %class S(src:S)
-put src: encode(++tuplepos)(index)
-	SET(curtuple).set(index, GET(src));
+put src: encode(++tuple_pos)(index)
+	curtuple.set(GET(index), GET(src));
 
 
 ##########==========  TESTS & CONTROL FLOW	  ==========##########
@@ -102,7 +102,7 @@ is_bitstr lbl arg:
 
 %class LDI(label:L, dest:D, i:I)
 test_arity lbl arg arity:
-	if (GET(arg).testTuple() == null || ((ETuple)GET(arg)).arity=GET(arity)) GOTO(lbl);
+	if (GET(arg).testTuple() == null || ((ETuple)GET(arg)).arity() == GET(arity)) GOTO(lbl);
 
 %class LSS(label:L, src1:S, src2:S)
 is_eq_exact lbl a b:
@@ -135,8 +135,9 @@ is_ge lbl a b:
 
 ##########==========      EXCEPTION HANDLING	  ==========##########
 
-%class YL(y:y, label:L)
-K_catch y lbl:
-	SET(y, makeExceptionHandler(sp,fp,exh));
+#%class YL(y:y, label:L)
+#K_catch y lbl:
+#	SET(y, makeExceptionHandler(sp,exh));
+#exh = GET(lbl);
 
 ##########==========       FLOATING-POINT    	  ==========##########

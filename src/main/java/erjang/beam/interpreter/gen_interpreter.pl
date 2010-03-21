@@ -18,8 +18,8 @@ my %TYPES_OPERAND_CLASS =
 my %TYPES_DECODE =
     (
      'c' => "consts[#]",
-     'x' => "stack[x0 + (#)]",
-     'y' => "stack[fp - (#)]",
+     'x' => "reg[#]",
+     'y' => "stack[sp - (#)]",
      'I' => "(#)",
      'L' => "(#)"
      );
@@ -90,7 +90,7 @@ sub base_types {
     }
 }
 
-sub process_instruction {
+sub process_instruction_rec {
     my ($insname, $directives,
 	$argmap, $cls_arg_names, $cls_arg_types,
 	$action, $code_acc, $varmap) = @_;
@@ -111,7 +111,7 @@ sub process_instruction {
 		$action = "$`$replacement = ($'";
 	    } elsif ($macro eq 'GOTO') {
 		my $replacement = $varmap->{$arg};
-		$action = "$`ip = $replacement$'";
+		$action = "$`pc = $replacement$'";
 	    } else {die;}
 	    goto again;
 	} else { # Replacement is not known.
@@ -141,11 +141,11 @@ sub process_instruction {
 		my %new_varmap = %{$varmap};
 		my $new_code_acc = $code_acc;
 
-		my $decl = "int _$arg = insns[ip++];\n\t\t";
+		my $decl = "int _$arg = code[pc++];\n\t\t";
 		$new_code_acc = "$code_acc$decl";
 		$new_varmap{$arg} = subst($TYPES_DECODE{$base_type}, "_$arg");
 		my $argno1 = 1+$argno;
-		process_instruction("${insname}_$argno1$base_type", $directives,
+		process_instruction_rec("${insname}_$argno1$base_type", $directives,
 				    $argmap, $cls_arg_names, $cls_arg_types,
 				    $action, $new_code_acc, \%new_varmap);
 		if (exists $PRIMITIVE_TYPES{$base_type}) {
@@ -159,15 +159,51 @@ sub process_instruction {
 	}
     } else {
 #	$enum_code .= "$insname,\n";
-	$enum_code .= "\tpublic static final short $insname = $enum_count;\n"; $enum_count++;
-	$interp_code .= "\tcase $insname: {\n".
-	    "\t\t$code_acc$action\n".
-	    "\t} break;\n";
-	$encoder_code .= "${eindent}emitAt(opcode_pos, $insname);\n";
-	print "DB| process_instruction $insname: Leaf: $code_acc$action.\n";
+	if ($action =~ /^\s*\{\s*\}\s*$/) {
+	    print STDERR "DB| nop: $insname\n";
+	    $encoder_code .= "${eindent}nop(opcode_pos);";
+	} else {
+	    $enum_code .= "\tpublic static final short $insname = $enum_count;\n"; $enum_count++;
+	    $interp_code .= "\tcase $insname: {\n".
+		"\t\t$code_acc$action\n".
+		"\t} break;\n";
+	    $encoder_code .= "${eindent}emitAt(opcode_pos, $insname);\n";
+	    print "DB| process_instruction_rec $insname: Leaf: $code_acc$action.\n";
+	}
     }
 }
 
+sub process_instruction {
+    my ($insname, $directives,
+	$argmap, $cls_arg_names, $cls_arg_types,
+	$action) = @_;
+
+    my $code_acc = "";
+    my $varmap = {};
+
+    # Process directives:
+    while ($directives ne '') {
+	print STDERR "DB| dir=$directives\n";
+	if ($directives =~ /^\s+/) {}
+	elsif ($directives =~ /^encode\(([^()]*)\)\((\w+)\)/) {
+	    my ($encode_exp,$arg) = ($1,$2);
+	    $encoder_code .= "emit($encode_exp);\n";
+	    my $decl = "int _$arg = code[pc++];\n\t\t";
+	    $code_acc .= $decl;
+	    $varmap->{$arg} = "_$arg";
+	    print STDERR "DB| custom encode: $encode_exp // $arg\n";
+
+	} elsif ($directives =~ /^encoder_side_effect\(([^()]*)\)/) {
+	    my ($encoder_stm) = ($1);
+	    $encoder_code .= "{$encoder_stm}\n";
+	} else {die "Invalid directive: $directives";}
+	$directives = $'; next; #'
+    }
+    return process_instruction_rec($insname, $directives,
+				   $argmap, $cls_arg_names, $cls_arg_types,
+				   $action,
+				   $code_acc, $varmap);
+}
 
 sub parse() {
     my $cur_ins_class;
@@ -204,8 +240,7 @@ sub parse() {
 		"\t$cur_ins_class typed_insn = ($cur_ins_class) insn;\n";
 	    process_instruction($insname, $directives,
 				\%argmap, \@cls_arg_names, \@cls_arg_types,
-				$action,
-				"", {});
+				$action);
 	    $encoder_code .= "\n} break;\n";
 	    $enum_count = int($enum_count/100+1)*100;# DEBUG
 	} else {
@@ -232,6 +267,7 @@ sub writeFile($$) {
 
 sub emit {
     my $encoder_template = readFile("Interpreter.template");
+    $enum_code .= "\tpublic static final short MAX_OPCODE = $enum_count;\n";
     print "ENUM:\n$enum_code\n";
     print "INTERPRETER:\n$interp_code\n";
     print("ENCODER:\n".subst($encoder_template,$encoder_code)."\n");

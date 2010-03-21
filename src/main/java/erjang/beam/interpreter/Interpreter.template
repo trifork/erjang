@@ -18,13 +18,23 @@
 
 package erjang.beam.interpreter;
 
+import java.util.List;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import erjang.EModule;
+import erjang.EModuleManager;
+import erjang.EFun;
+import erjang.EFunHandler;
+import erjang.FunID;
+
 import erjang.ERT;
+import erjang.EProc;
+
 import erjang.EObject;
 import erjang.EAtom;
 import erjang.ESeq;
+import erjang.ETuple;
 
 import erjang.beam.BeamFileData;
 import erjang.beam.ModuleVisitor;
@@ -33,10 +43,15 @@ import erjang.beam.BlockVisitor;
 
 import erjang.beam.repr.Insn;
 import erjang.beam.repr.Operands;
+import erjang.beam.repr.ExtFun;
 // import static erjang.beam.repr.Insn.*;
+
+import kilim.Pausable;
 
 public class Interpreter {
 #ENUM#
+	public static final short ENSURE_REG_CAPACITY = MAX_OPCODE + 1;
+
 	public static class Encoder implements ModuleVisitor {
 		private EAtom moduleName;
 		final HashMap<Integer,Insn> insn_start = new HashMap<Integer,Insn>();
@@ -51,7 +66,9 @@ public class Interpreter {
 			this.moduleName = name;
 		}
 
-		public void visitExport(EAtom fun, int arity, int entry) {}
+		public void visitExport(EAtom fun, int arity, int entryLabel) {
+			
+		}
 
 		public void visitAttribute(EAtom att, EObject value) {}
 
@@ -74,6 +91,10 @@ public class Interpreter {
 
 		protected void emit(short val) {code.add(val);}
 		protected void emitAt(int pos, short val) {code.set(pos,val);}
+		protected void nop(int code_pos) {
+			code.remove(code_pos);
+			code.subList(code_pos, code.size()).clear();
+		}
 
 		protected void emit(int intval) {
 			short val = (short) intval;
@@ -97,20 +118,13 @@ public class Interpreter {
 			label_map.put(beamLabel, codePos());
 		}
 
-		public ESeq xregs(EObject[] stack, int x0, int arity) {
-			ESeq res = ERT.NIL;
-			for (int i=arity-1; i>=0; i--) {
-				res = res.cons(stack[x0 + i]);
-			}
-			return res;
-		}
-
 		//--------------------------------------------------
 
 		class FunctionEncoder implements FunctionVisitor, BlockVisitor {
 			final EAtom name;
 			final int arity;
 			final int startLabel;
+			private int tuple_pos;
 
 			public FunctionEncoder(EAtom name, int arity, int startLabel) {
 				this.name = name;
@@ -139,6 +153,137 @@ public class Interpreter {
 		}
 	}
 
-    public static class Module {
-    }
+    public static class Module extends EModule {
+		final private String name;
+		final private short[] code;
+		final private EObject[] consts;
+		final private List<FunIDWithEntry> exports;
+		final private List<FunID> imports;
+		final private EFun[] ext_funs;
+
+		Module(String name,
+			   short[] code, EObject[] consts,
+			   List<FunIDWithEntry> exports, List<FunID> imports)
+		{
+			this.name = name;
+			this.code = code;
+			this.consts = consts;
+			this.exports = exports;
+			this.imports = imports;
+			ext_funs = new EFun[imports.size()];
+		}
+
+		public String module_name() {return name;}
+
+		/**
+		 * This method is used by EModuleManager in function resolution.
+		 */
+		public void registerImportsAndExports() {
+			for (int i=0; i<imports.size(); i++) {
+				FunID imp = imports.get(i);
+				EModuleManager.add_import(imp, new ExtFunBinder(imp, i));
+				i++;
+			}
+
+			for (FunIDWithEntry fi : exports) {
+				EFun fun = EFun.get_fun_with_handler(fi.arity, new Function(fi.start_pc));
+				EModuleManager.add_export(this, fi, fun);
+			}
+		}
+
+		class ExtFunBinder extends EModuleManager.FunctionBinder {
+			final FunID funID; // (Technically superfluous?)
+			final int index;
+			public ExtFunBinder(FunID funID, int index) {
+				this.funID = funID;
+				this.index = index;
+			}
+
+			public FunID getFunID() {
+				return funID;
+			}
+
+			public void bind(EFun value) {
+				ext_funs[index] = value;
+			}
+		}
+
+		class Function implements EFunHandler {
+			final int start_pc;
+
+			public Function(int start_pc) {
+				this.start_pc = start_pc;
+			}
+
+			public EObject invoke(final EProc proc, final EObject[] args) throws Pausable, Exception {
+				final short[] code = Module.this.code;
+				EObject stack[] = proc.stack;
+				int sp = proc.sp;
+				int pc = start_pc;
+				EObject[] reg = new EObject[args.length+2]; //??
+				for (int i=0; i<args.length; i++) {reg[i] = args[i];} //??
+
+				// For exception handling:
+				int exh = -1;
+
+				// For tuple construction:
+				ETuple curtuple = null;
+// 				int tuplepos = -1;
+
+				while (true) {
+					final int opcode = code[pc++];
+					System.err.println("INTP| "+opcode);
+					switch (opcode) {
+					case ENSURE_REG_CAPACITY: {
+						int max_x = code[pc++];
+						System.err.println("INTP| Ensure reg capacity: "+max_x);
+						reg = ensureCapacity(reg, max_x);
+					} break;
+#INTERPRET#
+					}
+				}
+			}
+
+// 			private EObject[] reserveStackFrame(EObject[] stack, int sp, int more) {
+// 				ensureCapacity(stack, sp+more);
+// 			}
+
+			public ESeq xregs(EObject[] reg, int arity) {
+				ESeq res = ERT.NIL;
+				for (int i=arity-1; i>=0; i--) {
+					res = res.cons(reg[i]);
+				}
+				return res;
+			}
+
+		} // class Function
+    } // Class Module
+
+
+	private static EObject[] ensureCapacity(EObject[] array, int atLeast) {
+		if (atLeast >= array.length) {
+			EObject[] tmp = new EObject[(atLeast)*3/2];
+			System.arraycopy(array,0, tmp,0, array.length);
+			array = tmp;
+		}
+		return array;
+	}
+
+	private static EObject[] ensureCapacity(EObject[] array, int atLeast, int keep) {
+		if (atLeast >= array.length) {
+			EObject[] tmp = new EObject[(atLeast)*3/2];
+			System.arraycopy(array,0, tmp,0, keep);
+			array = tmp;
+		}
+		return array;
+	}
+
+	static class FunIDWithEntry extends FunID {
+		final int start_pc;
+
+		public FunIDWithEntry(EAtom mod, EAtom fun, int arity, int start_pc) {
+			super(mod, fun, arity);
+			this.start_pc = start_pc;
+		}
+	}
 }
