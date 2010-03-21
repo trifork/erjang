@@ -267,8 +267,8 @@ public final class EBig extends EInteger {
 		return other.band(value);
 	}
 
-	public EInteger band(int lhs) {
-		return ERT.box(BigInteger.valueOf(lhs).and(value));
+	public ESmall band(int lhs) {
+		return (ESmall) ERT.box(BigInteger.valueOf(lhs).and(value));
 	}
 
 	public EInteger band(BigInteger lhs) {

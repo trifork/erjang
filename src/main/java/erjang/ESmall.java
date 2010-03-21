@@ -314,11 +314,11 @@ public class ESmall extends EInteger {
 
 	// binary and - erlang:band/2
 
-	public EInteger band(EObject other) {
+	public ESmall band(EObject other) {
 		return other.band(value);
 	}
 
-	public EInteger band(int lhs) {
+	public ESmall band(int lhs) {
 		return ERT.box((lhs & value));
 	}
 
