@@ -140,7 +140,7 @@ public class ERT {
 	 * @param s
 	 * @return
 	 */
-	public static EPID loopkup_pid(EString name) {
+	public static EPID loopkup_pid(ESeq name) {
 		throw new NotImplemented();
 	}
 
