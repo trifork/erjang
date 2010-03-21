@@ -330,6 +330,8 @@ public class BIFUtil {
 
 		registerBifs("erlang", ERT.class);
 		registerBifs("erlang", EObject.class);
+		registerBifs("erlang", ESmall.class);
+		registerBifs("erlang", EBig.class);
 	}
 	
 	public static void registerBifs(String module, Class<?> clazz) {

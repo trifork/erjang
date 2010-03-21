@@ -24,7 +24,7 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
-public class ESmall extends EInteger {
+public final class ESmall extends EInteger {
 
 	private static final Type ESMALL_TYPE = Type.getType(ESmall.class);
 	public static final ESmall ZERO = new ESmall(0);
@@ -197,6 +197,7 @@ public class ESmall extends EInteger {
 
 	// integer division erlang:'*'/2
 
+	@BIF(name="*")
 	public ENumber multiply(EObject other) {
 		return other.multiply(value);
 	}
