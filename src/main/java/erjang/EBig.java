@@ -24,7 +24,7 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
-public class EBig extends EInteger {
+public final class EBig extends EInteger {
 
 	private static final BigInteger BIG_32 = BigInteger.valueOf(32);
 	private static final BigInteger BIG_MAX_INT = BigInteger.valueOf(Integer.MAX_VALUE);
