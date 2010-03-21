@@ -367,6 +367,11 @@ public class ErlBif {
 		return a2.setelement(index, term);
 	}
 
+	@BIF
+	static public ETuple setelement(ESmall index, ETuple a2, EObject term) {
+		return a2.setelement(index.value, term);
+	}
+
 	@BIF(type = Type.GUARD, name = "element")
 	static public EObject element$g(EObject idx, EObject tup) {
 		EInteger i = idx.testInteger();
@@ -417,6 +422,15 @@ public class ErlBif {
 			return tup.elm(idx);
 		}
 		throw ERT.badarg(new ESmall(idx), tup);
+	}
+
+	@BIF
+	static public EObject element(ESmall sidx, ETuple tup) {
+		int idx = sidx.value;
+		if (tup.arity() >= idx) {
+			return tup.elm(idx);
+		}
+		throw ERT.badarg(sidx, tup);
 	}
 
 	@BIF
