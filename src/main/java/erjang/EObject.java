@@ -173,6 +173,12 @@ public abstract class EObject implements Comparable<EObject> {
 	@BIF(name="+")
 	public final ENumber add(EObject rhs) { return add(rhs, false); }
 
+	@BIF(name="+")
+	public final ENumber add(ESmall rhs) { return add(rhs.value, false); }
+
+	@BIF(name="+", type=BIF.Type.GUARD)
+	public final ENumber add$g(ESmall rhs) { return add(rhs.value, true); }
+
 	public ENumber add(EObject rhs, boolean guard) { if (guard) return null; throw ERT.badarith(this, rhs); }
 	public ENumber add(int lhs, boolean guard) { if (guard) return null; throw ERT.badarith(lhs, this); }
 	public ENumber add(double lhs, boolean guard) { if (guard) return null; throw ERT.badarith(lhs, this); }
