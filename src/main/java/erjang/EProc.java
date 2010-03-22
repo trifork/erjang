@@ -52,6 +52,7 @@ public final class EProc extends ETask<EInternalPID> {
 	public static final EAtom am_dictionary = EAtom.intern("dictionary");
 	public static final EAtom am_group_leader = EAtom.intern("group_leader");
 	public static final EAtom am_links = EAtom.intern("links");
+	public static final EAtom am_heap_size = EAtom.intern("heap_size");
 	public static final EAtom am_priority = EAtom.intern("priority");
 	public static final EAtom am_monitor_nodes = EAtom.intern("monitor_nodes");
 	public static final EAtom am_registered_name = EAtom.intern("registered_name");
@@ -464,24 +465,17 @@ public final class EProc extends ETask<EInternalPID> {
 		
 		ESeq res = ERT.NIL;
 		
-		res = res.cons(new ETuple2(am_trap_exit, trap_exit));
-		
-		// get messages
-		ESeq messages = EList.make((Object[])mbox.messages());
-		res = res.cons(new ETuple2(am_messages, messages));
-		res = res.cons(new ETuple2(am_message_queue_len, new ESmall(messages.length())));
-		
-		res = res.cons(new ETuple2(am_dictionary, get()));
-		
-		res = res.cons(new ETuple2(am_group_leader, group_leader));
+		res = res.cons(process_info(am_trap_exit));
+		res = res.cons(process_info(am_messages));
+		res = res.cons(process_info(am_message_queue_len));
+		res = res.cons(process_info(am_dictionary));
+		res = res.cons(process_info(am_group_leader));
+		res = res.cons(process_info(am_links));
+		res = res.cons(process_info(am_heap_size));
 
 		EObject reg_name = self_handle().name;
 		if (reg_name != null)
 			res = res.cons(new ETuple2(am_registered_name, reg_name));
-
-		ESeq links = links();
-		res = res.cons(new ETuple2(am_links, links));
-		
 		
 		if (res == ERT.NIL) return ERT.am_undefined;
 		return res;
@@ -530,6 +524,10 @@ public final class EProc extends ETask<EInternalPID> {
 			} else {
 				return new ETuple2(am_status, am_runnable);
 			}
+		} else if (spec == am_heap_size) {
+			return new ETuple2(am_heap_size, 
+							   ERT.box(Runtime.getRuntime().totalMemory() 
+									   - Runtime.getRuntime().freeMemory()));
 		} else {
 			System.err.println(spec);
 			throw new NotImplemented();
