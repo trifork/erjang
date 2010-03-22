@@ -314,6 +314,21 @@ public class Operands {
 		public EObject toSymbolic() {
 			return ETuple.make(F_ATOM, new ESmall(nr));
 		}
+		
+		@Override
+		public int hashCode() {
+			return nr;
+		}
+		
+		@Override
+		public boolean equals(Object obj) {
+			if (obj instanceof Label) {
+				Label lab = (Label) obj;
+				return lab.nr == nr;
+			} else {
+				return false;
+			}
+		}
     }
 
     public static class XReg extends DestinationOperand {
