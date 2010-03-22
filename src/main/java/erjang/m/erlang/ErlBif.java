@@ -443,6 +443,16 @@ public class ErlBif {
 	}
 
 	@BIF
+	static public EObject element(ESmall sidx, EObject obj) {
+		int idx = sidx.value;
+		ETuple tup;
+		if ((tup = obj.testTuple()) != null && tup.arity() >= idx) {
+			return tup.elm(idx);
+		}
+		throw ERT.badarg(new ESmall(idx), obj);
+	}
+
+	@BIF
 	static public EObject hd(ECons cell) {
 		return cell.head();
 	}
