@@ -368,11 +368,12 @@ public class BIFUtil {
 	/**
 	 * @param name
 	 * @param parmTypes
+	 * @param fail_when_missing TODO
 	 * @param b
 	 * @return
 	 */
 	public static BuiltInFunction getMethod(String module, String name, Type[] parmTypes,
-			boolean isGuard) {
+			boolean isGuard, boolean fail_when_missing) {
 
 		Map<String, BIFHandler> tab = isGuard ? guard_bifs : bifs;
 
@@ -380,9 +381,11 @@ public class BIFUtil {
 		String key = module + ":" + name;
 		if (tab.containsKey(key)) {
 			bif = tab.get(key);
-		} else {
+		} else if (fail_when_missing) {
 			throw new Error("no " + (isGuard ? "guard" : "normal")
 					+ " bif named " + module+ ":'" + name + "'/" + parmTypes.length);
+		} else {
+			return null;
 		}
 
 		return bif.getMethod(parmTypes);
@@ -393,15 +396,16 @@ public class BIFUtil {
 	 * @param name
 	 * @param args
 	 * @param isGuard
+	 * @param fail_when_missing TODO
 	 * @return
 	 */
 	public static BuiltInFunction getMethod(String module, String name,
-			Arg[] args, boolean isGuard) {
+			Arg[] args, boolean isGuard, boolean fail_when_missing) {
 		Type[] parms = new Type[args.length];
 		for (int i = 0; i < args.length; i++) {
 			parms[i] = args[i].type;
 		}
-		return getMethod(module, name, parms, isGuard);
+		return getMethod(module, name, parms, isGuard, fail_when_missing);
 	}
 
 }

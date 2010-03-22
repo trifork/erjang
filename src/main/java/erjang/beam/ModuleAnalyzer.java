@@ -170,25 +170,20 @@ public class ModuleAnalyzer implements ModuleVisitor {
 						case call_ext:
 							Insn.IE e = (IE) insn;
 
-							try {
-								String mod = e.ext_fun.mod.getName();
-								String fun = e.ext_fun.fun.getName();
-								Type[] parms = parmTypes(e.ext_fun.arity);
-								BuiltInFunction bif = BIFUtil.getMethod(mod,
-										fun, parms, false);
+							String mod = e.ext_fun.mod.getName();
+							String fun = e.ext_fun.fun.getName();
+							Type[] parms = parmTypes(e.ext_fun.arity);
+							BuiltInFunction bif = BIFUtil.getMethod(mod,
+									fun, parms, false, false);
+							
+							if (bif != null) {
+								self.is_pausable |= bif.isPausable();
 								
-								if (bif != null) {
-									self.is_pausable |= bif.isPausable();
-									
-									if (ERT.DEBUG2 && !self.is_pausable) {
-										System.err.println("! "+mod+":"+fun+"/"+e.ext_fun.arity);
-									}
-									
-								} else {
-									self.is_pausable = true;
+								if (ERT.DEBUG2 && !self.is_pausable) {
+									System.err.println("! "+mod+":"+fun+"/"+e.ext_fun.arity);
 								}
-
-							} catch (Error ee) {
+								
+							} else {
 								self.is_pausable = true;
 							}
 
@@ -214,9 +209,9 @@ public class ModuleAnalyzer implements ModuleVisitor {
 							EAtom name = bi.ext_fun.fun;
 							SourceOperand[] srcs = bi.args;
 
-							BuiltInFunction bif = BIFUtil.getMethod("erlang",
+							bif = BIFUtil.getMethod("erlang",
 									name.getName(), parmTypes(srcs.length),
-									false);
+									false, true);
 
 							self.is_pausable |= bif.isPausable();
 

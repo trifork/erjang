@@ -2559,12 +2559,8 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				if (isExternal) {
 					BuiltInFunction bif = null;
 
-					try {
-						bif = BIFUtil.getMethod(fun.mod.getName(),
-												fun.fun.getName(), args, false);
-					} catch (Error e) {
-						// ignore //
-					}
+					bif = BIFUtil.getMethod(fun.mod.getName(),
+							fun.fun.getName(), args, false, false);
 
 					if (bif == null) {
 						String field = CompilerVisitor.this

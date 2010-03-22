@@ -482,7 +482,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						Arg out = dest_arg(insn_idx, insn.dest);
 
 						BuiltInFunction bif = BIFUtil.getMethod("erlang", name.getName(), inTypes,
-								failLabel != 0);
+								failLabel != 0, true);
 
 						vis.visitInsn(opcode, failLabel, in, out, bif);
 						break;
@@ -501,7 +501,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 						BuiltInFunction bif = BIFUtil.getMethod("erlang", name.getName(),
 								parmTypes(type_map, srcs),
-								failLabel != 0);
+								failLabel != 0, true);
 
 						vis.visitInsn(opcode, failLabel, in, out, bif);
 						break;
@@ -519,7 +519,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 						BuiltInFunction bif = BIFUtil.getMethod("erlang", name.getName(),
 								parmTypes(type_map, srcs),
-								failLabel != 0);
+								failLabel != 0, true);
 
 						vis.visitInsn(opcode, failLabel, in, out, bif);
 						break;
