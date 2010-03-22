@@ -525,6 +525,28 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						break;
 					}
 
+					case is_tuple: {
+						
+						Insn next_insn = insns.get(insn_idx+1);
+						if (next_insn.opcode() == BeamOpcode.test_arity) {
+							
+							int this_fail = decode_labelref(((Insn.L)insn_).label, this.map[insn_idx].exh);
+							int next_fail = decode_labelref(((Insn.L)next_insn).label, this.map[insn_idx+1].exh);
+
+							if (this_fail == next_fail) {
+
+								Arg this_arg = src_arg(insn_idx, ((Insn.LD)insn_).dest);
+								Arg next_arg = src_arg(insn_idx+1, ((Insn.LD)next_insn).dest);
+
+								if (this_arg.equals(next_arg)) { 
+									// SKIP THIS INSTRUCTION!									
+									break;
+								}
+							}
+						}
+						
+					}
+						
 						// Tests:
 						// LS:
 					case is_integer:
@@ -538,7 +560,6 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					case is_binary:
 					case is_list:
 					case is_nonempty_list:
-					case is_tuple:
 					case is_function:
 					case is_boolean:
 					case is_bitstr:
@@ -1447,6 +1468,33 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					}
 
 
+					case is_tuple: {
+						
+						Insn next_insn = insns.get(insn_idx+1);
+						if (next_insn.opcode() == BeamOpcode.test_arity) {
+							
+							if (this.map[insn_idx+1] == null) {
+								this.map[insn_idx+1] = this.map[insn_idx];
+							}
+							
+							int this_fail = decode_labelref(((Insn.L)insn_).label, this.map[insn_idx].exh);
+							int next_fail = decode_labelref(((Insn.L)next_insn).label, this.map[insn_idx+1].exh);
+
+							if (this_fail == next_fail) {
+
+								Arg this_arg = src_arg(insn_idx, ((Insn.LD)insn_).dest);
+								Arg next_arg = src_arg(insn_idx+1, ((Insn.LD)next_insn).dest);
+
+								if (this_arg.equals(next_arg)) { 
+									// SKIP THIS INSTRUCTION!									
+									continue next_insn;
+								}
+							}
+						}
+						
+					}
+						
+
 						// Tests:
 						// LS:
 					case is_integer:
@@ -1460,7 +1508,6 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					case is_binary:
 					case is_list:
 					case is_nonempty_list:
-					case is_tuple:
 					case is_function:
 					case is_boolean:
 					case is_bitstr:

@@ -226,6 +226,7 @@ public abstract class ETuple extends EObject implements Cloneable /* , Indexed *
 
 		// create cast method
 		create_cast(cw, num_cells);
+		create_cast2(cw, num_cells);
 
 		// create constructor
 		create_constructor(cw, super_class_name);
@@ -401,6 +402,32 @@ public abstract class ETuple extends EObject implements Cloneable /* , Indexed *
 		Label fail = new Label();
 
 		mv.visitJumpInsn(Opcodes.IF_ICMPNE, fail);
+		mv.visitVarInsn(Opcodes.ALOAD, 0);
+		mv.visitTypeInsn(Opcodes.CHECKCAST, ETUPLE_NAME + n);
+		mv.visitInsn(Opcodes.ARETURN);
+
+		mv.visitLabel(fail);
+		mv.visitInsn(Opcodes.ACONST_NULL);
+		mv.visitInsn(Opcodes.ARETURN);
+
+		mv.visitMaxs(2, 2);
+		mv.visitEnd();
+	}
+
+
+	private static void create_cast2(ClassAdapter cw, int n) {
+		MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PUBLIC
+				| Opcodes.ACC_STATIC, "cast", "(L" + Type.getInternalName(EObject.class) + ";)L"
+				+ ETUPLE_NAME + n + ";", null, null);
+		mv.visitCode();
+
+		mv.visitVarInsn(Opcodes.ALOAD, 0);
+		mv.visitInsn(Opcodes.DUP);
+		mv.visitTypeInsn(Opcodes.INSTANCEOF, ETUPLE_NAME + n);
+		
+		Label fail = new Label();
+
+		mv.visitJumpInsn(Opcodes.IFEQ, fail);
 		mv.visitVarInsn(Opcodes.ALOAD, 0);
 		mv.visitTypeInsn(Opcodes.CHECKCAST, ETUPLE_NAME + n);
 		mv.visitInsn(Opcodes.ARETURN);
