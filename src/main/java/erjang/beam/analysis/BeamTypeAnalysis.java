@@ -527,6 +527,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 					case is_tuple: {
 						
+						if (insn_idx+1 < insns.size()) {
 						Insn next_insn = insns.get(insn_idx+1);
 						if (next_insn.opcode() == BeamOpcode.test_arity) {
 							
@@ -544,7 +545,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 								}
 							}
 						}
-						
+						}
 					}
 						
 						// Tests:
@@ -1331,7 +1332,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 			}
 
 			private void dump() {
-				if (ERT.DEBUG2 == true) return;
+				if (ERT.DEBUG2 == false) return;
 				next_insn: for (int i = 0; i < insns.size(); i++) {
 					System.err.println(name + "(" + block_label + "):" + i
 							+ " :: " + (map == null ? "?" : map[i]));
@@ -1470,6 +1471,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 					case is_tuple: {
 						
+						if (insn_idx+1 < insns.size()) {
 						Insn next_insn = insns.get(insn_idx+1);
 						if (next_insn.opcode() == BeamOpcode.test_arity) {
 							
@@ -1490,6 +1492,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 									continue next_insn;
 								}
 							}
+						}
 						}
 						
 					}
