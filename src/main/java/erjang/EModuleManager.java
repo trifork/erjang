@@ -117,7 +117,7 @@ public class EModuleManager {
 		private EFun makeErrorHandler() {
 			return EFun.get_fun_with_handler(fun.arity,
 					new EFunHandler() {
-						public EObject invoke(EProc proc, EObject[] args)
+					public EObject invoke(EProc proc, EObject[] args)
 								throws Pausable {
 							
 							/** Get reference to error_handler:undefined_function/3 */
@@ -470,12 +470,14 @@ public class EModuleManager {
 		try {
 			clazz = (Class<? extends EModule>) loader.loadClass(java_name);
 		} catch (ClassNotFoundException e1) {
+			e1.printStackTrace();
 			throw new ErlangError(e1);
 		}
 		EModule mi;
 		try {
 			mi = clazz.newInstance();
 		} catch (Exception e) {
+			e.printStackTrace();
 			throw new ErlangError(e);
 		}
 

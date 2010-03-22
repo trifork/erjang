@@ -71,10 +71,12 @@ import erjang.ETuple2;
 import erjang.ErlFun;
 import erjang.ErlangException;
 import erjang.Export;
+import erjang.FunID;
 import erjang.Import;
 import erjang.Module;
 import erjang.NotImplemented;
 import erjang.beam.Arg.Kind;
+import erjang.beam.ModuleAnalyzer.FunInfo;
 import erjang.m.erlang.ErlBif;
 
 import erjang.beam.repr.Insn;
@@ -367,6 +369,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 	Map<String, Integer> lambdas_xx = new TreeMap<String, Integer>();
 	Map<String, String> funs = new HashMap<String, String>();
 	Map<String, String> funt = new HashMap<String, String>();
+	Set<String> non_pausable_methods = new HashSet<String>();
 
 	class ASMFunctionAdapter implements FunctionVisitor2 {
 		private final EAtom fun_name;
@@ -394,6 +397,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 		private int bit_string_matcher;
 
 		private int bit_string_save;
+		private FunInfo funInfo;
 
 		Label getLabel(int i) {
 			if (i <= 0)
@@ -430,12 +434,18 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 		public void visitMaxs(int x_count, int y_count, int fp_count,
 				boolean isTailRecursive) {
 
+			FunID me = new FunID(module_name, fun_name, arity);
+			this.funInfo = funInfos.get(me);
 			this.isTailRecursive = isTailRecursive;
 			String javaName = EUtil.getJavaName(fun_name, arity);
 			String signature = EUtil.getSignature(arity, true);
 			mv = cv.visitMethod(ACC_STATIC | ACC_PUBLIC, javaName, signature,
-					null, PAUSABLE_EX);
+					null, funInfo.is_pausable ? PAUSABLE_EX : null);
 
+			if (!funInfo.is_pausable) {
+				non_pausable_methods.add(javaName);
+			}
+			
 			add_erlfun_annotation(mv);
 
 			this.start = new Label();
@@ -509,10 +519,10 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					ACC_STATIC);
 
 			byte[] data = CompilerVisitor.make_invoker(self_type, mname, mname,
-					arity, true, freevars, EOBJECT_TYPE);
+					arity, true, freevars, EOBJECT_TYPE, funInfo.is_tail_recursive, funInfo.is_pausable);
 
 			ClassWeaver w = new ClassWeaver(data, new Compiler.ErjangDetector(
-					self_type.getInternalName()));
+					self_type.getInternalName(), non_pausable_methods));
 			for (ClassInfo ci : w.getClassInfos()) {
 				try {
 					// System.out.println("> storing "+ci.className);
@@ -563,11 +573,16 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 		 */
 		private void generate_invoke_call_self() {
 
+			boolean pausable = funInfo.is_pausable;
 			String javaName = EUtil.getJavaName(fun_name, arity);
 			String signature = EUtil.getSignature(arity, true);
 			mv = cv.visitMethod(ACC_STATIC, javaName + "$call", signature,
-					null, PAUSABLE_EX);
+					null, pausable ? PAUSABLE_EX : null);
 			mv.visitCode();
+			
+			if (!pausable) {
+				non_pausable_methods.add(javaName + "$call");
+			}
 
 			// if (isTailRecursive) {
 
@@ -577,6 +592,9 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			}
 			mv.visitMethodInsn(INVOKESTATIC, self_type.getInternalName(),
 					javaName, EUtil.getSignature(arity, true));
+			
+			if (funInfo.is_tail_recursive) {
+			
 			mv.visitVarInsn(ASTORE, arity + 1);
 
 			Label done = new Label();
@@ -592,7 +610,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			mv.visitFieldInsn(GETFIELD, EPROC_NAME, "tail", EFUN_DESCRIPTOR);
 			mv.visitVarInsn(ALOAD, 0);
 
-			mv.visitMethodInsn(INVOKEVIRTUAL, EFUN_NAME, "go", GO_DESC);
+			mv.visitMethodInsn(INVOKEVIRTUAL, EFUN_NAME, (pausable ? "go" : "go2"), GO_DESC);
 			mv.visitVarInsn(ASTORE, arity + 1);
 
 			mv.visitJumpInsn(GOTO, loop);
@@ -600,16 +618,8 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			mv.visitLabel(done);
 			mv.visitVarInsn(ALOAD, arity + 1);
 
-			/*
-			 * } else {
-			 * 
-			 * mv.visitVarInsn(ALOAD, 0); for (int i = 0; i < arity; i++) {
-			 * mv.visitVarInsn(ALOAD, i + 1); } mv.visitMethodInsn(INVOKESTATIC,
-			 * self_type.getInternalName(), javaName, EUtil.getSignature(arity,
-			 * true));
-			 * 
-			 * }
-			 */
+			}
+			
 
 			mv.visitInsn(ARETURN);
 			mv.visitMaxs(arity + 2, arity + 2);
@@ -2643,12 +2653,14 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 						push(args[i], EOBJECT_TYPE);
 					}
 
+					FunInfo target = funInfos.get(new FunID(fun.mod, fun.name(), fun.arity));
+					
 					mv.visitMethodInsn(INVOKESTATIC, self_type
 							.getInternalName(), EUtil.getJavaName(fun.fun,
 							fun.arity)
-							+ (is_tail ? "$tail" : "$call"), EUtil
+							+ (is_tail ? "$tail" : (target.is_tail_recursive ? "$call" : "")), EUtil
 							.getSignature(args.length, true));
-
+					
 					if (is_tail) {
 						mv.visitInsn(ARETURN);
 					} else {
@@ -2707,6 +2719,8 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 	Map<String, ExtFun> imported = new HashMap<String, ExtFun>();
 
+	private Map<FunID, FunInfo> funInfos;
+
 	/**
 	 * @param fun
 	 * @return
@@ -2739,7 +2753,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 	static public byte[] make_invoker(Type self_type, String mname,
 			String fname, int arity, boolean proc, int freevars,
-			Type return_type) {
+			Type return_type, boolean is_tail_call, boolean is_pausable) {
 
 		String outer_name = self_type.getInternalName();
 		String inner_name = "FN_" + mname;
@@ -2780,17 +2794,19 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 		mv.visitEnd();
 
 		make_invoke_method(cw, outer_name, fname, arity, proc, freevars,
-				return_type);
+				return_type, is_tail_call);
 		make_invoketail_method(cw, full_inner_name, arity, freevars);
 		make_go_method(cw, outer_name, fname, full_inner_name, arity, proc,
-				freevars, return_type);
+				freevars, return_type, is_tail_call, is_pausable);
+		make_go2_method(cw, outer_name, fname, full_inner_name, arity, proc,
+				freevars, return_type, is_tail_call, is_pausable);
 
 		return cw.toByteArray();
 
 	}
 
 	private static void make_invoke_method(ClassWriter cw, String outer_name,
-			String mname, int arity, boolean proc, int freevars, Type returnType) {
+			String mname, int arity, boolean proc, int freevars, Type returnType, boolean isTailCall) {
 		MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "invoke", EUtil
 				.getSignature(arity - freevars, true), null, PAUSABLE_EX);
 		mv.visitCode();
@@ -2807,6 +2823,8 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 		}
 		mv.visitMethodInsn(INVOKESTATIC, outer_name, mname, EUtil.getSignature(
 				arity, proc, returnType));
+		
+		if (isTailCall) {
 		mv.visitVarInsn(ASTORE, arity + 2);
 
 		Label done = new Label();
@@ -2828,6 +2846,8 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 		mv.visitLabel(done);
 		mv.visitVarInsn(ALOAD, arity + 2);
+		}
+		
 		mv.visitInsn(ARETURN);
 		mv.visitMaxs(arity + 2, arity + 2);
 		mv.visitEnd();
@@ -2856,7 +2876,9 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 	private static void make_go_method(ClassWriter cw, String outer_name,
 			String mname, String full_inner, int arity, boolean proc,
-			int freevars, Type returnType) {
+			int freevars, Type returnType, boolean isTailCall, boolean isPausable) {
+		if (!isPausable) return;
+		
 		MethodVisitor mv;
 		mv = cw.visitMethod(ACC_PUBLIC, "go", GO_DESC, null, PAUSABLE_EX);
 		mv.visitCode();
@@ -2889,6 +2911,50 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 		mv.visitEnd();
 
 		cw.visitEnd();
+	}
+
+	private static void make_go2_method(ClassWriter cw, String outer_name,
+			String mname, String full_inner, int arity, boolean proc,
+			int freevars, Type returnType, boolean isTailCall, boolean isPausable) {
+		
+		if (isPausable) return;
+		
+		MethodVisitor mv;
+		mv = cw.visitMethod(ACC_PUBLIC, "go2", GO_DESC, null, null);
+		mv.visitCode();
+		for (int i = 0; i < arity - freevars; i++) {
+			mv.visitVarInsn(ALOAD, 1);
+			mv.visitFieldInsn(GETFIELD, EPROC_NAME, "arg" + i, EOBJECT_DESC);
+			mv.visitVarInsn(ASTORE, i + 2);
+		}
+		for (int i = 0; i < arity - freevars; i++) {
+			mv.visitVarInsn(ALOAD, 1);
+			mv.visitInsn(ACONST_NULL);
+			mv.visitFieldInsn(PUTFIELD, EPROC_NAME, "arg" + i, EOBJECT_DESC);
+		}
+		if (proc)
+			mv.visitVarInsn(ALOAD, 1);
+
+		for (int i = 0; i < arity - freevars; i++) {
+			mv.visitVarInsn(ALOAD, i + 2);
+		}
+
+		for (int i = 0; i < freevars; i++) {
+			mv.visitVarInsn(ALOAD, 0);
+			mv.visitFieldInsn(GETFIELD, full_inner, "fv" + i, EOBJECT_DESC);
+		}
+
+		mv.visitMethodInsn(INVOKESTATIC, outer_name, mname, EUtil.getSignature(
+				arity, proc, returnType));
+		mv.visitInsn(ARETURN);
+		mv.visitMaxs(arity + 2, arity + 2);
+		mv.visitEnd();
+
+		cw.visitEnd();
+	}
+
+	public void setFunInfos(Map<FunID, FunInfo> funInfos) {
+		this.funInfos = funInfos;
 	}
 
 }
