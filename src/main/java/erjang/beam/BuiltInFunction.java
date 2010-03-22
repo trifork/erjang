@@ -21,6 +21,8 @@ package erjang.beam;
 
 import java.lang.reflect.Modifier;
 
+import kilim.Pausable;
+
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
@@ -31,6 +33,7 @@ public class BuiltInFunction {
 	public final Type owner;
 	public final Method method;
 	public final boolean isVirtual;
+	public final boolean isPausable;
 	
 	/* (non-Javadoc)
 	 * @see java.lang.Object#toString()
@@ -40,12 +43,6 @@ public class BuiltInFunction {
 		return method.toString();
 	}
 	
-	public BuiltInFunction(Type owner, Method method, boolean isVirtual) {
-		this.owner = owner;
-		this.method = method;
-		this.isVirtual = isVirtual;
-	}
-
 	/**
 	 * @param m
 	 */
@@ -55,6 +52,14 @@ public class BuiltInFunction {
 					Type.getType(m.getReturnType()),
 					Type.getArgumentTypes(m));
 		isVirtual = !Modifier.isStatic(m.getModifiers());
+		boolean p = false;
+		for (Class c : m.getExceptionTypes()) {
+			if (Pausable.class.equals(c)) {
+				p = true;
+				break;
+			}
+		}
+		isPausable = p;
 	}
 
 	/**
@@ -94,6 +99,10 @@ public class BuiltInFunction {
 	 */
 	public boolean isVirtual() {
 		return isVirtual;
+	}
+
+	public boolean isPausable() {
+		return isPausable;
 	}
 
 	
