@@ -107,9 +107,10 @@ public class EBinary extends EBitString {
 
 	/**
 	 * @param barr
+	 * @throws IOException 
 	 * @throws IOException
 	 */
-	public void writeTo(ByteArrayOutputStream o) {
+	public void writeTo(OutputStream o) throws IOException {
 		o.write(data, byteOffset(), byteSize());
 	}
 

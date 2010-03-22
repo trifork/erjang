@@ -239,7 +239,12 @@ public class ErlConvert {
 					throw ERT.badarg(list);
 				barr.write(sm.value);
 			} else if ((bi = hd.testBinary()) != null) {
-				bi.writeTo(barr);
+				try {
+					bi.writeTo(barr);
+				} catch (IOException e) {
+					// should not happen, barr is an byte array stream
+					throw new InternalError();
+				}
 			} else if ((co = hd.testNonEmptyList()) != null) {
 				collectList(list, co, barr);
 			} else if (hd.isNil()) {
@@ -251,7 +256,11 @@ public class ErlConvert {
 		// Process tail:
 		EBinary bi;
 		if ((bi = tail.testBinary()) != null) {
-			bi.writeTo(barr);
+			try {
+				bi.writeTo(barr);
+			} catch (IOException e) {
+				throw new InternalError("should not happen");
+			}
 		} else if (! tail.isNil()) {
 			throw ERT.badarg(list);
 		}
