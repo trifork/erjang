@@ -50,7 +50,7 @@ public class Insn implements BeamInstruction {
 	public Insn(BeamOpcode opcode) {this.opcode = opcode;}
 	public BeamOpcode opcode() {return opcode;}
 
-	public String toString() {return opcode+"(...)";}
+	public String toString() {return toSymbolic().toString();}
 	public EObject toSymbolic() {
 	    return opcode.symbol;
 	}
