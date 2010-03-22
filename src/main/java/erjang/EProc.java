@@ -76,6 +76,9 @@ public final class EProc extends ETask<EInternalPID> {
 	private static final EObject am_running = EAtom.intern("running");
 	private static final EObject am_runnable = EAtom.intern("runnable");
 
+	private static final EObject am_DOWN = EAtom.intern("DOWN");
+	private static final EObject am_noproc = EAtom.intern("noproc");
+
 	public EFun tail;
 	public EObject arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10;
 	public ErlangException last_exception;
@@ -551,8 +554,13 @@ public final class EProc extends ETask<EInternalPID> {
 	 * @param object
 	 * @return
 	 */
-	public ERef monitor(EHandle handle, EObject object) {
+	public ERef monitor(EHandle handle, EObject object) throws Pausable {
 		ERef ref = handle.add_monitor(self_handle(), object);
+		if (ref == null) {
+			ref = ERT.getLocalNode().createRef();
+			this.mbox_send(ETuple.make(am_DOWN, ref, object, am_noproc));
+			return ref;
+		}
 		this.is_monitoring.put(ref, handle);
 		return ref;
 	}

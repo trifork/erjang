@@ -106,8 +106,8 @@ public class EInternalPID extends EPID implements ELocalHandle {
 		EProc task = this.task;
 		if (task != null) 
 			return task.add_monitor(target, object);
-		else
-			throw ERT.badarg(target, object);
+		else 
+			return null;
 	}
 	
 	@Override
