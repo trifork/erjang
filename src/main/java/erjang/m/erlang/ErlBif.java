@@ -442,6 +442,8 @@ public class ErlBif {
 		throw ERT.badarg(new ESmall(idx), obj);
 	}
 
+	/*
+	 * TODO: figure out why sofs.erl compiles to this with EInteger 1st arg
 	@BIF
 	static public EObject element(ESmall sidx, EObject obj) {
 		int idx = sidx.value;
@@ -451,7 +453,8 @@ public class ErlBif {
 		}
 		throw ERT.badarg(new ESmall(idx), obj);
 	}
-
+*/
+	
 	@BIF
 	static public EObject hd(ECons cell) {
 		return cell.head();
@@ -1111,13 +1114,12 @@ public class ErlBif {
 	}
 
 	@BIF(name = "++")
-	public static ECons append(EObject l1, EObject l2) {
+	public static EObject append(EObject l1, EObject l2) {
 		
 		ESeq ll1 = l1.testSeq();
-		ECons r = l2.testCons();
-		if (ll1 == null||r==null) throw ERT.badarg(l1, l2);
+		if (ll1 == null) throw ERT.badarg(l1, l2);
 		
-		return r.prepend(ll1);
+		return l2.prepend(ll1);
 	}
 
 	@BIF
@@ -1288,12 +1290,23 @@ public class ErlBif {
 			ErlangError ee = new ErlangError(ERT.am_io, e, mod, bin);
 			ETuple2 result = new ETuple2(ERT.am_error, ee.reason());
 			
-			log.log(Level.SEVERE, "cannot load module", e);
+			log.log(Level.SEVERE, "cannot load module "+mod, e);
 			
 			return result;
 		} 
 		
 		return new ETuple2(ERT.am_module, mod);
+	}
+	
+	@BIF
+	public static ETuple make_tuple(EObject arity, EObject initial) {
+		ESmall sm = arity.testSmall();
+		if (sm == null) throw ERT.badarg(arity, initial);
+		ETuple et = ETuple.make(sm.value);
+		for (int i = 1; i <= sm.value; i++) {
+			et.set(i, initial);
+		}
+		return et;
 	}
 
 	@BIF

@@ -408,7 +408,7 @@ public class EString extends ESeq implements CharSequence {
 	 * @see erjang.ECons#prepend(erjang.ECons)
 	 */
 	@Override
-	public ECons prepend(ESeq list) {
+	public ESeq prepend(ESeq list) {
 		EString other = list.testString();
 		if (other != null) {
 			byte[] out = new byte[length() + other.length()];

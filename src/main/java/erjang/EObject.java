@@ -409,4 +409,28 @@ public abstract class EObject implements Comparable<EObject> {
 		return this.compareTo(other) >= 0;
 	}
 	
+	/**
+	 * @param c1
+	 * @return
+	 */
+	public EObject prepend(ESeq list) {
+		
+		// first, rlist=lists:reverse(list)
+		ESeq rlist = ERT.NIL;
+		while (!list.isNil()) {
+			rlist = rlist.cons(list.head());
+			list = list.tail();
+		}
+
+		// then, prepend rlist on this
+		EObject r = this;
+		while(!rlist.isNil()) {
+			r = r.cons(rlist.head());
+			rlist = rlist.tail();
+		} 
+		
+		return r;
+	}
+
+
 }
