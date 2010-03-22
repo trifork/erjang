@@ -38,6 +38,7 @@ import erjang.ESmall;
 import erjang.EString;
 import erjang.ETuple;
 import erjang.ERef;
+import erjang.ETuple2;
 import erjang.ErlangError;
 import erjang.NotImplemented;
 
@@ -50,6 +51,8 @@ public class ErlConvert {
 	 * 
 	 */
 	private static final ESmall PLUS_SIGN = ERT.box((int)'+');
+	private static final EAtom am_compressed = EAtom.intern("compressed");
+	private static final EAtom am_minor_version = EAtom.intern("minor_version");
 
 	@BIF
 	public static EObject binary_to_term(EObject arg) {
@@ -69,6 +72,62 @@ public class ErlConvert {
 	public static EBinary term_to_binary(EObject obj) {
 		EOutputStream eos = new EOutputStream();
 		eos.write_any(obj);
+		return eos.getBinaryContent();		
+	}
+
+	@BIF
+	public static EBinary term_to_binary(EObject obj, EObject spec) {
+		int compression = 0;
+		int minor = 0;
+		
+		ESeq opts;
+		if ((opts=spec.testSeq()) == null) {
+			throw ERT.badarg(obj, spec);
+		}
+		
+		while (!opts.isNil()) {
+			
+			EObject val = opts.head();
+			ETuple2 tup;
+			if (val == am_compressed) {
+				compression = 6;
+			} else if ((tup=ETuple2.cast(val)) != null) {
+				if (tup.elem1 == am_compressed) {
+					ESmall sm;
+					if ((sm=tup.elem2.testSmall()) != null) {
+						compression = sm.value;
+					} else {
+						throw ERT.badarg(obj, spec);
+					}
+				} else if (tup.elem1 == am_minor_version) {
+					ESmall sm;
+					if ((sm=tup.elem2.testSmall()) != null) {
+						minor = sm.value;
+					} else {
+						throw ERT.badarg(obj, spec);
+					}
+				}
+			} else {
+				throw ERT.badarg(obj, spec);
+			}
+			
+			opts = opts.tail();
+		}
+		
+		if (compression < 0 || compression > 9 || minor < 0 || minor > 1) {
+			throw ERT.badarg(obj, spec);
+		}
+		
+		if (minor == 0) {
+			throw new NotImplemented("encoding with minor_version=0");
+		}
+		
+		EOutputStream eos = new EOutputStream();
+		if (compression != 0) {
+			eos.write_compressed(obj, compression);
+		} else {
+			eos.write_any(obj);
+		}
 		return eos.getBinaryContent();		
 	}
 
