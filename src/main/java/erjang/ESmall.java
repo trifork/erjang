@@ -28,6 +28,7 @@ public final class ESmall extends EInteger {
 
 	private static final Type ESMALL_TYPE = Type.getType(ESmall.class);
 	public static final ESmall ZERO = new ESmall(0);
+	public static final ESmall MINUS_ONE = new ESmall(-1);
 	public final int value;
 
 	public ESmall testSmall() {
@@ -280,7 +281,19 @@ public final class ESmall extends EInteger {
 	}
 
 	public EInteger r_bsr(int lhs) {
-		return ERT.box((lhs >> value));
+		
+		/** it's a small positive integer in the range 0..31 */
+		if ((value & ~31) == 0) 
+			return ERT.box((lhs >> value));
+
+		if (value >= 32) {
+			if (lhs < 0)
+				return ESmall.MINUS_ONE;
+			else
+				return ZERO;
+		} else /* if (value < 0) */ {
+			return ERT.box(BigInteger.valueOf(lhs).shiftRight(value));
+		}
 	}
 
 	public EInteger r_bsr(BigInteger lhs) {
@@ -293,20 +306,8 @@ public final class ESmall extends EInteger {
 		return other.r_bsl(value);
 	}
 
-	public EInteger bsl(int rhs) {
-		if (rhs < 32) {
-			return ERT.box(((long) value) << rhs);
-		} else {
-			return ERT.box(BigInteger.valueOf(value).shiftLeft(rhs));
-		}
-	}
-
 	public EInteger r_bsl(int lhs) {
-		if (value < 32) {
-			return ERT.box(((long) lhs) << value);
-		} else {
-			return ERT.box(BigInteger.valueOf(lhs).shiftLeft(value));
-		}
+		return ERT.box(BigInteger.valueOf(lhs).shiftLeft(value));
 	}
 
 	public EInteger r_bsl(BigInteger lhs) {

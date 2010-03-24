@@ -222,7 +222,6 @@ public abstract class EObject implements Comparable<EObject> {
 
 	@BIF(name="bsl")
 	public EInteger bsl(EObject rhs) { throw ERT.badarith(this, rhs); }
-	public EInteger bsl(int rhs) { throw ERT.badarith(this, rhs); }
 	EInteger r_bsl(int lhs) { throw ERT.badarith(lhs, this); }
 	EInteger r_bsl(BigInteger lhs) { throw ERT.badarith(lhs, this); }
 	

@@ -223,7 +223,10 @@ public final class EBig extends EInteger {
 
 	EInteger r_bsr(int lhs) {
 		if (BIG_32.compareTo(value) <= 0) {
-			return new ESmall(0);
+			if (lhs < 0)
+				return ESmall.MINUS_ONE;
+			else
+				return ESmall.ZERO;
 		} else {
 			return ERT.box(lhs >> value.intValue());
 		}
@@ -241,24 +244,12 @@ public final class EBig extends EInteger {
 		return other.r_bsl(value);
 	}
 
-	public EInteger bsl(int rhs) {
-		return ERT.box(value.shiftLeft(rhs));
-	}
-
 	EInteger r_bsl(int lhs) {
-		if (BIG_32.compareTo(value) <= 0) {
-			return new ESmall(0);
-		} else {
-			return ERT.box(BigInteger.valueOf(lhs).shiftLeft(value.intValue()));
-		}
+		return ERT.box(BigInteger.valueOf(lhs).shiftLeft(value.intValue()));
 	}
 
 	EInteger r_bsl(BigInteger lhs) {
-		if (BIG_MAX_INT.compareTo(value) < 0) {
-			return new ESmall(0);
-		} else {
-			return ERT.box(lhs.shiftLeft(value.intValue()));
-		}
+		return ERT.box(lhs.shiftLeft(value.intValue()));
 	}
 
 	// binary and
