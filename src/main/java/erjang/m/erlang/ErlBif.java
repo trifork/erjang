@@ -311,6 +311,10 @@ public class ErlBif {
 			return EModuleManager.get_attributes(m);
 		}
 		
+		if (k == ERT.am_exports) {
+			return EModuleManager.get_exports(m);
+		}
+		
 		if (k == ERT.am_module) {
 			return mod;
 		}

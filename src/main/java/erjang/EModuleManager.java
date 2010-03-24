@@ -288,6 +288,18 @@ public class EModuleManager {
 			}
 		}
 
+		public ESeq get_exports() {
+			ESeq rep = ERT.NIL;
+			
+			for (FunctionInfo fi : binding_points.values()) {
+				if (fi.exported()) {
+					rep = rep.cons(new ETuple2(fi.fun.function, ERT.box(fi.fun.arity)));
+				}
+			}
+
+			return rep;
+		}
+
 	}
 
 	static void add_import(FunID fun, Field ref) throws Exception {
@@ -521,6 +533,15 @@ public class EModuleManager {
 	public static ESeq get_attributes(EAtom mod) {
 		ModuleInfo mi = get_module_info(mod);
 		return mi.get_attributes();
+	}
+
+	/**
+	 * @param mod
+	 * @return
+	 */
+	public static ESeq get_exports(EAtom mod) {
+		ModuleInfo mi = get_module_info(mod);
+		return mi.get_exports();
 	}
 
 }
