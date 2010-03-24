@@ -1287,7 +1287,7 @@ public class ErlBif {
 		} catch (ThreadDeath e) {
 			throw e;
 		} catch (Throwable e) {
-			ErlangError ee = new ErlangError(ERT.am_io, e, mod, bin);
+			ErlangError ee = new ErlangError(ERT.am_badfile, e);
 			ETuple2 result = new ETuple2(ERT.am_error, ee.reason());
 			
 			log.log(Level.SEVERE, "cannot load module "+mod, e);

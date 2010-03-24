@@ -294,6 +294,7 @@ public class ERT {
 	public static final EAtom am_infinity = EAtom.intern("infinity");
 	public static final EAtom am_noproc = EAtom.intern("noproc");
 	public static final EAtom am_error = EAtom.intern("error");
+	public static final EAtom am_badfile = EAtom.intern("badfile");
 	public static final EAtom am_value = EAtom.intern("value");
 	public static final EAtom am_timeout = EAtom.intern("timeout");
 	public static final EAtom am_function_clause = EAtom
