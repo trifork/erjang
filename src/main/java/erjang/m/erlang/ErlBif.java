@@ -534,11 +534,6 @@ public class ErlBif {
 		return ERT.whereis(regname);
 	}
 
-	@BIF
-	static public EObject port_info(EObject a1, EObject a2) {
-		throw new NotImplemented();
-	}
-	
 	static final long wall_clock0 = System.currentTimeMillis();
 	
 	// TODO: figure out if this needs to be stored in the current process

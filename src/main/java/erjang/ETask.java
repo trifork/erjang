@@ -212,7 +212,7 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 						"cannot receive exit signal before we're running");
 
 			default:
-				throw new Error("unknown state?");
+				throw new Error("unknown state? "+pstate);
 
 			case RUNNING:
 			}
