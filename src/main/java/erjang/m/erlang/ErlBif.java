@@ -75,7 +75,8 @@ public class ErlBif {
 	 */
 	private static final TimeZone UTC_TIME_ZONE = TimeZone.getTimeZone("UTC");
 	private static Logger log = Logger.getLogger("erlang");
-
+	private static EAtom am_wall_clock = EAtom.intern("wall_clock");
+	
 	@BIF
 	static EObject apply(EProc proc, EObject fun, EObject args) throws Pausable {
 		ESeq a = args.testSeq();
@@ -533,10 +534,24 @@ public class ErlBif {
 	static public EObject port_info(EObject a1, EObject a2) {
 		throw new NotImplemented();
 	}
+	
+	static final long wall_clock0 = System.currentTimeMillis();
+	
+	// TODO: figure out if this needs to be stored in the current process
+	static long last_wall_clock = wall_clock0;
 
 	@BIF
-	static public EObject statistics(EObject list) {
-		throw new NotImplemented();
+	static public EObject statistics(EObject spec) {
+		
+		if (spec == am_wall_clock) {
+			long now = System.currentTimeMillis();
+			long since_last = now-last_wall_clock;
+			long since_epoch = now-wall_clock0;
+			last_wall_clock = now;
+			return ETuple.make(ERT.box(since_epoch), ERT.box(since_last));
+		}
+		
+		throw new NotImplemented("erlang:statistics("+spec+")");
 	}
 
 	@BIF
