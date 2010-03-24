@@ -19,10 +19,13 @@
 
 package erjang.m.lists;
 
+import kilim.Pausable;
 import erjang.BIF;
 import erjang.EAtom;
+import erjang.EFun;
 import erjang.ENative;
 import erjang.EObject;
+import erjang.EProc;
 import erjang.ERT;
 import erjang.ESeq;
 import erjang.ESmall;
@@ -116,6 +119,11 @@ public class Native extends ENative {
 		
 		if (res == null) throw ERT.badarg(hd, tl);
 		
+		return reverse(front, res);
+	}
+
+	@BIF
+	public static ESeq reverse(ESeq front, ESeq res) {		
 		while (!front.isNil()) {
 			res = res.cons(front.head());
 			front = front.tail();
@@ -123,7 +131,6 @@ public class Native extends ENative {
 		
 		return res;
 	}
-
 	@BIF
 	public static EAtom member(EObject e, EObject l) {
 		ESeq list = l.testSeq();
@@ -137,5 +144,21 @@ public class Native extends ENative {
 		return ERT.FALSE;
 	}
 
+	@BIF
+	public static ESeq map(EProc proc, EObject f, EObject s) throws Pausable {
+		EFun fun = f.testFunction2(1);
+		ESeq seq = s.testSeq();
+		if (fun == null || seq == null) throw ERT.badarg(f, s);
+		
+		EObject[] arg = new EObject[1];
+		
+		ESeq rev = ERT.NIL;
+		for (; !seq.isNil(); seq = seq.tail()) {
+			arg[0] = seq.head();
+			rev = rev.cons( fun.invoke(proc, arg) );
+		}
 
+		return reverse(rev, ERT.NIL);
+	}
+	
 }
