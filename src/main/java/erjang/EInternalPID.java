@@ -132,7 +132,7 @@ public class EInternalPID extends EPID implements ELocalHandle {
 	 * @return
 	 */
 	public int internal_pid_number() {
-		throw new NotImplemented();
+		return id;
 	}
 	
 	@Override

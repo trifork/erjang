@@ -18,6 +18,7 @@
 
 package erjang;
 
+
 public abstract class EPort extends EHandle {
 
 	int id;
@@ -100,4 +101,6 @@ public abstract class EPort extends EHandle {
 	public void encode(EOutputStream eos) {
 		eos.write_port(node.node().getName(), id, creation);
 	}
+
+	public abstract EObject port_info(EAtom spec);
 }

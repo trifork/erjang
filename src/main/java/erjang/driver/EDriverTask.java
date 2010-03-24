@@ -41,6 +41,7 @@ import java.nio.channels.SelectableChannel;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 import kilim.Pausable;
 import erjang.EAtom;
@@ -76,15 +77,23 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 	}
 
 	private static final EAtom am_data = EAtom.intern("data");
+	private static final EAtom am_connected = EAtom.intern("connected");
 	private final EInternalPort port;
 	protected EPID owner;
 	private final EDriverControl instance;
+
+	
+	private	static ConcurrentHashMap<Integer,EDriverTask> all_ports 
+		= new ConcurrentHashMap<Integer,EDriverTask> ();
 
 	protected EDriverTask(EProc owner, EDriverInstance driver) {
 		this.owner = owner.self_handle();
 		this.instance = driver;
 		this.port = new EInternalPort(this);
 		driver.task = this;
+		
+
+		all_ports.put(id, this);
 	}
 
 	public void setupInstance() {instance.setup();}
@@ -512,6 +521,8 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 		if (result != am_normal) {
 			owner.send(ETuple.make(ERT.EXIT, self_handle(), result));
 		}
+		//this.port.done();
+		all_ports.remove(this.id);
 	}
 	
 	/*
@@ -611,6 +622,27 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 	 */
 	public void eof_from_driver() {
 		owner.sendb(new ETuple2(port, am_eof));
+	}
+
+	public static ESeq all_ports() {
+		
+		ESeq res = ERT.NIL;
+		for (EDriverTask dt : all_ports.values()) {
+			if (dt.isDone()) continue;
+			res = res.cons(dt.self_handle());
+		}
+
+		return res;
+	}
+
+	public EObject port_info(EAtom spec) {
+		
+		if (spec == am_connected) {
+			return new ETuple2(am_connected, owner);
+		}
+		
+		throw new NotImplemented("port_info(" + spec + ")");
+		
 	}
 
 }
