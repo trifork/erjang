@@ -22,6 +22,10 @@ import java.nio.ByteBuffer;
 import java.io.IOException;
 import java.util.List;
 
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
+
 /**
  * Special cons cell optimizing for [byte, byte, byte | Tail].  
  * An <code>EBinList</code> has a tail, and an array of bytes for the
@@ -299,4 +303,36 @@ public class EBinList extends ECons {
 		}
 		eos.write_any(tail);
 	}
+	
+	public static EBinList fromString(String c, EObject tail) {
+		byte[] data = new byte[c.length()];
+		for (int i = 0; i < data.length; i++) {
+			data[i] = (byte) c.charAt(i);
+		}
+		return new EBinList(data, tail);
+	}
+	
+	private static final Type EBINLIST_TYPE = Type.getType(EBinList.class);
+	private static final Type STRING_TYPE = Type.getType(String.class);
+	private static final String EOBJECT_DESC = Type.getDescriptor(EObject.class);
+
+	@Override
+	public Type emit_const(MethodVisitor fa) {
+
+		Type type = EBINLIST_TYPE;
+
+		char[] ch = new char[len];
+		for (int i = 0; i < len; i++) {
+			ch[i] = (char)(0xff & (int)data[off+i]);
+		}
+		
+		fa.visitLdcInsn(new String(ch));
+		tail.emit_const(fa);
+		fa.visitMethodInsn(Opcodes.INVOKESTATIC, type.getInternalName(),
+				"fromString", "(" + STRING_TYPE.getDescriptor() + EOBJECT_DESC + ")"
+						+ type.getDescriptor());
+
+		return type;
+	}
+
 }
