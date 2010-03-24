@@ -381,7 +381,7 @@ public class EBigString extends ESeq implements CharSequence {
 	 * @see erjang.ECons#prepend(erjang.ECons)
 	 */
 	@Override
-	public ECons prepend(ESeq list) {
+	public ESeq prepend(ESeq list) {
 		EBigString other = list.testBigString();
 		if (other != null) {
 			char[] out = new char[length() + other.length()];

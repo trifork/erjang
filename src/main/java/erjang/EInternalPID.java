@@ -20,6 +20,7 @@
 package erjang;
 
 import kilim.Pausable;
+import kilim.Task;
 
 /**
  * This is a PID on this node
@@ -63,6 +64,13 @@ public class EInternalPID extends EPID implements ELocalHandle {
 	public void send(EObject msg) throws Pausable {
 		EProc task = this.task;
 		if (task != null) {
+			
+			task.reds += task.mbox.size();
+			if (task.reds > 1000) {
+				task.reds = 0;
+				Task.yield();
+			}
+
 			task.mbox.put(msg);
 		}
 	}
@@ -98,8 +106,8 @@ public class EInternalPID extends EPID implements ELocalHandle {
 		EProc task = this.task;
 		if (task != null) 
 			return task.add_monitor(target, object);
-		else
-			throw ERT.badarg(target, object);
+		else 
+			return null;
 	}
 	
 	@Override
@@ -124,7 +132,7 @@ public class EInternalPID extends EPID implements ELocalHandle {
 	 * @return
 	 */
 	public int internal_pid_number() {
-		throw new NotImplemented();
+		return id;
 	}
 	
 	@Override

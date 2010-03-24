@@ -173,6 +173,12 @@ public abstract class EObject implements Comparable<EObject> {
 	@BIF(name="+")
 	public final ENumber add(EObject rhs) { return add(rhs, false); }
 
+	@BIF(name="+")
+	public final ENumber add(ESmall rhs) { return add(rhs.value, false); }
+
+	@BIF(name="+", type=BIF.Type.GUARD)
+	public final ENumber add$g(ESmall rhs) { return add(rhs.value, true); }
+
 	public ENumber add(EObject rhs, boolean guard) { if (guard) return null; throw ERT.badarith(this, rhs); }
 	public ENumber add(int lhs, boolean guard) { if (guard) return null; throw ERT.badarith(lhs, this); }
 	public ENumber add(double lhs, boolean guard) { if (guard) return null; throw ERT.badarith(lhs, this); }
@@ -216,13 +222,12 @@ public abstract class EObject implements Comparable<EObject> {
 
 	@BIF(name="bsl")
 	public EInteger bsl(EObject rhs) { throw ERT.badarith(this, rhs); }
-	public EInteger bsl(int rhs) { throw ERT.badarith(this, rhs); }
 	EInteger r_bsl(int lhs) { throw ERT.badarith(lhs, this); }
 	EInteger r_bsl(BigInteger lhs) { throw ERT.badarith(lhs, this); }
 	
 	@BIF(name="band")
 	public EInteger band(EObject rhs) { throw ERT.badarith(this, rhs); }
-	public EInteger band(int lhs) { throw ERT.badarith(lhs, this); }
+	public ESmall band(int lhs) { throw ERT.badarith(lhs, this); }
 	public EInteger band(BigInteger lhs) { throw ERT.badarith(lhs, this); }
 
 	@BIF(name="bor")
@@ -377,6 +382,53 @@ public abstract class EObject implements Comparable<EObject> {
 
 	public void encode(EOutputStream eos) {
 		throw new NotImplemented();
+	}
+
+	final public boolean is_eq(EObject other) {
+		return equals(other);
+	}
+	
+	final public boolean is_eq_exact(EObject other) {
+		return equalsExactly(other);
+	}
+	
+	final public boolean is_ne(EObject other) {
+		return !equals(other);
+	}
+	
+	final public boolean is_ne_exact(EObject other) {
+		return !equalsExactly(other);
+	}
+	
+	final public boolean is_lt(EObject other) {
+		return this.compareTo(other) < 0;
+	}
+	
+	final public boolean is_ge(EObject other) {
+		return this.compareTo(other) >= 0;
+	}
+	
+	/**
+	 * @param c1
+	 * @return
+	 */
+	public EObject prepend(ESeq list) {
+		
+		// first, rlist=lists:reverse(list)
+		ESeq rlist = ERT.NIL;
+		while (!list.isNil()) {
+			rlist = rlist.cons(list.head());
+			list = list.tail();
+		}
+
+		// then, prepend rlist on this
+		EObject r = this;
+		while(!rlist.isNil()) {
+			r = r.cons(rlist.head());
+			rlist = rlist.tail();
+		} 
+		
+		return r;
 	}
 
 

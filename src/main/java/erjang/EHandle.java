@@ -20,6 +20,7 @@
 package erjang;
 
 import kilim.Pausable;
+import kilim.Task;
 
 /**
  * An EHandle is either an EPort or an EPID.  EHandles can be sent messages
@@ -51,6 +52,13 @@ public abstract class EHandle extends EObject {
 	public void send(EObject msg) throws Pausable {
 		ETask<?> task = task();
 		if (task != null) {
+			
+			task.reds += task.mbox.size();
+			if (task.reds > 1000) {
+				task.reds = 0;
+				Task.yield();
+			}
+			
 			task.mbox_send(msg);
 		}
 	}

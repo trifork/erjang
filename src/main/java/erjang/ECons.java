@@ -84,6 +84,7 @@ public abstract class ECons extends EObject {
 		
 		ECons ths = this;
 		ECons other = rhs.testCons();
+		if (other == null) return false;
 		do {
 			// This would have been nicer if not ENil <: ECons...:
 			boolean other_is_nil = other.isNil();

@@ -24,10 +24,11 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
-public class ESmall extends EInteger {
+public final class ESmall extends EInteger {
 
 	private static final Type ESMALL_TYPE = Type.getType(ESmall.class);
 	public static final ESmall ZERO = new ESmall(0);
+	public static final ESmall MINUS_ONE = new ESmall(-1);
 	public final int value;
 
 	public ESmall testSmall() {
@@ -48,7 +49,11 @@ public class ESmall extends EInteger {
 	}
 
 	int r_compare_same(ESmall lhs) {
-		return lhs.value < value ? -1 : lhs.value == value ? 0 : 1;
+		if (lhs.value < value)
+			return -1;
+		if (lhs.value == value) 
+			return 0;
+		return 1;
 	}
 
 	int r_compare_same(EBig lhs) {
@@ -193,6 +198,7 @@ public class ESmall extends EInteger {
 
 	// integer division erlang:'*'/2
 
+	@BIF(name="*")
 	public ENumber multiply(EObject other) {
 		return other.multiply(value);
 	}
@@ -209,9 +215,6 @@ public class ESmall extends EInteger {
 		return ERT.box(lhs.multiply(BigInteger.valueOf(value)));
 	}
 
-	/* (non-Javadoc)
-	 * @see erjang.EObject#negate()
-	 */
 	@Override
 	public ENumber negate() {
 		return new ESmall(-value);
@@ -278,7 +281,19 @@ public class ESmall extends EInteger {
 	}
 
 	public EInteger r_bsr(int lhs) {
-		return ERT.box((lhs >> value));
+		
+		/** it's a small positive integer in the range 0..31 */
+		if ((value & ~31) == 0) 
+			return ERT.box((lhs >> value));
+
+		if (value >= 32) {
+			if (lhs < 0)
+				return ESmall.MINUS_ONE;
+			else
+				return ZERO;
+		} else /* if (value < 0) */ {
+			return ERT.box(BigInteger.valueOf(lhs).shiftRight(value));
+		}
 	}
 
 	public EInteger r_bsr(BigInteger lhs) {
@@ -291,20 +306,8 @@ public class ESmall extends EInteger {
 		return other.r_bsl(value);
 	}
 
-	public EInteger bsl(int rhs) {
-		if (rhs < 32) {
-			return ERT.box(((long) value) << rhs);
-		} else {
-			return ERT.box(BigInteger.valueOf(value).shiftLeft(rhs));
-		}
-	}
-
 	public EInteger r_bsl(int lhs) {
-		if (value < 32) {
-			return ERT.box(((long) lhs) << value);
-		} else {
-			return ERT.box(BigInteger.valueOf(lhs).shiftLeft(value));
-		}
+		return ERT.box(BigInteger.valueOf(lhs).shiftLeft(value));
 	}
 
 	public EInteger r_bsl(BigInteger lhs) {
@@ -313,11 +316,11 @@ public class ESmall extends EInteger {
 
 	// binary and - erlang:band/2
 
-	public EInteger band(EObject other) {
+	public ESmall band(EObject other) {
 		return other.band(value);
 	}
 
-	public EInteger band(int lhs) {
+	public ESmall band(int lhs) {
 		return ERT.box((lhs & value));
 	}
 

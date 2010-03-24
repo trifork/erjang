@@ -2,3 +2,5 @@ bin
 *.class
 *~
 erjang-*.jar
+.erj
+classes

@@ -25,6 +25,7 @@ import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.DecimalFormat;
+import java.util.zip.Deflater;
 
 /**
  * Provides a stream for encoding Erlang terms to external format, for
@@ -750,14 +751,14 @@ public class EOutputStream extends ByteArrayOutputStream {
      * @param o
      *            the Erlang tem to write.
      */
-    public void write_compressed(final EObject o) {
+    public void write_compressed(final EObject o, int level) {
 	final EOutputStream oos = new EOutputStream(o);
 	write1(EExternal.compressedTag);
 	write4BE(oos.size());
 	final java.io.FilterOutputStream fos = new java.io.FilterOutputStream(
 		this);
 	final java.util.zip.DeflaterOutputStream dos = new java.util.zip.DeflaterOutputStream(
-		fos);
+		fos, new Deflater(level));
 	try {
 	    oos.writeTo(dos);
 	    dos.close();

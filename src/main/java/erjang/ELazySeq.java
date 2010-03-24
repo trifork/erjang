@@ -37,6 +37,9 @@ public abstract class ELazySeq extends ESeq {
 	private ESeq value() {
 		if (value == null) {
 			value = initialValue();
+			
+			// Sanity check: nil not allowed
+			assert value.testNil()==null;
 		}
 		return value;
 	}

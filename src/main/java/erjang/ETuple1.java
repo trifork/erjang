@@ -26,6 +26,11 @@ public class ETuple1 extends ETuple {
 		return null;
 	}
 	
+	static public ETuple1 cast(EObject value) {
+		if (value instanceof ETuple1) return (ETuple1)value; 
+		return null;
+	}
+	
 	@Override
 	public ETuple1 blank() {
 		ETuple1 res = new ETuple1();

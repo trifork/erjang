@@ -24,7 +24,7 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
-public class EBig extends EInteger {
+public final class EBig extends EInteger {
 
 	private static final BigInteger BIG_32 = BigInteger.valueOf(32);
 	private static final BigInteger BIG_MAX_INT = BigInteger.valueOf(Integer.MAX_VALUE);
@@ -223,7 +223,10 @@ public class EBig extends EInteger {
 
 	EInteger r_bsr(int lhs) {
 		if (BIG_32.compareTo(value) <= 0) {
-			return new ESmall(0);
+			if (lhs < 0)
+				return ESmall.MINUS_ONE;
+			else
+				return ESmall.ZERO;
 		} else {
 			return ERT.box(lhs >> value.intValue());
 		}
@@ -241,24 +244,12 @@ public class EBig extends EInteger {
 		return other.r_bsl(value);
 	}
 
-	public EInteger bsl(int rhs) {
-		return ERT.box(value.shiftLeft(rhs));
-	}
-
 	EInteger r_bsl(int lhs) {
-		if (BIG_32.compareTo(value) <= 0) {
-			return new ESmall(0);
-		} else {
-			return ERT.box(BigInteger.valueOf(lhs).shiftLeft(value.intValue()));
-		}
+		return ERT.box(BigInteger.valueOf(lhs).shiftLeft(value.intValue()));
 	}
 
 	EInteger r_bsl(BigInteger lhs) {
-		if (BIG_MAX_INT.compareTo(value) < 0) {
-			return new ESmall(0);
-		} else {
-			return ERT.box(lhs.shiftLeft(value.intValue()));
-		}
+		return ERT.box(lhs.shiftLeft(value.intValue()));
 	}
 
 	// binary and
@@ -267,8 +258,8 @@ public class EBig extends EInteger {
 		return other.band(value);
 	}
 
-	public EInteger band(int lhs) {
-		return ERT.box(BigInteger.valueOf(lhs).and(value));
+	public ESmall band(int lhs) {
+		return (ESmall) ERT.box(BigInteger.valueOf(lhs).and(value));
 	}
 
 	public EInteger band(BigInteger lhs) {
@@ -306,6 +297,13 @@ public class EBig extends EInteger {
 	public EInteger bnot() {
 		return ERT.box(value.not());
 	}
+
+
+	@Override
+	public ENumber negate() {
+               return ERT.box(value.negate());
+	}
+	
 
 	/*
 	 * (non-Javadoc)

@@ -140,7 +140,7 @@ public class ERT {
 	 * @param s
 	 * @return
 	 */
-	public static EPID loopkup_pid(EString name) {
+	public static EPID loopkup_pid(ESeq name) {
 		throw new NotImplemented();
 	}
 
@@ -268,7 +268,7 @@ public class ERT {
 	 * @return
 	 */
 	public static EAtom guard(boolean bool) {
-		return bool ? TRUE : null;
+		return bool ? TRUE : FALSE;
 	}
 
 	public static final ENil NIL = new ENil();
@@ -294,6 +294,7 @@ public class ERT {
 	public static final EAtom am_infinity = EAtom.intern("infinity");
 	public static final EAtom am_noproc = EAtom.intern("noproc");
 	public static final EAtom am_error = EAtom.intern("error");
+	public static final EAtom am_badfile = EAtom.intern("badfile");
 	public static final EAtom am_value = EAtom.intern("value");
 	public static final EAtom am_timeout = EAtom.intern("timeout");
 	public static final EAtom am_function_clause = EAtom
@@ -458,6 +459,8 @@ public class ERT {
 			throws Pausable {
 		// TODO handle ports also?
 		proc.check_exit();
+		
+		//System.out.println(""+proc+" :: "+pid+" ! "+msg);
 
 		EHandle p;
 		if ((p = pid.testHandle()) != null) {
@@ -669,6 +672,7 @@ public class ERT {
 	static kilim.Scheduler scheduler = new kilim.Scheduler(threadPoolSize());
 	public static EAtom am_io = EAtom.intern("io");
 	public static EAtom am_attributes = EAtom.intern("attributes");
+	public static EAtom am_exports = EAtom.intern("exports");
 	public static EAtom am_badfun = EAtom.intern("badfun");
 
 	public static EAtom am_name = EAtom.intern("name");
@@ -688,38 +692,52 @@ public class ERT {
 		task.setScheduler(scheduler);
 		task.start();
 	}
+	
+	 /*
+	  * Skeleton for receive statement:
+	  *
+	  *      L1:          <-------------------+
+	  *                   <-----------+       |
+	  *     	     	       	  |   	  |
+	  *             loop_rec L2 ------+---+   |
+	  *             ...               |   |   |
+	  *             remove_message 	  |   |	  |
+	  *             jump L3           |   |   |
+	  *		...	          |   |   |
+	  *		loop_rec_end L1 --+   |   |
+	  *      L2:          <---------------+   |
+	  *	   	wait L1  -----------------+      or wait_timeout
+	  *		timeout
+	  *
+	  *	 L3:    Code after receive...
+	  *
+	  */
 
-	/** peek mbox */
-	public static EObject receive_peek(EProc proc) {
-		if (proc.midx == -1024) {
-			proc.midx = 0;
-		}
-		return proc.mbox.peek(proc.midx);
+	/** peek mbox at current index (proc.midx), which is 0 upon entry to the loop. */
+	public static EObject loop_rec(EProc proc) {
+		int idx = proc.midx;
+		EObject msg = proc.mbox.peek(idx);		
+		if (DEBUG_WAIT) System.err.println("WAIT| entered loop #"+idx+" message="+msg);
+		return msg;
 	}
 
-	public static void remove_message(EProc proc) throws Pausable {
+	/** remove current message, and reset message index */
+	public static void remove_message(EProc proc) {
 		proc.mbox.remove(proc.midx);
-		proc.midx = -1024;
+		proc.midx = 0;
 	}
 
+	/** message did not match incoming, goto next message (will be followed by goto top-of-loop)*/
+	public static void loop_rec_end(EProc proc) {
+		proc.midx += 1;
+	}
+
+	/** wait for howlong, for one more message to be available */
 	public static boolean wait_timeout(EProc proc, EObject howlong)
 			throws Pausable {
 		if (ERT.DEBUG_WAIT) System.err.println("WAIT| "+proc+" waits for messages for "+howlong+" ms");
-		if (proc.midx == -1024) {
 			if (howlong == am_infinity) {
-				proc.mbox.untilHasMessage();
-				return false;
-			} else {
-				EInteger ei;
-				if ((ei = howlong.testInteger()) == null)
-					throw new ErlangError(EAtom.intern("timeout_value"));
-
-				proc.mbox.untilHasMessage(ei.longValue());
-				return false;
-			}
-		} else {
-			if (howlong == am_infinity) {
-				proc.mbox.untilHasMessages(proc.midx + 1);
+				proc.mbox.untilHasMessages(proc.midx+1);
 				if (ERT.DEBUG_WAIT) System.err.println("WAIT| "+proc+" wakes up on message");
 				return true;
 			} else {
@@ -732,25 +750,20 @@ public class ERT {
 				if (ERT.DEBUG_WAIT) System.err.println("WAIT| "+proc+" wakes up "+(res?"on message" : "after timeout"));
 				return res;
 			}
-		}
 	}
 
-	public static void wait_forever(EProc proc) throws Pausable {
-		if (DEBUG_WAIT) System.err.println("WAIT| "+proc+" waits for messages");
-		if (proc.midx == -1024) {
-			proc.mbox.untilHasMessage();
-		} else {
-			proc.mbox.untilHasMessages(proc.midx + 1);
-		}
-		if (DEBUG_WAIT) System.err.println("WAIT| "+proc+" wakes up after timeout");
+	/** wait forever, for one more message to be available */
+	public static void wait(EProc proc) throws Pausable {
+		int idx = proc.midx + 1;
+		if (DEBUG_WAIT) System.err.println("WAIT| "+proc+" waits for "+idx+" messages");
+		proc.mbox.untilHasMessages(idx);
+		if (DEBUG_WAIT) System.err.println("WAIT| "+proc+" wakes up after timeout; now has "+(idx));
 	}
 
-	// this will be followed by a goto the receive
-	public static void loop_rec_end(EProc proc) {
-		proc.midx += 1;
-	}
-
-	public static void timeout() {
+	/** message reception timed out, reset message index */
+	public static void timeout(EProc proc) {
+		if (DEBUG_WAIT) System.err.println("WAIT| "+proc+" timed out");
+		proc.midx = 0;
 	}
 
 	public static int unboxToInt(EInteger i) {

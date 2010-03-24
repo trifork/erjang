@@ -21,8 +21,10 @@ package erjang;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import kilim.Pausable;
 import kilim.analysis.ClassInfo;
@@ -69,7 +71,10 @@ public abstract class EFun extends EObject implements Opcodes {
 	}
 
 	/** used for translation of tail recursive methods */
-	public abstract EObject go(EProc eproc) throws Pausable;
+	public EObject go(EProc eproc) throws Pausable { return go2(eproc); }
+
+	/** used for translation of tail recursive methods */
+	public abstract EObject go2(EProc eproc);
 
 	/** generic invoke, used only for apply */
 	public abstract EObject invoke(EProc proc, EObject[] args) throws Pausable;
@@ -109,7 +114,7 @@ public abstract class EFun extends EObject implements Opcodes {
 		Class<?> declaringClass = method.getDeclaringClass();
 		Type type = Type.getType(declaringClass);
 		byte[] data = CompilerVisitor.make_invoker(type, mname, method
-				.getName(), ary, proc, 0, Type.getType(method.getReturnType()));
+				.getName(), ary, proc, 0, Type.getType(method.getReturnType()), true, true);
 
 		String clname = type.getClassName() + "$FN_" + mname;
 
@@ -280,7 +285,7 @@ public abstract class EFun extends EObject implements Opcodes {
 	}
 
 	public static byte[] weave(byte[] data) {
-		ClassWeaver w = new ClassWeaver(data, new Compiler.ErjangDetector("/xx/"));
+		ClassWeaver w = new ClassWeaver(data, new Compiler.ErjangDetector("/xx/", (Set<String>)Collections.EMPTY_SET));
 		for (ClassInfo ci : w.getClassInfos()) {
 			ETuple.dump(ci.className, ci.bytes);
 			

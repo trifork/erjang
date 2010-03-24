@@ -1,17 +1,12 @@
 package erjang.beam.repr;
 
-import erjang.EObject;
-import erjang.EAtom;
-import erjang.ETuple;
-import erjang.ESmall;
-import erjang.EBitString;
-import erjang.EBinary;
-import erjang.EString;
-
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
-import static erjang.beam.CodeAtoms.EXTFUNC_ATOM;
+import erjang.EAtom;
+import erjang.EBitString;
+import erjang.EObject;
+import erjang.EString;
 
 public class CodeTables {
 	protected EAtom[]   atoms;
@@ -20,7 +15,7 @@ public class CodeTables {
 	protected AnonFun[] anonymousFuns;
 	protected byte[]    stringpool;
 
- 	protected Map<Integer,FunctionInfo> functionMap = new HashMap();
+ 	protected Map<Integer,FunctionInfo> functionMap = new HashMap<Integer, FunctionInfo>();
 
 	public EAtom atom(int nr) {return atoms[nr-1];}		// 1-based
 	public EObject literal(int nr) {return literals[nr];}		// 0-based

@@ -30,14 +30,16 @@ public class ENil extends ESeq {
 	private static final Type ENIL_TYPE = Type.getType(ENil.class);
 	private static final Type ERT_TYPE = Type.getType(ERT.class);
 	
-	private static ByteBuffer EMPTY_BB = ByteBuffer.allocate(0);
-
 	public ENil() {
 		super();
 	}
 
 	public boolean isNil() {
 		return true;
+	}
+
+	public String stringValue() {
+		return "";
 	}
 
 
@@ -91,5 +93,10 @@ public class ENil extends ESeq {
 	@Override
 	public void encode(EOutputStream eos) {
 		eos.write_nil();
+	}
+	
+	@Override
+	public ESeq prepend(ESeq list) {
+		return list;
 	}
 }

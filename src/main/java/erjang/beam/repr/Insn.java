@@ -18,27 +18,39 @@
 
 package erjang.beam.repr;
 
+import static erjang.beam.CodeAtoms.ARITHFBIF_ATOM;
+import static erjang.beam.CodeAtoms.ATOM_ATOM;
+import static erjang.beam.CodeAtoms.BIF_ATOM;
+import static erjang.beam.CodeAtoms.FIELD_FLAGS_ATOM;
+import static erjang.beam.CodeAtoms.F_ATOM;
+import static erjang.beam.CodeAtoms.GCBIF_ATOM;
+import static erjang.beam.CodeAtoms.NOFAIL_ATOM;
+import static erjang.beam.CodeAtoms.START_ATOM;
+import static erjang.beam.CodeAtoms.TEST_ATOM;
+import erjang.EList;
+import erjang.EObject;
+import erjang.ERT;
+import erjang.ESmall;
+import erjang.ETuple;
 import erjang.beam.BeamInstruction;
 import erjang.beam.BeamOpcode;
-
-import erjang.EObject;
-import erjang.EAtom;
-import erjang.ETuple;
-import erjang.ESeq;
-import erjang.EList;
-import erjang.ESmall;
-import erjang.EBinary;
-import erjang.ERT;
-
-import static erjang.beam.repr.Operands.*;
-import static erjang.beam.CodeAtoms.*;
+import erjang.beam.repr.Operands.AllocList;
+import erjang.beam.repr.Operands.Atom;
+import erjang.beam.repr.Operands.BitString;
+import erjang.beam.repr.Operands.ByteString;
+import erjang.beam.repr.Operands.DestinationOperand;
+import erjang.beam.repr.Operands.Label;
+import erjang.beam.repr.Operands.SelectList;
+import erjang.beam.repr.Operands.SourceOperand;
+import erjang.beam.repr.Operands.XReg;
+import erjang.beam.repr.Operands.YReg;
 
 public class Insn implements BeamInstruction {
 	protected final BeamOpcode opcode;
 	public Insn(BeamOpcode opcode) {this.opcode = opcode;}
 	public BeamOpcode opcode() {return opcode;}
 
-	public String toString() {return opcode+"(...)";}
+	public String toString() {return toSymbolic().toString();}
 	public EObject toSymbolic() {
 	    return opcode.symbol;
 	}

@@ -129,8 +129,8 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 	}
 
 
-
-	protected Mailbox<EObject> mbox = new Mailbox<EObject>();
+	static final int MAX_MAILBOX_SIZE = 1000;
+	protected Mailbox<EObject> mbox = new Mailbox<EObject>(10, MAX_MAILBOX_SIZE);
 
 	protected static enum State {
 		INIT, // has not started yet
@@ -143,6 +143,8 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 
 	protected State pstate = State.INIT;
 	protected EObject exit_reason;
+
+	public int reds;
 
 	/**
 	 * @throws Pausable
@@ -210,7 +212,7 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 						"cannot receive exit signal before we're running");
 
 			default:
-				throw new Error("unknown state?");
+				throw new Error("unknown state? "+pstate);
 
 			case RUNNING:
 			}

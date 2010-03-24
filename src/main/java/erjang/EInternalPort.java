@@ -132,4 +132,10 @@ public class EInternalPort extends EPort implements ELocalHandle {
 		// TODO: this can be wrong in a race condition, but nothing to do about it.
 		return !task.isDone();
 	}
+	
+	@Override
+	public EObject port_info(EAtom spec) {
+		if (task.isDone()) return ERT.am_undefined;
+		return task.port_info(spec);
+	}
 }

@@ -30,6 +30,7 @@ import erjang.EObject;
 import erjang.EPort;
 import erjang.EProc;
 import erjang.ERT;
+import erjang.ESeq;
 import erjang.ESmall;
 import erjang.EString;
 import erjang.ETask;
@@ -38,6 +39,7 @@ import erjang.ETuple2;
 import erjang.ETuple3;
 import erjang.NotImplemented;
 import erjang.driver.EDriver;
+import erjang.driver.EDriverTask;
 import erjang.driver.EExecDriverTask;
 import erjang.driver.EFDDriverTask;
 import erjang.driver.ESpawnDriverTask;
@@ -146,7 +148,7 @@ public class ErlPort {
 		ETuple3 name3;
 		if ((name = ETuple2.cast(t)) != null) {
 
-			EString command = EString.make(name.elem2);
+			EString command = (EString)EString.make(name.elem2);
 
 			if (name.elem1 == am_spawn) {
 				EDriver drv = ERT.find_driver(command);
@@ -214,4 +216,19 @@ public class ErlPort {
 		return ERT.TRUE;
 	}
 
+	@BIF
+	static public ESeq ports()
+	{
+		return EDriverTask.all_ports();
+	}
+	
+	@BIF
+	static public EObject port_info(EObject a1, EObject a2) {
+		EPort p = a1.testPort();
+		EAtom spec = a2.testAtom();
+		if (p==null || spec==null) throw ERT.badarg();
+		return p.port_info(spec);
+	}
+	
+	
 }

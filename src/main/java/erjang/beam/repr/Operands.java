@@ -254,6 +254,11 @@ public class Operands {
 		public EObject toSymbolic() {
 			return ETuple.make(ATOM_ATOM, value);
 		}
+		
+		@Override
+		public String toString() {
+			return "atom:" + value.toString();
+		}
     }
 
     public static class BitString extends Literal {
@@ -314,6 +319,21 @@ public class Operands {
 		public EObject toSymbolic() {
 			return ETuple.make(F_ATOM, new ESmall(nr));
 		}
+		
+		@Override
+		public int hashCode() {
+			return nr;
+		}
+		
+		@Override
+		public boolean equals(Object obj) {
+			if (obj instanceof Label) {
+				Label lab = (Label) obj;
+				return lab.nr == nr;
+			} else {
+				return false;
+			}
+		}
     }
 
     public static class XReg extends DestinationOperand {
@@ -323,7 +343,7 @@ public class Operands {
 		@Override
 		public XReg testXReg() {return this;}
 
-		private static ArrayList<XReg> cache = new ArrayList();
+		private static ArrayList<XReg> cache = new ArrayList<XReg>();
 		public static XReg get(int nr) {
 			while (cache.size() <= nr) {
 				cache.add(new XReg(cache.size()));
@@ -345,7 +365,7 @@ public class Operands {
 		@Override
 		public YReg testYReg() {return this;}
 
-		private static ArrayList<YReg> cache = new ArrayList();
+		private static ArrayList<YReg> cache = new ArrayList<YReg>();
 		public static YReg get(int nr) {
 			while (cache.size() <= nr) {
 				cache.add(new YReg(cache.size()));
@@ -365,7 +385,7 @@ public class Operands {
 		@Override
 		public FReg testFReg() {return this;}
 
-		private static ArrayList<FReg> cache = new ArrayList();
+		private static ArrayList<FReg> cache = new ArrayList<FReg>();
 		public static FReg get(int nr) {
 			while (cache.size() <= nr) {
 				cache.add(new FReg(cache.size()));

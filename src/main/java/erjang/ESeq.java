@@ -30,6 +30,10 @@ public abstract class ESeq extends ECons {
 	public ESeq testSeq() {
 		return this;
 	}	
+	
+	public String stringValue() {
+		throw ERT.badarg(this);
+	}
 
 	@Override
 	public abstract ESeq tail();
@@ -159,4 +163,27 @@ public abstract class ESeq extends ECons {
 		return result;
 	}
 
+
+	/**
+	 * @param c1
+	 * @return
+	 */
+	public ESeq prepend(ESeq list) {
+		
+		// first, rlist=lists:reverse(list)
+		ESeq rlist = ERT.NIL;
+		while (!list.isNil()) {
+			rlist = rlist.cons(list.head());
+			list = list.tail();
+		}
+
+		// then, prepend rlist on this
+		ESeq r = this;
+		while(!rlist.isNil()) {
+			r = r.cons(rlist.head());
+			rlist = rlist.tail();
+		} 
+		
+		return r;
+	}
 }

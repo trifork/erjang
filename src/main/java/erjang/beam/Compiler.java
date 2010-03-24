@@ -24,6 +24,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.CRC32;
@@ -100,6 +101,12 @@ public class Compiler implements Opcodes {
 		// the beam file reader, phase 1
 		BeamFileData reader = getLoader().load(data.getByteArray());
 
+		// run through module analyzer...
+		ModuleAnalyzer ma = new ModuleAnalyzer();
+		reader.accept(ma);
+		
+		cv.setFunInfos(ma.getFunInfos());
+		
 		try {
 			// go!
 			reader.accept(analysis);
@@ -117,18 +124,25 @@ public class Compiler implements Opcodes {
 			return;
 		}
 		*/
-		
+		boolean written = false;
 		ClassWeaver cwe = new ClassWeaver(byteArray, new ErjangDetector(
-				cv.getInternalClassName()));
+				cv.getInternalClassName(), cv.non_pausable_methods));
 		for (ClassInfo ci : cwe.getClassInfos()) {
 			String name = ci.className;
 			byte[] bytes = ci.bytes;
 
-			repo.store(name.replace('.', '/'), bytes);
+			String iname = name.replace('.', '/');
+			if (iname.equals(cv.getInternalClassName())) {
+				written = true;
+			}
+
+			repo.store(iname, bytes);
 		}
-
-		// repo.store(cv.getInternalClassName(), byteArray);
-
+		
+		if (!written) {		
+			// no pausable functions in module!
+			repo.store(cv.getInternalClassName(), byteArray);
+		}
 	}
 
 	public void compile(File file) throws IOException {
@@ -167,7 +181,7 @@ public class Compiler implements Opcodes {
 		// classRepo.store(cv.getInternalClassName(), cw.toByteArray());
 
 		ClassWeaver cwe = new ClassWeaver(cw.toByteArray(), new ErjangDetector(
-				cv.getInternalClassName()));
+				cv.getInternalClassName(), cv.non_pausable_methods));
 		for (ClassInfo ci : cwe.getClassInfos()) {
 			String name = ci.className;
 			byte[] bytes = ci.bytes;
@@ -182,14 +196,17 @@ public class Compiler implements Opcodes {
 	static public class ErjangDetector extends Detector {
 
 		private final String className;
+		private final Set<String> nonPausableMethods;
 
 		/**
 		 * @param className
+		 * @param nonPausableMethods 
 		 * @param mirrors
 		 */
-		public ErjangDetector(String className) {
+		public ErjangDetector(String className, Set<String> nonPausableMethods) {
 			super(Mirrors.getRuntimeMirrors());
 			this.className = className;
+			this.nonPausableMethods = nonPausableMethods;
 		}
 
 		
@@ -242,6 +259,8 @@ public class Compiler implements Opcodes {
 				if (methodName.endsWith("init>"))
 					return Detector.METHOD_NOT_PAUSABLE;
 				if (methodName.equals("module_name"))
+					return Detector.METHOD_NOT_PAUSABLE;
+				if (nonPausableMethods.contains(methodName)) 
 					return Detector.METHOD_NOT_PAUSABLE;
 				return Detector.PAUSABLE_METHOD_FOUND;
 			}

@@ -82,7 +82,7 @@ public class EString extends ESeq implements CharSequence {
 	/**
 	 * @param list
 	 */
-	public static EString make(ECons list) {
+	public static ESeq make(ECons list) {
 		EString s;
 		if ((s = list.testString()) != null) {
 			return s;
@@ -129,10 +129,9 @@ public class EString extends ESeq implements CharSequence {
 	}
 
 	public boolean equalsExactly(EObject rhs) {
-		ENil nil;
 		int length = length();
 
-		if ((nil = rhs.testNil()) != null) {
+		if ((rhs.testNil()) != null) {
 			return length == 0;
 		}
 
@@ -409,7 +408,7 @@ public class EString extends ESeq implements CharSequence {
 	 * @see erjang.ECons#prepend(erjang.ECons)
 	 */
 	@Override
-	public ECons prepend(ESeq list) {
+	public ESeq prepend(ESeq list) {
 		EString other = list.testString();
 		if (other != null) {
 			byte[] out = new byte[length() + other.length()];
@@ -433,7 +432,7 @@ public class EString extends ESeq implements CharSequence {
 	 * @param eObject
 	 * @return
 	 */
-	public static EString make(EObject eObject) {
+	public static ESeq make(EObject eObject) {
 		ESeq str;
 		if ((str = eObject.testSeq()) != null)
 			return make(str);

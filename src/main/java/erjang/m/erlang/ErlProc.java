@@ -60,6 +60,7 @@ public class ErlProc {
 
 	private static final EAtom am_smp_support = EAtom.intern("smp_support");
 	private static final EAtom am_threads = EAtom.intern("threads");
+	private static final EAtom am_process = EAtom.intern("process");
 	private static final EAtom am_wordsize = EAtom.intern("wordsize");
 	private static final EAtom am_thread_pool_size = EAtom
 			.intern("thread_pool_size");
@@ -289,6 +290,9 @@ public class ErlProc {
 	@BIF
 	@ErlFun(export = true)
 	static public EObject monitor(EProc self, EObject how, EObject pid) throws Pausable {
+		if (how != am_process)
+			throw ERT.badarg(how, pid);
+		
 		EHandle h = EHandle.cast(pid);
 		if (h != null) 
 			return self.monitor(h, h);

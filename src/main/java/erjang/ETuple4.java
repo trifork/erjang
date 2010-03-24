@@ -30,6 +30,11 @@ public class ETuple4 extends ETuple {
 		return null;
 	}
 	
+	static public ETuple4 cast(EObject value) {
+		if (value instanceof ETuple4) return (ETuple4)value; 
+		return null;
+	}
+	
 	@Override
 	public ETuple4 blank() {
 		ETuple4 res = new ETuple4();

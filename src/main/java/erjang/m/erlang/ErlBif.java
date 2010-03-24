@@ -75,7 +75,8 @@ public class ErlBif {
 	 */
 	private static final TimeZone UTC_TIME_ZONE = TimeZone.getTimeZone("UTC");
 	private static Logger log = Logger.getLogger("erlang");
-
+	private static EAtom am_wall_clock = EAtom.intern("wall_clock");
+	
 	@BIF
 	static EObject apply(EProc proc, EObject fun, EObject args) throws Pausable {
 		ESeq a = args.testSeq();
@@ -196,7 +197,7 @@ public class ErlBif {
 	
 	@BIF
 	@ErlFun(export = true)
-	static public EPID self(EProc proc) throws Pausable {
+	static public EPID self(EProc proc) {
 		if (proc == null) {
 			System.out.println("Houston, we have a problem.");
 		}
@@ -230,7 +231,7 @@ public class ErlBif {
 	static public EPID list_to_pid(EObject obj) {
 		ECons list;
 		if ((list = obj.testCons()) != null) {
-			EString s = EString.make(list);
+			ESeq s = EString.make(list);
 			return ERT.loopkup_pid(s);
 		}
 		throw ERT.badarg();
@@ -310,6 +311,10 @@ public class ErlBif {
 			return EModuleManager.get_attributes(m);
 		}
 		
+		if (k == ERT.am_exports) {
+			return EModuleManager.get_exports(m);
+		}
+		
 		if (k == ERT.am_module) {
 			return mod;
 		}
@@ -367,6 +372,11 @@ public class ErlBif {
 		return a2.setelement(index, term);
 	}
 
+	@BIF
+	static public ETuple setelement(ESmall index, ETuple a2, EObject term) {
+		return a2.setelement(index.value, term);
+	}
+
 	@BIF(type = Type.GUARD, name = "element")
 	static public EObject element$g(EObject idx, EObject tup) {
 		EInteger i = idx.testInteger();
@@ -420,6 +430,15 @@ public class ErlBif {
 	}
 
 	@BIF
+	static public EObject element(ESmall sidx, ETuple tup) {
+		int idx = sidx.value;
+		if (tup.arity() >= idx) {
+			return tup.elm(idx);
+		}
+		throw ERT.badarg(sidx, tup);
+	}
+
+	@BIF
 	static public EObject element(int idx, EObject obj) {
 		ETuple tup;
 		if ((tup = obj.testTuple()) != null && tup.arity() >= idx) {
@@ -428,6 +447,19 @@ public class ErlBif {
 		throw ERT.badarg(new ESmall(idx), obj);
 	}
 
+	/*
+	 * TODO: figure out why sofs.erl compiles to this with EInteger 1st arg
+	@BIF
+	static public EObject element(ESmall sidx, EObject obj) {
+		int idx = sidx.value;
+		ETuple tup;
+		if ((tup = obj.testTuple()) != null && tup.arity() >= idx) {
+			return tup.elm(idx);
+		}
+		throw ERT.badarg(new ESmall(idx), obj);
+	}
+*/
+	
 	@BIF
 	static public EObject hd(ECons cell) {
 		return cell.head();
@@ -502,14 +534,23 @@ public class ErlBif {
 		return ERT.whereis(regname);
 	}
 
-	@BIF
-	static public EObject port_info(EObject a1, EObject a2) {
-		throw new NotImplemented();
-	}
+	static final long wall_clock0 = System.currentTimeMillis();
+	
+	// TODO: figure out if this needs to be stored in the current process
+	static long last_wall_clock = wall_clock0;
 
 	@BIF
-	static public EObject statistics(EObject list) {
-		throw new NotImplemented();
+	static public EObject statistics(EObject spec) {
+		
+		if (spec == am_wall_clock) {
+			long now = System.currentTimeMillis();
+			long since_last = now-last_wall_clock;
+			long since_epoch = now-wall_clock0;
+			last_wall_clock = now;
+			return ETuple.make(ERT.box(since_epoch), ERT.box(since_last));
+		}
+		
+		throw new NotImplemented("erlang:statistics("+spec+")");
 	}
 
 	@BIF
@@ -779,6 +820,12 @@ public class ErlBif {
 		return ERT.box((long) v1 * (long) v2);
 	}
 
+
+	@BIF(name = "*")
+	static public ENumber multiply(EObject v1, EObject v2) {
+		return v1.multiply(v2);
+	}
+
 	@BIF
 	@ErlFun(export = true)
 	static public EInteger trunc(EObject v1) {
@@ -922,7 +969,7 @@ public class ErlBif {
 
 	@BIF(name = "==", type = Type.GUARD)
 	public static final EAtom is_eq$p(EObject a1, EObject a2) {
-		return ERT.guard(a1.compareTo(a2) == 0);
+		return ERT.guard(a1.equals(a2));
 	}
 
 	@BIF(name = "=/=", type = Type.GUARD)
@@ -995,7 +1042,7 @@ public class ErlBif {
 
 	@BIF(name = "==", type = Type.GUARD)
 	public static final EAtom is_eq_op$g(EObject a1, EObject a2) {
-		return ERT.guard(a1.compareTo(a2) == 0);
+		return ERT.guard(a1.equals(a2));
 	}
 
 	@BIF(name = "==")
@@ -1005,32 +1052,34 @@ public class ErlBif {
 
 	@BIF(name = "=/=", type = Type.GUARD)
 	public static final EAtom is_ne_exact$g(EObject a1, EObject a2) {
-		return !a1.equals(a2) ? ERT.TRUE : null;
+		return ERT.guard( !a1.equalsExactly(a2) );
 	}
 
 	@BIF(name = ">=", type = Type.GUARD)
 	public static final EAtom is_ge$g2(EObject a1, EObject a2) {
-		return a1.compareTo(a2) >= 0 ? ERT.TRUE : null;
+		return ERT.guard( a1.compareTo(a2) >= 0 );
 	}
 
 	@BIF(name = ">", type = Type.GUARD)
 	public static final EAtom is_gt$g(EObject a1, EObject a2) {
-		return a1.compareTo(a2) > 0 ? ERT.TRUE : null;
+		return ERT.guard( a1.compareTo(a2) > 0 );
 	}
 
 	@BIF(name = "is_ge", type = Type.GUARD)
 	public static final EAtom is_ge$g(EObject a1, EObject a2) {
-		return a1.compareTo(a2) >= 0 ? ERT.TRUE : null;
+		return ERT.guard(a1.compareTo(a2) >= 0);
 	}
 
 	@BIF(name = "/=")
 	public static final EAtom is_ne(EObject a1, EObject a2) {
-		return ERT.box(!a1.equals(a2));
+		boolean eq = a1.equals(a2);
+		return ERT.box(!eq);
 	}
 
 	@BIF(name = "/=", type = Type.GUARD)
 	public static final EAtom is_ne$g(EObject a1, EObject a2) {
-		return ERT.guard(!a1.equals(a2));
+		boolean eq = a1.equals(a2);
+		return ERT.guard(!eq);
 	}
 
 	@BIF(name = "<", type = Type.GUARD)
@@ -1079,13 +1128,12 @@ public class ErlBif {
 	}
 
 	@BIF(name = "++")
-	public static ECons append(EObject l1, EObject l2) {
+	public static EObject append(EObject l1, EObject l2) {
 		
 		ESeq ll1 = l1.testSeq();
-		ECons r = l2.testCons();
-		if (ll1 == null||r==null) throw ERT.badarg(l1, l2);
+		if (ll1 == null) throw ERT.badarg(l1, l2);
 		
-		return r.prepend(ll1);
+		return l2.prepend(ll1);
 	}
 
 	@BIF
@@ -1112,7 +1160,7 @@ public class ErlBif {
 	}
 
 	@BIF
-	public static EObject process_flag(EProc proc, EObject a1, EObject a2) throws Pausable {
+	public static EObject process_flag(EProc proc, EObject a1, EObject a2) {
 		return proc.process_flag(a1.testAtom(), a2);
 	}
 
@@ -1123,7 +1171,7 @@ public class ErlBif {
 
 	@BIF(name = "is_atom", type = Type.GUARD)
 	public static EAtom is_atom$p(EObject obj) {
-		return obj == null ? null : obj.testAtom();
+		return ERT.guard(obj.testAtom() != null);
 	}
 
 	@BIF
@@ -1132,13 +1180,13 @@ public class ErlBif {
 	}
 
 	@BIF(name = "is_list", type = Type.GUARD)
-	public static ECons is_list$p(EObject obj) {
-		return obj.testCons();
+	public static EAtom is_list$p(EObject obj) {
+		return ERT.guard(obj.testCons() != null);
 	}
 
 	@BIF(name = "is_tuple", type = Type.GUARD)
-	public static ETuple is_tuple$p(EObject obj) {
-		return obj == null ? null : obj.testTuple();
+	public static EAtom is_tuple$p(EObject obj) {
+		return ERT.guard(obj.testTuple() != null);
 	}
 
 	@BIF
@@ -1241,7 +1289,7 @@ public class ErlBif {
 
 	@BIF
 	@ErlFun(export = true)
-	public static ETuple2 load_module(EProc proc, EAtom mod, EBinary bin) throws Pausable {
+	public static ETuple2 load_module(EProc proc, EAtom mod, EBinary bin) {
 		if (mod == null || bin == null)
 			throw ERT.badarg();
 
@@ -1253,15 +1301,26 @@ public class ErlBif {
 		} catch (ThreadDeath e) {
 			throw e;
 		} catch (Throwable e) {
-			ErlangError ee = new ErlangError(ERT.am_io, e, mod, bin);
+			ErlangError ee = new ErlangError(ERT.am_badfile, e);
 			ETuple2 result = new ETuple2(ERT.am_error, ee.reason());
 			
-			log.log(Level.SEVERE, "cannot load module", e);
+			log.log(Level.SEVERE, "cannot load module "+mod, e);
 			
 			return result;
 		} 
 		
 		return new ETuple2(ERT.am_module, mod);
+	}
+	
+	@BIF
+	public static ETuple make_tuple(EObject arity, EObject initial) {
+		ESmall sm = arity.testSmall();
+		if (sm == null) throw ERT.badarg(arity, initial);
+		ETuple et = ETuple.make(sm.value);
+		for (int i = 1; i <= sm.value; i++) {
+			et.set(i, initial);
+		}
+		return et;
 	}
 
 	@BIF
@@ -1387,6 +1446,11 @@ public class ErlBif {
 	@BIF
 	public static EInteger band(EObject o1, EObject o2) {
 		return o1.band(o2);
+	}
+
+	@BIF
+	public static ESmall band(EObject o1, ESmall o2) {
+		return o2.band(o1);
 	}
 
 	@BIF

@@ -100,7 +100,7 @@ public class EModuleManager {
 		private EFun makeErrorHandler() {
 			return EFun.get_fun_with_handler(fun.arity,
 					new EFunHandler() {
-						public EObject invoke(EProc proc, EObject[] args)
+					public EObject invoke(EProc proc, EObject[] args)
 								throws Pausable {
 							
 							/** Get reference to error_handler:undefined_function/3 */
@@ -175,14 +175,12 @@ public class EModuleManager {
 
 	static class ModuleInfo {
 
-		private final EAtom name;
 		private EModule resident;
 
 		/**
 		 * @param module
 		 */
 		public ModuleInfo(EAtom module) {
-			this.name = module;
 		}
 
 		Map<FunID, FunctionInfo> binding_points = new ConcurrentHashMap<FunID, FunctionInfo>();
@@ -273,6 +271,18 @@ public class EModuleManager {
 			}
 		}
 
+		public ESeq get_exports() {
+			ESeq rep = ERT.NIL;
+			
+			for (FunctionInfo fi : binding_points.values()) {
+				if (fi.exported()) {
+					rep = rep.cons(new ETuple2(fi.fun.function, ERT.box(fi.fun.arity)));
+				}
+			}
+
+			return rep;
+		}
+
 	}
 
 	public static void add_import(FunID fun, FunctionBinder ref) throws Exception {
@@ -297,8 +307,6 @@ public class EModuleManager {
 	// static private Map<EAtom, EModule> modules = new HashMap<EAtom,
 	// EModule>();
 
-	private static final EAtom AM_BADARG = EAtom.intern("badarg");
-
 	static void setup_module(EModule mod_inst) throws Error {
 		ModuleInfo module_info = get_module_info(EAtom.intern(mod_inst.module_name()));
 		module_info.setModule(
@@ -313,6 +321,7 @@ public class EModuleManager {
 		module_info.warn_about_unresolved();
 	}
 
+	@SuppressWarnings("unchecked")
 	public static EModule load_module(EAtom mod, URL url) {
 		String internalName = erjang.beam.Compiler.moduleClassName(mod
 				.getName());
@@ -322,12 +331,14 @@ public class EModuleManager {
 		try {
 			clazz = (Class<? extends EModule>) loader.loadClass(java_name);
 		} catch (ClassNotFoundException e1) {
+			e1.printStackTrace();
 			throw new ErlangError(e1);
 		}
 		EModule mi;
 		try {
 			mi = clazz.newInstance();
 		} catch (Exception e) {
+			e.printStackTrace();
 			throw new ErlangError(e);
 		}
 
@@ -373,6 +384,14 @@ public class EModuleManager {
 		return mi.get_attributes();
 	}
 
+	/**
+	 * @param mod
+	 * @return
+	 */
+	public static ESeq get_exports(EAtom mod) {
+		ModuleInfo mi = get_module_info(mod);
+		return mi.get_exports();
+	}
 
 	public static abstract class FunctionBinder {
 		public abstract void bind(EFun value) throws Exception;

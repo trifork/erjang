@@ -29,7 +29,6 @@ public class ETuple3 extends ETuple {
 		return null;
 	}
 	
-
 	@Override
 	public ETuple3 blank() {
 		ETuple3 res = new ETuple3();

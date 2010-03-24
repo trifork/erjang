@@ -34,6 +34,7 @@ import erjang.ECons;
 import erjang.EObject;
 import erjang.EProc;
 import erjang.ERT;
+import erjang.ESeq;
 import erjang.EString;
 import erjang.ETuple2;
 import erjang.ErlangError;
@@ -67,7 +68,7 @@ public class EExecDriverTask extends EDriverTask {
 			this.name = name;
 			
 		// argument can be any list, ... turn it into a string
-		EString es = name.elem2.testString();
+		ESeq es = name.elem2.testString();
 		if (es == null) {		
 			ECons cons;
 			EAtom am;
@@ -122,7 +123,7 @@ public class EExecDriverTask extends EDriverTask {
 		ECons cons;
 		EBitString bin;
 		if ((cons=val.testCons()) != null) {
-			EString str = EString.make(cons);
+			ESeq str = EString.make(cons);
 			// buf = str.collectIOList(null);
 			
 		} else if ((bin=val.testBitString()) != null) {

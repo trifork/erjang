@@ -482,7 +482,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						Arg out = dest_arg(insn_idx, insn.dest);
 
 						BuiltInFunction bif = BIFUtil.getMethod("erlang", name.getName(), inTypes,
-								failLabel != 0);
+								failLabel != 0, true);
 
 						vis.visitInsn(opcode, failLabel, in, out, bif);
 						break;
@@ -501,7 +501,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 						BuiltInFunction bif = BIFUtil.getMethod("erlang", name.getName(),
 								parmTypes(type_map, srcs),
-								failLabel != 0);
+								failLabel != 0, true);
 
 						vis.visitInsn(opcode, failLabel, in, out, bif);
 						break;
@@ -519,12 +519,35 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 						BuiltInFunction bif = BIFUtil.getMethod("erlang", name.getName(),
 								parmTypes(type_map, srcs),
-								failLabel != 0);
+								failLabel != 0, true);
 
 						vis.visitInsn(opcode, failLabel, in, out, bif);
 						break;
 					}
 
+					case is_tuple: {
+						
+						if (insn_idx+1 < insns.size()) {
+						Insn next_insn = insns.get(insn_idx+1);
+						if (next_insn.opcode() == BeamOpcode.test_arity) {
+							
+							int this_fail = decode_labelref(((Insn.L)insn_).label, this.map[insn_idx].exh);
+							int next_fail = decode_labelref(((Insn.L)next_insn).label, this.map[insn_idx+1].exh);
+
+							if (this_fail == next_fail) {
+
+								Arg this_arg = src_arg(insn_idx, ((Insn.LD)insn_).dest);
+								Arg next_arg = src_arg(insn_idx+1, ((Insn.LD)next_insn).dest);
+
+								if (this_arg.equals(next_arg)) { 
+									// SKIP THIS INSTRUCTION!									
+									break;
+								}
+							}
+						}
+						}
+					}
+						
 						// Tests:
 						// LS:
 					case is_integer:
@@ -538,7 +561,6 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					case is_binary:
 					case is_list:
 					case is_nonempty_list:
-					case is_tuple:
 					case is_function:
 					case is_boolean:
 					case is_bitstr:
@@ -1031,8 +1053,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					Arg[] args = new Arg[] {
 						src_arg(insn_idx, insn.src1),
 						src_arg(insn_idx, insn.src2) };
-					vis.visitTest(test, failLabel, args, (Arg) null,
-							Type.VOID_TYPE);
+					vis.visitTest(test, failLabel, args, Type.VOID_TYPE);
 					break;
 				}
 
@@ -1311,7 +1332,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 			}
 
 			private void dump() {
-				if (ERT.DEBUG2 == true) return;
+				if (ERT.DEBUG2 == false) return;
 				next_insn: for (int i = 0; i < insns.size(); i++) {
 					System.err.println(name + "(" + block_label + "):" + i
 							+ " :: " + (map == null ? "?" : map[i]));
@@ -1448,6 +1469,35 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					}
 
 
+					case is_tuple: {
+						
+						if (insn_idx+1 < insns.size()) {
+						Insn next_insn = insns.get(insn_idx+1);
+						if (next_insn.opcode() == BeamOpcode.test_arity) {
+							
+							if (this.map[insn_idx+1] == null) {
+								this.map[insn_idx+1] = this.map[insn_idx];
+							}
+							
+							int this_fail = decode_labelref(((Insn.L)insn_).label, this.map[insn_idx].exh);
+							int next_fail = decode_labelref(((Insn.L)next_insn).label, this.map[insn_idx+1].exh);
+
+							if (this_fail == next_fail) {
+
+								Arg this_arg = src_arg(insn_idx, ((Insn.LD)insn_).dest);
+								Arg next_arg = src_arg(insn_idx+1, ((Insn.LD)next_insn).dest);
+
+								if (this_arg.equals(next_arg)) { 
+									// SKIP THIS INSTRUCTION!									
+									continue next_insn;
+								}
+							}
+						}
+						}
+						
+					}
+						
+
 						// Tests:
 						// LS:
 					case is_integer:
@@ -1461,7 +1511,6 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					case is_binary:
 					case is_list:
 					case is_nonempty_list:
-					case is_tuple:
 					case is_function:
 					case is_boolean:
 					case is_bitstr:
@@ -1943,7 +1992,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					ExtFun ext_fun = spec_insn.ext_fun;
 
 					if (ext_fun.mod == ERLANG_ATOM &&
-					    ext_fun.fun == ERROR_ATOM &&
+					    (ext_fun.fun == ERROR_ATOM || ext_fun.fun == THROW_ATOM) &&
 					    ext_fun.arity == 1) return true;
 				}
 				return false;
@@ -2012,6 +2061,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 				case is_lt:
 				case is_ge:
 				case is_ne:
+				case is_eq:
 				case is_ne_exact: {
 					Insn.LSS insn = (Insn.LSS) insn_;
 					checkArg(current, insn.src1);
@@ -2019,7 +2069,6 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					return current;
 				}
 
-				case is_eq:
 				case is_eq_exact: {
 					Insn.LSS insn = (Insn.LSS) insn_;
 					checkArg(current, insn.src1);
@@ -2029,8 +2078,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					Type t2 = getType(current, insn.src2);
 
 					if (!t1.equals(t2)) {
-						//TODO: Is this correct for is_eq on integer vs. double?
-						// Also, for reg-vs-reg, we should really use the GLB.
+						//TODO: for reg-vs-reg, we should really use the GLB.
 						DestinationOperand reg;
 						if ((reg = insn.src1.testDestination()) != null) {
 							current = setType(current, reg, t2);

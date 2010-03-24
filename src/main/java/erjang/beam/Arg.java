@@ -81,5 +81,12 @@ public class Arg {
 		this.type = type;
 	}
 	
-	
+	@Override
+	public boolean equals(Object obj) {
+		if (obj instanceof Arg) {
+			Arg arg = (Arg) obj;
+			return kind == arg.kind && no == arg.no && value == arg.value;
+		}
+		return false;
+	}
 }

@@ -23,12 +23,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import kilim.Pausable;
 import erjang.m.erlang.ErlProc;
-import erjang.util.WeakHashSet;
 
 /**
  * An erlang process
@@ -52,6 +52,10 @@ public final class EProc extends ETask<EInternalPID> {
 	public static final EAtom am_dictionary = EAtom.intern("dictionary");
 	public static final EAtom am_group_leader = EAtom.intern("group_leader");
 	public static final EAtom am_links = EAtom.intern("links");
+	public static final EAtom am_heap_size = EAtom.intern("heap_size");
+	public static final EAtom am_stack_size = EAtom.intern("stack_size");
+	public static final EAtom am_reductions = EAtom.intern("reductions");
+	public static final EAtom am_initial_call = EAtom.intern("initial_call");
 	public static final EAtom am_priority = EAtom.intern("priority");
 	public static final EAtom am_monitor_nodes = EAtom.intern("monitor_nodes");
 	public static final EAtom am_registered_name = EAtom.intern("registered_name");
@@ -69,6 +73,14 @@ public final class EProc extends ETask<EInternalPID> {
 
 	private static final EObject am_kill = EAtom.intern("kill");
 	private static final EObject am_killed = EAtom.intern("killed");
+
+	private static final EObject am_status = EAtom.intern("status");
+	private static final EObject am_waiting = EAtom.intern("waiting");
+	private static final EObject am_running = EAtom.intern("running");
+	private static final EObject am_runnable = EAtom.intern("runnable");
+
+	private static final EObject am_DOWN = EAtom.intern("DOWN");
+	private static final EObject am_noproc = EAtom.intern("noproc");
 
 	public EFun tail;
 	public EObject arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10;
@@ -127,7 +139,7 @@ public final class EProc extends ETask<EInternalPID> {
 		case 0:
 		}
 		
-		all_tasks.add(this);
+		all_tasks.put(this.id, this);
 	}
 
 	/**
@@ -147,7 +159,7 @@ public final class EProc extends ETask<EInternalPID> {
 
 	private EAtom trap_exit = ERT.FALSE;
 
-	public int midx;
+	public int midx = 0;
 
 	/** monitor nodes[option] -> true/false */
 	private Map<Integer,EAtom> monitor_nodes = new HashMap<Integer, EAtom>();
@@ -180,6 +192,8 @@ public final class EProc extends ETask<EInternalPID> {
 		}
 		
 		self.done();
+		
+		all_tasks.remove(this.id);
 	}
 	
 	protected void process_incoming_exit(EHandle from, EObject reason) throws Pausable
@@ -295,7 +309,7 @@ public final class EProc extends ETask<EInternalPID> {
 	 * @return
 	 * @throws Pausable 
 	 */
-	public EObject process_flag(EAtom flag, EObject value) throws Pausable {
+	public EObject process_flag(EAtom flag, EObject value) {
 
 		if (flag == am_trap_exit) {
 			EAtom old = this.trap_exit;
@@ -406,8 +420,7 @@ public final class EProc extends ETask<EInternalPID> {
 			try {
 				this.pstate = State.RUNNING;
 
-				EObject tmp;
-				while((tmp = this.tail.go(this)) == TAIL_MARKER) {
+				while(this.tail.go(this) == TAIL_MARKER) {
 					/* skip */
 				}
 				 
@@ -460,24 +473,17 @@ public final class EProc extends ETask<EInternalPID> {
 		
 		ESeq res = ERT.NIL;
 		
-		res = res.cons(new ETuple2(am_trap_exit, trap_exit));
-		
-		// get messages
-		ESeq messages = EList.make((Object[])mbox.messages());
-		res = res.cons(new ETuple2(am_messages, messages));
-		res = res.cons(new ETuple2(am_message_queue_len, new ESmall(messages.length())));
-		
-		res = res.cons(new ETuple2(am_dictionary, get()));
-		
-		res = res.cons(new ETuple2(am_group_leader, group_leader));
+		res = res.cons(process_info(am_trap_exit));
+		res = res.cons(process_info(am_messages));
+		res = res.cons(process_info(am_message_queue_len));
+		res = res.cons(process_info(am_dictionary));
+		res = res.cons(process_info(am_group_leader));
+		res = res.cons(process_info(am_links));
+		res = res.cons(process_info(am_heap_size));
 
 		EObject reg_name = self_handle().name;
 		if (reg_name != null)
 			res = res.cons(new ETuple2(am_registered_name, reg_name));
-
-		ESeq links = links();
-		res = res.cons(new ETuple2(am_links, links));
-		
 		
 		if (res == ERT.NIL) return ERT.am_undefined;
 		return res;
@@ -518,6 +524,31 @@ public final class EProc extends ETask<EInternalPID> {
 		} else if (spec == am_links) {
 			ESeq links = links();
 			return new ETuple2(am_links, links);
+		} else if (spec == am_status) {
+			if (this.running) {
+				return new ETuple2(am_status, am_running);
+			} else if (this.pauseReason != null) {
+				return new ETuple2(am_status, am_waiting);
+			} else {
+				return new ETuple2(am_status, am_runnable);
+			}
+		} else if (spec == am_heap_size) {
+			return new ETuple2(am_heap_size, 
+							   ERT.box(Runtime.getRuntime().totalMemory() 
+									   - Runtime.getRuntime().freeMemory()));
+		} else if (spec == am_stack_size) {
+			// TODO: Maybe use HotSpotDiagnosticMXBean ThreadStackSize property?
+			return new ETuple2(am_stack_size, 
+							   ERT.box(0));
+			
+		} else if (spec == am_reductions) {
+			return new ETuple2(am_reductions, ERT.box(this.reds));
+			
+		} else if (spec == am_initial_call) {
+			// TODO: Maybe use HotSpotDiagnosticMXBean ThreadStackSize property?
+			return new ETuple2(am_initial_call, 
+							   ETuple.make(spawn_mod, spawn_fun, ERT.box(spawn_args)));
+			
 		} else {
 			System.err.println(spec);
 			throw new NotImplemented();
@@ -541,8 +572,13 @@ public final class EProc extends ETask<EInternalPID> {
 	 * @param object
 	 * @return
 	 */
-	public ERef monitor(EHandle handle, EObject object) {
+	public ERef monitor(EHandle handle, EObject object) throws Pausable {
 		ERef ref = handle.add_monitor(self_handle(), object);
+		if (ref == null) {
+			ref = ERT.getLocalNode().createRef();
+			this.mbox_send(ETuple.make(am_DOWN, ref, object, am_noproc));
+			return ref;
+		}
 		this.is_monitoring.put(ref, handle);
 		return ref;
 	}
@@ -562,14 +598,15 @@ public final class EProc extends ETask<EInternalPID> {
 	}
 	
 	
-	private	static WeakHashSet<EProc> all_tasks = new WeakHashSet<EProc>();
+	private	static ConcurrentHashMap<Integer,EProc> all_tasks 
+		= new ConcurrentHashMap<Integer,EProc> ();
 	
 	/**
 	 * @return
 	 */
 	public static ESeq processes() {
 		ESeq res = ERT.NIL;
-		for (EProc proc : all_tasks) {
+		for (EProc proc : all_tasks.values()) {
 			if (proc.is_alive()) {
 				res = res.cons(proc.self_handle());
 			}

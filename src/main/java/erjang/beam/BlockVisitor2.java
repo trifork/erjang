@@ -56,11 +56,10 @@ public interface BlockVisitor2 extends BlockVisitor {
 	 * @param test
 	 * @param failLabel
 	 * @param args
-	 * @param arg
 	 * @param voidType
+	 * @param arg
 	 */
-	void visitTest(BeamOpcode test, int failLabel, Arg[] args, Arg out,
-			Type voidType);
+	void visitTest(BeamOpcode test, int failLabel, Arg[] args, Type voidType);
 
 	/**
 	 * @param opcode

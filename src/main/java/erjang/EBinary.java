@@ -18,10 +18,8 @@
 
 package erjang;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.zip.CRC32;
 
@@ -107,9 +105,10 @@ public class EBinary extends EBitString {
 
 	/**
 	 * @param barr
+	 * @throws IOException 
 	 * @throws IOException
 	 */
-	public void writeTo(ByteArrayOutputStream o) {
+	public void writeTo(OutputStream o) throws IOException {
 		o.write(data, byteOffset(), byteSize());
 	}
 
