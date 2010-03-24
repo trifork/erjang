@@ -23,12 +23,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import kilim.Pausable;
 import erjang.m.erlang.ErlProc;
-import erjang.util.WeakHashSet;
 
 /**
  * An erlang process
@@ -53,6 +53,7 @@ public final class EProc extends ETask<EInternalPID> {
 	public static final EAtom am_group_leader = EAtom.intern("group_leader");
 	public static final EAtom am_links = EAtom.intern("links");
 	public static final EAtom am_heap_size = EAtom.intern("heap_size");
+	public static final EAtom am_stack_size = EAtom.intern("stack_size");
 	public static final EAtom am_priority = EAtom.intern("priority");
 	public static final EAtom am_monitor_nodes = EAtom.intern("monitor_nodes");
 	public static final EAtom am_registered_name = EAtom.intern("registered_name");
@@ -136,7 +137,7 @@ public final class EProc extends ETask<EInternalPID> {
 		case 0:
 		}
 		
-		all_tasks.add(this);
+		all_tasks.put(this.id, this);
 	}
 
 	/**
@@ -189,6 +190,8 @@ public final class EProc extends ETask<EInternalPID> {
 		}
 		
 		self.done();
+		
+		all_tasks.remove(this.id);
 	}
 	
 	protected void process_incoming_exit(EHandle from, EObject reason) throws Pausable
@@ -531,6 +534,11 @@ public final class EProc extends ETask<EInternalPID> {
 			return new ETuple2(am_heap_size, 
 							   ERT.box(Runtime.getRuntime().totalMemory() 
 									   - Runtime.getRuntime().freeMemory()));
+		} else if (spec == am_stack_size) {
+			// TODO: Maybe use HotSpotDiagnosticMXBean ThreadStackSize property?
+			return new ETuple2(am_stack_size, 
+							   ERT.box(0));
+			
 		} else {
 			System.err.println(spec);
 			throw new NotImplemented();
@@ -580,14 +588,15 @@ public final class EProc extends ETask<EInternalPID> {
 	}
 	
 	
-	private	static WeakHashSet<EProc> all_tasks = new WeakHashSet<EProc>();
+	private	static ConcurrentHashMap<Integer,EProc> all_tasks 
+		= new ConcurrentHashMap<Integer,EProc> ();
 	
 	/**
 	 * @return
 	 */
 	public static ESeq processes() {
 		ESeq res = ERT.NIL;
-		for (EProc proc : all_tasks) {
+		for (EProc proc : all_tasks.values()) {
 			if (proc.is_alive()) {
 				res = res.cons(proc.self_handle());
 			}
