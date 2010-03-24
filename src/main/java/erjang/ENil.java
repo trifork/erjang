@@ -94,4 +94,9 @@ public class ENil extends ESeq {
 	public void encode(EOutputStream eos) {
 		eos.write_nil();
 	}
+	
+	@Override
+	public ESeq prepend(ESeq list) {
+		return list;
+	}
 }
