@@ -254,6 +254,11 @@ public class Operands {
 		public EObject toSymbolic() {
 			return ETuple.make(ATOM_ATOM, value);
 		}
+		
+		@Override
+		public String toString() {
+			return "atom:" + value.toString();
+		}
     }
 
     public static class BitString extends Literal {
