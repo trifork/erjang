@@ -58,14 +58,6 @@ public abstract class EDriverControl {
 	}
 
 	/**
-	 * @param buf
-	 */
-	public void outputv(ByteBuffer buf) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	/**
 	 * @param op
 	 * @param out
 	 * @return

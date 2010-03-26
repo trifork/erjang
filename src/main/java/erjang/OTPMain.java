@@ -39,7 +39,8 @@ public class OTPMain {
 
 	public static EDriver[] DRIVERS = new EDriver[] {
 	    new erjang.driver.efile.Driver(),
-	    new erjang.driver.ram_file.Driver()
+	    new erjang.driver.ram_file.Driver(),
+	    new erjang.driver.tcp_inet.Driver()
 	};
 
 	public static void main(String[] args) throws ClassNotFoundException, InstantiationException, IllegalAccessException, IOException {
