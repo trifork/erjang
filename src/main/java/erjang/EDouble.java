@@ -158,18 +158,18 @@ public class EDouble extends ENumber {
 	}
 
 	public ENumber subtract(EObject other, boolean guard) {
-		return other.r_subtract(value);
+		return other.r_subtract(value, guard);
 	}
 
-	public ENumber r_subtract(int lhs) {
+	public ENumber r_subtract(int lhs, boolean guard) {
 		return ERT.box((long) lhs - value);
 	}
 
-	public ENumber r_subtract(double lhs) {
+	public ENumber r_subtract(double lhs, boolean guard) {
 		return ERT.box(lhs - value);
 	}
 
-	public ENumber r_subtract(BigInteger lhs) {
+	public ENumber r_subtract(BigInteger lhs, boolean guard) {
 		return ERT.box(lhs.doubleValue() - value);
 	}
 

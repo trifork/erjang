@@ -188,9 +188,9 @@ public abstract class EObject implements Comparable<EObject> {
 	public ENumber subtract(EObject rhs) { return subtract(rhs, false); }
 	public ENumber subtract(EObject rhs, boolean guard) { if (guard) return null; throw ERT.badarith(this, rhs); }
 	public ENumber subtract(int rhs) { throw ERT.badarith(this, rhs); }
-	ENumber r_subtract(int lhs) { throw ERT.badarith(lhs, this); }
-	ENumber r_subtract(double lhs) { throw ERT.badarith(lhs, this); }
-	ENumber r_subtract(BigInteger lhs) { throw ERT.badarith(lhs, this); }
+	ENumber r_subtract(int lhs, boolean guard) { if (guard) return null; throw ERT.badarith(lhs, this); }
+	ENumber r_subtract(double lhs, boolean guard) { if (guard) return null; throw ERT.badarith(lhs, this); }
+	ENumber r_subtract(BigInteger lhs, boolean guard) { if (guard) return null; throw ERT.badarith(lhs, this); }
 	
 	@BIF(name="div")
 	public EInteger idiv(EObject rhs) { throw ERT.badarith(this, rhs); }

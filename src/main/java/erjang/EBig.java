@@ -141,18 +141,18 @@ public final class EBig extends EInteger {
 	}
 
 	public ENumber subtract(EObject other, boolean guard) {
-		return other.r_subtract(value);
+		return other.r_subtract(value, guard);
 	}
 
-	ENumber r_subtract(int lhs) {
+	ENumber r_subtract(int lhs, boolean guard) {
 		return ERT.box(BigInteger.valueOf(lhs).subtract(value));
 	}
 
-	ENumber r_subtract(double lhs) {
+	ENumber r_subtract(double lhs, boolean guard) {
 		return ERT.box(lhs - value.doubleValue());
 	}
 
-	ENumber r_subtract(BigInteger lhs) {
+	ENumber r_subtract(BigInteger lhs, boolean guard) {
 		return ERT.box(lhs.subtract(value));
 	}
 
