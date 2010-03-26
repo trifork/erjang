@@ -168,7 +168,7 @@ public abstract class EObject implements Comparable<EObject> {
 	//
 	
 	@BIF(name="-")
-	public ENumber negate() { throw ERT.badarg(this); }
+	public ENumber negate() { throw ERT.badarith(this); }
 
 	@BIF(name="+")
 	public final ENumber add(EObject rhs) { return add(rhs, false); }
@@ -227,7 +227,7 @@ public abstract class EObject implements Comparable<EObject> {
 	
 	@BIF(name="band")
 	public EInteger band(EObject rhs) { throw ERT.badarith(this, rhs); }
-	public ESmall band(int lhs) { throw ERT.badarith(lhs, this); }
+	public EInteger band(int lhs) { throw ERT.badarith(lhs, this); }
 	public EInteger band(BigInteger lhs) { throw ERT.badarith(lhs, this); }
 
 	@BIF(name="bor")

@@ -227,14 +227,17 @@ public final class ESmall extends EInteger {
 	}
 
 	public EDouble r_divide(int lhs) {
+		if (value==0) throw ERT.badarith(lhs, this);
 		return ERT.box((double) lhs / value);
 	}
 
 	public EDouble r_divide(double lhs) {
+		if (value==0) throw ERT.badarith(ERT.box(lhs), this);
 		return ERT.box(lhs / value);
 	}
 
 	public EDouble r_divide(BigInteger lhs) {
+		if (value==0) throw ERT.badarith(ERT.box(lhs), this);
 		return ERT.box(lhs.doubleValue() / value);
 	}
 
@@ -245,20 +248,24 @@ public final class ESmall extends EInteger {
 	}
 
 	public EInteger idiv(int rhs) {
+		if (rhs==0) throw ERT.badarith(this, ERT.box(rhs));
 		return ERT.box(value / rhs);
 	}
 
 	public EInteger r_idiv(int lhs) {
+		if (value==0) throw ERT.badarith(ERT.box(lhs), this);
 		return ERT.box((long) lhs / (long) value);
 	}
 
 	public EInteger r_idiv(BigInteger lhs) {
+		if (value==0) throw ERT.badarith(lhs, this);
 		return ERT.box(lhs.divide(BigInteger.valueOf(value)));
 	}
 
 	// remainder erlang:rem/2
 
 	public ESmall irem(int rhs) {
+		if (rhs==0) throw ERT.badarith(this, ERT.box(rhs));
 		return ERT.box(value % rhs);
 	}
 
@@ -267,10 +274,12 @@ public final class ESmall extends EInteger {
 	}
 
 	public EInteger r_irem(int lhs) {
+		if (value==0) throw ERT.badarith(ERT.box(lhs), this);
 		return ERT.box(lhs % value);
 	}
 
 	public EInteger r_irem(BigInteger lhs) {
+		if (value==0) throw ERT.badarith(ERT.box(lhs), this);
 		return ERT.box(lhs.remainder(BigInteger.valueOf(value)));
 	}
 
@@ -316,11 +325,11 @@ public final class ESmall extends EInteger {
 
 	// binary and - erlang:band/2
 
-	public ESmall band(EObject other) {
+	public EInteger band(EObject other) {
 		return other.band(value);
 	}
 
-	public ESmall band(int lhs) {
+	public EInteger band(int lhs) {
 		return ERT.box((lhs & value));
 	}
 
@@ -349,11 +358,11 @@ public final class ESmall extends EInteger {
 	}
 
 	public EInteger bxor(int lhs) {
-		return ERT.box((lhs | value));
+		return ERT.box((lhs ^ value));
 	}
 
 	public EInteger bxor(BigInteger lhs) {
-		return ERT.box(lhs.or(BigInteger.valueOf(value)));
+		return ERT.box(lhs.xor(BigInteger.valueOf(value)));
 	}
 
 	public EInteger bnot() {
