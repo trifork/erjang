@@ -212,6 +212,10 @@ public class ModuleAnalyzer implements ModuleVisitor {
 							bif = BIFUtil.getMethod("erlang",
 									name.getName(), parmTypes(srcs.length),
 									false, true);
+							
+							if (bif == null) {
+								throw new Error("missing bif: "+bi.ext_fun);
+							}
 
 							self.is_pausable |= bif.isPausable();
 
