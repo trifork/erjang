@@ -234,7 +234,10 @@ public final class EBig extends EInteger {
 
 	EInteger r_bsr(BigInteger lhs) {
 		if (BIG_MAX_INT.compareTo(value) < 0) {
-			return new ESmall(0);
+			if (BigInteger.ZERO.compareTo(lhs) > 0)
+				return ESmall.MINUS_ONE;
+			else
+				return ESmall.ZERO;
 		} else {
 			return ERT.box(lhs.shiftRight(value.intValue()));
 		}
