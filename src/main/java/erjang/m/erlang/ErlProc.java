@@ -141,7 +141,7 @@ public class ErlProc {
 	
 	
 	@BIF
-	public static EObject spawn_link(EProc proc, EObject mod, EObject fun, EObject args)  {
+	public static EObject spawn_link(EProc proc, EObject mod, EObject fun, EObject args) throws Pausable {
 		
 		EAtom m = mod.testAtom();
 		EAtom f = fun.testAtom();
