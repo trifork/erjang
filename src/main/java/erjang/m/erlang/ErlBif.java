@@ -1628,4 +1628,8 @@ public class ErlBif {
 		throw ERT.raise(kind, value, trace);
 	}
 	
+	@BIF
+	public static ESeq registered() {
+		return ERT.registered();
+	}
 }
