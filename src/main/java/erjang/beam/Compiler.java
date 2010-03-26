@@ -400,8 +400,9 @@ public class Compiler implements Opcodes {
 		if (!jarFile.exists()) {
 			JarClassRepo repo = new JarClassRepo(jarFile);
 
-			System.out.print("[compiling "); 
+			System.out.print("["); 
 			System.out.print(name);
+			System.out.print(":"); 
 			long before = System.currentTimeMillis();
 
 			try {
@@ -417,7 +418,7 @@ public class Compiler implements Opcodes {
 				}
 			}
 			
-			System.out.print(":"+(System.currentTimeMillis()-before)+"ms]");
+			System.out.print(""+(System.currentTimeMillis()-before)+"ms]");
 		}
 
 		return jarFile;
