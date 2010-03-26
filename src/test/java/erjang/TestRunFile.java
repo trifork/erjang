@@ -37,6 +37,8 @@ import junit.framework.Test;
 import junit.framework.TestResult;
 import junit.framework.Assert;
 import junit.framework.AssertionFailedError;
+import kilim.ExitMsg;
+import kilim.Mailbox;
 
 /**
  * 
@@ -109,8 +111,12 @@ public class TestRunFile implements Test {
 
 			EProc p = new EProc(null, RUN_WRAPPER_ATOM, RUN_WRAPPER_ATOM, EList.make(EList.make(ERJANG_ATOM, module)));
 			ERT.run(p);
-			p.joinb();
-
+			
+	        Mailbox<ExitMsg> mb = new Mailbox<ExitMsg>();
+	        p.informOnExit(mb);
+	        ExitMsg exit = mb.getb(20*1000); // 20sec
+	        Assert.assertNotNull("process timed out?", exit);
+	        
 			EObject actual = (EObject) p.exit_reason;
 			Assert.assertEquals(expected, actual);
 		} catch (AssertionFailedError e) {
