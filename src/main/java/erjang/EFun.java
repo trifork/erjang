@@ -99,7 +99,7 @@ public abstract class EFun extends EObject implements Opcodes {
 	 * @param module
 	 * @return
 	 */
-	static EFun make(Method method) {
+	public static EFun make(Method method) {
 
 		assert (Modifier.isStatic(method.getModifiers()));
 		assert (!Modifier.isPrivate(method.getModifiers()));
@@ -218,7 +218,7 @@ public abstract class EFun extends EObject implements Opcodes {
 
 	static Map<Integer, Constructor<? extends EFun>> handlers = new HashMap<Integer, Constructor<? extends EFun>>();
 
-	static EFun get_fun_with_handler(int arity, EFunHandler handler) {
+	public static EFun get_fun_with_handler(int arity, EFunHandler handler) {
 		Constructor<? extends EFun> h = handlers.get(arity);
 
 		if (h == null) {

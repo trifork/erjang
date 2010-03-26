@@ -157,6 +157,11 @@ public class EDouble extends ENumber {
 		return ERT.box(lhs.doubleValue() + value);
 	}
 
+	@Override
+	public ENumber negate() {
+		return new EDouble(-value);
+	}
+
 	public ENumber subtract(EObject other, boolean guard) {
 		return other.r_subtract(value, guard);
 	}

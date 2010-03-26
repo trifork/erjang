@@ -1449,7 +1449,7 @@ public class ErlBif {
 	}
 
 	@BIF
-	public static ESmall band(EObject o1, ESmall o2) {
+	public static EInteger band(EObject o1, ESmall o2) {
 		return o2.band(o1);
 	}
 

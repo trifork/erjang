@@ -20,14 +20,11 @@ package erjang;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Map;
-import java.util.TreeSet;
+import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -64,21 +61,7 @@ public class EModuleManager {
 
 		EModule defining_module;
 		EFun resolved_value;
-		Collection<Field> resolve_points = new TreeSet<Field>(
-				new Comparator<Field>() {
-
-					@Override
-					public int compare(Field o1, Field o2) {
-						if (o1 == o2)
-							return 0;
-						int c1 = o1.getDeclaringClass().getName().compareTo(
-								o2.getDeclaringClass().getName());
-						if (c1 != 0)
-							return c1;
-						int c2 = o1.getName().compareTo(o2.getName());
-						return c2;
-					}
-				});
+		Collection<FunctionBinder> resolve_points = new HashSet<FunctionBinder>();
 		private EFun error_handler;
 
 		/**
@@ -86,14 +69,14 @@ public class EModuleManager {
 		 * @throws IllegalAccessException
 		 * @throws IllegalArgumentException
 		 */
-		synchronized void add_import(final Field ref) throws Exception {
+		synchronized void add_import(final FunctionBinder ref) throws Exception {
 			resolve_points.add(ref);
 			if (resolved_value != null) {
 				// System.out.println("binding "+fun+" "+resolved_value+" -> "+ref);
-				ref.set(null, resolved_value);
+				ref.bind(resolved_value);
 			} else {
 				EFun h = getFunErrorHandler();
-				ref.set(null, h);
+				ref.bind(h);
 			}
 		}
 
@@ -168,9 +151,9 @@ public class EModuleManager {
 			this.resolved_value = value;
 			this.defining_module = definer;
 
-			for (Field f : resolve_points) {
+			for (FunctionBinder f : resolve_points) {
 				// System.out.println("binding " + fun2 + " " + value + " -> " + f);
-				f.set(null, value);
+				f.bind(value);
 			}
 		}
 
@@ -208,7 +191,7 @@ public class EModuleManager {
 		 * @return
 		 * @throws Exception
 		 */
-		public void add_import(FunID fun, Field ref) throws Exception {
+		public void add_import(FunID fun, FunctionBinder ref) throws Exception {
 			FunctionInfo info = get_function_info(fun);
 			info.add_import(ref);
 		}
@@ -302,7 +285,7 @@ public class EModuleManager {
 
 	}
 
-	static void add_import(FunID fun, Field ref) throws Exception {
+	public static void add_import(FunID fun, FunctionBinder ref) throws Exception {
 		get_module_info(fun.module).add_import(fun, ref);
 	}
 
@@ -317,7 +300,7 @@ public class EModuleManager {
 		return mi;
 	}
 
-	static void add_export(EModule mod, FunID fun, EFun value) throws Exception {
+	public static void add_export(EModule mod, FunID fun, EFun value) throws Exception {
 		get_module_info(fun.module).add_export(mod, fun, value);
 	}
 
@@ -330,146 +313,12 @@ public class EModuleManager {
 				mod_inst);
 
 		try {
-			read_annotations(mod_inst);
+			mod_inst.registerImportsAndExports();
 		} catch (Exception e) {
 			throw new Error(e);
 		}
-		
+
 		module_info.warn_about_unresolved();
-	}
-
-	@SuppressWarnings("unchecked")
-	private static void read_annotations(EModule mod_inst) throws Exception {
-		Class<? extends EModule> module_class = mod_inst.getClass();
-		Field[] fields = module_class.getDeclaredFields();
-
-		for (Field field : fields) {
-			if (!Modifier.isStatic(field.getModifiers()))
-				continue;
-
-			/*
-			 * Annotation[] ann = field.getAnnotations(); for (Annotation a :
-			 * ann) { System.err.println(" -> "+field.getName()+" : "+a); }
-			 */
-
-			Import imp = field.getAnnotation(Import.class);
-			if (imp != null) {
-				field.setAccessible(true);
-
-				add_import(new FunID(imp), field);
-
-				// System.out.println("  import " + f
-				// + (resolved ? "resolved" : ""));
-
-				continue;
-			}
-
-			Export exp = field.getAnnotation(Export.class);
-			if (exp != null) {
-				field.setAccessible(true);
-				EFun value;
-				try {
-					value = (EFun) field.get(null);
-				} catch (Exception e) {
-					throw new Error(e);
-				}
-
-				if (value == null)
-					throw new Error("field " + field + " not initialized");
-
-				add_export(mod_inst, new FunID(exp), value);
-
-				// System.out.println("  export " + f);
-
-				continue;
-			}
-		}
-
-		process_native_annotations(module_class, mod_inst);
-
-		String cname = module_class.getName();
-		String nname = cname.substring(0, cname.lastIndexOf('.')) + ".Native";
-
-		Class<? extends ENative> natives;
-
-		try {
-			natives = (Class<? extends ENative>) Class.forName(nname, true,
-					module_class.getClassLoader());
-		} catch (ClassNotFoundException e) {
-			// System.out.println("no native: " + nname);
-			return;
-		}
-
-		ENative en;
-		try {
-			en = natives.newInstance();
-		} catch (Exception e) {
-			throw new Error("cannot instantiate Natives for module "
-					+ mod_inst.module_name(), e);
-		}
-
-		for (Class nat : en.getNativeClasses()) {
-			process_native_annotations(nat, mod_inst);
-		}
-
-	}
-
-	private static void process_native_annotations(Class<?> nat, EModule mod_inst)
-			throws Exception {
-		for (Field field : nat.getDeclaredFields()) {
-			if (!Modifier.isStatic(field.getModifiers()))
-				continue;
-
-			Import imp = field.getAnnotation(Import.class);
-			if (imp != null) {
-				field.setAccessible(true);
-				add_import(new FunID(imp), field);
-
-				// System.out.println("N import " + f);
-
-				continue;
-			}
-
-		}
-
-		// for native methods
-		Method[] methods = nat.getDeclaredMethods();
-
-		next_method: for (Method method : methods) {
-
-			BIF efun = method.getAnnotation(BIF.class);
-			if (efun != null && efun.type().export()) {
-				String mod = mod_inst.module_name();
-
-				String name = efun.name();
-				if (name.equals("__SELFNAME__"))
-					name = method.getName();
-
-				Class<?>[] parameterTypes = method.getParameterTypes();
-				int arity = parameterTypes.length;
-				if (arity > 0 && parameterTypes[0].equals(EProc.class)) {
-					arity -= 1;
-				}
-
-				for (int i = 0; i < parameterTypes.length; i++) {
-					if (i == 0 && parameterTypes[i].equals(EProc.class))
-						continue;
-					if (parameterTypes[i].equals(EObject.class))
-						continue;
-
-					// we only allow EProc as zero'th and EObject as other args
-					// in exported functions
-					continue next_method;
-				}
-
-				FunID f = new FunID(mod, name, arity);
-
-				// System.out.println("N export " + f);
-
-				add_export(mod_inst, f, EFun.make(method));
-			}
-
-		}
 	}
 
 	@SuppressWarnings("unchecked")
@@ -542,6 +391,11 @@ public class EModuleManager {
 	public static ESeq get_exports(EAtom mod) {
 		ModuleInfo mi = get_module_info(mod);
 		return mi.get_exports();
+	}
+
+	public static abstract class FunctionBinder {
+		public abstract void bind(EFun value) throws Exception;
+		public abstract FunID getFunID();
 	}
 
 }
