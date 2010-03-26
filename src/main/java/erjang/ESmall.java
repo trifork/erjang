@@ -43,6 +43,13 @@ public final class ESmall extends EInteger {
 		return value;
 	}
 
+	public boolean equals(EObject other) {
+		if (other == this) return true;
+		if (other instanceof ESmall)
+			return ((ESmall)other).value == value;
+		return false;
+	}
+	
 	@Override
 	int compare_same(EObject rhs) {
 		return rhs.r_compare_same(this);
@@ -134,7 +141,7 @@ public final class ESmall extends EInteger {
 
 	@Override
 	public ESmall abs() {
-		return new ESmall(Math.abs(value));
+		return ERT.box(Math.abs(value));
 	}
 
 	/**
@@ -142,7 +149,7 @@ public final class ESmall extends EInteger {
 	 * @return
 	 */
 	public static ESmall make(int arity) {
-		return new ESmall(arity);
+		return ERT.box(arity);
 	}
 
 	//
@@ -176,7 +183,7 @@ public final class ESmall extends EInteger {
 	/* subtract */
 
 	public ENumber subtract(EObject other, boolean guard) {
-		return other.r_subtract(value);
+		return other.r_subtract(value, guard);
 	}
 
 	@Deprecated
@@ -184,15 +191,15 @@ public final class ESmall extends EInteger {
 			return ERT.box((long)value - rhs);
 	}
 
-	public ENumber r_subtract(int lhs) {
+	public ENumber r_subtract(int lhs, boolean guard) {
 		return ERT.box((long) lhs - (long) value);
 	}
 
-	public ENumber r_subtract(double lhs) {
+	public ENumber r_subtract(double lhs, boolean guard) {
 		return ERT.box(lhs - value);
 	}
 
-	public ENumber r_subtract(BigInteger lhs) {
+	public ENumber r_subtract(BigInteger lhs, boolean guard) {
 		return ERT.box(lhs.subtract(BigInteger.valueOf(value)));
 	}
 
