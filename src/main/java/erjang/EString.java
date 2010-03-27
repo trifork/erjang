@@ -373,24 +373,24 @@ public class EString extends ESeq implements CharSequence {
 
 		}
 
-		ECons seq;
-		if ((seq = rhs.testCons()) != null) {
+		ECons rseq;
+		if ((rseq = rhs.testCons()) != null) {
 
 			int i = 0;
 
 			while (i < length) {
 
-				if ((seq.testNil()) != null) {
-					return -1; // I AM SHORTER
+				if ((rseq.testNil()) != null) {
+					return 1; // I AM LONGER
 				}
 
-				int cmp = (new ESmall(charAt(i++))).compareTo(seq.head());
+				int cmp = (new ESmall(charAt(i++))).compareTo(rseq.head());
 				if (cmp != 0)
 					return cmp;
 
-				EObject res = seq.tail();
+				EObject res = rseq.tail();
 
-				if ((seq = res.testCons()) != null) {
+				if ((rseq = res.testCons()) != null) {
 					continue;
 				}
 
