@@ -315,6 +315,11 @@ public abstract class EObject implements Comparable<EObject> {
 	int cmp_order() { throw new Error("cannot compare"); }
 
 
+	@BIF
+	public EAtom is_function(EObject arity) {
+		return ERT.FALSE;
+	}
+	
 	/**
 	 * @param o2
 	 * @return

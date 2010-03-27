@@ -45,6 +45,16 @@ public abstract class EFun extends EObject implements Opcodes {
 
 	public abstract int arity();
 
+	@BIF
+	public EAtom is_function(EObject arity) {
+		ESmall ary;
+		if ((ary=arity.testSmall()) != null) {
+			return ERT.box( arity() == ary.value );
+		}
+		throw ERT.badarg(this, arity);
+	}
+	
+
 	public EFun testFunction2(int nargs) {
 		if (this.arity() == nargs)
 			return this;

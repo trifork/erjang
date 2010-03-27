@@ -40,6 +40,11 @@ import erjang.FunID;
 public class ErlFun {
 
 	@BIF
+	public static EObject is_function(EObject a1, EObject a2) {
+		return a1.is_function(a2);
+	}
+	
+	@BIF
 	public static EObject fun_info(EObject fun_arg, EObject spec_arg)
 	{
 		EFun fun = fun_arg.testFunction();
