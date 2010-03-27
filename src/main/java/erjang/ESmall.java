@@ -47,6 +47,8 @@ public final class ESmall extends EInteger {
 		if (other == this) return true;
 		if (other instanceof ESmall)
 			return ((ESmall)other).value == value;
+		if (other instanceof EDouble)
+			return ((EDouble)other).value == value;
 		return false;
 	}
 	
