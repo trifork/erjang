@@ -667,6 +667,15 @@ public class ErlBif {
 		throw ERT.badarg();
 	}
 
+	@BIF(name = "-", type=Type.GUARD)
+	static public ENumber neg$g(EObject v1) {
+		ENumber n1;
+		if ((n1 = v1.testNumber()) != null) {
+			return n1.negate();
+		}
+		return null;
+	}
+
 	@BIF
 	static public EInteger div(EObject o1, EObject o2) {
 		return o1.idiv(o2);
