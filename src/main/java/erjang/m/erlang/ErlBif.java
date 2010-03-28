@@ -84,7 +84,7 @@ public class ErlBif {
 		
 		EFun f = fun.testFunction();
 		if (f != null) {
-			return f.apply(proc, a);
+			return apply(proc, f, a);
 		}
 
 		ETuple t = fun.testTuple();
@@ -107,7 +107,7 @@ public class ErlBif {
 			throw ERT.undef(funspec, a.toArray());
 		}
 		
-		return f.apply(proc, a);
+		return apply(proc, f, a);
 	}
 	
 	@BIF
@@ -188,11 +188,45 @@ public class ErlBif {
 		
 		EFun f = EModuleManager.resolve(new FunID(mod, fun, args.length()));
 		
-		if (f == null) {
-			throw new ErlangUndefined(mod, fun, args.length());
+		return apply(proc, f, args);
+	}
+
+	private static EObject apply(EProc proc, EFun fun, ESeq args)
+			throws Pausable {
+		ESeq rargs = args.reverse();
+		int len = args.length();
+		switch(len) {		
+		case 11:
+			proc.arg10 = rargs.head(); rargs = rargs.tail();
+		case 10:
+			proc.arg9 = rargs.head(); rargs = rargs.tail();
+		case 9:
+			proc.arg8 = rargs.head(); rargs = rargs.tail();
+		case 8:
+			proc.arg7 = rargs.head(); rargs = rargs.tail();
+		case 7:
+			proc.arg6 = rargs.head(); rargs = rargs.tail();
+		case 6:
+			proc.arg5 = rargs.head(); rargs = rargs.tail();
+		case 5:
+			proc.arg4 = rargs.head(); rargs = rargs.tail();
+		case 4:
+			proc.arg3 = rargs.head(); rargs = rargs.tail();
+		case 3:
+			proc.arg2 = rargs.head(); rargs = rargs.tail();
+		case 2:
+			proc.arg1 = rargs.head(); rargs = rargs.tail();
+		case 1:
+			proc.arg0 = rargs.head();
+		case 0:
+			break;
+			
+		default:
+			return fun.apply(proc, args);
 		}
 		
-		return f.apply(proc, args);
+		proc.tail = fun;
+		return EProc.TAIL_MARKER;
 	}
 	
 	@BIF
