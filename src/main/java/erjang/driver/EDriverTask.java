@@ -415,21 +415,12 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 		ByteBuffer bb = instance.control(op, out);
 
 		if (bb == null || bb.position() == 0) {
-			if (this.send_binary_data) {
-				return ERT.EMPTY_BINARY;
-			} else {
 				return ERT.NIL;
-			}
 
 		} else {
-			int len = bb.position();
 
-			bb.rewind();
-			if (this.send_binary_data) {
-				return new EBinary(bb.array(), bb.arrayOffset(), len);
-			} else {
-				return EString.make(bb.array(), bb.arrayOffset(), len);
-			}
+			bb.flip();
+			return EString.make(bb.array(), bb.arrayOffset(), bb.remaining());
 		}
 	}
 
