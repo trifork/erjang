@@ -142,8 +142,9 @@ public final class ESmall extends EInteger {
 	}
 
 	@Override
-	public ESmall abs() {
-		return ERT.box(Math.abs(value));
+	public EInteger abs() {
+		// OBS: abs(Integer.MIN_VALUE) cannot be represented by an ESmall.
+		return ERT.box(Math.abs((long)value));
 	}
 
 	/**
