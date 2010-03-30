@@ -42,12 +42,16 @@ public abstract class EDriverInstance extends EDriverControl {
 
 	EDriverTask task;
 	Lock pdl;
+	
+	protected EInternalPort port() {
+		return task.self_handle();
+	}
 
-	static final int ERL_DRV_READ = SelectionKey.OP_READ;
-	static final int ERL_DRV_WRITE = SelectionKey.OP_WRITE;
-	static final int ERL_DRV_ACCEPT = SelectionKey.OP_ACCEPT;
-	static final int ERL_DRV_CONNECT = SelectionKey.OP_CONNECT;
-	static final int ERL_DRV_USE = 1 << 5;
+	protected static final int ERL_DRV_READ = SelectionKey.OP_READ;
+	protected static final int ERL_DRV_WRITE = SelectionKey.OP_WRITE;
+	protected static final int ERL_DRV_ACCEPT = SelectionKey.OP_ACCEPT;
+	protected static final int ERL_DRV_CONNECT = SelectionKey.OP_CONNECT;
+	protected static final int ERL_DRV_USE = 1 << 5;
 
 	static private final int ALL_OPS = ERL_DRV_READ | ERL_DRV_WRITE
 			| ERL_DRV_ACCEPT | ERL_DRV_CONNECT;
@@ -131,6 +135,7 @@ public abstract class EDriverInstance extends EDriverControl {
 	}
 
 	private ByteBuffer[] queue = null;
+	private EPID caller;
 
 	/**
 	 * @return
@@ -138,7 +143,22 @@ public abstract class EDriverInstance extends EDriverControl {
 	protected ByteBuffer[] driver_peekq() {
 		return queue;
 	}
+	
+	protected EPID driver_caller() {
+		return this.caller;
+	}
 
+	protected int driver_sizeq() {
+		if (queue == null) return 0;
+		
+		int size = 0;
+		int p = 0;
+		for (p = 0; p < queue.length && !queue[p].hasRemaining(); p++) {
+			size += queue[p].remaining();
+		}
+		return size;
+	}
+	
 	protected void driver_deq(long size) {
 
 		if (queue == null)

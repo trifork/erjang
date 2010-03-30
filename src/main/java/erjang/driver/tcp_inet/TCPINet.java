@@ -19,20 +19,65 @@
 package erjang.driver.tcp_inet;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.channels.SelectableChannel;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import kilim.RingQueue;
+
+import erjang.EAtom;
+import erjang.EInternalPort;
 import erjang.EObject;
+import erjang.EPID;
+import erjang.EPort;
+import erjang.EProc;
+import erjang.ERT;
 import erjang.ERef;
 import erjang.EString;
+import erjang.ETuple;
+import erjang.ETuple2;
+import erjang.ErlangError;
 import erjang.driver.EAsync;
 import erjang.driver.EDriverInstance;
+import erjang.driver.IO;
+import erjang.driver.SelectMode;
 import erjang.driver.efile.Posix;
 
 public class TCPINet extends EDriverInstance {
 
+	static class AsyncOp {
+
+		/** id used to identify reply */
+		short id;
+		
+		/** recipient of async reply */
+		EPID caller;
+		
+		/* Request id (CONNECT/ACCEPT/RECV) */
+		int req;
+		
+		ERef monitor;
+
+		public int timeout;
+	}
+	
 	static enum SockType {
 		SOCK_STREAM, SOCK_DGRAM, SOCK_SEQPACKET;
+	}
+	
+	static enum ActiveType {
+		PASSIVE(0), ACTIVE(1), ACTIVE_ONCE(2);
+		final int value;
+		ActiveType(int val) { this.value = val; }
 	}
 	
 	/* general address encode/decode tag */
@@ -109,16 +154,47 @@ public class TCPINet extends EDriverInstance {
 	public static final int SCTP_REQ_LISTEN	       =61; /* Different from TCP; not for UDP */
 	public static final int SCTP_REQ_BINDX	       =62; /* Multi-home SCTP bind            */
 
-	private final EString command;
+	/* INET_REQ_SUBSCRIBE sub-requests */
+	public static final byte INET_SUBS_EMPTY_OUT_Q  =1;
 
+
+	/* *_REQ_* replies */
+	public static final byte INET_REP_ERROR       =0;
+	public static final byte INET_REP_OK          =1;
+	public static final byte INET_REP_SCTP        =2;
+
+	public static final int INET_STATE_CLOSED    =0;
+	public static final int INET_STATE_OPEN      =(INET_F_OPEN);
+	public static final int INET_STATE_BOUND     =(INET_STATE_OPEN | INET_F_BOUND);
+	public static final int INET_STATE_CONNECTED =(INET_STATE_BOUND | INET_F_ACTIVE);
+
+	public static final int TCP_STATE_CLOSED     =INET_STATE_CLOSED;
+	public static final int TCP_STATE_OPEN       =(INET_F_OPEN);
+	public static final int TCP_STATE_BOUND      =(TCP_STATE_OPEN | INET_F_BOUND);
+	public static final int TCP_STATE_CONNECTED  =(TCP_STATE_BOUND | INET_F_ACTIVE);
+	public static final int TCP_STATE_LISTEN     =(TCP_STATE_BOUND | INET_F_LISTEN);
+	public static final int TCP_STATE_CONNECTING =(TCP_STATE_BOUND | INET_F_CON);
+	public static final int TCP_STATE_ACCEPTING  =(TCP_STATE_LISTEN | INET_F_ACC);
+	public static final int TCP_STATE_MULTI_ACCEPTING =(TCP_STATE_ACCEPTING | INET_F_MULTI_CLIENT);
+
+	public static final byte[] EXBADPORT = "exbadport".getBytes(Charset.forName("ASCII"));
+	public static final byte[] EXBADSEQ = "exbadseq".getBytes(Charset.forName("ASCII"));
+
+	public static final int INET_INFINITY  =   0xffffffff;
+	private static final EAtom am_inet_async = EAtom.intern("inet_async");
+	
+	private final EString command;
+	private int state = INET_STATE_CLOSED;
+	private SockType type;
+	private byte family;
+	private SocketChannel fd;
+	private List<EObject> empty_out_q_subs = new ArrayList<EObject>(1);
+	private InetSocketAddress remote;
+	private ActiveType active = ActiveType.PASSIVE;
+	private RingQueue<AsyncOp> opt = new RingQueue<AsyncOp>(2);
+	
 	public TCPINet(EString command) {
 		this.command = command;
-	}
-
-	@Override
-	protected EObject call(int command, EObject data) {
-		throw new erjang.NotImplemented();
-
 	}
 
 	@Override
@@ -170,12 +246,12 @@ public class TCPINet extends EDriverInstance {
 	}
 	
 	@Override
-	protected ByteBuffer control(int command, ByteBuffer[] out) {
+	protected ByteBuffer control(EPID caller, int command, ByteBuffer cmd) {
 		
 		switch (command) {
 		case INET_REQ_OPEN:
-			if (out.length == 1 && out[0].remaining()==1) {
-				byte family = out[0].get();
+			if (cmd.remaining()==1) {
+				byte family = cmd.get();
 				
 				if (family == INET_AF_INET || family == INET_AF_INET6) {
 					return inet_ctl_open(family, SockType.SOCK_STREAM);
@@ -184,20 +260,282 @@ public class TCPINet extends EDriverInstance {
 			
 			return ctl_error(Posix.EINVAL);
 
+		case INET_REQ_SUBSCRIBE:
+			return inet_subscribe(caller, cmd);
+			
+			
+		case INET_REQ_BIND:
+			return inet_bind(cmd);
+			
+		case INET_REQ_CONNECT:
+			/* INPUT: Timeout(4), Port(2), Address(N) */
+
+			
+			if (!is_open()) {
+				return ctl_xerror(EXBADPORT);
+			} else if (is_conected()) {
+				return ctl_error(Posix.EISCONN);
+			} else if (!is_bound()) {
+				return ctl_xerror(EXBADSEQ);
+			} else if (is_connecting()) {
+				return ctl_error(Posix.EINVAL);
+			}
+			
+			int timeout = cmd.getInt();
+			
+			remote = inet_set_address(family, cmd);
+			
+			try {
+				short aid;
+				ByteBuffer reply = ByteBuffer.allocate(3);
+				reply.put(INET_REP_OK);
+				
+				if (this.fd.connect(remote)) {
+					// established
+					
+				    state = TCP_STATE_CONNECTED;
+				    if (active != ActiveType.PASSIVE)
+				    	select(fd, ERL_DRV_READ|ERL_DRV_WRITE, SelectMode.SET);
+				    aid = enq_async(caller, reply, INET_REQ_CONNECT);
+				    async_ok();
+
+				} else {
+					// async
+					
+				    state = TCP_STATE_CONNECTING;
+				    if (timeout != INET_INFINITY)
+					   driver_set_timer(timeout);
+				    
+				    aid = enq_async(caller, reply, INET_REQ_CONNECT);
+				}
+				
+				return reply;
+			} catch (IOException e) {
+				e.printStackTrace();
+				return ctl_error(IO.exception_to_posix_code(e));
+			}
+
+			
+			
 		}
 		
 		throw new erjang.NotImplemented("tcp_inet control(cmd="+command+")");
 		
 	}
 
-	private ByteBuffer inet_ctl_open(byte family, SockType sockStream) {
-		throw new erjang.NotImplemented();
+	private ByteBuffer inet_bind(ByteBuffer cmd) {
+		if (cmd.remaining() < 2) 
+			return ctl_error(Posix.EINVAL);
+
+		if (state != INET_STATE_OPEN) 
+			return ctl_xerror(EXBADSEQ);
 		
+		InetSocketAddress addr = inet_set_address(family, cmd);
+		if (addr == null) 
+			return ctl_error(Posix.EINVAL);
+		
+		try {
+			fd.socket().bind(addr);
+		} catch (IOException e1) {
+			e1.printStackTrace();
+			return ctl_error(IO.exception_to_posix_code(e1));
+		}
+		
+		state = INET_STATE_BOUND;
+		
+		int port = addr.getPort();
+		if (port == 0) {
+			port = fd.socket().getLocalPort();
+		}
+		
+		ByteBuffer reply = ByteBuffer.allocate(3);
+		reply.order(ByteOrder.nativeOrder());
+		reply.put(INET_REP_OK);
+		reply.putShort((short) (port & 0xFFFF));
+		
+		return reply;
 	}
 
-	private ByteBuffer ctl_error(int einval) {
-		throw new erjang.NotImplemented();
-		
+	private boolean async_ok() {
+		AsyncOp op = deq_async();
+		if (op == null) {
+			return false;
+		}
+		return send_async_ok(op.id, op.caller);
 	}
+
+	private AsyncOp deq_async() {
+		return deq_async_w_tmo();
+	}
+
+	private AsyncOp deq_async_w_tmo() {
+		if (opt.size() == 0)
+			return null;
+		return opt.get();
+	}
+
+	private boolean send_async_ok(int id, EPID caller) {
+		ETuple msg = ETuple.make(am_inet_async, port(), ERT.box(id), ERT.am_ok);
+		return caller.sendnb(msg);
+	}
+
+	private boolean send_async_ok_port(int id, EPID caller, EPort port2) {
+		ETuple msg = ETuple.make(am_inet_async, port(), ERT.box(id), 
+					new ETuple2(ERT.am_ok, port2));
+		return caller.sendnb(msg);
+	}
+
+	private short enq_async(EPID caller, ByteBuffer reply, int req) {
+		return enq_async_w_tmo(caller, reply, req, INET_INFINITY, (ERef)null);
+	}
+	
+	static AtomicInteger aid = new AtomicInteger(0);
+
+	private short enq_async_w_tmo(EPID caller, ByteBuffer reply, int req, int timeout,
+			ERef monitor) {
+		
+		AsyncOp op = new AsyncOp();
+		op.caller = driver_caller();
+		op.req = req;
+		op.id = (short)(aid.incrementAndGet() & 0xffff);
+		op.timeout = timeout;
+		op.monitor = monitor;
+		
+		return op.id;
+	}
+
+	private InetSocketAddress inet_set_address(byte family, ByteBuffer cmd) {
+
+		int port = cmd.getShort() & 0xffff;
+		
+		byte[] bytes;
+		if (family == INET_AF_INET) {
+			bytes = new byte[4];
+		} else if (family == INET_AF_INET6) {
+			bytes = new byte[16];
+		} else {
+			return null;
+		}
+		InetAddress addr;
+		try {
+			if (cmd.remaining() == 0) {
+				addr = InetAddress.getLocalHost();
+			} else {
+				
+					cmd.get(bytes);
+
+				addr = InetAddress.getByAddress(bytes);
+			}
+		} catch (UnknownHostException e) {
+			return null;
+		}
+		
+		InetSocketAddress res = new InetSocketAddress(addr , port);
+		System.out.println("addr: "+res);
+		return res;
+	}
+
+	private boolean is_connecting() {
+		return (state & INET_F_CON) == INET_F_CON;
+	}
+		
+	private boolean is_bound() {
+		return (state & INET_F_BOUND) == INET_F_BOUND;
+	}
+
+	private boolean is_conected() {
+		return (state & INET_STATE_CONNECTED) == INET_STATE_CONNECTED;
+	}
+
+	private boolean is_open() {
+		return (state & INET_F_OPEN) == INET_F_OPEN;
+	}
+
+	private ByteBuffer inet_subscribe(EPID caller, ByteBuffer cmd) {
+		ByteBuffer reply = ByteBuffer.allocate(1 + cmd.remaining() * 5);
+		reply.put(INET_REP_OK);
+
+		while (cmd.hasRemaining()) {
+			byte op = cmd.get();
+			if (op == INET_SUBS_EMPTY_OUT_Q) {
+				
+				reply.put(INET_SUBS_EMPTY_OUT_Q);
+				
+				int val = driver_sizeq();
+				if (val > 0) {
+					save_subscriber(empty_out_q_subs, caller);
+				}
+				
+				reply.putInt(val);
+				
+			} else {
+				throw new ErlangError(EAtom.intern("einval"));
+			}
+		}
+		
+		return reply;
+	}
+
+	private boolean save_subscriber(List<EObject> subs, EPID pid) {
+
+		subs.add(pid);
+		
+		return true;
+	}
+
+	private ByteBuffer inet_ctl_open(byte domain, SockType type) {
+		if (state != INET_STATE_CLOSED) {
+			return ctl_xerror(EXBADSEQ);
+		}
+
+		// since we don't know if we will be connecting or listening we 
+		// need to delay that decision; for now, create a (client) socket.
+		
+		try {
+			this.fd = SocketChannel.open();
+		} catch (IOException e) {
+			int code = IO.exception_to_posix_code(e);
+			return ctl_error(code);
+		}
+		
+		this.state = INET_STATE_OPEN;
+		this.type = type;
+		this.family = domain;
+		
+	    return ctl_reply(INET_REP_OK);
+	}
+
+	private ByteBuffer ctl_reply(int code) {
+		ByteBuffer buf = ByteBuffer.allocate(1);
+		buf.put((byte) code);
+		return buf;
+	}
+
+	private ByteBuffer ctl_xerror(byte[] exbadseq2) {
+		return ctl_reply(INET_REP_ERROR, exbadseq2);
+	}
+
+	private ByteBuffer ctl_reply(int code, byte[] data) {
+		ByteBuffer buf = ByteBuffer.allocate(1+data.length);
+		buf.put((byte) code);
+		buf.put(data);
+		return buf;
+	}
+
+	private ByteBuffer ctl_reply(int code, String data) {
+		ByteBuffer buf = ByteBuffer.allocate(1+data.length());
+		buf.put((byte) code);
+		for (int i = 0; i < data.length(); i++) {
+			buf.put((byte) data.charAt(i));
+		}
+		return buf;
+	}
+
+	private ByteBuffer ctl_error(int err) {
+		String id = Posix.errno_id(err);
+		return ctl_reply(INET_REP_ERROR, id);		
+	}
+	
+	
 
 }
