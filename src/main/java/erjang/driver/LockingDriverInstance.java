@@ -24,6 +24,7 @@ import java.nio.channels.SelectableChannel;
 import java.util.concurrent.locks.Lock;
 
 import erjang.EObject;
+import erjang.EPID;
 import erjang.ERef;
 
 /**
@@ -43,20 +44,20 @@ class LockingDriverInstance extends EDriverInstance {
 	}
 
 	@Override
-	protected EObject call(int command, EObject data) {
+	protected EObject call(EPID caller, int command, EObject data) {
 		lock.lock();
 		try {
-			return target.call(command, data);
+			return target.call(caller, command, data);
 		} finally {
 			lock.unlock();
 		}
 	}
 
 	@Override
-	protected ByteBuffer control(int command, ByteBuffer[] buf) {
+	protected ByteBuffer control(EPID pid, int command, ByteBuffer buf) {
 		lock.lock();
 		try {
-			return target.control(command, buf);
+			return target.control(pid, command, buf);
 		} finally {
 			lock.unlock();
 		}

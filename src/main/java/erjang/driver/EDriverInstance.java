@@ -27,7 +27,9 @@ import java.util.concurrent.locks.Lock;
 import kilim.ReentrantLock;
 import erjang.EBinList;
 import erjang.EBinary;
+import erjang.EInternalPort;
 import erjang.EObject;
+import erjang.EPID;
 import erjang.EPort;
 import erjang.ERT;
 import erjang.ERef;
@@ -216,7 +218,7 @@ public abstract class EDriverInstance extends EDriverControl {
 	/*
 	 * "ioctl" for drivers - invoked by port_control/3)
 	 */
-	protected ByteBuffer control(int command, ByteBuffer[] out) {
+	protected ByteBuffer control(EPID pid, int command, ByteBuffer cmd) {
 		throw ERT.badarg();
 	}
 
@@ -232,7 +234,9 @@ public abstract class EDriverInstance extends EDriverControl {
 	/*
 	 * Works mostly like 'control', a syncronous call into the driver.
 	 */
-	protected abstract EObject call(int command, EObject data);
+	protected EObject call(EPID caller, int command, EObject data) {
+		throw ERT.badarg();
+	}
 
 
 	protected abstract void processExit(ERef monitor);

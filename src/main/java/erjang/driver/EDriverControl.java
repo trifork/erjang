@@ -24,6 +24,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectableChannel;
 
 import erjang.EObject;
+import erjang.EPID;
 
 /**
  * 
@@ -58,11 +59,12 @@ public abstract class EDriverControl {
 	}
 
 	/**
+	 * @param pid TODO
 	 * @param op
-	 * @param out
+	 * @param cmd2
 	 * @return
 	 */
-	protected ByteBuffer control(int op, ByteBuffer[] out) {
+	protected ByteBuffer control(EPID pid, int op, ByteBuffer cmd2) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -120,7 +122,7 @@ public abstract class EDriverControl {
 	 * @param data
 	 * @return
 	 */
-	protected EObject call(int op, EObject data) {
+	protected EObject call(EPID caller, int op, EObject data) {
 		// TODO Auto-generated method stub
 		return null;
 	}

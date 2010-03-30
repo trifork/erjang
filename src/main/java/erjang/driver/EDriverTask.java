@@ -402,17 +402,23 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 
 	/**
 	 * implementation of port_control
+	 * @param caller 
 	 * 
 	 * @param op
-	 * @param out
+	 * @param cmd2
 	 */
-	public EObject control(int op, ByteBuffer[] out) {
+	public EObject control(EProc caller, int op, ByteBuffer cmd2) {
 
-		if (pstate != State.RUNNING) {
+		if (pstate == State.RUNNING || pstate == State.INIT) {
+			// ok
+		} else {
 			throw ERT.badarg();
 		}
 
-		ByteBuffer bb = instance.control(op, out);
+		if (ERT.DEBUG_PORT)
+			System.out.println("ctrl: cmd="+op+"; arg="+EBinary.make(cmd2));
+		
+		ByteBuffer bb = instance.control(caller.self_handle(), op, cmd2);
 
 		if (bb == null || bb.position() == 0) {
 				return ERT.NIL;
@@ -455,12 +461,12 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 	 * @param data
 	 * @return
 	 */
-	public EObject call(int op, EObject data) {
+	public EObject call(EProc caller, int op, EObject data) {
 		if (pstate != State.RUNNING) {
 			throw ERT.badarg();
 		}
 
-		EObject result = instance.call(op, data);
+		EObject result = instance.call(caller.self_handle(), op, data);
 
 		if (result == null) {
 			return ERT.NIL;
