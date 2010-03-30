@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 import kilim.Pausable;
+import kilim.Task;
 import erjang.EAtom;
 import erjang.EBinary;
 import erjang.ECons;
@@ -249,12 +250,18 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 	}
 
 	@Override
+	public Task start() {
+		Task result = super.start();
+		this.pstate = State.RUNNING;
+		return result;
+	}
+	
+	@Override
 	public void execute() throws Pausable {
 		try {
 
 			EObject result = null;
 			try {
-				this.pstate = State.RUNNING;
 
 				// driver main loop
 				main_loop();
