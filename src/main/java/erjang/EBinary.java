@@ -170,7 +170,10 @@ public class EBinary extends EBitString {
 		StringBuilder sb = new StringBuilder("<<\"");
 		for (int i = 0; i < byteSize(); i++) {
 			char b = (char) (0xff & byteAt(i*8));
-			EString.appendChar(sb, b);
+			if (b >= 32 && b < 127)
+				EString.appendChar(sb, b);
+			else
+				return super.toString();
 		}
 		
 		sb.append("\">>");
