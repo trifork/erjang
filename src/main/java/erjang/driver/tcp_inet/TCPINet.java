@@ -238,13 +238,80 @@ public class TCPINet extends EDriverInstance {
 		throw new erjang.NotImplemented();
 
 	}
-
+	
 	@Override
-	protected void timeout() {
-		throw new erjang.NotImplemented();
+	public void readyConnect(SelectableChannel evt) {
+		
+		if (state == TCP_STATE_CONNECTING) {
+			// clear select state
+		    select(fd, ERL_DRV_CONNECT, SelectMode.CLEAR);
+		    
+		    // cancel the timer
+			driver_cancel_timer(port());
+			
+			try {
+				if (!fd.finishConnect()) {
+					async_error(Posix.EIO);
+					return;
+				}
+			} catch (IOException e) {
+				async_error(IO.exception_to_posix_code(e));
+				return;
+			}
+			
+			if (active != ActiveType.PASSIVE) {
+				select(fd, ERL_DRV_READ|ERL_DRV_WRITE, SelectMode.SET);
+			}
+			
+			async_ok();
+			
+		}
 
+		
 	}
 	
+	private boolean async_error(int eio) {
+
+		return async_error(EAtom.intern(Posix.errno_id(eio).toLowerCase()));
+	}
+
+	@Override
+	/* Handling of timeout in driver */
+	protected void timeout() {
+
+		if ((state & INET_F_MULTI_CLIENT) != 0) {
+			
+		} else if ((state & TCP_STATE_CONNECTED) == TCP_STATE_CONNECTED) {
+			
+		} else if ((state & TCP_STATE_CONNECTING) == TCP_STATE_CONNECTING) {
+
+			erl_inet_close();
+			async_error(ERT.am_timeout);
+			
+		} else if ((state & TCP_STATE_ACCEPTING) == TCP_STATE_ACCEPTING) {
+			
+		}
+	}
+	
+	private boolean async_error(EAtom reason) {
+		AsyncOp op = deq_async();
+		if (op == null) {
+			return false;
+		}
+		return send_async_error(op.id, op.caller, reason);
+	}
+
+	private void erl_inet_close() {
+
+		try {
+			fd.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+	}
+
 	@Override
 	protected ByteBuffer control(EPID caller, int command, ByteBuffer cmd) {
 		
@@ -305,6 +372,8 @@ public class TCPINet extends EDriverInstance {
 				    state = TCP_STATE_CONNECTING;
 				    if (timeout != INET_INFINITY)
 					   driver_set_timer(timeout);
+				    
+				    select(fd, ERL_DRV_CONNECT, SelectMode.SET);
 				    
 				    aid = enq_async(caller, reply, INET_REQ_CONNECT);
 				}
@@ -374,14 +443,35 @@ public class TCPINet extends EDriverInstance {
 		return opt.get();
 	}
 
+	private boolean send_async_error(short id, EPID caller, EObject reason) {
+		/* send message:
+		**      {inet_async, Port, Ref, {error,Reason}}
+		*/
+		
+		ETuple msg = ETuple.make(am_inet_async, port(), ERT.box(id), 
+				new ETuple2(ERT.am_error, reason));
+		if (ERT.DEBUG_PORT) {
+			System.out.println("sending to "+caller+" ! "+msg);
+		}
+		return caller.sendnb(msg);
+
+	}
+
+
 	private boolean send_async_ok(int id, EPID caller) {
 		ETuple msg = ETuple.make(am_inet_async, port(), ERT.box(id), ERT.am_ok);
+		if (ERT.DEBUG_PORT) {
+			System.out.println("sending to "+caller+" ! "+msg);
+		}
 		return caller.sendnb(msg);
 	}
 
 	private boolean send_async_ok_port(int id, EPID caller, EPort port2) {
 		ETuple msg = ETuple.make(am_inet_async, port(), ERT.box(id), 
 					new ETuple2(ERT.am_ok, port2));
+		if (ERT.DEBUG_PORT) {
+			System.out.println("sending to "+caller+" ! "+msg);
+		}
 		return caller.sendnb(msg);
 	}
 
@@ -395,11 +485,17 @@ public class TCPINet extends EDriverInstance {
 			ERef monitor) {
 		
 		AsyncOp op = new AsyncOp();
-		op.caller = driver_caller();
+		op.caller = caller;
 		op.req = req;
 		op.id = (short)(aid.incrementAndGet() & 0xffff);
 		op.timeout = timeout;
 		op.monitor = monitor;
+		
+		if (reply != null) {
+			reply.putShort(op.id);
+		}
+		
+		opt.put(op);
 		
 		return op.id;
 	}
@@ -493,6 +589,8 @@ public class TCPINet extends EDriverInstance {
 		
 		try {
 			this.fd = SocketChannel.open();
+			fd.configureBlocking(false);
+			
 		} catch (IOException e) {
 			int code = IO.exception_to_posix_code(e);
 			return ctl_error(code);

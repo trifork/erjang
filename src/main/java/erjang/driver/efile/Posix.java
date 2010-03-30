@@ -33,6 +33,7 @@ public class Posix {
 	public static final int EISCONN = 5;
 	public static final int EUNKNOWN = 6;
 	public static final int ENETUNREACH = 7;
+	public static final int EADDRNOTAVAIL = 8;
 	public static final int EIO = 9;
 
 	private static final String[] err_id = { "einval",
@@ -41,7 +42,9 @@ public class Posix {
 			"eisconn",
 			"eunknown",
 			"enetunreach",
+			"eaddrnotavail",
 	};
+
 
 	/**
 	 * @param posixErrno
