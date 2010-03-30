@@ -30,12 +30,18 @@ public class Posix {
 	public static final int EEXIST = 2;
 	public static final int ENOENT = 3;
 	public static final int EPERM = 4;
-	public static final int EUNKNOWN = 5;
-	public static final int EIO = 5;
+	public static final int EISCONN = 5;
+	public static final int EUNKNOWN = 6;
+	public static final int ENETUNREACH = 7;
+	public static final int EIO = 9;
 
 	private static final String[] err_id = { "einval",
 			"enomem", "eexist", "enoent",
-			"eperm", "eunknown" };
+			"eperm", 
+			"eisconn",
+			"eunknown",
+			"enetunreach",
+	};
 
 	/**
 	 * @param posixErrno

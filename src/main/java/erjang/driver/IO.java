@@ -107,6 +107,13 @@ public class IO {
 	 * @return
 	 */
 	public static int exception_to_posix_code(IOException e) {
+		
+		if (e instanceof java.net.SocketException) {
+			if ("Network is unreachable".equals (e.getMessage())) {
+				return Posix.ENETUNREACH;
+			}
+		}
+		
 		// TODO: implement some more error codes here
 		return Posix.EUNKNOWN;
 	}
