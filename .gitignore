@@ -4,3 +4,4 @@ bin
 erjang-*.jar
 .erj
 classes
+target

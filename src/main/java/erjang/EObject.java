@@ -188,9 +188,9 @@ public abstract class EObject implements Comparable<EObject> {
 	public ENumber subtract(EObject rhs) { return subtract(rhs, false); }
 	public ENumber subtract(EObject rhs, boolean guard) { if (guard) return null; throw ERT.badarith(this, rhs); }
 	public ENumber subtract(int rhs) { throw ERT.badarith(this, rhs); }
-	ENumber r_subtract(int lhs) { throw ERT.badarith(lhs, this); }
-	ENumber r_subtract(double lhs) { throw ERT.badarith(lhs, this); }
-	ENumber r_subtract(BigInteger lhs) { throw ERT.badarith(lhs, this); }
+	ENumber r_subtract(int lhs, boolean guard) { if (guard) return null; throw ERT.badarith(lhs, this); }
+	ENumber r_subtract(double lhs, boolean guard) { if (guard) return null; throw ERT.badarith(lhs, this); }
+	ENumber r_subtract(BigInteger lhs, boolean guard) { if (guard) return null; throw ERT.badarith(lhs, this); }
 	
 	@BIF(name="div")
 	public EInteger idiv(EObject rhs) { throw ERT.badarith(this, rhs); }
@@ -227,7 +227,7 @@ public abstract class EObject implements Comparable<EObject> {
 	
 	@BIF(name="band")
 	public EInteger band(EObject rhs) { throw ERT.badarith(this, rhs); }
-	public ESmall band(int lhs) { throw ERT.badarith(lhs, this); }
+	public EInteger band(int lhs) { throw ERT.badarith(lhs, this); }
 	public EInteger band(BigInteger lhs) { throw ERT.badarith(lhs, this); }
 
 	@BIF(name="bor")
@@ -315,6 +315,11 @@ public abstract class EObject implements Comparable<EObject> {
 	int cmp_order() { throw new Error("cannot compare"); }
 
 
+	@BIF
+	public EAtom is_function(EObject arity) {
+		return ERT.FALSE;
+	}
+	
 	/**
 	 * @param o2
 	 * @return

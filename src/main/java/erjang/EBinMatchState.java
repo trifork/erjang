@@ -19,6 +19,7 @@
 package erjang;
 
 import java.math.BigInteger;
+import java.nio.ByteOrder;
 
 /** Match state is another one of those pseudo-terms that are allowed on the stack, 
  * but in a very controlled fashion. */
@@ -164,12 +165,10 @@ public class EBinMatchState extends EPseudoTerm {
 		boolean little_endian = ((flags & BSF_LITTLE) == BSF_LITTLE);
 		boolean native_endian = ((flags & BSF_NATIVE) == BSF_NATIVE);
 
-		if (flags == 0 || flags == BSF_SIGNED) {
-			// ok 
-		} else {
-			throw new Error("unhandled flags: " + flags);
+		if (native_endian) {
+			little_endian = ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN;
 		}
-
+		
 		if (size == 0) {
 			return ESmall.ZERO;
 		}
@@ -181,6 +180,17 @@ public class EBinMatchState extends EPseudoTerm {
 
 		if (size <= 32) {
 			int value = bin.intBitsAt(offset, size);
+			if (little_endian) {
+				int i1 = (value >>> 24) & 0xff;
+				int i2 = (value >>> 16) & 0xff;
+				int i3 = (value >>> 8) & 0xff;
+				int i4 = value & 0xff;
+				
+				value = i4 << 24;
+				value |= i3 << 16;
+				value |= i2 << 8;
+				value |= i1;
+			}
 			if (signed) {
 				value = EBitString.signExtend(value, size);
 			}
@@ -191,6 +201,10 @@ public class EBinMatchState extends EPseudoTerm {
 
 		if (size <= 64) {
 			long value = bin.longBitsAt(offset, size);
+			if (little_endian) {
+				throw new Error("little endian not supported: " + flags);
+			}
+
 			if (signed) {
 				value = EBitString.signExtend(value, size);
 			}

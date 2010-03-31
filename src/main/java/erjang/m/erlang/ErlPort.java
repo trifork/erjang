@@ -50,6 +50,7 @@ import erjang.driver.ESpawnDriverTask;
 public class ErlPort {
 
 	public static final EAtom am_fd = EAtom.intern("fd");
+	private static final ByteBuffer EMPTY_BYTEBUFFER = ByteBuffer.allocate(0);
 	static EAtom am_spawn = EAtom.intern("spawn");
 	static EAtom am_spawn_driver = EAtom.intern("spawn_driver");
 	static EAtom am_spawn_executable = EAtom.intern("spawn_executable");
@@ -85,6 +86,20 @@ public class ErlPort {
 	@BIF
 	static EObject port_control(EProc proc, EObject port, EObject operation,
 			EObject data) {
+		
+			try {
+				return port_control0(proc, port, operation, data);
+			} catch (RuntimeException e) {
+				e.printStackTrace();
+				throw e;
+			} catch (Error e) {
+				e.printStackTrace();
+				throw e;
+			}
+		}
+
+	static EObject port_control0(EProc proc, EObject port, EObject operation,
+			EObject data) {
 		EInternalPort p = port.testInternalPort();
 
 		if (p == null) {
@@ -102,12 +117,32 @@ public class ErlPort {
 			throw ERT.badarg(port, operation, data);
 		}
 
-		ByteBuffer[] out = new ByteBuffer[ovec.size()];
-		ovec.toArray(out);
-
+		ByteBuffer cmd = flatten(ovec);
+		
 		// TODO: improve exception handling/wrapping here so we get
 		// ErlangException types only!
-		return p.control(op.value, out);
+		return p.control(proc, op.value, cmd);
+	}
+
+	private static ByteBuffer flatten(List<ByteBuffer> ovec) {
+		if (ovec.size() == 0) {
+			return EMPTY_BYTEBUFFER;
+		} else if (ovec.size() == 1) {
+			return ovec.get(0);
+		}
+		
+		int len = 0;
+		for (int i = 0; i < ovec.size(); i++) {
+			len += ovec.get(i).remaining();
+		}
+		
+		ByteBuffer res = ByteBuffer.allocate(len);
+		for (ByteBuffer bb : ovec) {
+			res.put(bb);
+		}
+		
+		res.rewind();
+		return res;		
 	}
 
 	@BIF
@@ -131,7 +166,7 @@ public class ErlPort {
 
 		// TODO: improve exception handling/wrapping here so we get
 		// ErlangException types only!
-		return p.call(op.value, data);
+		return p.call(proc, op.value, data);
 	}
 
 	@BIF

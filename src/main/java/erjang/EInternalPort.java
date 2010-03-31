@@ -98,12 +98,13 @@ public class EInternalPort extends EPort implements ELocalHandle {
 	}
 
 	/**
+	 * @param caller 
 	 * @param op
-	 * @param out
+	 * @param cmd
 	 * @return
 	 */
-	public EObject control(int op, ByteBuffer[] out) {
-		return task.control(op, out);
+	public EObject control(EProc caller, int op, ByteBuffer cmd) {
+		return task.control(caller, op, cmd);
 	}
 
 	/**
@@ -111,8 +112,8 @@ public class EInternalPort extends EPort implements ELocalHandle {
 	 * @param data
 	 * @return
 	 */
-	public EObject call(int op, EObject data) {
-		return task.call(op, data);
+	public EObject call(EProc caller, int op, EObject data) {
+		return task.call(caller, op, data);
 	}
 
 	/**

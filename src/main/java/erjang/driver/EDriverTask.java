@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 import kilim.Pausable;
+import kilim.Task;
 import erjang.EAtom;
 import erjang.EBinary;
 import erjang.ECons;
@@ -249,12 +250,18 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 	}
 
 	@Override
+	public Task start() {
+		Task result = super.start();
+		this.pstate = State.RUNNING;
+		return result;
+	}
+	
+	@Override
 	public void execute() throws Pausable {
 		try {
 
 			EObject result = null;
 			try {
-				this.pstate = State.RUNNING;
 
 				// driver main loop
 				main_loop();
@@ -402,34 +409,31 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 
 	/**
 	 * implementation of port_control
+	 * @param caller 
 	 * 
 	 * @param op
-	 * @param out
+	 * @param cmd2
 	 */
-	public EObject control(int op, ByteBuffer[] out) {
+	public EObject control(EProc caller, int op, ByteBuffer cmd2) {
 
-		if (pstate != State.RUNNING) {
+		if (pstate == State.RUNNING || pstate == State.INIT) {
+			// ok
+		} else {
 			throw ERT.badarg();
 		}
 
-		ByteBuffer bb = instance.control(op, out);
+		if (ERT.DEBUG_PORT)
+			System.out.println("ctrl: cmd="+op+"; arg="+EBinary.make(cmd2));
+		
+		ByteBuffer bb = instance.control(caller.self_handle(), op, cmd2);
 
 		if (bb == null || bb.position() == 0) {
-			if (this.send_binary_data) {
-				return ERT.EMPTY_BINARY;
-			} else {
 				return ERT.NIL;
-			}
 
 		} else {
-			int len = bb.position();
 
-			bb.rewind();
-			if (this.send_binary_data) {
-				return new EBinary(bb.array(), bb.arrayOffset(), len);
-			} else {
-				return EString.make(bb.array(), bb.arrayOffset(), len);
-			}
+			bb.flip();
+			return EString.make(bb.array(), bb.arrayOffset(), bb.remaining());
 		}
 	}
 
@@ -464,12 +468,12 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 	 * @param data
 	 * @return
 	 */
-	public EObject call(int op, EObject data) {
+	public EObject call(EProc caller, int op, EObject data) {
 		if (pstate != State.RUNNING) {
 			throw ERT.badarg();
 		}
 
-		EObject result = instance.call(op, data);
+		EObject result = instance.call(caller.self_handle(), op, data);
 
 		if (result == null) {
 			return ERT.NIL;

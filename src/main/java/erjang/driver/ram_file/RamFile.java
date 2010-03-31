@@ -20,6 +20,7 @@
 package erjang.driver.ram_file;
 
 import erjang.EObject;
+import erjang.EPID;
 import erjang.EString;
 import erjang.EBinary;
 import erjang.ERef;
@@ -210,7 +211,7 @@ public class RamFile extends EDriverInstance {
 	}
 
 	@Override
-	protected EObject call(int command, EObject data) {
+	protected EObject call(EPID caller, int command, EObject data) {
 		// TODO
 		return null;
 	}

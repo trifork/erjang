@@ -288,6 +288,7 @@ public class ERT {
 	public static final boolean DEBUG = false;
 	public static final boolean DEBUG2 = false;
 	public static final boolean DEBUG_WAIT = false;
+	public static final boolean DEBUG_PORT = false;
 	public static final EBinary EMPTY_BINARY = new EBinary(new byte[0]);
 	public static final ByteBuffer[] EMPTY_BYTEBUFFER_ARR = new ByteBuffer[0];
 	public static final ByteBuffer EMPTY_BYTEBUFFER = ByteBuffer.allocate(0);
@@ -856,7 +857,19 @@ public class ERT {
 	 * @return
 	 */
 	public static int threadPoolSize() {
-		return Integer.parseInt(System.getProperty("erj.threads", "4"));
+		String threads = System.getProperty("erj.threads");
+		if (threads != null)
+			return Integer.parseInt(threads);
+		else
+			return Runtime.getRuntime().availableProcessors();
+	}
+
+	public static ESeq registered() {
+		ESeq res = ERT.NIL;
+		for (EAtom reg : register.keySet()) {
+			res = res.cons(reg);
+		}
+		return res;
 	}
 
 }

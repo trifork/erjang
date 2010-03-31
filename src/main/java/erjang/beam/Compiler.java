@@ -18,6 +18,7 @@
 
 package erjang.beam;
 
+import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
@@ -147,49 +148,18 @@ public class Compiler implements Opcodes {
 
 	public void compile(File file) throws IOException {
 
-		// class writer, phase 4
-		ClassWriter cw = new ClassWriter(true);
-
-		// 
-		CheckClassAdapter ca = new CheckClassAdapter(cw);
-
-		// the java bytecode generator, phase 3
-		CompilerVisitor cv = new CompilerVisitor(ca, classRepo);
-
-		// the type analysis, phase 2
-		BeamTypeAnalysis analysis = new BeamTypeAnalysis(cv);
-
-		// the beam file reader, phase 1
-		BeamFileData reader = getLoader().load(file);
-
-		// go!
-		reader.accept(analysis);
-
-		byte[] byteArray = cw.toByteArray();
-
-		/*
-		System.out.println(cv.getInternalClassName());
-		
-		 // uncomment this block to emit pre-kilim code [for debugging]	
-		if (cv.getInternalClassName().indexOf("user") != -1) {
-			classRepo.store(cv.getInternalClassName(), byteArray);
-			System.out.println("emitted non-woven class");
-			return;
+		int length = (int) file.length();
+		byte[] data = new byte[length];
+		FileInputStream fi = new FileInputStream(file);
+		ByteArrayOutputStream bo = new ByteArrayOutputStream();
+		int read = 0;
+		while (read < length) {
+			read += fi.read(data, read, length-read);
 		}
-		*/
+		fi.close();
 
-		// classRepo.store(cv.getInternalClassName(), cw.toByteArray());
-
-		ClassWeaver cwe = new ClassWeaver(cw.toByteArray(), new ErjangDetector(
-				cv.getInternalClassName(), cv.non_pausable_methods));
-		for (ClassInfo ci : cwe.getClassInfos()) {
-			String name = ci.className;
-			byte[] bytes = ci.bytes;
-
-			// System.out.println("storing "+name+" in "+classRepo);
-
-			classRepo.store(name.replace('.', '/'), bytes);
-		}
+		EBinary bin = new EBinary(data);
+		compile(bin, this.classRepo);
 
 	}
 
@@ -400,8 +370,9 @@ public class Compiler implements Opcodes {
 		if (!jarFile.exists()) {
 			JarClassRepo repo = new JarClassRepo(jarFile);
 
-			System.out.print("[compiling "); 
+			System.out.print("["); 
 			System.out.print(name);
+			System.out.print(":"); 
 			long before = System.currentTimeMillis();
 
 			try {
@@ -417,7 +388,7 @@ public class Compiler implements Opcodes {
 				}
 			}
 			
-			System.out.print(":"+(System.currentTimeMillis()-before)+"ms]");
+			System.out.print(""+(System.currentTimeMillis()-before)+"ms]");
 		}
 
 		return jarFile;

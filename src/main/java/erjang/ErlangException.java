@@ -150,7 +150,7 @@ public abstract class ErlangException extends RuntimeException {
 
 		ESeq trace = ERT.NIL;
 
-		for (int i = st.length - 1; i >= 0; i--) {
+		for (int i = st.length - 1; i > 0; i--) {
 
 			StackTraceElement st2 = st[i];
 

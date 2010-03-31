@@ -24,10 +24,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.channels.SelectableChannel;
 
 import erjang.EBinary;
 import erjang.EObject;
+import erjang.EPID;
 import erjang.ERT;
 import erjang.ERef;
 import erjang.EString;
@@ -119,11 +121,13 @@ public class FDDriverInstance extends EDriverInstance {
 		}
 	}
 
-	protected ByteBuffer control(int command, ByteBuffer[] out) {
+	@Override
+	protected ByteBuffer control(EPID caller, int command, ByteBuffer out) {
 		if (command == CTRL_OP_GET_WINSIZE) {
 			// TODO: hmm, how do we do that?
 			// for now, we always respond 80x25.
 			ByteBuffer bb = ByteBuffer.allocate(8);
+			bb.order(ByteOrder.nativeOrder());
 			bb.putInt(80);
 			bb.putInt(25);
 			return bb;
@@ -133,7 +137,7 @@ public class FDDriverInstance extends EDriverInstance {
 	}
 	
 	@Override
-	protected EObject call(int command, EObject data) {
+	protected EObject call(EPID caller, int command, EObject data) {
 		// allways return null
 		return null;
 	}

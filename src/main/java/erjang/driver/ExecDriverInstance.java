@@ -24,6 +24,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectableChannel;
 
 import erjang.EObject;
+import erjang.EPID;
 import erjang.ERef;
 import erjang.ETuple2;
 
@@ -43,7 +44,7 @@ public class ExecDriverInstance extends EDriverInstance {
 	 * @see erjang.driver.EDriverInstance#call(int, erjang.EObject)
 	 */
 	@Override
-	protected EObject call(int command, EObject data) {
+	protected EObject call(EPID pid, int command, EObject data) {
 		// TODO Auto-generated method stub
 		return null;
 	}

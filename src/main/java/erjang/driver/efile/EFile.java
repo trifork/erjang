@@ -20,11 +20,11 @@ package erjang.driver.efile;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.RandomAccessFile;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
@@ -37,7 +37,6 @@ import java.util.Queue;
 import java.util.concurrent.locks.Lock;
 
 import erjang.EBinary;
-import erjang.EObject;
 import erjang.EPort;
 import erjang.ERef;
 import erjang.EString;
@@ -405,12 +404,6 @@ public class EFile extends EDriverInstance {
 		IO.putstr(response, err, false);
 
 		driver_output2(response, null);
-	}
-
-	@Override
-	protected EObject call(int command, EObject data) {
-		// TODO Auto-generated method stub
-		return null;
 	}
 
 

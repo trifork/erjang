@@ -84,7 +84,7 @@ public class ErlBif {
 		
 		EFun f = fun.testFunction();
 		if (f != null) {
-			return f.apply(proc, a);
+			return apply(proc, f, a);
 		}
 
 		ETuple t = fun.testTuple();
@@ -107,7 +107,7 @@ public class ErlBif {
 			throw ERT.undef(funspec, a.toArray());
 		}
 		
-		return f.apply(proc, a);
+		return apply(proc, f, a);
 	}
 	
 	@BIF
@@ -188,11 +188,45 @@ public class ErlBif {
 		
 		EFun f = EModuleManager.resolve(new FunID(mod, fun, args.length()));
 		
-		if (f == null) {
-			throw new ErlangUndefined(mod, fun, args.length());
+		return apply(proc, f, args);
+	}
+
+	private static EObject apply(EProc proc, EFun fun, ESeq args)
+			throws Pausable {
+		ESeq rargs = args.reverse();
+		int len = args.length();
+		switch(len) {		
+		case 11:
+			proc.arg10 = rargs.head(); rargs = rargs.tail();
+		case 10:
+			proc.arg9 = rargs.head(); rargs = rargs.tail();
+		case 9:
+			proc.arg8 = rargs.head(); rargs = rargs.tail();
+		case 8:
+			proc.arg7 = rargs.head(); rargs = rargs.tail();
+		case 7:
+			proc.arg6 = rargs.head(); rargs = rargs.tail();
+		case 6:
+			proc.arg5 = rargs.head(); rargs = rargs.tail();
+		case 5:
+			proc.arg4 = rargs.head(); rargs = rargs.tail();
+		case 4:
+			proc.arg3 = rargs.head(); rargs = rargs.tail();
+		case 3:
+			proc.arg2 = rargs.head(); rargs = rargs.tail();
+		case 2:
+			proc.arg1 = rargs.head(); rargs = rargs.tail();
+		case 1:
+			proc.arg0 = rargs.head();
+		case 0:
+			break;
+			
+		default:
+			return fun.apply(proc, args);
 		}
 		
-		return f.apply(proc, args);
+		proc.tail = fun;
+		return EProc.TAIL_MARKER;
 	}
 	
 	@BIF
@@ -667,6 +701,15 @@ public class ErlBif {
 		throw ERT.badarg();
 	}
 
+	@BIF(name = "-", type=Type.GUARD)
+	static public ENumber neg$g(EObject v1) {
+		ENumber n1;
+		if ((n1 = v1.testNumber()) != null) {
+			return n1.negate();
+		}
+		return null;
+	}
+
 	@BIF
 	static public EInteger div(EObject o1, EObject o2) {
 		return o1.idiv(o2);
@@ -909,7 +952,7 @@ public class ErlBif {
 
 	@BIF(name = "rem", type = Type.GUARD)
 	static public EInteger rem$p(EObject v1, EObject v2) {
-		if (v2.equals(ESmall.ZERO) || v1.testNumber()==null || v2.testNumber()==null) {
+		if (v2.equals(ESmall.ZERO) || v1.testInteger()==null || v2.testInteger()==null) {
 			return null;
 		} else {
 			return v1.irem(v2);
@@ -1301,7 +1344,7 @@ public class ErlBif {
 		} catch (ThreadDeath e) {
 			throw e;
 		} catch (Throwable e) {
-			ErlangError ee = new ErlangError(ERT.am_badfile, e);
+			ErlangError ee = new ErlangError(ERT.am_badfile, e, mod, bin);
 			ETuple2 result = new ETuple2(ERT.am_error, ee.reason());
 			
 			log.log(Level.SEVERE, "cannot load module "+mod, e);
@@ -1449,7 +1492,7 @@ public class ErlBif {
 	}
 
 	@BIF
-	public static ESmall band(EObject o1, ESmall o2) {
+	public static EInteger band(EObject o1, ESmall o2) {
 		return o2.band(o1);
 	}
 
@@ -1628,4 +1671,8 @@ public class ErlBif {
 		throw ERT.raise(kind, value, trace);
 	}
 	
+	@BIF
+	public static ESeq registered() {
+		return ERT.registered();
+	}
 }

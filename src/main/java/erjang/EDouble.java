@@ -157,19 +157,24 @@ public class EDouble extends ENumber {
 		return ERT.box(lhs.doubleValue() + value);
 	}
 
-	public ENumber subtract(EObject other, boolean guard) {
-		return other.r_subtract(value);
+	@Override
+	public ENumber negate() {
+		return new EDouble(-value);
 	}
 
-	public ENumber r_subtract(int lhs) {
+	public ENumber subtract(EObject other, boolean guard) {
+		return other.r_subtract(value, guard);
+	}
+
+	public ENumber r_subtract(int lhs, boolean guard) {
 		return ERT.box((long) lhs - value);
 	}
 
-	public ENumber r_subtract(double lhs) {
+	public ENumber r_subtract(double lhs, boolean guard) {
 		return ERT.box(lhs - value);
 	}
 
-	public ENumber r_subtract(BigInteger lhs) {
+	public ENumber r_subtract(BigInteger lhs, boolean guard) {
 		return ERT.box(lhs.doubleValue() - value);
 	}
 

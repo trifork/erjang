@@ -43,6 +43,15 @@ public final class ESmall extends EInteger {
 		return value;
 	}
 
+	public boolean equals(EObject other) {
+		if (other == this) return true;
+		if (other instanceof ESmall)
+			return ((ESmall)other).value == value;
+		if (other instanceof EDouble)
+			return ((EDouble)other).value == value;
+		return false;
+	}
+	
 	@Override
 	int compare_same(EObject rhs) {
 		return rhs.r_compare_same(this);
@@ -133,8 +142,9 @@ public final class ESmall extends EInteger {
 	}
 
 	@Override
-	public ESmall abs() {
-		return new ESmall(Math.abs(value));
+	public EInteger abs() {
+		// OBS: abs(Integer.MIN_VALUE) cannot be represented by an ESmall.
+		return ERT.box(Math.abs((long)value));
 	}
 
 	/**
@@ -142,7 +152,7 @@ public final class ESmall extends EInteger {
 	 * @return
 	 */
 	public static ESmall make(int arity) {
-		return new ESmall(arity);
+		return ERT.box(arity);
 	}
 
 	//
@@ -176,7 +186,7 @@ public final class ESmall extends EInteger {
 	/* subtract */
 
 	public ENumber subtract(EObject other, boolean guard) {
-		return other.r_subtract(value);
+		return other.r_subtract(value, guard);
 	}
 
 	@Deprecated
@@ -184,15 +194,15 @@ public final class ESmall extends EInteger {
 			return ERT.box((long)value - rhs);
 	}
 
-	public ENumber r_subtract(int lhs) {
+	public ENumber r_subtract(int lhs, boolean guard) {
 		return ERT.box((long) lhs - (long) value);
 	}
 
-	public ENumber r_subtract(double lhs) {
+	public ENumber r_subtract(double lhs, boolean guard) {
 		return ERT.box(lhs - value);
 	}
 
-	public ENumber r_subtract(BigInteger lhs) {
+	public ENumber r_subtract(BigInteger lhs, boolean guard) {
 		return ERT.box(lhs.subtract(BigInteger.valueOf(value)));
 	}
 
@@ -227,14 +237,17 @@ public final class ESmall extends EInteger {
 	}
 
 	public EDouble r_divide(int lhs) {
+		if (value==0) throw ERT.badarith(lhs, this);
 		return ERT.box((double) lhs / value);
 	}
 
 	public EDouble r_divide(double lhs) {
+		if (value==0) throw ERT.badarith(ERT.box(lhs), this);
 		return ERT.box(lhs / value);
 	}
 
 	public EDouble r_divide(BigInteger lhs) {
+		if (value==0) throw ERT.badarith(ERT.box(lhs), this);
 		return ERT.box(lhs.doubleValue() / value);
 	}
 
@@ -245,20 +258,24 @@ public final class ESmall extends EInteger {
 	}
 
 	public EInteger idiv(int rhs) {
+		if (rhs==0) throw ERT.badarith(this, ERT.box(rhs));
 		return ERT.box(value / rhs);
 	}
 
 	public EInteger r_idiv(int lhs) {
+		if (value==0) throw ERT.badarith(ERT.box(lhs), this);
 		return ERT.box((long) lhs / (long) value);
 	}
 
 	public EInteger r_idiv(BigInteger lhs) {
+		if (value==0) throw ERT.badarith(lhs, this);
 		return ERT.box(lhs.divide(BigInteger.valueOf(value)));
 	}
 
 	// remainder erlang:rem/2
 
 	public ESmall irem(int rhs) {
+		if (rhs==0) throw ERT.badarith(this, ERT.box(rhs));
 		return ERT.box(value % rhs);
 	}
 
@@ -267,10 +284,12 @@ public final class ESmall extends EInteger {
 	}
 
 	public EInteger r_irem(int lhs) {
+		if (value==0) throw ERT.badarith(ERT.box(lhs), this);
 		return ERT.box(lhs % value);
 	}
 
 	public EInteger r_irem(BigInteger lhs) {
+		if (value==0) throw ERT.badarith(ERT.box(lhs), this);
 		return ERT.box(lhs.remainder(BigInteger.valueOf(value)));
 	}
 
@@ -316,11 +335,11 @@ public final class ESmall extends EInteger {
 
 	// binary and - erlang:band/2
 
-	public ESmall band(EObject other) {
+	public EInteger band(EObject other) {
 		return other.band(value);
 	}
 
-	public ESmall band(int lhs) {
+	public EInteger band(int lhs) {
 		return ERT.box((lhs & value));
 	}
 
@@ -349,11 +368,11 @@ public final class ESmall extends EInteger {
 	}
 
 	public EInteger bxor(int lhs) {
-		return ERT.box((lhs | value));
+		return ERT.box((lhs ^ value));
 	}
 
 	public EInteger bxor(BigInteger lhs) {
-		return ERT.box(lhs.or(BigInteger.valueOf(value)));
+		return ERT.box(lhs.xor(BigInteger.valueOf(value)));
 	}
 
 	public EInteger bnot() {

@@ -19,20 +19,31 @@
 
 package erjang.m.erlang;
 
+import kilim.Pausable;
 import erjang.BIF;
 import erjang.EAtom;
 import erjang.EFun;
+import erjang.EFunHandler;
+import erjang.EModuleManager;
 import erjang.EObject;
+import erjang.EProc;
 import erjang.ERT;
 import erjang.ESeq;
+import erjang.ESmall;
 import erjang.ETuple;
 import erjang.ETuple2;
+import erjang.FunID;
 
 /**
  * BIFs for fun_info/1, fun_info/2 and make_fun/3
  */
 public class ErlFun {
 
+	@BIF
+	public static EObject is_function(EObject a1, EObject a2) {
+		return a1.is_function(a2);
+	}
+	
 	@BIF
 	public static EObject fun_info(EObject fun_arg, EObject spec_arg)
 	{
@@ -70,6 +81,19 @@ public class ErlFun {
 		res = res.cons(fun.info(ERT.am_type));
 		
 		return res;
+	}
+	
+	@BIF
+	public static EFun make_fun(EObject m, EObject f, EObject a)
+	{
+		EAtom mod = m.testAtom();
+		EAtom fun = f.testAtom();
+		ESmall arity = a.testSmall();
+		if (mod==null||fun==null||arity==null) {
+			throw ERT.badarg(m,f,a);
+		}
+		
+		return EModuleManager.resolve(new FunID(mod, fun, arity.value));
 	}
 	
 }

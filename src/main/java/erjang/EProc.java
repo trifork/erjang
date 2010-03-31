@@ -47,6 +47,7 @@ public final class EProc extends ETask<EInternalPID> {
 			ERTS_NODES_MON_OPT_TYPE_VISIBLE | ERTS_NODES_MON_OPT_TYPE_HIDDEN;
 	
 	public static final EAtom am_trap_exit = EAtom.intern("trap_exit");
+	public static final EAtom am_sensitive = EAtom.intern("sensitive");
 	public static final EAtom am_messages = EAtom.intern("messages");
 	public static final EAtom am_message_queue_len = EAtom.intern("message_queue_len");
 	public static final EAtom am_dictionary = EAtom.intern("dictionary");
@@ -158,6 +159,7 @@ public final class EProc extends ETask<EInternalPID> {
 	Map<EObject, EObject> pdict = new HashMap<EObject, EObject>();
 
 	private EAtom trap_exit = ERT.FALSE;
+	private EAtom sensitive = ERT.FALSE;
 
 	public int midx = 0;
 
@@ -334,7 +336,19 @@ public final class EProc extends ETask<EInternalPID> {
 			if (val == null) throw ERT.badarg(flag, value);
 			return val;
 		}
-		
+
+		if (flag == am_trap_exit) {
+			EAtom old = this.trap_exit;
+			trap_exit = value.testBoolean();
+			return ERT.box(old==ERT.TRUE);
+		}
+
+		if (flag == am_sensitive) {
+			EAtom old = this.sensitive;
+			sensitive = value.testBoolean();
+			return ERT.box(old==ERT.TRUE);
+		}
+
 		ETuple2 tup;
 		if ((tup = ETuple2.cast(flag)) != null && tup.elem1==am_monitor_nodes) {
 			ESeq opts = tup.elem2.testSeq();

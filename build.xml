@@ -99,7 +99,7 @@
 			<exclude name="erjang/examples/**" />
 			<exclude name="erjang/bench/**" />
 			<manifest>
-				<attribute name="Main-Class" value="erjang.Erj" />
+				<attribute name="Main-Class" value="erjang.Main" />
 			</manifest>
 		</jar>
 	</target>

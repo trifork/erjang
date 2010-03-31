@@ -70,6 +70,17 @@ public abstract class EHandle extends EObject {
 		}
 	}
 
+	/** send non-blocking
+	 * @return true if message was sent */
+	public boolean sendnb(EObject msg) {
+		ETask<?> task = task();
+		if (task != null) {
+			return task.mbox().putnb(msg);
+		} else {
+			return false;
+		}
+	}
+
 	/**
 	 * @param self
 	 * @param result
