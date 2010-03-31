@@ -13,7 +13,8 @@ my %TYPES_OPERAND_CLASS =
      'y' => "Operands.YReg",
      'c' => "Operands.Literal",
      'I' => "int",
-     'L' => "Operands.Label"
+     'L' => "Operands.Label",
+     'E' => "ExtFun"
      );
 my %TYPES_DECODE =
     (
@@ -21,7 +22,8 @@ my %TYPES_DECODE =
      'x' => "reg[#]",
      'y' => "stack[sp - (#)]",
      'I' => "(#)",
-     'L' => "(#)"
+     'L' => "(#)",
+     'E' => "ext_funs[#]"
      );
 my %TYPES_ENCODE =
 (
@@ -29,7 +31,8 @@ my %TYPES_ENCODE =
  'x' => "#.nr",
  'y' => "#.nr",
  'I' => "#",
- 'L' => "#.nr"
+ 'L' => "#.nr",
+ 'E' => "encodeExtFun(#)"
  );
 # my %TYPES_JAVATYPE =
 #     (
@@ -44,7 +47,8 @@ my %TYPES_ALLOWED_OPS =
      'y' => {'GET'=>1, 'SET'=>1},
      'c' => {'GET'=>1},
      'I' => {'GET'=>1},
-     'L' => {'GOTO'=>1}
+     'L' => {'GOTO'=>1},
+     'E' => {'GET'=>1}
      );
 
 my %PRIMITIVE_TYPES = ('I' => 1);

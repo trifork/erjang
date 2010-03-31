@@ -23,7 +23,7 @@ bs_init_writable:
 
 %class AAI(a1:A, a2:A, i3:I)
 func_info mod fun arity:
-	return ERT.func_info((EAtom)GET(mod), (EAtom)GET(fun), xregs(reg, GET(arity)));
+	if (true) return ERT.func_info((EAtom)GET(mod), (EAtom)GET(fun), xregsSeq(reg, GET(arity)));
 
 ##########==========        ALLOCATION      	  ==========##########
 
@@ -130,6 +130,10 @@ is_ge lbl a b:
 # %class IL(i1:I lbl:L)
 # call_only keep lbl:
 # 	GOTO(lbl);
+
+%class IE(i1:I ext_fun:E)
+call_ext_only _ extfun:
+	reg[0] = GET(extfun).invoke(proc, xregsArray(reg, GET(extfun).arity()));
 
 ##########==========             BIFS       	  ==========##########
 

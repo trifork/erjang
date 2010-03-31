@@ -44,6 +44,7 @@ import erjang.beam.BlockVisitor;
 import erjang.beam.repr.Insn;
 import erjang.beam.repr.Operands;
 import erjang.beam.repr.ExtFun;
+import erjang.beam.repr.FunctionInfo;
 // import static erjang.beam.repr.Insn.*;
 
 import kilim.Pausable;
@@ -59,6 +60,8 @@ public class Interpreter {
 		final ArrayList<EObject>   consts    = new ArrayList<EObject>();
 		final HashMap<EObject,Integer>	const_map = new HashMap<EObject,Integer>();
 		final HashMap<Integer,Integer>	label_map = new HashMap<Integer,Integer>();
+		final HashMap<FunID,Integer>	ext_fun_map = new HashMap<FunID,Integer>();
+		final ArrayList<FunctionInfo>	raw_exports = new ArrayList<FunctionInfo>();
 
 
 		public void visitModule(EAtom name) {
@@ -67,7 +70,7 @@ public class Interpreter {
 		}
 
 		public void visitExport(EAtom fun, int arity, int entryLabel) {
-			
+			raw_exports.add(new FunctionInfo(moduleName, fun, arity, entryLabel));
 		}
 
 		public void visitAttribute(EAtom att, EObject value) {}
@@ -80,7 +83,33 @@ public class Interpreter {
 								   ": " + code.get(i) +
 								   (insn!=null ? ("\t"+insn.toSymbolic().toString()) : ""));
 			}
+
+			short[] codeArray = toShortArray(code);
+			EObject[] constArray = consts.toArray(new EObject[consts.size()]);
+			List<FunID> imports = new ArrayList<FunID>(ext_fun_map.keySet());
+			List<FunIDWithEntry> exports = convertExports(raw_exports);
+			System.err.println("INT| Constructing module for "+moduleName.getName());
+			Module m = new Module(moduleName.getName(),
+								  codeArray, constArray,
+								  exports, imports);
 		}
+
+		static short[] toShortArray(List<Short> org) {
+			int len = org.size();
+			short[] res = new short[len];
+			for (int i=0; i<len; i++) res[i] = org.get(i);
+			return res;
+		}
+
+		List<FunIDWithEntry> convertExports(List<FunctionInfo> org) {
+			List<FunIDWithEntry> res = new ArrayList(org.size());
+			for (FunctionInfo fi : org) {
+				res.add(new FunIDWithEntry(fi.mod, fi.fun, fi.arity,
+										   label_map.get(fi.label)));
+			}
+			return res;
+		}
+
 
 		public FunctionVisitor visitFunction(EAtom name, int arity, int startLabel) {
 			return new FunctionEncoder(name, arity, startLabel);
@@ -104,13 +133,23 @@ public class Interpreter {
 
 		protected int encodeLiteral(Operands.Literal lit) {
 			EObject value = lit.literalValue();
-			Integer key = const_map.get(value);
-			if (key == null) {
-				key = const_map.size();
+			Integer index = const_map.get(value);
+			if (index == null) {
+				index = const_map.size();
 				consts.add(value);
-				const_map.put(value, key);
+				const_map.put(value, index);
 			}
-			return key;
+			return index;
+		}
+
+		protected int encodeExtFun(ExtFun extfun) {
+			FunID id = new FunID(extfun.mod, extfun.fun, extfun.arity);
+			Integer index = ext_fun_map.get(id);
+			if (index == null) {
+				index = ext_fun_map.size();
+				ext_fun_map.put(id, index);
+			}
+			return index;
 		}
 
 		protected void registerLabel(int beamLabel) {
@@ -165,12 +204,15 @@ public class Interpreter {
 			   short[] code, EObject[] consts,
 			   List<FunIDWithEntry> exports, List<FunID> imports)
 		{
+			super(true);
 			this.name = name;
 			this.code = code;
 			this.consts = consts;
 			this.exports = exports;
 			this.imports = imports;
 			ext_funs = new EFun[imports.size()];
+			System.err.println("INT| Constructed module for "+this.name);
+			setup();
 		}
 
 		public String module_name() {return name;}
@@ -178,14 +220,16 @@ public class Interpreter {
 		/**
 		 * This method is used by EModuleManager in function resolution.
 		 */
-		public void registerImportsAndExports() {
+		public void registerImportsAndExports() throws Exception {
 			for (int i=0; i<imports.size(); i++) {
 				FunID imp = imports.get(i);
+				System.err.println("INT| Import #"+i+": "+imp);
 				EModuleManager.add_import(imp, new ExtFunBinder(imp, i));
-				i++;
 			}
 
+			int j=0;
 			for (FunIDWithEntry fi : exports) {
+				System.err.println("INT| Export #"+(j++)+": "+fi);
 				EFun fun = EFun.get_fun_with_handler(fi.arity, new Function(fi.start_pc));
 				EModuleManager.add_export(this, fi, fun);
 			}
@@ -215,7 +259,7 @@ public class Interpreter {
 				this.start_pc = start_pc;
 			}
 
-			public EObject invoke(final EProc proc, final EObject[] args) throws Pausable, Exception {
+			public EObject invoke(final EProc proc, final EObject[] args) throws Pausable {
 				final short[] code = Module.this.code;
 				EObject stack[] = proc.stack;
 				int sp = proc.sp;
@@ -228,7 +272,6 @@ public class Interpreter {
 
 				// For tuple construction:
 				ETuple curtuple = null;
-// 				int tuplepos = -1;
 
 				while (true) {
 					final int opcode = code[pc++];
@@ -244,11 +287,7 @@ public class Interpreter {
 				}
 			}
 
-// 			private EObject[] reserveStackFrame(EObject[] stack, int sp, int more) {
-// 				ensureCapacity(stack, sp+more);
-// 			}
-
-			public ESeq xregs(EObject[] reg, int arity) {
+			public ESeq xregsSeq(EObject[] reg, int arity) {
 				ESeq res = ERT.NIL;
 				for (int i=arity-1; i>=0; i--) {
 					res = res.cons(reg[i]);
@@ -256,8 +295,14 @@ public class Interpreter {
 				return res;
 			}
 
+			public EObject[] xregsArray(EObject[] reg, int arity) {
+				EObject[] res = new EObject[arity];
+				System.arraycopy(reg,0, res,0, arity);
+				return res;
+			}
+
 		} // class Function
-    } // Class Module
+    } // class Module
 
 
 	private static EObject[] ensureCapacity(EObject[] array, int atLeast) {

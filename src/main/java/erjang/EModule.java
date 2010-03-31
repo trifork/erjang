@@ -24,10 +24,15 @@ public abstract class EModule {
 
 	/** Base constructor for modules.  Will register <code>this</code> in the system. */
 	public EModule() {
-		// TODO: handle if there is a module of this name already!
-
-		EModuleManager.setup_module(this);
+		this(false);
 	}
+
+	public EModule(boolean delay_setup) {
+		// TODO: handle if there is a module of this name already!
+		if (!delay_setup) setup();
+	}
+
+	protected void setup() {EModuleManager.setup_module(this);}
 
 	/**
 	 * This method is code-generated in subclasses
