@@ -45,13 +45,8 @@ public class Erj {
 		EAtom module = EAtom.intern(m);
 		EAtom fun = EAtom.intern(f);
 		
-		// TODO: remove this hack, it prevents loading real modules for these
-		EModuleManager.load_module(EAtom.intern("io"), new File("target/classes").toURI().toURL());
-		EModuleManager.load_module(EAtom.intern("timer"), new File("target/classes").toURI().toURL());
-		
 		load("erlang");
-		
-		ERT.load_module(EAtom.intern(m));
+		load(m);
 		
 		ESeq env = ERT.NIL;
 		ESeq argv = ERT.NIL;
@@ -73,17 +68,6 @@ public class Erj {
 	 * @param string
 	 */
 	private static void load(String module) throws Exception {
-		File f = Compiler.find_and_compile(module);
-		EModuleManager.load_module(EAtom.intern(module), f.toURI().toURL());
-	}
-
-	private static void load(File path, String mod) throws Error,
-			MalformedURLException {
-		if (!path.exists() || !path.isDirectory()) {
-			throw new Error("no path to: "+path);
-		}
-					
-		EModuleManager.load_module(EAtom.intern(mod), 
-					path.toURI().toURL());
+		EModuleLoader.find_and_load_module(module);
 	}
 }

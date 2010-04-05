@@ -116,8 +116,7 @@ public class EModuleManager {
 							if (uf == null) {
 								if (!module_loaded(fun.module)) {
 									try {
-										File f = Compiler.find_and_compile(fun.module.getName());
-										EModuleManager.load_module(fun.module, f.toURI().toURL());										
+										EModuleLoader.find_and_load_module(fun.module.getName());
 									} catch (IOException e) {
 										// we don't report this separately; it ends up causing an undefined below...
 									}
@@ -309,8 +308,7 @@ public class EModuleManager {
 
 	static void setup_module(EModule mod_inst) throws Error {
 		ModuleInfo module_info = get_module_info(EAtom.intern(mod_inst.module_name()));
-		module_info.setModule(
-				mod_inst);
+		module_info.setModule(mod_inst);
 
 		try {
 			mod_inst.registerImportsAndExports();
@@ -319,32 +317,6 @@ public class EModuleManager {
 		}
 
 		module_info.warn_about_unresolved();
-	}
-
-	@SuppressWarnings("unchecked")
-	public static EModule load_module(EAtom mod, URL url) {
-		String internalName = erjang.beam.Compiler.moduleClassName(mod
-				.getName());
-		String java_name = internalName.replace('/', '.');
-		EModuleClassLoader loader = new EModuleClassLoader(url);
-		Class<? extends EModule> clazz;
-		try {
-			clazz = (Class<? extends EModule>) loader.loadClass(java_name);
-		} catch (ClassNotFoundException e1) {
-			e1.printStackTrace();
-			throw new ErlangError(e1);
-		}
-		EModule mi;
-		try {
-			mi = clazz.newInstance();
-		} catch (Exception e) {
-			e.printStackTrace();
-			throw new ErlangError(e);
-		}
-
-		// mi.read_annotations();
-
-		return mi;
 	}
 
 	/**

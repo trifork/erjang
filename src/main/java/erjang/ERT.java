@@ -814,14 +814,12 @@ public class ERT {
 	}
 
 	static void load_module(EAtom module) throws IOException {
-		File f = Compiler.find_and_compile(module.getName());
-		EModuleManager.load_module(module, f.toURI().toURL());
+		EModuleLoader.find_and_load_module(module.getName());
 	}
 
 	public static void load_module(EAtom module, EBinary bin)
 			throws IOException {
-		File f = Compiler.compile(module.getName(), bin);
-		EModuleManager.load_module(module, f.toURI().toURL());
+		EModuleLoader.load_module(module.getName(), bin);
 	}
 
 	/**

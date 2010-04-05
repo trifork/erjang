@@ -20,6 +20,7 @@
 package erjang;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.MalformedURLException;
 
 /**
@@ -31,8 +32,8 @@ public class EErrorLogger {
 	public static void start()
 	{
 		try {
-			EModuleManager.load_module(EAtom.intern("erjang"), new File("target/classes").toURI().toURL());
-		} catch (MalformedURLException e) {
+			EModuleLoader.find_and_load_module("erjang");
+		} catch (IOException e) {
 			throw new Error(e);
 		}
 		

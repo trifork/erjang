@@ -128,15 +128,14 @@ public class TestRunFile implements Test {
 	}
 
 	private static void load(String module) throws Exception {
-		File f = Compiler.find_and_compile(module);
-		EModuleManager.load_module(EAtom.intern(module), f.toURI().toURL());
+		EModuleLoader.find_and_load_module(module);
 	}
 
 	private static void load(File file) throws Exception {
 		Compiler compiler = new Compiler(repo);
 		compiler.compile(file);
 		String moduleName = trimExtension(file.getName());
-		EModuleManager.load_module(EAtom.intern(moduleName), repoDir.toURL());
+		EModuleLoader.load_compiled_module(moduleName, repoDir.toURL());
 	}
 
 	private EObject erl_run(File file) throws Exception {
