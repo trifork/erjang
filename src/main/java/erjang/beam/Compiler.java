@@ -147,7 +147,7 @@ public class Compiler implements Opcodes {
 	}
 
 	public void compile(File file) throws IOException {
-		EBinary eb = EUtil.readFile(input);
+		EBinary eb = EUtil.readFile(file);
 		compile(eb, this.classRepo);
 	}
 
