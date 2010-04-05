@@ -22,7 +22,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Set;
@@ -52,27 +51,7 @@ import erjang.beam.analysis.BeamTypeAnalysis;
 import erjang.beam.loader.ErjangBeamDisLoader;
 
 public class Compiler implements Opcodes {
-	static final boolean USE_NATIVE_LOADER = true;
-
-	static BeamLoader xloader;
 	private ClassRepo classRepo;
-
-	static BeamLoader getLoader() {
-		if (xloader == null) {
-			if (USE_NATIVE_LOADER)
-				xloader = new ErjangBeamDisLoader();
-			else
-				try {
-					xloader = new ErlangBeamDisLoader();
-				} catch (OtpAuthException e) {
-					throw new Error(e);
-				} catch (IOException e) {
-					throw new Error(e);
-				}
-		}
-
-		return xloader;
-	}
 
 	/**
 	 * @param repo
@@ -84,13 +63,11 @@ public class Compiler implements Opcodes {
 		this.classRepo = repo;
 	}
 
-	public static void compile(EBinary data, ClassRepo repo) throws IOException {
-		
-		
+	public static void compile(BeamFileData data, ClassRepo repo) throws IOException {
 		// class writer, phase 4
 		ClassWriter cw = new ClassWriter(true);
 
-		// 
+		// class checker, optional phase
 		CheckClassAdapter ca = new CheckClassAdapter(cw);
 
 		// the java bytecode generator, phase 3
@@ -99,23 +76,19 @@ public class Compiler implements Opcodes {
 		// the type analysis, phase 2
 		BeamTypeAnalysis analysis = new BeamTypeAnalysis(cv);
 
-		// the beam file reader, phase 1
-		BeamFileData reader = getLoader().load(data.getByteArray());
-
-		// run through module analyzer...
+		// the module analyzer, phase 1 (not chained to phase 2)
 		ModuleAnalyzer ma = new ModuleAnalyzer();
-		reader.accept(ma);
-		
+		data.accept(ma);
+
 		cv.setFunInfos(ma.getFunInfos());
-		
+
 		try {
 			// go!
-			reader.accept(analysis);
+			data.accept(analysis);
 		} catch (Error e) {
 			e.printStackTrace();
 		}
 
-		
 		byte[] byteArray = cw.toByteArray();
 
 		/*
@@ -139,16 +112,17 @@ public class Compiler implements Opcodes {
 
 			repo.store(iname, bytes);
 		}
-		
-		if (!written) {		
+
+		if (!written) {
 			// no pausable functions in module!
 			repo.store(cv.getInternalClassName(), byteArray);
 		}
 	}
 
-	public void compile(File file) throws IOException {
+	public void compile(File file, BeamLoader beam_parser) throws IOException {
 		EBinary eb = EUtil.readFile(file);
-		compile(eb, this.classRepo);
+		BeamFileData bfd = beam_parser.load(eb.getByteArray());
+		compile(bfd, this.classRepo);
 	}
 
 	static public class ErjangDetector extends Detector {
@@ -240,8 +214,9 @@ public class Compiler implements Opcodes {
 
 		File out_dir = new File("target/compiled");
 		out_dir.mkdirs();
-		for (int i = 0; i < args.length; i++) {
+		BeamLoader beamParser = new ErjangBeamDisLoader();
 
+		for (int i = 0; i < args.length; i++) {
 			if (args[i].endsWith(".beam")) {
 				File in = new File(args[i]);
 				if (!in.exists() || !in.isFile() || !in.canRead())
@@ -257,7 +232,7 @@ public class Compiler implements Opcodes {
 				JarClassRepo jcp = new JarClassRepo(out);
 
 				System.out.println("compiling " + in + " -> " + out + " ...");
-				new Compiler(jcp).compile(in);
+				new Compiler(jcp).compile(in, beamParser);
 
 				jcp.close();
 			}
@@ -280,54 +255,7 @@ public class Compiler implements Opcodes {
 		}
 	}
 
-	public static File find_and_compile(String module) throws IOException {
-		File input = findBeamFile(module);
-		if (input == null)
-			throw new FileNotFoundException(module);
-		EBinary eb = EUtil.readFile(input);
-		return compile(module, eb);
-	}
-
-	/**
-	 * @param module
-	 * @return
-	 */
-	private static File findBeamFile(String module) {
-		String n = module;
-
-		for (File e : loadPath) {
-			File beam = new File(e, n + ".beam");
-			if (beam.exists())
-				return beam;
-		}
-
-		return null;
-	}
-
-	static File[] loadPath;
-
-	static {
-		ArrayList<File> lp = new ArrayList<File>();
-		String sys_path = System.getenv("ERJ_PATH");
-		if (sys_path != null)
-			add(lp, sys_path);
-
-		String path = System.getProperty("erjpath", ".");
-		add(lp, path);
-
-		loadPath = lp.toArray(new File[lp.size()]);
-	}
-
-	private static void add(ArrayList<File> out, String path) {
-		for (String s : path.split(File.pathSeparator)) {
-			File elem = new File(s);
-			if (elem.exists() && elem.isDirectory()) {
-				out.add(elem);
-			}
-		}
-	}
-
-	public static File compile(String name, EBinary beam_data) throws IOException {
+	public static File compile(String name, EBinary beam_data, BeamLoader beam_parser) throws IOException {
 
 		long crc = beam_data.crc();
 
@@ -343,7 +271,7 @@ public class Compiler implements Opcodes {
 			long before = System.currentTimeMillis();
 
 			try {
-				compile(beam_data, repo);
+				compile(beam_parser.load(beam_data.getByteArray()), repo);
 
 				repo.close();
 				repo = null;

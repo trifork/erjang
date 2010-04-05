@@ -30,6 +30,8 @@ import erjang.EList;
 import erjang.ETuple;
 import erjang.EBinary;
 import erjang.beam.DirClassRepo;
+import erjang.beam.BeamLoader;
+import erjang.beam.loader.ErjangBeamDisLoader;
 
 import erjang.m.erlang.ErlConvert;
 
@@ -59,6 +61,8 @@ public class TestRunFile implements Test {
 
 	final static File repoDir = new File("target/compiled");
 	final static DirClassRepo repo = new DirClassRepo(repoDir);
+
+	final static BeamLoader beamParser = new ErjangBeamDisLoader();
 
 	/**
 	 * @param file
@@ -133,7 +137,7 @@ public class TestRunFile implements Test {
 
 	private static void load(File file) throws Exception {
 		Compiler compiler = new Compiler(repo);
-		compiler.compile(file);
+		compiler.compile(file, beamParser);
 		String moduleName = trimExtension(file.getName());
 		EModuleLoader.load_compiled_module(moduleName, repoDir.toURL());
 	}

@@ -26,6 +26,8 @@ import com.ericsson.otp.erlang.OtpAuthException;
 
 import erjang.beam.Compiler;
 import erjang.beam.JarClassRepo;
+import erjang.beam.BeamLoader;
+import erjang.beam.loader.ErjangBeamDisLoader;
 
 /**
  * Beam -> Java compiler
@@ -33,23 +35,20 @@ import erjang.beam.JarClassRepo;
 public class ErjC {
 
 	public static void main(String[] args) throws OtpAuthException, IOException {
-		
+		BeamLoader beamParser = new ErjangBeamDisLoader();
+
 		for (int i = 0; i < args.length; i++) {
-			
 			if (args[i].endsWith(".beam")) {
 				File in = new File(args[i]);
 				int idx = args[i].lastIndexOf('.');
 				File out = new File(args[i].substring(0, idx) + ".jar");
 				JarClassRepo jcp = new JarClassRepo(out);
-				
+
 				System.out.println("compiling "+in+" -> "+out+" ...");
-				new Compiler(jcp).compile(in);
-			
+				new Compiler(jcp).compile(in, beamParser);
+
 				jcp.close();
 			}
 		}
-		
 	}
-	
-	
 }

@@ -18,25 +18,44 @@
 
 package erjang;
 
+import erjang.beam.BeamFileData;
+import erjang.beam.BeamLoader;
 import erjang.beam.Compiler;
 import erjang.beam.EUtil;
 
+import erjang.beam.loader.ErjangBeamDisLoader;
+
+import java.util.List;
+import java.util.ArrayList;
+
 import java.io.IOException;
+import java.io.FileNotFoundException;
 import java.io.File;
 import java.io.InputStream;
+
 import java.net.URL;
-import java.net.URLClassLoader;
 
 /** Handles the part of module loading that involves going from module name,
- *  or module name plus beam file name, to an EModule instance.
+ *  or module name plus beam file name, to a BeamFileData representation;
+ *  and chooses how to convert that into an EModule instance.
  *  The EModule instance may be compiled, interpreted, or whatever.
  *
+ *  The entire procedure looks roughly like this:
+ *  - File resolution: from module name to beam file name.
+ *  - File reading: from beam file name to raw beam data.
+ *  - Beam parsing: From raw beam data to beam representation (BeamFileData).
+ *  - Module creation: From beam representation to executable module (EModule).
  */
 class EModuleLoader {
+	final static BeamLoader beamParser = new ErjangBeamDisLoader();
+
+	/*==================== API ====================*/
 
 	public static EModule find_and_load_module(String moduleName) throws IOException {
-		File jarFile = Compiler.find_and_compile(moduleName);
-		return load_compiled_module(moduleName, jarFile.toURI().toURL());
+		File input = findBeamFile(moduleName);
+		if (input == null)
+			throw new FileNotFoundException(moduleName); // Is this the right error message?
+		return load_module(moduleName, input);
 	}
 
 	public static EModule load_module(String moduleName, File beamFile) throws IOException {
@@ -44,9 +63,46 @@ class EModuleLoader {
 	}
 
 	public static EModule load_module(String moduleName, EBinary beamBin) throws IOException {
- 		File jarFile = Compiler.compile(moduleName, beamBin);
+ 		File jarFile = Compiler.compile(moduleName, beamBin, beamParser);
+		// This is where the module creation mode is selected.
  		return load_compiled_module(moduleName, jarFile.toURI().toURL());
 	}
+
+	/*==================== BEAM FILE RESOLUTION STEP ====================*/
+
+	private static File findBeamFile(String module) {
+		String n = module;
+
+		for (File e : loadPath) {
+			File beam = new File(e, n + ".beam");
+			if (beam.exists())
+				return beam;
+		}
+
+		return null;
+	}
+
+	final static List<File> loadPath = new ArrayList<File>();
+
+	static {
+		String sys_path = System.getenv("ERJ_PATH");
+		if (sys_path != null)
+			addLoadPaths(loadPath, sys_path);
+
+		String path = System.getProperty("erjpath", ".");
+		addLoadPaths(loadPath, path);
+	}
+
+	private static void addLoadPaths(List<File> out, String path) {
+		for (String s : path.split(File.pathSeparator)) {
+			File elem = new File(s);
+			if (elem.exists() && elem.isDirectory()) {
+				out.add(elem);
+			}
+		}
+	}
+
+	/*==================== MODULE CREATION STEP ====================*/
 
 	@SuppressWarnings("unchecked")
 	public static EModule load_compiled_module(String mod, URL jarUrl) {
