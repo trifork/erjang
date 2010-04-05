@@ -18,9 +18,12 @@
 
 package erjang.beam;
 
+import java.io.File;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -28,6 +31,7 @@ import java.util.regex.Pattern;
 import org.objectweb.asm.Type;
 
 import erjang.EAtom;
+import erjang.EBinary;
 import erjang.beam.repr.ExtFun;
 
 /**
@@ -229,4 +233,21 @@ public class EUtil {
 		return sb.toString();
 	}
 
+	public static EBinary readFile(File file) throws IOException {
+		int length = (int) file.length();
+		byte[] data = new byte[length];
+		FileInputStream fi = new FileInputStream(file);
+		try {
+			ByteArrayOutputStream bo = new ByteArrayOutputStream();
+			int read = 0;
+			while (read < length) {
+				read += fi.read(data, read, length-read);
+			}
+		} finally {
+			fi.close();
+		}
+
+		EBinary bin = new EBinary(data);
+		return bin;
+	}
 }

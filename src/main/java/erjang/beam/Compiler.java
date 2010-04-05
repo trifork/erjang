@@ -147,20 +147,8 @@ public class Compiler implements Opcodes {
 	}
 
 	public void compile(File file) throws IOException {
-
-		int length = (int) file.length();
-		byte[] data = new byte[length];
-		FileInputStream fi = new FileInputStream(file);
-		ByteArrayOutputStream bo = new ByteArrayOutputStream();
-		int read = 0;
-		while (read < length) {
-			read += fi.read(data, read, length-read);
-		}
-		fi.close();
-
-		EBinary bin = new EBinary(data);
-		compile(bin, this.classRepo);
-
+		EBinary eb = EUtil.readFile(input);
+		compile(eb, this.classRepo);
 	}
 
 	static public class ErjangDetector extends Detector {
@@ -293,32 +281,11 @@ public class Compiler implements Opcodes {
 	}
 
 	public static File find_and_compile(String module) throws IOException {
-		
 		File input = findBeamFile(module);
 		if (input == null)
 			throw new FileNotFoundException(module);
-		byte[] data = new byte[(int) input.length()];
-		FileInputStream fi = new FileInputStream(input);
-		try {
-			int pos = 0, left = data.length;
-			do {
-				int val = fi.read(data, pos, left);
-				if (val == -1)
-					throw new EOFException();
-				pos += val;
-				left -= val;
-			} while (left > 0);
-
-		} finally {
-			fi.close();
-		}
-
-		EBinary eb = new EBinary(data);
-
-		
-		
+		EBinary eb = EUtil.readFile(input);
 		return compile(module, eb);
-
 	}
 
 	/**
