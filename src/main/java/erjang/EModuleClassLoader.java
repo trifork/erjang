@@ -18,6 +18,7 @@
 
 package erjang;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -26,21 +27,14 @@ import java.net.URLClassLoader;
 /**
  * Each module has it's own class loader.
  */
-class EModuleLoader extends URLClassLoader {
+class EModuleClassLoader extends URLClassLoader {
 
 	/**
 	 * @param urls
 	 */
-	public EModuleLoader(URL loadFrom) {
+	public EModuleClassLoader(URL loadFrom) {
 		super(loadFrom == null ? new URL[0] : new URL[] { loadFrom },
 				EObject.class.getClassLoader());
-	}
-
-	/**
-	 * 
-	 */
-	public EModuleLoader() {
-		this(null);
 	}
 
 	/**
@@ -76,7 +70,8 @@ class EModuleLoader extends URLClassLoader {
 		}
 		
 		if (name.startsWith("kilim.S_")) {
-			InputStream resource = super.getResourceAsStream(name.replace('.', '/')  + ".class");
+			String classFileName = name.replace('.', File.separatorChar) + ".class";
+			InputStream resource = super.getResourceAsStream(classFileName);
 
 			if (resource == null) {
 				throw new ClassNotFoundException(name, new Error("while loading "+this.getURLs()[0]));
@@ -85,7 +80,7 @@ class EModuleLoader extends URLClassLoader {
 			try {
 				byte[] bb = new byte[resource.available()];
 				resource.read(bb);
-				return ERT.defineClass(EModuleLoader.class.getClassLoader(), name, bb, 0, bb.length);
+				return ERT.defineClass(EModuleClassLoader.class.getClassLoader(), name, bb, 0, bb.length);
 			} catch (IOException ex) {
 				throw new Error(ex);
 			}

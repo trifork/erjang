@@ -326,7 +326,7 @@ public class EModuleManager {
 		String internalName = erjang.beam.Compiler.moduleClassName(mod
 				.getName());
 		String java_name = internalName.replace('/', '.');
-		EModuleLoader loader = new EModuleLoader(url);
+		EModuleClassLoader loader = new EModuleClassLoader(url);
 		Class<? extends EModule> clazz;
 		try {
 			clazz = (Class<? extends EModule>) loader.loadClass(java_name);
