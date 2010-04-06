@@ -265,5 +265,37 @@ public class ErlPort {
 		return p.port_info(spec);
 	}
 	
+	@BIF
+	static public EObject port_set_data(EObject port, EObject data) {
+		EPort p = id_or_name2port(port);
+		if (p == null) {
+			throw ERT.badarg(port, data);
+		}
+
+		p.set_data(data);
+		
+		return data;
+	}
+	
+	@BIF
+	static public EObject port_get_data(EObject port) {
+		EPort p = id_or_name2port(port);
+		if (p == null) {
+			throw ERT.badarg(port);
+		}
+		
+		return p.get_data();
+	}
+
+	private static EPort id_or_name2port(EObject port) {
+		EPort p = port.testPort();
+		if (p != null) return p;
+			
+		EObject p2 = ERT.whereis(port);
+		
+		// p2 is ERT.am_undefined if not found
+		
+		return p2.testPort();
+	}
 	
 }

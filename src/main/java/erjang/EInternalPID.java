@@ -102,7 +102,7 @@ public class EInternalPID extends EPID implements ELocalHandle {
 			task.link_oneway(other);
 	}
 	
-	public ERef add_monitor(EPID target, EObject object) {
+	public ERef add_monitor(EHandle target, EObject object) {
 		EProc task = this.task;
 		if (task != null) 
 			return task.add_monitor(target, object);

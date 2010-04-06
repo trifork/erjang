@@ -35,14 +35,22 @@ public class Posix {
 	public static final int ENETUNREACH = 7;
 	public static final int EADDRNOTAVAIL = 8;
 	public static final int EIO = 9;
+	public static final int EOPNOTSUPP = 10;
+	public static final int ECONNREFUSED = 11;
 
-	private static final String[] err_id = { "einval",
-			"enomem", "eexist", "enoent",
+	private static final String[] err_id = { 
+			"einval",
+			"enomem", 
+			"eexist", 
+			"enoent",
 			"eperm", 
 			"eisconn",
 			"eunknown",
 			"enetunreach",
 			"eaddrnotavail",
+			"eio",
+			"eopnotsupp",
+			"econnrefused",
 	};
 
 

@@ -95,7 +95,7 @@ class LockingDriverInstance extends EDriverInstance {
 	}
 
 	@Override
-	protected void processExit(ERef monitor) {
+	public void processExit(ERef monitor) {
 		lock.lock();
 		try {
 			target.processExit(monitor);

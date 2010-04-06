@@ -18,12 +18,15 @@
 
 package erjang;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import erjang.m.erlang.ErlProc;
 
 import kilim.Mailbox;
 import kilim.Pausable;
@@ -108,11 +111,42 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 	}
 	
 
+	// this is not synchronized, as we only mess with it from this proc
+	Map<ERef,EHandle> is_monitoring = new HashMap<ERef, EHandle>();
+
+	/**
+	 * @param selfHandle
+	 * @param object
+	 * @return
+	 */
+	public ERef monitor(EHandle observed, EObject object) {
+		ERef ref = observed.add_monitor(self_handle(), object);
+		if (ref == null) {
+			return ref;
+		}
+		this.is_monitoring.put(ref, observed);
+		return ref;
+	}
+
+	/**
+	 * @param r
+	 * @param flush
+	 * @return
+	 */
+	public void demonitor(ERef r, boolean flush) {
+		EHandle h = is_monitoring.get(r);
+		if (h == null) {
+			throw ERT.badarg(r, flush ? ERT.NIL.cons(ErlProc.am_flush) : ERT.NIL);
+		}
+
+		h.remove_monitor(r, flush);
+	}
+	
 	/**
 	 * @param self2
 	 * @return
 	 */
-	public ERef add_monitor(EPID target, EObject object) {
+	public ERef add_monitor(EHandle target, EObject object) {
 		ERef ref = ERT.getLocalNode().createRef();
 		monitors.put(ref, new ETuple2(target, object));
 		return ref;
@@ -127,6 +161,12 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 			// TODO: do we need to represent flush somehow?
 		}
 	}
+	
+	public EHandle get_monitored_process(ERef monitor) {
+		return is_monitoring.get(monitor);
+	}
+
+
 
 
 	static final int MAX_MAILBOX_SIZE = 1000;

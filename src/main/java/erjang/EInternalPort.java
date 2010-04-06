@@ -69,7 +69,7 @@ public class EInternalPort extends EPort implements ELocalHandle {
 		task.link_oneway(other);
 	}
 	
-	public ERef add_monitor(EPID target, EObject object) {
+	public ERef add_monitor(EHandle target, EObject object) {
 		// TODO: check if task is alive!
 		return task.add_monitor(target, object);
 	}
@@ -85,6 +85,7 @@ public class EInternalPort extends EPort implements ELocalHandle {
 	 * @see erjang.EHandle#self()
 	 */
 	@Override
+	public
 	EDriverTask task() {
 		return task;
 	}
@@ -138,5 +139,20 @@ public class EInternalPort extends EPort implements ELocalHandle {
 	public EObject port_info(EAtom spec) {
 		if (task.isDone()) return ERT.am_undefined;
 		return task.port_info(spec);
+	}
+
+	@Override
+	public EObject get_data() {
+		EDriverTask dt = task;
+		if (dt == null)
+			return ERT.am_undefined;
+		return dt.port_data;
+	}
+
+	@Override
+	public void set_data(EObject data) {
+		EDriverTask dt = task;
+		if (dt != null)
+			dt.port_data = data;		
 	}
 }

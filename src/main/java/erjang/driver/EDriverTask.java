@@ -55,12 +55,14 @@ import erjang.EPID;
 import erjang.EPort;
 import erjang.EProc;
 import erjang.ERT;
+import erjang.ERef;
 import erjang.ESeq;
 import erjang.EString;
 import erjang.ETask;
 import erjang.ETuple;
 import erjang.ETuple2;
 import erjang.ETuple3;
+import erjang.ETuple4;
 import erjang.ErlangError;
 import erjang.ErlangException;
 import erjang.ErlangExitSignal;
@@ -123,6 +125,9 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 	protected String cwd;
 	protected HashMap<String, String> env;
 	private long abs_timeout;
+
+	/** state controlled from elsewhere... erlang:port_set_data/2*/
+	public EObject port_data;
 
 	/**
 	 * @param cmd
@@ -340,6 +345,7 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 			ETuple2 t2;
 			EPortControl ctrl;
 			ETuple3 t3;
+			ETuple4 t4;
 			if ((t2 = ETuple2.cast(msg)) != null) {
 
 				EObject sender = t2.elem1;
@@ -399,6 +405,13 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 					// close is handled by exception handling code
 					return;
 				}
+			} else if ((t4 = ETuple4.cast(msg)) != null) {
+				// {'DOWN', ref, pid, reason}
+				if (t3.elem1 == ERT.am_DOWN) {
+					ERef ref = t4.elem2.testReference();
+					instance.processExit(ref);
+				}
+
 			}
 
 			break;

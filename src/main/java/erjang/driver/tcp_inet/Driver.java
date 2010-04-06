@@ -21,6 +21,7 @@ package erjang.driver.tcp_inet;
 import erjang.EString;
 import erjang.driver.EDriver;
 import erjang.driver.EDriverInstance;
+import erjang.net.Protocol;
 
 public class Driver implements EDriver {
 
@@ -35,7 +36,7 @@ public class Driver implements EDriver {
 
 	@Override
 	public EDriverInstance start(EString command) {
-		return new TCPINet(command);
+		return new TCPINet(Protocol.TCP);
 	}
 
 	@Override
