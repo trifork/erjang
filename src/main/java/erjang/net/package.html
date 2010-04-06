@@ -1,0 +1,20 @@
+<html>
+<body>
+<p>This package contains a BSD/Posix-like socket abstraction, which maps to Java's notion
+of sockets.  The issue is that the call sequence required by Erlang/OTP does not map
+well to the fact that Java supports ServerSocket and Socket; a distinction which has 
+to be made before the socket is bound and/or socket options are set.</p>
+
+<p>So with the sockets described in this package, you first create a LazySocket, which assembles
+the options and the port binding, and then whey you say either listen() or connect(), then the 
+supporting ServerSocket or Socket (respectively) is created, and the previously given options
+and port binding are applied.  This has the (bad) side effect that bind() does not actuall bind the
+socket, and thus if you bind(0) you will not know the actual port bound, as also binding to 
+a specific port, say bind(80) does not fail (if there is a conflict) until you later issue
+either a connect() or a listen().
+</p>
+
+<p>Even with this restriction, it seems to fit well with the calling sequences in Erlang</p>
+
+</body>
+</html>
