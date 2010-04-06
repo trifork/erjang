@@ -3,7 +3,7 @@
 # label L: ignore
 
 K_return:
-	//TODO
+	if (true) return reg[0];
 send:
 	//TODO
 remove_message:
@@ -23,13 +23,16 @@ bs_init_writable:
 
 %class AAI(a1:A, a2:A, i3:I)
 func_info mod fun arity:
-	if (true) return ERT.func_info((EAtom)GET(mod), (EAtom)GET(fun), xregsSeq(reg, GET(arity)));
+	if (true) {System.err.println("INT| func_info: "+GET(mod)+":"+GET(fun)+"/"+GET(arity)); return ERT.func_info((EAtom)GET(mod), (EAtom)GET(fun), xregsSeq(reg, GET(arity)));}
 
 ##########==========        ALLOCATION      	  ==========##########
 
 %class I(i1:I)
 allocate slots:
 	stack = ensureCapacity(stack, sp+GET(slots), sp); sp += GET(slots);
+
+deallocate slots:
+	sp -= GET(slots);
 
 %class II(i1:I, i2:I)
 allocate_zero slots _live:
@@ -49,6 +52,10 @@ move src dst:
 %class SSD(src1:S src2:S dest:D)
 put_list h t dst:
 	SET(dst, ERT.cons(GET(h), GET(t)));
+
+%class SDD(src:S dest1:D dest2:D)
+get_list src h t:
+        {ECons cons = GET(src).testNonEmptyList(); SET(h, cons.head()); SET(t, cons.tail());}
 
 %class SID(src:S i:I dest:D)
 get_tuple_element src pos dst:
@@ -127,15 +134,26 @@ is_ge lbl a b:
 
 ##########==========       FUNCTION CALLS   	  ==========##########
 
-# %class IL(i1:I lbl:L)
-# call_only keep lbl:
-# 	GOTO(lbl);
+%class IL(i1:I label:L)
+call_only keep lbl:
+	GOTO(lbl);
+
+call keep lbl:
+	proc.stack=stack; proc.sp=sp; reg[0] = invoke(proc, reg, GET(keep), GET_PC(lbl));
 
 %class IE(i1:I ext_fun:E)
 call_ext_only _ extfun:
-	reg[0] = GET(extfun).invoke(proc, xregsArray(reg, GET(extfun).arity()));
+	proc.stack=stack; proc.sp=sp; reg[0] = GET(extfun).invoke(proc, xregsArray(reg, GET(extfun).arity()));
+
 
 ##########==========             BIFS       	  ==========##########
+
+%class GcBif(ext_fun:E args[0]:S args[1]:S dest:D label:L)
+
+gc_bif2 bif arg1 arg2 dest onFail:
+	{System.err.println("INTP| invoking bif "+GET(bif)+" with "+GET(arg1)+","+GET(arg2)); EObject tmp = GET(bif).invoke(proc, new EObject[]{GET(arg1), GET(arg2)}); if (tmp==null) GOTO(onFail); SET(dest, tmp);}
+# TODO: Streamline these calls - e.g. cast to EFun2 instead of creating array
+
 
 ##########==========      EXCEPTION HANDLING	  ==========##########
 

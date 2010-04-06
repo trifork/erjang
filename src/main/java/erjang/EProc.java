@@ -97,6 +97,10 @@ public final class EProc extends ETask<EInternalPID> {
 
 	private int spawn_args;
 
+	// For interpreter use:
+	public EObject[] stack = new EObject[10];
+	public int sp = 0;
+
 	/**
 	 * @param m
 	 * @param f
@@ -564,8 +568,8 @@ public final class EProc extends ETask<EInternalPID> {
 							   ETuple.make(spawn_mod, spawn_fun, ERT.box(spawn_args)));
 			
 		} else {
-			System.err.println(spec);
-			throw new NotImplemented();
+			System.err.println("NotImplemented: process_info("+spec+")");
+			throw new NotImplemented("process_info("+spec+")");
 		}
 	}
 

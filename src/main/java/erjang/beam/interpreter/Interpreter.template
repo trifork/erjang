@@ -34,7 +34,9 @@ import erjang.EProc;
 import erjang.EObject;
 import erjang.EAtom;
 import erjang.ESeq;
+import erjang.ECons;
 import erjang.ETuple;
+import erjang.EBinary;
 
 import erjang.beam.BeamFileData;
 import erjang.beam.ModuleVisitor;
@@ -53,6 +55,12 @@ public class Interpreter {
 #ENUM#
 	public static final short ENSURE_REG_CAPACITY = MAX_OPCODE + 1;
 
+	public static EModule beamFileToEModule(BeamFileData bfd) {
+		Encoder encoder = new Encoder();
+		bfd.accept(encoder);
+		return encoder.toEModule();
+	}
+
 	public static class Encoder implements ModuleVisitor {
 		private EAtom moduleName;
 		final HashMap<Integer,Insn> insn_start = new HashMap<Integer,Insn>();
@@ -60,9 +68,10 @@ public class Interpreter {
 		final ArrayList<EObject>   consts    = new ArrayList<EObject>();
 		final HashMap<EObject,Integer>	const_map = new HashMap<EObject,Integer>();
 		final HashMap<Integer,Integer>	label_map = new HashMap<Integer,Integer>();
+		final ArrayList<Backpatch>	    backpatches = new ArrayList<Backpatch>();
 		final HashMap<FunID,Integer>	ext_fun_map = new HashMap<FunID,Integer>();
+		final ArrayList<FunID>	imports = new ArrayList<FunID>();
 		final ArrayList<FunctionInfo>	raw_exports = new ArrayList<FunctionInfo>();
-
 
 		public void visitModule(EAtom name) {
 			System.err.println("Interpreter.Encoder| doing module "+name);
@@ -77,21 +86,29 @@ public class Interpreter {
 
 		public void visitEnd() {
 			System.err.println("Interpreter code for module '"+moduleName+"':");
+
+			for (Backpatch bp : backpatches) {
+				System.err.println("INT| backpatching "+bp.offset+" (label "+bp.label+") => "+label_map.get(bp.label));
+				emitAt(bp.offset, label_map.get(bp.label));
+			}
+
 			for (int i=0; i<code.size(); i++) {
 				Insn insn = insn_start.get(i);
 				System.err.println((insn!=null? "*" : " ") + i +
 								   ": " + code.get(i) +
 								   (insn!=null ? ("\t"+insn.toSymbolic().toString()) : ""));
 			}
+		}
 
+		public Module toEModule() {
 			short[] codeArray = toShortArray(code);
 			EObject[] constArray = consts.toArray(new EObject[consts.size()]);
-			List<FunID> imports = new ArrayList<FunID>(ext_fun_map.keySet());
 			List<FunIDWithEntry> exports = convertExports(raw_exports);
 			System.err.println("INT| Constructing module for "+moduleName.getName());
 			Module m = new Module(moduleName.getName(),
 								  codeArray, constArray,
 								  exports, imports);
+			return m;
 		}
 
 		static short[] toShortArray(List<Short> org) {
@@ -130,6 +147,11 @@ public class Interpreter {
 			if (val!=intval) throw new Error("Value too large to be encoded: "+intval);
 			code.add(val);
 		}
+		protected void emitAt(int pos, int intval) {
+			short val = (short) intval;
+			if (val!=intval) throw new Error("Value too large to be encoded: "+intval);
+			code.set(pos, val);
+		}
 
 		protected int encodeLiteral(Operands.Literal lit) {
 			EObject value = lit.literalValue();
@@ -146,10 +168,21 @@ public class Interpreter {
 			FunID id = new FunID(extfun.mod, extfun.fun, extfun.arity);
 			Integer index = ext_fun_map.get(id);
 			if (index == null) {
-				index = ext_fun_map.size();
+				index = imports.size();
+				imports.add(new FunID(extfun.mod, extfun.fun, extfun.arity));
 				ext_fun_map.put(id, index);
+				System.err.println("INT| ext-fun mapping: "+index+" ==> "+extfun);
 			}
 			return index;
+		}
+
+		protected int encodeLabel(int label) {
+			if (label_map.containsKey(label)) {
+				return label_map.get(label);
+			} else {
+				if (label!=0) backpatches.add(new Backpatch(label, codePos()));
+				return -12348;
+			}
 		}
 
 		protected void registerLabel(int beamLabel) {
@@ -260,12 +293,17 @@ public class Interpreter {
 			}
 
 			public EObject invoke(final EProc proc, final EObject[] args) throws Pausable {
+				return invoke(proc, args, args.length, start_pc);
+			}
+
+			public EObject invoke(final EProc proc, final EObject[] args, int argCnt, int pc) throws Pausable {
+				System.err.println("INT| invoking "+name+"@"+pc+"...");
 				final short[] code = Module.this.code;
 				EObject stack[] = proc.stack;
 				int sp = proc.sp;
-				int pc = start_pc;
-				EObject[] reg = new EObject[args.length+2]; //??
-				for (int i=0; i<args.length; i++) {reg[i] = args[i];} //??
+				EObject[] reg = new EObject[argCnt+2]; //??
+				for (int i=0; i<argCnt; i++) {reg[i] = args[i];} //??
+				for (int i=0; i<argCnt; i++) System.err.println("INT| arg#"+i+"="+args[i]);
 
 				// For exception handling:
 				int exh = -1;
@@ -275,7 +313,7 @@ public class Interpreter {
 
 				while (true) {
 					final int opcode = code[pc++];
-					System.err.println("INTP| "+opcode);
+					System.err.println("INTP| (pc="+(pc-1)+"; sp="+sp+")"+opcode+"   "+reg[0]);
 					switch (opcode) {
 					case ENSURE_REG_CAPACITY: {
 						int max_x = code[pc++];
@@ -283,6 +321,8 @@ public class Interpreter {
 						reg = ensureCapacity(reg, max_x);
 					} break;
 #INTERPRET#
+					default:
+						throw new Error();
 					}
 				}
 			}
@@ -329,6 +369,15 @@ public class Interpreter {
 		public FunIDWithEntry(EAtom mod, EAtom fun, int arity, int start_pc) {
 			super(mod, fun, arity);
 			this.start_pc = start_pc;
+		}
+	}
+
+	static class Backpatch {
+		final int label;
+		final int offset;
+		public Backpatch(int label, int offset) {
+			this.label=label;
+			this.offset=offset;
 		}
 	}
 }

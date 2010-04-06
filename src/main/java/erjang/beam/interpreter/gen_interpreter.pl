@@ -31,7 +31,7 @@ my %TYPES_ENCODE =
  'x' => "#.nr",
  'y' => "#.nr",
  'I' => "#",
- 'L' => "#.nr",
+ 'L' => "encodeLabel(#.nr)",
  'E' => "encodeExtFun(#)"
  );
 # my %TYPES_JAVATYPE =
@@ -47,13 +47,13 @@ my %TYPES_ALLOWED_OPS =
      'y' => {'GET'=>1, 'SET'=>1},
      'c' => {'GET'=>1},
      'I' => {'GET'=>1},
-     'L' => {'GOTO'=>1},
+     'L' => {'GOTO'=>1, 'GET_PC'=>1},
      'E' => {'GET'=>1}
      );
 
 my %PRIMITIVE_TYPES = ('I' => 1);
 
-my @METAS = ('GET', 'SET', 'GOTO');
+my @METAS = ('GET', 'SET', 'GOTO', 'GET_PC');
 
 my $enum_code  = "";
 my $interp_code = "";
@@ -102,12 +102,13 @@ sub process_instruction_rec {
     my $eindent = "\t" x (1 + scalar keys %{$varmap});
     # First process all GETs, then all SETs, etc.:
     if ($action =~ /\b(GET)\((\w+)\)/ ||
+	$action =~ /\b(GET_PC)\((\w+)\)/ ||
 	$action =~ /\b(SET)\((\w+),\s+/ ||
 	$action =~ /\b(GOTO)\((\w+)\)/)
     {
 	my ($macro,$arg) = ($1,$2);
 	if (exists $varmap->{$arg}) { # Replacement is already known.
-	    if ($macro eq 'GET') {
+	    if ($macro eq 'GET' || $macro eq 'GET_PC') {
 		my $replacement = $varmap->{$arg};
 		$action = "$`$replacement$'";
 	    } elsif ($macro eq 'SET') {
@@ -224,7 +225,7 @@ sub parse() {
 	    my $tmp = $2;
 	    @cls_arg_names = @cls_arg_types = ();
 	    for my $arg (split(/\s+/, $tmp)) {
-		die "Bad class field syntax ($tmp)" unless ($arg =~ /(\w+):(\w)/);
+		die "Bad class field syntax ($tmp)" unless ($arg =~ /([\w.\[\]]+):(\w)/);
 # 	    print "DB| arg: $arg => $1/$2\n";
 		push(@cls_arg_names, $1);
 		push(@cls_arg_types, $2);
