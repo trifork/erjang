@@ -34,8 +34,11 @@ import java.net.SocketImpl;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.ClosedByInterruptException;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.GatheringByteChannel;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SelectableChannel;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -421,6 +424,7 @@ public class TCPINet extends EDriverInstance {
 
 	public TCPINet(Protocol protocol) {
 		this.protocol = protocol;
+		this.bufsz = INET_DEF_BUFFER;
 	}
 
 	@Override
@@ -498,8 +502,109 @@ public class TCPINet extends EDriverInstance {
 
 	@Override
 	protected synchronized void readyInput(SelectableChannel ch) {
-		throw new erjang.NotImplemented();
+		
+		
+		if (is_conected()) {
+			tcp_recv(0);
+		}
 
+	}
+
+	private int tcp_recv(int request_len) {
+
+		int n, len, nread;
+		
+		if (i_buf == null) {
+			/* allocate a read buffer */
+			int sz = (request_len > 0) ? request_len : this.bufsz;
+			
+			try { 
+				i_buf = ByteBuffer.allocate(sz);
+			} catch (OutOfMemoryError e) {
+				return -1;
+			}
+			
+			i_ptr_start = 0;
+			nread = sz;
+			if (request_len > 0) {
+				i_remain = request_len;
+			} else {
+				i_remain = 0;
+			}
+
+		} else if (request_len > 0) {
+			n = i_buf.position()-i_ptr_start;
+			if (n >= request_len) {
+				return tcp_deliver(request_len);
+			} else if (tcp_expand_buffer(request_len) < 0) {
+				return tcp_recv_error(Posix.ENOMEM);
+			} else {
+				i_remain = nread = request_len-n;
+			}
+
+		} else if (i_remain == 0) {
+			int[] lenp = new int[1];
+			if ((nread = tcp_remain(lenp)) < 0) {
+				return tcp_recv_error(Posix.EMSGSIZE);
+			} else if (nread == 0) {
+				return tcp_deliver(lenp[0]);
+			} else if (lenp[0] > 0) {
+				i_remain = lenp[0];
+			}
+		
+		} else {
+			nread = i_remain;
+		}
+		
+		try {
+			ReadableByteChannel rbc = (ReadableByteChannel) fd.channel();
+			n = rbc.read(i_buf);
+		} catch (ClosedByInterruptException e) {
+			return tcp_recv_closed();
+		} catch (AsynchronousCloseException e) {
+			return tcp_recv_closed();
+		} catch (ClosedChannelException e) {
+			return tcp_recv_closed();
+		} catch (IOException e) {
+			return tcp_recv_error(IO.exception_to_posix_code(e));
+		}
+		
+		if (n == 0) {
+			return tcp_recv_closed();
+		}
+		
+		if (i_remain > 0) {
+			i_remain -= n;
+			if (i_remain == 0) {
+				return tcp_deliver(i_buf.position() - i_ptr_start);
+			}
+		} else {
+			int[] lenp = new int[1];
+			if ((nread = tcp_remain(lenp)) < 0) {
+				return tcp_recv_error(Posix.EMSGSIZE);
+			} else if (nread == 0) {
+				return tcp_deliver(lenp[0]);
+			} else if (lenp[0] > 0) {
+				i_remain = lenp[0];
+			}
+		}
+		
+		return 0;
+	}
+
+	private int tcp_recv_closed() {
+		throw new erjang.NotImplemented();
+		
+	}
+
+	private int sock_recv(EInternalPort port, InetSocket fd2, ByteBuffer iBuf, int nread) {
+		throw new erjang.NotImplemented();
+		
+	}
+
+	private int tcp_recv_error(int enomem) {
+		throw new erjang.NotImplemented();
+		
 	}
 
 	@Override

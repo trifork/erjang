@@ -37,6 +37,7 @@ public class Posix {
 	public static final int EIO = 9;
 	public static final int EOPNOTSUPP = 10;
 	public static final int ECONNREFUSED = 11;
+	public static final int EMSGSIZE = 12;
 
 	private static final String[] err_id = { 
 			"einval",
@@ -51,6 +52,7 @@ public class Posix {
 			"eio",
 			"eopnotsupp",
 			"econnrefused",
+			"emsgsize",
 	};
 
 
