@@ -132,6 +132,10 @@ is_lt lbl a b:
 is_ge lbl a b:
 	if (GET(a).compareTo(GET(b)) >= 0) GOTO(lbl);
 
+%class Select(src:S jumpTable:J defaultLabel:L)
+select_val src table lbl:
+	TABLEJUMP(table, GET(src), GET_PC(lbl));
+
 ##########==========       FUNCTION CALLS   	  ==========##########
 
 %class IL(i1:I label:L)
@@ -143,8 +147,10 @@ call keep lbl:
 
 %class IE(i1:I ext_fun:E)
 call_ext_only _ extfun:
-	proc.stack=stack; proc.sp=sp; reg[0] = GET(extfun).invoke(proc, xregsArray(reg, GET(extfun).arity()));
+	proc.stack=stack; proc.sp=sp; stack=null; reg[0] = GET(extfun).invoke(proc, xregsArray(reg, GET(extfun).arity())); stack=proc.stack;
 
+call_ext _ extfun:
+	proc.stack=stack; proc.sp=sp; stack=null; reg[0] = GET(extfun).invoke(proc, xregsArray(reg, GET(extfun).arity())); stack=proc.stack;
 
 ##########==========             BIFS       	  ==========##########
 

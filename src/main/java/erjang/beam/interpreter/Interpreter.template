@@ -66,6 +66,7 @@ public class Interpreter {
 		final HashMap<Integer,Insn> insn_start = new HashMap<Integer,Insn>();
 		final ArrayList<Short>     code      = new ArrayList<Short>();
 		final ArrayList<EObject>   consts    = new ArrayList<EObject>();
+		final ArrayList<ValueJumpTable> value_jump_tables = new ArrayList<ValueJumpTable>();
 		final HashMap<EObject,Integer>	const_map = new HashMap<EObject,Integer>();
 		final HashMap<Integer,Integer>	label_map = new HashMap<Integer,Integer>();
 		final ArrayList<Backpatch>	    backpatches = new ArrayList<Backpatch>();
@@ -88,8 +89,8 @@ public class Interpreter {
 			System.err.println("Interpreter code for module '"+moduleName+"':");
 
 			for (Backpatch bp : backpatches) {
-				System.err.println("INT| backpatching "+bp.offset+" (label "+bp.label+") => "+label_map.get(bp.label));
-				emitAt(bp.offset, label_map.get(bp.label));
+				System.err.println("INT| backpatching "+bp+" (label "+bp.label+") => "+label_map.get(bp.label));
+				bp.patch(label_map.get(bp.label));
 			}
 
 			for (int i=0; i<code.size(); i++) {
@@ -103,10 +104,11 @@ public class Interpreter {
 		public Module toEModule() {
 			short[] codeArray = toShortArray(code);
 			EObject[] constArray = consts.toArray(new EObject[consts.size()]);
+			ValueJumpTable[] valueJumpTableArray = value_jump_tables.toArray(new ValueJumpTable[value_jump_tables.size()]);
 			List<FunIDWithEntry> exports = convertExports(raw_exports);
 			System.err.println("INT| Constructing module for "+moduleName.getName());
 			Module m = new Module(moduleName.getName(),
-								  codeArray, constArray,
+								  codeArray, constArray, valueJumpTableArray,
 								  exports, imports);
 			return m;
 		}
@@ -176,11 +178,33 @@ public class Interpreter {
 			return index;
 		}
 
+		protected int encodeValueJumpTable(Operands.SelectList jumpTable) {
+			final ValueJumpTable table = new ValueJumpTable();
+			for (int i=0; i<jumpTable.size(); i++) {
+				final EObject value = ((Operands.Literal)jumpTable.getValue(i)).literalValue();
+				int label = jumpTable.getLabel(i).nr;
+				table.put(value, -12347);
+				backpatches.add(new Backpatch(label) {
+					public void patch(int labelOffset) {
+						table.put(value, labelOffset);
+					}});
+			}
+			int index = value_jump_tables.size();
+			value_jump_tables.add(table);
+			return index;
+		}
+
 		protected int encodeLabel(int label) {
 			if (label_map.containsKey(label)) {
 				return label_map.get(label);
 			} else {
-				if (label!=0) backpatches.add(new Backpatch(label, codePos()));
+				if (label!=0) {
+					final int codePos = codePos();
+					backpatches.add(new Backpatch(label) {
+						public void patch(int labelOffset) {
+							emitAt(codePos, labelOffset);
+						}});
+				}
 				return -12348;
 			}
 		}
@@ -229,18 +253,21 @@ public class Interpreter {
 		final private String name;
 		final private short[] code;
 		final private EObject[] consts;
+		final private ValueJumpTable[] value_jump_tables;
 		final private List<FunIDWithEntry> exports;
 		final private List<FunID> imports;
 		final private EFun[] ext_funs;
 
 		Module(String name,
 			   short[] code, EObject[] consts,
+			   ValueJumpTable[] value_jump_tables,
 			   List<FunIDWithEntry> exports, List<FunID> imports)
 		{
 			super(true);
 			this.name = name;
 			this.code = code;
 			this.consts = consts;
+			this.value_jump_tables = value_jump_tables;
 			this.exports = exports;
 			this.imports = imports;
 			ext_funs = new EFun[imports.size()];
@@ -341,6 +368,13 @@ public class Interpreter {
 				return res;
 			}
 
+			public int lookupValueJumpTable(ValueJumpTable jumpTable,
+											EObject key, int defaultLabel)
+			{
+				Integer lbl = jumpTable.get(key);
+				return (lbl != null) ? lbl.intValue() : defaultLabel;
+			}
+
 		} // class Function
     } // class Module
 
@@ -372,12 +406,16 @@ public class Interpreter {
 		}
 	}
 
-	static class Backpatch {
-		final int label;
-		final int offset;
-		public Backpatch(int label, int offset) {
-			this.label=label;
-			this.offset=offset;
+	static class ValueJumpTable extends HashMap<EObject,Integer> {
+		public int lookup(EObject key, int defaultLabel) {
+			Integer lbl = get(key);
+			return (lbl != null) ? lbl.intValue() : defaultLabel;
 		}
+	}
+
+	static abstract class Backpatch {
+		final int label;
+		public Backpatch(int label) { this.label=label; }
+		public abstract void patch(int labelOffset);
 	}
 }

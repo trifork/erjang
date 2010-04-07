@@ -14,7 +14,8 @@ my %TYPES_OPERAND_CLASS =
      'c' => "Operands.Literal",
      'I' => "int",
      'L' => "Operands.Label",
-     'E' => "ExtFun"
+     'E' => "ExtFun",
+     'J' => "Operands.SelectList"
      );
 my %TYPES_DECODE =
     (
@@ -23,7 +24,8 @@ my %TYPES_DECODE =
      'y' => "stack[sp - (#)]",
      'I' => "(#)",
      'L' => "(#)",
-     'E' => "ext_funs[#]"
+     'E' => "ext_funs[#]",
+     'J' => "value_jump_tables[#]"
      );
 my %TYPES_ENCODE =
 (
@@ -32,7 +34,8 @@ my %TYPES_ENCODE =
  'y' => "#.nr",
  'I' => "#",
  'L' => "encodeLabel(#.nr)",
- 'E' => "encodeExtFun(#)"
+ 'E' => "encodeExtFun(#)",
+ 'J' => "encodeValueJumpTable(#)"
  );
 # my %TYPES_JAVATYPE =
 #     (
@@ -48,12 +51,13 @@ my %TYPES_ALLOWED_OPS =
      'c' => {'GET'=>1},
      'I' => {'GET'=>1},
      'L' => {'GOTO'=>1, 'GET_PC'=>1},
-     'E' => {'GET'=>1}
+     'E' => {'GET'=>1},
+     'J' => {'TABLEJUMP'=>1}
      );
 
 my %PRIMITIVE_TYPES = ('I' => 1);
 
-my @METAS = ('GET', 'SET', 'GOTO', 'GET_PC');
+my @METAS = ('GET', 'SET', 'GOTO', 'TABLEJUMP', 'GET_PC');
 
 my $enum_code  = "";
 my $interp_code = "";
@@ -104,7 +108,8 @@ sub process_instruction_rec {
     if ($action =~ /\b(GET)\((\w+)\)/ ||
 	$action =~ /\b(GET_PC)\((\w+)\)/ ||
 	$action =~ /\b(SET)\((\w+),\s+/ ||
-	$action =~ /\b(GOTO)\((\w+)\)/)
+	$action =~ /\b(GOTO)\((\w+)\)/ ||
+	$action =~ /\b(TABLEJUMP)\((\w+),\s+/)
     {
 	my ($macro,$arg) = ($1,$2);
 	if (exists $varmap->{$arg}) { # Replacement is already known.
@@ -117,6 +122,9 @@ sub process_instruction_rec {
 	    } elsif ($macro eq 'GOTO') {
 		my $replacement = $varmap->{$arg};
 		$action = "$`pc = $replacement$'";
+	    } elsif ($macro eq 'TABLEJUMP') {
+		my $replacement = $varmap->{$arg};
+		$action = "$`pc = lookupValueJumpTable($replacement,$'";
 	    } else {die;}
 	    goto again;
 	} else { # Replacement is not known.
