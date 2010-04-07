@@ -185,7 +185,6 @@ sub process_instruction_rec {
     } else {
 #	$enum_code .= "$insname,\n";
 	if ($action =~ /^\s*\{\s*\}\s*$/) {
-	    print STDERR "DB| nop: $insname\n";
 	    $encoder_code .= "${eindent}nop(opcode_pos);";
 	} else {
 	    $enum_code .= "\tpublic static final short $insname = $enum_count;\n"; $enum_count++;
@@ -193,7 +192,6 @@ sub process_instruction_rec {
 		"\t\t$code_acc$action\n".
 		"\t} break;\n";
 	    $encoder_code .= "${eindent}emitAt(opcode_pos, $insname);\n";
-	    print "DB| process_instruction_rec $insname: Leaf: $code_acc$action.\n";
 	}
     }
 }
@@ -208,7 +206,6 @@ sub process_instruction {
 
     # Process directives:
     while ($directives ne '') {
-	print STDERR "DB| dir=$directives\n";
 	if ($directives =~ /^\s+/) {}
 	elsif ($directives =~ /^encode\(([^()]*)\)\((\w+)\)/) {
 	    my ($encode_exp,$arg) = ($1,$2);
@@ -216,7 +213,6 @@ sub process_instruction {
 	    my $decl = "int _$arg = code[pc++];\n\t\t";
 	    $code_acc .= $decl;
 	    $varmap->{$arg} = "_$arg";
-	    print STDERR "DB| custom encode: $encode_exp // $arg\n";
 
 	} elsif ($directives =~ /^encoder_side_effect\(([^()]*)\)/) {
 	    my ($encoder_stm) = ($1);
@@ -246,18 +242,16 @@ sub parse() {
 	    @cls_arg_names = @cls_arg_types = ();
 	    for my $arg (split(/\s+/, $tmp)) {
 		die "Bad class field syntax ($tmp)" unless ($arg =~ /^([\w.\[\]]+):(\w\d?),?$/);
-# 	    print "DB| arg: $arg => $1/$2\n";
 		push(@cls_arg_names, $1);
 		push(@cls_arg_types, $2);
 	    }
-	    print "DB| class: $cur_ins_class, @cls_arg_names, @cls_arg_types\n";
 	} elsif (/^(\w+)\s*([\w\s]*):(.*)$/) {
 	    my $insname = $1;
 	    my $directives = $3;
 	    my @args = split(/\s+/, $2);
 	    my %argmap = reverse_map(@args);
 	    die "Bad arg count" unless (scalar @args == scalar @cls_arg_names);
-	    print "DB| instruction $insname...\n";
+
 	    my $action = <>; chomp $action;
 	    die unless ($action =~ /^\s/);
 	    $action =~ s/^\s+//;
@@ -293,9 +287,6 @@ sub writeFile($$) {
 sub emit {
     my $encoder_template = readFile("Interpreter.template");
     $enum_code .= "\tpublic static final short MAX_OPCODE = $enum_count;\n";
-    print "ENUM:\n$enum_code\n";
-    print "INTERPRETER:\n$interp_code\n";
-    print("ENCODER:\n".subst($encoder_template,$encoder_code)."\n");
     my $subst_map = {'ENCODE' => $encoder_code,
 		     'ENUM' => $enum_code,
 		     'INTERPRET' => $interp_code};
