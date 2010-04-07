@@ -64,15 +64,24 @@ class EModuleLoader {
 		return load_module(moduleName, EUtil.readFile(beamFile));
 	}
 
+	static long acc_int_load = 0;
 	static long acc_load = 0;
 	public static EModule load_module(String moduleName, EBinary beamBin) throws IOException {
 		// This is where the module creation mode is selected.
+		boolean use_interpreter = false;
 
 		long before = System.currentTimeMillis();
- 		File jarFile = Compiler.compile(moduleName, beamBin, beamParser);
-		long after = System.currentTimeMillis();
-
-		EModule loaded_module = load_compiled_module(moduleName, jarFile.toURI().toURL());
+		long after;
+		EModule loaded_module;
+		if (use_interpreter) {
+			BeamFileData bfd = beamParser.load(beamBin.toByteArray());
+			loaded_module = erjang.beam.interpreter.Interpreter.beamFileToEModule(bfd);
+			after = System.currentTimeMillis();
+		} else { // Use compiler
+			File jarFile = Compiler.compile(moduleName, beamBin, beamParser);
+			after = System.currentTimeMillis();
+			loaded_module = load_compiled_module(moduleName, jarFile.toURI().toURL());
+		}
 
 		if (DEBUG_MODULE_LOAD) {
 			long after_load = System.currentTimeMillis();
@@ -81,7 +90,10 @@ class EModuleLoader {
 			System.err.print(":");
 			System.err.print(""+(after-before)+"ms");
 			System.err.print(";"+(after_load-after)+"ms]");
-			acc_load += (after_load-after);
+			if (use_interpreter)
+				acc_int_load += (after_load-after);
+			else
+				acc_load += (after_load-after);
 			System.err.println("("+acc_load+")");
 		}
 
@@ -126,6 +138,7 @@ class EModuleLoader {
 
 	@SuppressWarnings("unchecked")
 	public static EModule load_compiled_module(String mod, URL jarUrl) {
+// 		System.err.println("EML| load_compiled_module: "+mod+" @ "+jarUrl);
 		String internalName = erjang.beam.Compiler.moduleClassName(mod);
 		String java_name = internalName.replace('/', '.');
 		EModuleClassLoader loader = new EModuleClassLoader(jarUrl);
