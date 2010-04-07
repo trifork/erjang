@@ -265,10 +265,6 @@ public class Compiler implements Opcodes {
 		if (!jarFile.exists()) {
 			JarClassRepo repo = new JarClassRepo(jarFile);
 
-			System.out.print("["); 
-			System.out.print(name);
-			System.out.print(":"); 
-			long before = System.currentTimeMillis();
 
 			try {
 				compile(beam_parser.load(beam_data.getByteArray()), repo);
@@ -283,7 +279,6 @@ public class Compiler implements Opcodes {
 				}
 			}
 			
-			System.out.print(""+(System.currentTimeMillis()-before)+"ms]");
 		}
 
 		return jarFile;

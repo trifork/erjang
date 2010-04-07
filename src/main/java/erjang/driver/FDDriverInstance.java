@@ -159,7 +159,7 @@ public class FDDriverInstance extends EDriverInstance {
 	}
 
 	@Override
-	protected void processExit(ERef monitor) {
+	public void processExit(ERef monitor) {
 		// TODO Auto-generated method stub
 
 	}

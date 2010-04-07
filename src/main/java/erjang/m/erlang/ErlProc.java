@@ -214,6 +214,13 @@ public class ErlProc {
 		ERef ref = null;
 		if (monitor) {
 			ref = self.monitor(p2.self_handle(), null);
+			
+			if (ref == null) {
+				ref = ERT.getLocalNode().createRef();
+				self.mbox_send(ETuple.make(ERT.am_DOWN, ref, p2.self_handle(), ERT.am_noproc));
+			}
+			return ref;
+
 		}
 		
 		ERT.run(p2);
@@ -295,7 +302,14 @@ public class ErlProc {
 		
 		EHandle h = EHandle.cast(pid);
 		if (h != null) 
-			return self.monitor(h, h);
+		{   
+			ERef ref = self.monitor(h, h); 
+			if (ref == null) {
+				ref = ERT.getLocalNode().createRef();
+				self.mbox_send(ETuple.make(ERT.am_DOWN, ref, h, ERT.am_noproc));
+			}
+			return ref;
+		}
 
 		throw new NotImplemented();
 	}

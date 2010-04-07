@@ -25,6 +25,7 @@ import java.nio.channels.SelectableChannel;
 
 import erjang.EObject;
 import erjang.EPID;
+import erjang.ERef;
 
 /**
  * 
@@ -50,10 +51,11 @@ public abstract class EDriverControl {
 	}
 
 	/**
+	 * @param caller TODO
 	 * @param bufv
 	 * @throws IOException 
 	 */
-	protected void outputv(ByteBuffer[] bufv) throws IOException {
+	protected void outputv(EPID caller, ByteBuffer[] bufv) throws IOException {
 		// TODO Auto-generated method stub
 		
 	}
@@ -125,6 +127,10 @@ public abstract class EDriverControl {
 	protected EObject call(EPID caller, int op, EObject data) {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	public void processExit(ERef ref) {
+		
 	}
 
 }

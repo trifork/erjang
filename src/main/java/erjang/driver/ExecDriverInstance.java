@@ -71,7 +71,7 @@ public class ExecDriverInstance extends EDriverInstance {
 	 * @see erjang.driver.EDriverInstance#processExit(erjang.ERef)
 	 */
 	@Override
-	protected void processExit(ERef monitor) {
+	public void processExit(ERef monitor) {
 		// TODO Auto-generated method stub
 
 	}

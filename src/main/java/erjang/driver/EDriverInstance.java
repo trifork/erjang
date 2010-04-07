@@ -22,11 +22,13 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
+import java.util.ArrayList;
 import java.util.concurrent.locks.Lock;
 
 import kilim.ReentrantLock;
 import erjang.EBinList;
 import erjang.EBinary;
+import erjang.EHandle;
 import erjang.EInternalPort;
 import erjang.EObject;
 import erjang.EPID;
@@ -34,6 +36,8 @@ import erjang.EPort;
 import erjang.ERT;
 import erjang.ERef;
 import erjang.EString;
+import erjang.ETuple;
+import erjang.ErlangException;
 
 /**
  * 
@@ -99,6 +103,25 @@ public abstract class EDriverInstance extends EDriverControl {
 		task.output_from_driver(out);
 	}
 
+	protected void driver_output(ByteBuffer buf) {
+		buf.flip();
+		EObject out;
+		
+		if (buf == null || !buf.hasRemaining()) {
+			out = ERT.NIL;
+		} else if (task.send_binary_data) {
+			out = EBinary.make(buf);
+		} else {
+			out = EString.make(buf);
+		}
+
+		task.output_from_driver(out);
+	}
+	
+	protected void driver_output_term(EObject term) {
+		task.output_term_from_driver(term);
+	}
+
 	/**
 	 * @param fileRespOkHeader
 	 * @param binp
@@ -148,6 +171,36 @@ public abstract class EDriverInstance extends EDriverControl {
 		return this.caller;
 	}
 
+	protected boolean driver_demonitor_process(ERef monitor) {
+		try {
+			task.demonitor(monitor, false);
+			return true;
+		} catch (ErlangException e) {
+			if (ERT.DEBUG_PORT) {
+				e.printStackTrace();
+			}
+			return false;
+		}
+	}
+
+	
+	protected EHandle driver_get_monitored_process(ERef monitor) {
+		return task.get_monitored_process(monitor);
+	}
+
+	
+	protected ERef driver_monitor_process(EPID pid) {
+		ERef ref = task.monitor(pid, pid);
+		
+		if (ref == null) {
+			ref = ERT.getLocalNode().createRef();
+			port().sendnb(ETuple.make(ERT.am_DOWN, ref, pid, ERT.am_noproc));
+		}
+		
+		return ref;
+	}
+
+
 	protected int driver_sizeq() {
 		if (queue == null) return 0;
 		
@@ -159,30 +212,55 @@ public abstract class EDriverInstance extends EDriverControl {
 		return size;
 	}
 	
-	protected void driver_deq(long size) {
+	protected long driver_deq(long size) {
 
+		ByteBuffer[] queue = this.queue;
+		
 		if (queue == null)
-			return;
+			return 0;
 
 		int p = 0;
-		for (p = 0; p < queue.length && !queue[p].hasRemaining(); p++) {
+		for (p = 0; p < queue.length && queue[p] != null && !queue[p].hasRemaining(); p++) {
 			/* skip */
 		}
 
 		if (p == queue.length)
-			return;
+			return 0;
 
-		for (int i = 0; i < p; i++) {
+		long res = 0;
+		for (int i = 0; (p+i) < queue.length; i++) {
 			queue[i] = queue[p + i];
+			if (queue[i] != null) {
+			 res += queue[i].remaining();
+			}
 		}
 
 		for (int i = p; i < queue.length; i++) {
 			queue[i] = null;
 		}
+		
+		return res;
 	}
 	
 	protected void driver_enqv(ByteBuffer[] q) {
-		queue = q;
+		if (queue == null || queue[0] == null) 
+			queue = q;
+		else {
+			
+			ArrayList<ByteBuffer> bbs = new ArrayList<ByteBuffer>();
+			for (int i = 0; i < queue.length; i++) {
+				if (queue[i] != null && queue[i].hasRemaining())
+					bbs.add(queue[i]);
+			}
+			
+			for (int i = 0; i < q.length; i++) {
+				if (q[i] != null && q[i].hasRemaining())
+					bbs.add(q[i]);
+			}
+			
+			queue = bbs.toArray(new ByteBuffer[bbs.size()]);
+			
+		}
 	}
 
 	/*
@@ -218,7 +296,7 @@ public abstract class EDriverInstance extends EDriverControl {
 	 * passed in contains multiple fragments. Default behavior is to flatten the
 	 * input vector, and call EDriverInstance#output(ByteBuffer).
 	 */
-	protected void outputv(ByteBuffer[] ev) throws IOException {
+	protected void outputv(EPID caller, ByteBuffer[] ev) throws IOException {
 		output(flatten(ev));
 	}
 
@@ -259,8 +337,6 @@ public abstract class EDriverInstance extends EDriverControl {
 	}
 
 
-	protected abstract void processExit(ERef monitor);
-
 	/**
 	 * @param ch
 	 */
@@ -275,5 +351,11 @@ public abstract class EDriverInstance extends EDriverControl {
 	public void readyAccept(SelectableChannel ch) {
 
 	}
+
+	protected void set_busy_port(boolean b) {
+		throw new erjang.NotImplemented();
+		
+	}
+
 
 }

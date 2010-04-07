@@ -582,39 +582,6 @@ public final class EProc extends ETask<EInternalPID> {
 			"::" + spawn_mod + ":" + spawn_fun + "/" + spawn_args;
 	}
 	
-	// this is not synchronized, as we only mess with it from this proc
-	Map<ERef,EHandle> is_monitoring = new HashMap<ERef, EHandle>();
-
-	/**
-	 * @param selfHandle
-	 * @param object
-	 * @return
-	 */
-	public ERef monitor(EHandle handle, EObject object) throws Pausable {
-		ERef ref = handle.add_monitor(self_handle(), object);
-		if (ref == null) {
-			ref = ERT.getLocalNode().createRef();
-			this.mbox_send(ETuple.make(am_DOWN, ref, object, am_noproc));
-			return ref;
-		}
-		this.is_monitoring.put(ref, handle);
-		return ref;
-	}
-
-	/**
-	 * @param r
-	 * @param flush
-	 * @return
-	 */
-	public void demonitor(ERef r, boolean flush) {
-		EHandle h = is_monitoring.get(r);
-		if (h == null) {
-			throw ERT.badarg(r, flush ? ERT.NIL.cons(ErlProc.am_flush) : ERT.NIL);
-		}
-
-		h.remove_monitor(r, flush);
-	}
-	
 	
 	private	static ConcurrentHashMap<Integer,EProc> all_tasks 
 		= new ConcurrentHashMap<Integer,EProc> ();

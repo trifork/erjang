@@ -22,6 +22,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.BindException;
+import java.net.ConnectException;
 import java.nio.ByteBuffer;
 import java.nio.channels.GatheringByteChannel;
 import java.nio.channels.WritableByteChannel;
@@ -108,6 +109,12 @@ public class IO {
 	 * @return
 	 */
 	public static int exception_to_posix_code(IOException e) {
+		
+		if (e instanceof ConnectException) {
+			if ("Connection refused".equals(e.getMessage())) {
+				return Posix.ECONNREFUSED;
+			}
+		}
 		
 		if (e instanceof BindException) {
 			if ("Can't assign requested address".equals(e.getMessage())) {

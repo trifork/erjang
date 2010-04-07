@@ -55,12 +55,14 @@ import erjang.EPID;
 import erjang.EPort;
 import erjang.EProc;
 import erjang.ERT;
+import erjang.ERef;
 import erjang.ESeq;
 import erjang.EString;
 import erjang.ETask;
 import erjang.ETuple;
 import erjang.ETuple2;
 import erjang.ETuple3;
+import erjang.ETuple4;
 import erjang.ErlangError;
 import erjang.ErlangException;
 import erjang.ErlangExitSignal;
@@ -123,6 +125,9 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 	protected String cwd;
 	protected HashMap<String, String> env;
 	private long abs_timeout;
+
+	/** state controlled from elsewhere... erlang:port_set_data/2*/
+	public EObject port_data;
 
 	/**
 	 * @param cmd
@@ -340,6 +345,7 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 			ETuple2 t2;
 			EPortControl ctrl;
 			ETuple3 t3;
+			ETuple4 t4;
 			if ((t2 = ETuple2.cast(msg)) != null) {
 
 				EObject sender = t2.elem1;
@@ -353,9 +359,9 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 					if (cmd.elem1 == EPort.am_command) {
 						if (cmd.elem2.collectIOList(out)) {
 							if (out.size() == 0) {
-								instance.outputv(ERT.EMPTY_BYTEBUFFER_ARR);
+								instance.outputv(null, ERT.EMPTY_BYTEBUFFER_ARR);
 							} else {
-								instance.outputv(out.toArray(new ByteBuffer[out
+								instance.outputv(null, out.toArray(new ByteBuffer[out
 										.size()]));
 							}
 							// if collectIOList fails, do the port task die?
@@ -399,6 +405,13 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 					// close is handled by exception handling code
 					return;
 				}
+			} else if ((t4 = ETuple4.cast(msg)) != null) {
+				// {'DOWN', ref, pid, reason}
+				if (t3.elem1 == ERT.am_DOWN) {
+					ERef ref = t4.elem2.testReference();
+					instance.processExit(ref);
+				}
+
 			}
 
 			break;
@@ -422,7 +435,7 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 			throw ERT.badarg();
 		}
 
-		if (ERT.DEBUG_PORT)
+		if (ERT.DEBUG_PORT) 
 			System.out.println("ctrl: cmd="+op+"; arg="+EBinary.make(cmd2));
 		
 		ByteBuffer bb = instance.control(caller.self_handle(), op, cmd2);
@@ -484,12 +497,13 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 
 	/**
 	 * erlang:port_command uses this, since error handling happens in the BIF
-	 * 
+	 * @param caller TODO
 	 * @param out
+	 * 
 	 * @return
 	 * @throws Pausable
 	 */
-	public void command(final ByteBuffer[] out) throws Pausable {
+	public void command(final EPID caller, final ByteBuffer[] out) throws Pausable {
 
 		if (mode != Mode.STREAM) {
 			// do we need to encode the packet length here?
@@ -500,7 +514,7 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 		mbox.put(new EPortControl() {
 			@Override
 			public void execute() throws Pausable, IOException {
-				instance.outputv(out);
+				instance.outputv(caller, out);
 			}
 		});
 	}
@@ -619,6 +633,10 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 	 */
 	public void output_from_driver(EObject out) {
 		owner.sendb(new ETuple2(port, new ETuple2(am_data, out)));
+	}
+
+	public void output_term_from_driver(EObject out) {
+		owner.sendb(out);
 	}
 
 	/**

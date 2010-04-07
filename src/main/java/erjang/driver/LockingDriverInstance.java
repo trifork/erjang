@@ -85,17 +85,17 @@ class LockingDriverInstance extends EDriverInstance {
 	}
 
 	@Override
-	protected void outputv(ByteBuffer[] ev) throws IOException {
+	protected void outputv(EPID caller, ByteBuffer[] ev) throws IOException {
 		lock.lock();
 		try {
-			target.outputv(ev);
+			target.outputv(null, ev);
 		} finally {
 			lock.unlock();
 		}
 	}
 
 	@Override
-	protected void processExit(ERef monitor) {
+	public void processExit(ERef monitor) {
 		lock.lock();
 		try {
 			target.processExit(monitor);

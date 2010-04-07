@@ -103,4 +103,7 @@ public abstract class EPort extends EHandle {
 	}
 
 	public abstract EObject port_info(EAtom spec);
+
+	public abstract void set_data(EObject data);
+	public abstract EObject get_data();
 }

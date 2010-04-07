@@ -105,7 +105,7 @@ public abstract class EHandle extends EObject {
 	 * @param selfHandle
 	 * @param object
 	 */
-	public abstract ERef add_monitor(EPID selfHandle, EObject object);
+	public abstract ERef add_monitor(EHandle selfHandle, EObject object);
 
 
 	/**
