@@ -165,6 +165,10 @@ call_ext_last arity extfun dealloc:
 apply_last arity dealloc:
 	proc.stack=stack; proc.sp=sp -= GET(dealloc); stack=null; int arity = GET(arity); EFun fun = ERT.resolve_fun(reg[arity], reg[arity+1], arity); if (true) return fun.invoke(proc, xregsArray(reg, arity));
 
+%class ILI(i1:I label:L i3:I)
+call_last keep lbl dealloc:
+	sp -= GET(dealloc); GOTO(lbl);
+
 ##########==========             BIFS       	  ==========##########
 
 #%class Bif(ext_fun:E args[0]:S args[1]:S dest:D label:L)
@@ -178,6 +182,33 @@ bif0 bif dest onFail:
 gc_bif2 bif arg1 arg2 dest onFail:
 	{System.err.println("INTP| invoking bif "+GET(bif)+" with "+GET(arg1)+","+GET(arg2)); EObject tmp = GET(bif).invoke(proc, new EObject[]{GET(arg1), GET(arg2)}); if (tmp==null) GOTO(onFail); SET(dest, tmp);}
 # TODO: Streamline these calls - e.g. cast to EFun2 instead of creating array
+
+
+##########==========      BINARY MANIPULATION	  ==========##########
+%class LDIID(label:L dest:D i3:I i4:I dest5:D)
+bs_start_match2 failLabel src _ slots dest:
+	EObject tmp = EBinMatchState.bs_start_match2(GET(src), GET(slots)); if (tmp==null) GOTO(failLabel); else SET(dest, tmp);
+#bs_get_utf8:
+#bs_get_utf16:
+#bs_get_utf32:
+
+%class LDBi(label:L dest:D bin:c)
+bs_match_string failLabel src string:
+	if (((EBinMatchState)(GET(src))).bs_match_string((EBitString)GET(string)) == null) GOTO(failLabel);
+
+
+%class LDISIID(label:L dest:D i3:I src4:S i5:I i6:I dest7:D)
+bs_get_integer2 failLabel src _keep bits _unit flags dest:
+	EObject tmp = ((EBinMatchState)(GET(src))).bs_get_integer2(((ESmall)GET(bits)).intValue(), GET(flags)); if (tmp == null) GOTO(failLabel); else SET(dest, tmp);
+
+#bs_get_float2:
+#bs_get_binary2:
+
+%class LDI(label:L, dest:D, i:I)
+bs_test_tail2 failLabel src bits_left:
+	if (! ((EBinMatchState)(GET(src))).bs_test_tail2(GET(bits_left))) GOTO(failLabel);
+
+#bs_test_unit:
 
 
 ##########==========      EXCEPTION HANDLING	  ==========##########

@@ -34,10 +34,14 @@ import erjang.ErlangError;
 
 import erjang.EObject;
 import erjang.EAtom;
+import erjang.ESmall;
 import erjang.ESeq;
 import erjang.ECons;
 import erjang.ETuple;
 import erjang.EBinary;
+import erjang.EBitString;
+
+import erjang.EBinMatchState;
 
 import erjang.beam.BeamFileData;
 import erjang.beam.ModuleVisitor;
