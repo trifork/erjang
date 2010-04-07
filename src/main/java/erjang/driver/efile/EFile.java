@@ -37,6 +37,7 @@ import java.util.Queue;
 import java.util.concurrent.locks.Lock;
 
 import erjang.EBinary;
+import erjang.EPID;
 import erjang.EPort;
 import erjang.ERef;
 import erjang.EString;
@@ -465,7 +466,7 @@ public class EFile extends EDriverInstance {
 	 * @see erjang.driver.EDriverInstance#outputv(java.nio.ByteBuffer[])
 	 */
 	@Override
-	protected void outputv(ByteBuffer[] ev) {
+	protected void outputv(EPID caller, ByteBuffer[] ev) {
 
 		if (ev.length == 0 || ev[0].remaining() == 0) {
 			reply_posix_error(Posix.EINVAL);

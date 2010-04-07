@@ -78,7 +78,7 @@ public class ErlPort {
 
 		// System.err.println("packing "+data+"::"+data.getClass().getName()+" -> "+ovec);
 
-		p.command(out);
+		p.command(proc.self_handle(), out);
 
 		return ERT.TRUE;
 	}

@@ -118,12 +118,13 @@ public class EInternalPort extends EPort implements ELocalHandle {
 	}
 
 	/**
+	 * @param caller TODO
 	 * @param out
 	 * @return
 	 * @throws Pausable 
 	 */
-	public void command(ByteBuffer[] out) throws Pausable {
-		task.command(out);
+	public void command(EPID caller, ByteBuffer[] out) throws Pausable {
+		task.command(caller, out);
 	}
 
 	/* (non-Javadoc)

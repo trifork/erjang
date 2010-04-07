@@ -359,9 +359,9 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 					if (cmd.elem1 == EPort.am_command) {
 						if (cmd.elem2.collectIOList(out)) {
 							if (out.size() == 0) {
-								instance.outputv(ERT.EMPTY_BYTEBUFFER_ARR);
+								instance.outputv(null, ERT.EMPTY_BYTEBUFFER_ARR);
 							} else {
-								instance.outputv(out.toArray(new ByteBuffer[out
+								instance.outputv(null, out.toArray(new ByteBuffer[out
 										.size()]));
 							}
 							// if collectIOList fails, do the port task die?
@@ -435,7 +435,7 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 			throw ERT.badarg();
 		}
 
-		if (ERT.DEBUG_PORT)
+		if (ERT.DEBUG_PORT) 
 			System.out.println("ctrl: cmd="+op+"; arg="+EBinary.make(cmd2));
 		
 		ByteBuffer bb = instance.control(caller.self_handle(), op, cmd2);
@@ -497,12 +497,13 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 
 	/**
 	 * erlang:port_command uses this, since error handling happens in the BIF
-	 * 
+	 * @param caller TODO
 	 * @param out
+	 * 
 	 * @return
 	 * @throws Pausable
 	 */
-	public void command(final ByteBuffer[] out) throws Pausable {
+	public void command(final EPID caller, final ByteBuffer[] out) throws Pausable {
 
 		if (mode != Mode.STREAM) {
 			// do we need to encode the packet length here?
@@ -513,7 +514,7 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 		mbox.put(new EPortControl() {
 			@Override
 			public void execute() throws Pausable, IOException {
-				instance.outputv(out);
+				instance.outputv(caller, out);
 			}
 		});
 	}
@@ -632,6 +633,10 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 	 */
 	public void output_from_driver(EObject out) {
 		owner.sendb(new ETuple2(port, new ETuple2(am_data, out)));
+	}
+
+	public void output_term_from_driver(EObject out) {
+		owner.sendb(out);
 	}
 
 	/**

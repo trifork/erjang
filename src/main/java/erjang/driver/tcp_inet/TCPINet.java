@@ -47,6 +47,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import kilim.RingQueue;
 import erjang.EAtom;
+import erjang.EBinList;
+import erjang.EBinary;
 import erjang.EHandle;
 import erjang.EInternalPort;
 import erjang.EObject;
@@ -54,6 +56,7 @@ import erjang.EPID;
 import erjang.EPort;
 import erjang.ERT;
 import erjang.ERef;
+import erjang.EString;
 import erjang.ETuple;
 import erjang.ETuple2;
 import erjang.ErlangError;
@@ -223,7 +226,7 @@ public class TCPINet extends EDriverInstance {
 															 * (passive mode)
 															 */
 
-	/*         *_REQ_* replies */
+	/*                   *_REQ_* replies */
 	public static final byte INET_REP_ERROR = 0;
 	public static final byte INET_REP_OK = 1;
 	public static final byte INET_REP_SCTP = 2;
@@ -379,10 +382,13 @@ public class TCPINet extends EDriverInstance {
 	private static final EAtom am_inet_reply = EAtom.intern("inet_reply");
 	private static final int INVALID_EVENT = 0xffff0000;
 	private static final int SOL_SOCKET = 0xffff;
+	private static final EAtom am_closed = EAtom.intern("closed");
+	private static final EAtom am_empty_out_q = EAtom.intern("empty_out_q");
+	private static final EAtom am_tcp = EAtom.intern("tcp");
 
 	private int state = INET_STATE_CLOSED;
 	private InetSocket fd;
-	private List<EObject> empty_out_q_subs = new ArrayList<EObject>(1);
+	private List<EHandle> empty_out_q_subs = new ArrayList<EHandle>(1);
 	private InetSocketAddress remote;
 	private ActiveType active = ActiveType.PASSIVE;
 	private RingQueue<AsyncOp> opt = new RingQueue<AsyncOp>(2);
@@ -398,13 +404,13 @@ public class TCPINet extends EDriverInstance {
 	private int event;
 	private PacketParseType htype = PacketParseType.TCP_PB_RAW;
 	private int hsz;
-	private int mode;
-	private int deliver;
+	private int mode = INET_MODE_LIST;
+	private int deliver = INET_DELIVER_TERM;
 	private int bufsz;
 	private boolean exitf = true;
 	private int psize;
-	private boolean bit8f;
-	private boolean bit8;
+	private boolean bit8f = false;
+	private boolean bit8 = false;
 	private int low;
 	private int high;
 	private int send_timeout;
@@ -440,9 +446,127 @@ public class TCPINet extends EDriverInstance {
 	}
 
 	@Override
-	protected synchronized void outputv(ByteBuffer[] ev) throws IOException {
+	protected synchronized void outputv(EPID caller, ByteBuffer[] ev)
+			throws IOException {
+
+		this.caller = caller;
+
+		if (!is_conected()) {
+			if ((tcp_add_flags & TCP_ADDF_DELAYED_CLOSE_SEND) != 0) {
+				tcp_add_flags &= ~TCP_ADDF_DELAYED_CLOSE_SEND;
+				inet_reply_error(am_closed);
+			} else {
+				inet_reply_error(Posix.ENOTCONN);
+			}
+		} else if (tcp_sendv(ev) == 0) {
+			inet_reply_ok();
+		}
+
+	}
+
+	private int tcp_sendv(ByteBuffer[] ev) {
+		int sz;
+		EPort ix = port();
+		long len = remaining(ev);
+		ByteBuffer hbuf = null;
+
+		switch (htype) {
+		case TCP_PB_1:
+			hbuf = ByteBuffer.allocate(1);
+			hbuf.put(0, (byte) (len & 0xff));
+			break;
+		case TCP_PB_2:
+			hbuf = ByteBuffer.allocate(2);
+			hbuf.putShort(0, (short) (len & 0xffff));
+			break;
+		case TCP_PB_4:
+			hbuf = ByteBuffer.allocate(4);
+			hbuf.putInt(0, (int) len);
+			break;
+		default:
+			if (len == 0) {
+				return 0;
+			}
+		}
+
+		if (hbuf != null) {
+			len += hbuf.remaining();
+			// insert hbuf ahead of ev
+			if (ev[0].remaining() == 0) {
+				ev[0] = hbuf;
+			} else {
+				ByteBuffer[] ev2 = new ByteBuffer[ev.length + 1];
+				ev2[0] = hbuf;
+				System.arraycopy(ev, 0, ev2, 1, ev.length);
+				ev = ev2;
+			}
+		}
+
+		if ((sz = driver_sizeq()) > 0) {
+			driver_enqv(ev);
+			if (sz + len >= high) {
+
+				state |= INET_F_BUSY; /* mark for low-watermark */
+				busy_caller = caller;
+				set_busy_port(port(), 1);
+				if (this.send_timeout != INET_INFINITY) {
+					busy_on_send = true;
+					driver_set_timer(send_timeout);
+				}
+				return 1;
+			}
+
+		} else {
+			int vsize = ev.length;
+			long n;
+
+			if ((tcp_add_flags & TCP_ADDF_DELAY_SEND) != 0) {
+				n = 0;
+			} else {
+				GatheringByteChannel gbc = (GatheringByteChannel) fd.channel();
+
+				try {
+					n = gbc.write(ev);
+				} catch (IOException e) {
+					int sock_errno = IO.exception_to_posix_code(e);
+					if ((sock_errno != Posix.EAGAIN)
+							&& (sock_errno != Posix.EINTR)) {
+						tcp_send_error(sock_errno);
+						return sock_errno;
+					} 
+					// TODO: handle partial writes, async
+					n = 0;
+				}
+
+			}
+
+			if (n == len) {
+				// we sent everything!
+				assert empty_out_q_subs.isEmpty() : "no subscribers";
+				return 0;
+			}
+
+			driver_enqv(ev);
+			sock_select(ERL_DRV_WRITE | 0, SelectMode.SET);
+
+		}
+		return 0;
+
+	}
+
+	private Object sock_sendv(InetSocket fd2, ByteBuffer[] ev, int[] np) {
 		throw new erjang.NotImplemented();
 
+	}
+
+	private long remaining(ByteBuffer[] ev) {
+		long res = 0;
+		for (int i = 0; i < ev.length; i++) {
+			if (ev[i] != null) {
+				res += ev[i].remaining();
+			}
+		}
+		return res;
 	}
 
 	@Override
@@ -502,8 +626,7 @@ public class TCPINet extends EDriverInstance {
 
 	@Override
 	protected synchronized void readyInput(SelectableChannel ch) {
-		
-		
+
 		if (is_conected()) {
 			tcp_recv(0);
 		}
@@ -513,17 +636,17 @@ public class TCPINet extends EDriverInstance {
 	private int tcp_recv(int request_len) {
 
 		int n, len, nread;
-		
+
 		if (i_buf == null) {
 			/* allocate a read buffer */
 			int sz = (request_len > 0) ? request_len : this.bufsz;
-			
-			try { 
+
+			try {
 				i_buf = ByteBuffer.allocate(sz);
 			} catch (OutOfMemoryError e) {
 				return -1;
 			}
-			
+
 			i_ptr_start = 0;
 			nread = sz;
 			if (request_len > 0) {
@@ -533,13 +656,13 @@ public class TCPINet extends EDriverInstance {
 			}
 
 		} else if (request_len > 0) {
-			n = i_buf.position()-i_ptr_start;
+			n = i_buf.position() - i_ptr_start;
 			if (n >= request_len) {
 				return tcp_deliver(request_len);
 			} else if (tcp_expand_buffer(request_len) < 0) {
 				return tcp_recv_error(Posix.ENOMEM);
 			} else {
-				i_remain = nread = request_len-n;
+				i_remain = nread = request_len - n;
 			}
 
 		} else if (i_remain == 0) {
@@ -551,11 +674,11 @@ public class TCPINet extends EDriverInstance {
 			} else if (lenp[0] > 0) {
 				i_remain = lenp[0];
 			}
-		
+
 		} else {
 			nread = i_remain;
 		}
-		
+
 		try {
 			ReadableByteChannel rbc = (ReadableByteChannel) fd.channel();
 			n = rbc.read(i_buf);
@@ -568,11 +691,11 @@ public class TCPINet extends EDriverInstance {
 		} catch (IOException e) {
 			return tcp_recv_error(IO.exception_to_posix_code(e));
 		}
-		
+
 		if (n == 0) {
 			return tcp_recv_closed();
 		}
-		
+
 		if (i_remain > 0) {
 			i_remain -= n;
 			if (i_remain == 0) {
@@ -588,36 +711,37 @@ public class TCPINet extends EDriverInstance {
 				i_remain = lenp[0];
 			}
 		}
-		
+
 		return 0;
 	}
 
 	private int tcp_recv_closed() {
 		throw new erjang.NotImplemented();
-		
+
 	}
 
-	private int sock_recv(EInternalPort port, InetSocket fd2, ByteBuffer iBuf, int nread) {
+	private int sock_recv(EInternalPort port, InetSocket fd2, ByteBuffer iBuf,
+			int nread) {
 		throw new erjang.NotImplemented();
-		
+
 	}
 
 	private int tcp_recv_error(int enomem) {
 		throw new erjang.NotImplemented();
-		
+
 	}
 
 	@Override
 	protected synchronized void readyOutput(SelectableChannel evt) {
 
 		EInternalPort ix = port();
-		
+
 		if (is_conected()) {
 			ByteBuffer[] iov;
 			if ((iov = driver_peekq()) == null) {
 				send_empty_out_q_msgs();
 				return;
-			} 
+			}
 
 			GatheringByteChannel gbc = (GatheringByteChannel) fd.channel();
 			long n;
@@ -627,7 +751,7 @@ public class TCPINet extends EDriverInstance {
 				tcp_send_error(IO.exception_to_posix_code(e));
 				return;
 			}
-			
+
 			if (driver_deq(n) <= low) {
 				if (is_busy()) {
 					caller = busy_caller;
@@ -641,27 +765,35 @@ public class TCPINet extends EDriverInstance {
 				}
 			}
 		}
-		
+
 	}
 
 	private void set_busy_port(EInternalPort port, int i) {
 		throw new erjang.NotImplemented();
-		
+
 	}
 
 	private void inet_reply_ok() {
-		throw new erjang.NotImplemented();
-		
+		ETuple msg = ETuple.make(am_inet_reply, port(), ERT.am_ok);
+		EHandle caller = this.caller;
+		this.caller = null;
+		caller.sendb(msg);
 	}
 
 	private void tcp_send_error(int exceptionToPosixCode) {
 		throw new erjang.NotImplemented();
-		
+
 	}
 
 	private void send_empty_out_q_msgs() {
-		throw new erjang.NotImplemented();
 		
+		if (empty_out_q_subs.isEmpty())
+			return;
+		
+		ETuple2 msg = new ETuple2(am_empty_out_q, port());
+		for (EHandle h : empty_out_q_subs) {
+			h.sendb(msg);
+		}
 	}
 
 	@Override
@@ -678,6 +810,9 @@ public class TCPINet extends EDriverInstance {
 				if (!fd.finishConnect()) {
 					async_error(Posix.EIO);
 					return;
+				} else {
+					state = TCP_STATE_CONNECTED;
+					
 				}
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -693,7 +828,7 @@ public class TCPINet extends EDriverInstance {
 
 		} else {
 			sock_select(ERL_DRV_CONNECT, SelectMode.CLEAR);
-			
+
 		}
 
 	}
@@ -803,13 +938,13 @@ public class TCPINet extends EDriverInstance {
 		}
 	}
 
-	private void free_subscribers(List<EObject> emptyOutQSubs) {
-		throw new erjang.NotImplemented();
-
+	private void free_subscribers(List<EHandle> emptyOutQSubs) {
+		emptyOutQSubs.clear();
 	}
 
 	@Override
-	protected synchronized ByteBuffer control(EPID caller, int command, ByteBuffer buf) {
+	protected synchronized ByteBuffer control(EPID caller, int command,
+			ByteBuffer buf) {
 
 		switch (command) {
 		case INET_REQ_OPEN:
@@ -1185,20 +1320,33 @@ public class TCPINet extends EDriverInstance {
 			if (len * 4 >= i_buf.capacity() * 3) { /* >=75% */
 				/* something after? */
 				if (i_ptr_start + len == i_buf.position()) { /* no */
-					code = tcp_reply_binary_data(i_buf.array(), i_buf.arrayOffset() + i_ptr_start, len);
+					code = tcp_reply_binary_data(i_buf.array(), i_buf
+							.arrayOffset()
+							+ i_ptr_start, len);
 					tcp_clear_input();
 				} else { /* move trail to beginning of a new buffer */
 					ByteBuffer bin = ByteBuffer.allocate(i_buf.capacity());
 					bin.put(i_buf.array(), i_buf.arrayOffset() + i_ptr_start
 							+ len, i_buf.position() - len - i_ptr_start);
 
-					code = tcp_reply_binary_data(i_buf.array(), i_buf.arrayOffset() +  i_ptr_start, len);
+					code = tcp_reply_binary_data(i_buf.array(), i_buf
+							.arrayOffset()
+							+ i_ptr_start, len);
 					i_buf = bin;
 					i_ptr_start = 0;
 					i_remain = 0;
 				}
 			} else {
-				code = tcp_reply_data(i_buf.array(), i_buf.arrayOffset() + i_ptr_start, len);
+				// are we sending all we've got?
+				boolean share_ok = i_ptr_start + len == i_buf.position();
+				if (share_ok) {
+					code = tcp_reply_data(i_buf.array(), i_buf.arrayOffset()
+							+ i_ptr_start, len);
+				} else {
+					byte[] data = new byte[len];
+					System.arraycopy(i_buf.array(), i_buf.arrayOffset()+i_ptr_start, data, 0, len);
+					code = tcp_reply_data(data, 0, len);
+				}
 				/* XXX The buffer gets thrown away on error (code < 0) */
 				/* Windows needs workaround for this in tcp_inet_event... */
 				i_ptr_start += len;
@@ -1239,21 +1387,18 @@ public class TCPINet extends EDriverInstance {
 		return count;
 	}
 
-	/* 
-	** active=TRUE:
-	**  (NOTE! distribution MUST use active=TRUE, deliver=PORT)
-	**       deliver=PORT  {S, {data, [H1,..Hsz | Data]}}
-	**       deliver=TERM  {tcp, S, [H1..Hsz | Data]}
-	**
-	** active=FALSE:
-	**       {async, S, Ref, {ok,[H1,...Hsz | Data]}}
-	*/
+	/*
+	 * * active=TRUE:* (NOTE! distribution MUST use active=TRUE, deliver=PORT)*
+	 * deliver=PORT {S, {data, [H1,..Hsz | Data]}}* deliver=TERM {tcp, S,
+	 * [H1..Hsz | Data]}** active=FALSE:* {async, S, Ref, {ok,[H1,...Hsz |
+	 * Data]}}
+	 */
 
 	private void tcp_restart_input() {
 		if (i_ptr_start != 0) {
 			int n = i_buf.position() - i_ptr_start;
-			System.arraycopy(i_buf.array(), i_buf.arrayOffset()+i_ptr_start, 
-						     i_buf.array(), i_buf.arrayOffset(), n);
+			System.arraycopy(i_buf.array(), i_buf.arrayOffset() + i_ptr_start,
+					i_buf.array(), i_buf.arrayOffset(), n);
 			i_ptr_start = 0;
 			i_buf.position(n);
 		}
@@ -1265,88 +1410,142 @@ public class TCPINet extends EDriverInstance {
 		Packet.get_body(htype, out);
 		start = out.position();
 		int bodylen = out.remaining();
-		
+
 		scanbit8(out);
+
+		out = out.slice(); 
+		out.position(out.limit());
 		
 		int code;
 		if (deliver == INET_DELIVER_PORT) {
 			code = inet_port_data(out);
-		} else if ((code=Packet.parse (htype, ib, start, len, http_state, packet_callbacks, this)) == 0) {
+		} else if ((code = Packet.parse(htype, ib, start, len, http_state,
+				packet_callbacks, this)) == 0) {
 			if (active == ActiveType.PASSIVE) {
 				return inet_async_data(0, out);
 			} else {
-				code = tcp_binary_message(out);
+				code = tcp_message(out);
 			}
 		}
-		
+
 		if (code < 0)
 			return code;
-		
+
 		if (active == ActiveType.ACTIVE_ONCE) {
 			active = ActiveType.PASSIVE;
 		}
-		
+
 		return code;
+	}
+
+	/** data is at 0 .. out.position() */
+	private int tcp_message(ByteBuffer out) {
+		int hsz = this.hsz;
+		
+		EObject msg;
+		EObject data;
+		
+		if (mode == INET_MODE_LIST) {
+			out.flip();
+			data = EString.make(out);
+		} else {
+			out.position(hsz);
+			ByteBuffer tail = out.slice();
+			
+			out.flip();
+			ByteBuffer header = out;
+			
+			data = new EBinList(header, EBinary.make(tail));
+		}
+
+		msg = ETuple.make(am_tcp, port(), data);
+
+		// System.out.println("sending "+msg);
+		
+
+		driver_output_term(msg);
+		
+		return 0;
 	}
 
 	private int inet_async_data(int i, ByteBuffer out) {
 		throw new erjang.NotImplemented();
-		
+
 	}
 
+	/** out has data from 0..out.position() */
 	private int inet_port_data(ByteBuffer out) {
-		throw new erjang.NotImplemented();
 		
+		int hsz = this.hsz;
+		if (mode == INET_MODE_LIST || (hsz > out.remaining())) {
+			driver_output2(out, null);
+			return 0;
+		} else if (hsz > 0) {
+			out.limit(out.position());
+			out.position(hsz);
+			ByteBuffer tail = out.slice();
+			tail.position(tail.limit());
+			out.limit(hsz);
+			
+			driver_output2(out, tail);
+			return 0;
+		} else {
+			driver_output(out);
+			return 0;
+		}
+
 	}
 
 	private int tcp_reply_binary_data(byte[] ib, int start, int len) {
-		
+
 		ByteBuffer out = ByteBuffer.wrap(ib, start, len);
 		Packet.get_body(htype, out);
 		start = out.position();
 		int bodylen = out.remaining();
-		
+
 		scanbit8(out);
-		
+
 		int code;
 		if (deliver == INET_DELIVER_PORT) {
 			code = inet_port_binary_data(out);
-		} else if ((code=Packet.parse (htype, ib, start, len, http_state, packet_callbacks, this)) == 0) {
+		} else if ((code = Packet.parse(htype, ib, start, len, http_state,
+				packet_callbacks, this)) == 0) {
 			if (active == ActiveType.PASSIVE) {
 				return inet_async_binary_data(0, out);
 			} else {
 				code = tcp_binary_message(out);
 			}
 		}
-		
+
 		if (code < 0)
 			return code;
-		
+
 		if (active == ActiveType.ACTIVE_ONCE) {
 			active = ActiveType.PASSIVE;
 		}
-		
+
 		return code;
 	}
 
 	private int tcp_binary_message(ByteBuffer out) {
 		throw new erjang.NotImplemented();
-		
+
 	}
 
 	private int inet_async_binary_data(int i, ByteBuffer out) {
 		throw new erjang.NotImplemented();
-		
+
 	}
 
 	private int inet_port_binary_data(ByteBuffer out) {
 		throw new erjang.NotImplemented();
-		
+
 	}
 
 	private void scanbit8(ByteBuffer out) {
-		if (!bit8f || bit8) return;
-		
+		if (!bit8f || bit8)
+			return;
+
 		char c = 0;
 		int rem = out.remaining();
 		for (int i = 0; i < rem; i++) {
@@ -1452,8 +1651,42 @@ public class TCPINet extends EDriverInstance {
 	}
 
 	private int tcp_remain(int[] lenp) {
-		throw new erjang.NotImplemented();
-
+		
+		int nfill = i_buf.position();
+		int nsz = i_buf.remaining();
+		int n = nfill - i_ptr_start;
+		
+		int tlen;
+		
+		tlen = Packet.get_length(htype, i_buf.array(), i_buf.arrayOffset()+i_ptr_start, n, 
+								 this.psize, i_bufsz(), http_state);
+		
+		if (tlen > 0) {
+			if (tlen <= n) {
+				// got a packet
+				lenp[0] = tlen;
+				return 0;				
+			} else {
+				if (tcp_expand_buffer(tlen) < 0) {
+					return -1;
+				}
+				lenp[0] = (tlen - n);
+				return lenp[0];
+			}
+		} else if (tlen == 0) {
+			lenp[0] = 0;
+			if (nsz == 0) {
+				if (nfill == n) {
+					return -1;
+				} else {
+					return nfill - n;
+				}
+			} else {
+				return nsz;
+			}
+		} 
+		
+		return -1;
 	}
 
 	private ByteBuffer inet_open(ByteBuffer cmd) {
@@ -1575,7 +1808,7 @@ public class TCPINet extends EDriverInstance {
 
 	private boolean inet_reply_error(EObject reason) {
 		/*
-		 * send message:* {inet_async, Port, Ref, {error,Reason}}
+		 * send message:* {inet_reply, Port, Ref, {error,Reason}}
 		 */
 		EPID caller = this.caller;
 		this.caller = null;
@@ -1586,6 +1819,10 @@ public class TCPINet extends EDriverInstance {
 		}
 		return caller.sendnb(msg);
 
+	}
+
+	private boolean inet_reply_error(int reason) {
+		return inet_reply_error(EAtom.intern(Posix.errno_id(reason)));
 	}
 
 	private boolean send_async_error(short id, EPID caller, EObject reason) {
@@ -1717,7 +1954,7 @@ public class TCPINet extends EDriverInstance {
 		return reply;
 	}
 
-	private boolean save_subscriber(List<EObject> subs, EPID pid) {
+	private boolean save_subscriber(List<EHandle> subs, EPID pid) {
 
 		subs.add(pid);
 

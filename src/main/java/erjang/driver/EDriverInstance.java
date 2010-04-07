@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
+import java.util.ArrayList;
 import java.util.concurrent.locks.Lock;
 
 import kilim.ReentrantLock;
@@ -100,6 +101,25 @@ public abstract class EDriverInstance extends EDriverControl {
 
 		EBinList out = new EBinList(header, tail);
 		task.output_from_driver(out);
+	}
+
+	protected void driver_output(ByteBuffer buf) {
+		buf.flip();
+		EObject out;
+		
+		if (buf == null || !buf.hasRemaining()) {
+			out = ERT.NIL;
+		} else if (task.send_binary_data) {
+			out = EBinary.make(buf);
+		} else {
+			out = EString.make(buf);
+		}
+
+		task.output_from_driver(out);
+	}
+	
+	protected void driver_output_term(EObject term) {
+		task.output_term_from_driver(term);
 	}
 
 	/**
@@ -194,6 +214,8 @@ public abstract class EDriverInstance extends EDriverControl {
 	
 	protected long driver_deq(long size) {
 
+		ByteBuffer[] queue = this.queue;
+		
 		if (queue == null)
 			return 0;
 
@@ -206,7 +228,7 @@ public abstract class EDriverInstance extends EDriverControl {
 			return 0;
 
 		long res = 0;
-		for (int i = 0; i < p; i++) {
+		for (int i = 0; (p+i) < queue.length; i++) {
 			queue[i] = queue[p + i];
 			if (queue[i] != null) {
 			 res += queue[i].remaining();
@@ -221,7 +243,24 @@ public abstract class EDriverInstance extends EDriverControl {
 	}
 	
 	protected void driver_enqv(ByteBuffer[] q) {
-		queue = q;
+		if (queue == null || queue[0] == null) 
+			queue = q;
+		else {
+			
+			ArrayList<ByteBuffer> bbs = new ArrayList<ByteBuffer>();
+			for (int i = 0; i < queue.length; i++) {
+				if (queue[i] != null && queue[i].hasRemaining())
+					bbs.add(queue[i]);
+			}
+			
+			for (int i = 0; i < q.length; i++) {
+				if (q[i] != null && q[i].hasRemaining())
+					bbs.add(q[i]);
+			}
+			
+			queue = bbs.toArray(new ByteBuffer[bbs.size()]);
+			
+		}
 	}
 
 	/*
@@ -257,7 +296,7 @@ public abstract class EDriverInstance extends EDriverControl {
 	 * passed in contains multiple fragments. Default behavior is to flatten the
 	 * input vector, and call EDriverInstance#output(ByteBuffer).
 	 */
-	protected void outputv(ByteBuffer[] ev) throws IOException {
+	protected void outputv(EPID caller, ByteBuffer[] ev) throws IOException {
 		output(flatten(ev));
 	}
 

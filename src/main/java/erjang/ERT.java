@@ -288,7 +288,7 @@ public class ERT {
 	public static final boolean DEBUG = false;
 	public static final boolean DEBUG2 = false;
 	public static final boolean DEBUG_WAIT = false;
-	public static final boolean DEBUG_PORT = true;
+	public static final boolean DEBUG_PORT = false;
 	public static final boolean DEBUG_MODULE_LOAD = true;
 	public static final EBinary EMPTY_BINARY = new EBinary(new byte[0]);
 	public static final ByteBuffer[] EMPTY_BYTEBUFFER_ARR = new ByteBuffer[0];

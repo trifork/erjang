@@ -20,6 +20,8 @@ package erjang.driver.efile;
 
 import java.io.File;
 
+import erjang.EObject;
+
 /**
  * 
  */
@@ -38,6 +40,9 @@ public class Posix {
 	public static final int EOPNOTSUPP = 10;
 	public static final int ECONNREFUSED = 11;
 	public static final int EMSGSIZE = 12;
+	public static final int ENOTCONN = 13;
+	public static final int EINTR = 14;
+	public static final int EAGAIN = 15;
 
 	private static final String[] err_id = { 
 			"einval",
@@ -53,6 +58,9 @@ public class Posix {
 			"eopnotsupp",
 			"econnrefused",
 			"emsgsize",
+			"enotconn",
+			"eintr",
+			"eagain",
 	};
 
 

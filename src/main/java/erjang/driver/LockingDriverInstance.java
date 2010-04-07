@@ -85,10 +85,10 @@ class LockingDriverInstance extends EDriverInstance {
 	}
 
 	@Override
-	protected void outputv(ByteBuffer[] ev) throws IOException {
+	protected void outputv(EPID caller, ByteBuffer[] ev) throws IOException {
 		lock.lock();
 		try {
-			target.outputv(ev);
+			target.outputv(null, ev);
 		} finally {
 			lock.unlock();
 		}
