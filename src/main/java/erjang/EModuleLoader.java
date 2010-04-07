@@ -47,6 +47,8 @@ import java.net.URL;
  *  - Module creation: From beam representation to executable module (EModule).
  */
 class EModuleLoader {
+	public static final boolean DEBUG_MODULE_LOAD = true;
+
 	final static BeamLoader beamParser = new ErjangBeamDisLoader();
 
 	/*==================== API ====================*/
@@ -62,10 +64,28 @@ class EModuleLoader {
 		return load_module(moduleName, EUtil.readFile(beamFile));
 	}
 
+	static long acc_load = 0;
 	public static EModule load_module(String moduleName, EBinary beamBin) throws IOException {
- 		File jarFile = Compiler.compile(moduleName, beamBin, beamParser);
 		// This is where the module creation mode is selected.
- 		return load_compiled_module(moduleName, jarFile.toURI().toURL());
+
+		long before = System.currentTimeMillis();
+ 		File jarFile = Compiler.compile(moduleName, beamBin, beamParser);
+		long after = System.currentTimeMillis();
+
+		EModule loaded_module = load_compiled_module(moduleName, jarFile.toURI().toURL());
+
+		if (DEBUG_MODULE_LOAD) {
+			long after_load = System.currentTimeMillis();
+			System.err.print("[");
+			System.err.print(moduleName);
+			System.err.print(":");
+			System.err.print(""+(after-before)+"ms");
+			System.err.print(";"+(after_load-after)+"ms]");
+			acc_load += (after_load-after);
+			System.err.println("("+acc_load+")");
+		}
+
+		return loaded_module;
 	}
 
 	/*==================== BEAM FILE RESOLUTION STEP ====================*/

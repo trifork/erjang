@@ -289,7 +289,6 @@ public class ERT {
 	public static final boolean DEBUG2 = false;
 	public static final boolean DEBUG_WAIT = false;
 	public static final boolean DEBUG_PORT = false;
-	public static final boolean DEBUG_MODULE_LOAD = true;
 	public static final EBinary EMPTY_BINARY = new EBinary(new byte[0]);
 	public static final ByteBuffer[] EMPTY_BYTEBUFFER_ARR = new ByteBuffer[0];
 	public static final ByteBuffer EMPTY_BYTEBUFFER = ByteBuffer.allocate(0);
@@ -819,23 +818,10 @@ public class ERT {
 		EModuleLoader.find_and_load_module(module.getName());
 	}
 
-	static long acc_load = 0;
-	
 	public static void load_module(EAtom module, EBinary bin)
-			throws IOException {
-		long before = System.currentTimeMillis();
+			throws IOException
+	{
 		EModuleLoader.load_module(module.getName(), bin);
-		long after = System.currentTimeMillis();
-		if (ERT.DEBUG_MODULE_LOAD) {
-		EModuleManager.load_module(module, f.toURI().toURL());
-		System.out.print("["); 
-		System.out.print(module);
-		System.out.print(":"); 
-		System.out.print(""+(after-before)+"ms");
-		System.out.print(";"+(System.currentTimeMillis()-after)+"ms]");
-		acc_load += System.currentTimeMillis()-after;
-		System.out.println("("+acc_load+")");
-		}
 	}
 
 	/**
