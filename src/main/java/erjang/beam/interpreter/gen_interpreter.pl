@@ -6,6 +6,7 @@ my %TYPES_SUBTYPES =
      'S' => ['c', 'x', 'y'],
      'D' => ['x', 'y'],
      'A' => ['c'],
+     'L0' => ['L', 'nolabel']
      );
 my %TYPES_OPERAND_CLASS =
     (
@@ -24,6 +25,7 @@ my %TYPES_DECODE =
      'y' => "stack[sp - (#)]",
      'I' => "(#)",
      'L' => "(#)",
+     'nolabel' => "nofailLabel()",
      'E' => "ext_funs[#]",
      'J' => "value_jump_tables[#]"
      );
@@ -51,6 +53,7 @@ my %TYPES_ALLOWED_OPS =
      'c' => {'GET'=>1},
      'I' => {'GET'=>1},
      'L' => {'GOTO'=>1, 'GET_PC'=>1},
+     'nolabel' => {'GOTO'=>1},
      'E' => {'GET'=>1},
      'J' => {'TABLEJUMP'=>1}
      );
@@ -124,7 +127,7 @@ sub process_instruction_rec {
 		$action = "$`pc = $replacement$'";
 	    } elsif ($macro eq 'TABLEJUMP') {
 		my $replacement = $varmap->{$arg};
-		$action = "$`pc = lookupValueJumpTable($replacement,$'";
+		$action = "$`pc = $replacement.lookup($'";
 	    } else {die;}
 	    goto again;
 	} else { # Replacement is not known.
@@ -136,28 +139,37 @@ sub process_instruction_rec {
 	    my @bts = base_types($arg_type, $macro);
 	    my $first_bt = 1;
 	    for my $base_type (@bts) {
-		my $opClass = $TYPES_OPERAND_CLASS{$base_type};
-		$encoder_code .= $eindent if ($first_bt);
-		if (exists $PRIMITIVE_TYPES{$base_type}) {
-		    $encoder_code .= "/*Prim: $base_type*/";
-		    $encoder_code .= "\t$opClass typed_$arg = ($opClass)typed_insn.$arg_src_name;\n";
+		my $encoding_needed = ($TYPES_DECODE{$base_type} =~ /\#/);
+
+		my $emitted = 0;
+		my $new_code_acc = $code_acc;
+		if ($encoding_needed) {
+		    my $opClass = $TYPES_OPERAND_CLASS{$base_type};
+		    $encoder_code .= $eindent if ($first_bt);
+		    if (exists $PRIMITIVE_TYPES{$base_type}) {
+			$encoder_code .= "/*Prim: $base_type*/";
+			$encoder_code .= "\t$opClass typed_$arg = ($opClass)typed_insn.$arg_src_name;\n";
+		    } else {
+			$encoder_code .= "/*Nonprim: $base_type*/";
+			$encoder_code .= "if (typed_insn.$arg_src_name instanceof $opClass) {\n";
+			$encoder_code .= $eindent."\t$opClass typed_$arg = ($opClass)typed_insn.$arg_src_name;\n";
+		    }
+		    my $encoding_exp_code = subst($TYPES_ENCODE{$base_type},
+						  "typed_$arg");
+		    $encoder_code .= $eindent."\temit($encoding_exp_code);\n";
+		    $emitted++;
+
+		    my $decl = "int _$arg = code[pc++];\n\t\t";
+		    $new_code_acc .= $decl;
 		} else {
-		    $encoder_code .= "/*Nonprim: $base_type*/";
-		    $encoder_code .= "if (typed_insn.$arg_src_name instanceof $opClass) {\n";
-		    $encoder_code .= $eindent."\t$opClass typed_$arg = ($opClass)typed_insn.$arg_src_name;\n";
+		    $encoder_code .= "if (typed_insn.$arg_src_name == null) {\n";
 		}
-		my $encoding_exp_code = subst($TYPES_ENCODE{$base_type},
-					      "typed_$arg");
-		$encoder_code .= $eindent."\temit($encoding_exp_code);\n";
 
 		# Setup args for recursive call:
 		my %new_varmap = %{$varmap};
-		my $new_code_acc = $code_acc;
 
-		my $decl = "int _$arg = code[pc++];\n\t\t";
-		$new_code_acc = "$code_acc$decl";
 		$new_varmap{$arg} = subst($TYPES_DECODE{$base_type}, "_$arg");
-		my $argno1 = 1+$argno;
+		my $argno1 = $argno + $emitted;
 		process_instruction_rec("${insname}_$argno1$base_type", $directives,
 				    $argmap, $cls_arg_names, $cls_arg_types,
 				    $action, $new_code_acc, \%new_varmap);
@@ -168,7 +180,7 @@ sub process_instruction_rec {
 		}
 		$first_bt = 0;
 	    }
-	    $encoder_code .= "throw new Error(\"Unrecognized operand\");\n";
+	    $encoder_code .= "throw new Error(\"Unrecognized operand: \"+typed_insn.$arg_src_name);\n";
 	}
     } else {
 #	$enum_code .= "$insname,\n";
@@ -233,7 +245,7 @@ sub parse() {
 	    my $tmp = $2;
 	    @cls_arg_names = @cls_arg_types = ();
 	    for my $arg (split(/\s+/, $tmp)) {
-		die "Bad class field syntax ($tmp)" unless ($arg =~ /([\w.\[\]]+):(\w)/);
+		die "Bad class field syntax ($tmp)" unless ($arg =~ /^([\w.\[\]]+):(\w\d?),?$/);
 # 	    print "DB| arg: $arg => $1/$2\n";
 		push(@cls_arg_names, $1);
 		push(@cls_arg_types, $2);

@@ -30,6 +30,7 @@ import erjang.FunID;
 
 import erjang.ERT;
 import erjang.EProc;
+import erjang.ErlangError;
 
 import erjang.EObject;
 import erjang.EAtom;
@@ -328,7 +329,7 @@ public class Interpreter {
 				final short[] code = Module.this.code;
 				EObject stack[] = proc.stack;
 				int sp = proc.sp;
-				EObject[] reg = new EObject[argCnt+2]; //??
+				EObject[] reg = new EObject[argCnt+12]; //??
 				for (int i=0; i<argCnt; i++) {reg[i] = args[i];} //??
 				for (int i=0; i<argCnt; i++) System.err.println("INT| arg#"+i+"="+args[i]);
 
@@ -368,11 +369,8 @@ public class Interpreter {
 				return res;
 			}
 
-			public int lookupValueJumpTable(ValueJumpTable jumpTable,
-											EObject key, int defaultLabel)
-			{
-				Integer lbl = jumpTable.get(key);
-				return (lbl != null) ? lbl.intValue() : defaultLabel;
+ 			public int nofailLabel() {
+				throw new ErlangError(EAtom.intern("nofail_failed"));
 			}
 
 		} // class Function

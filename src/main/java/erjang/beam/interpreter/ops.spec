@@ -42,6 +42,10 @@ allocate_zero slots _live:
 test_heap alloc_size _live:
 	{}
 
+%class D(dest:D)
+init dest:
+	SET(dest, null);
+
 ##########==========  MOVE/CONSTRUCT/DECONSTRUCT  ==========##########
 
 %class SD(src:S dest:D)
@@ -146,13 +150,28 @@ call keep lbl:
 	proc.stack=stack; proc.sp=sp; reg[0] = invoke(proc, reg, GET(keep), GET_PC(lbl));
 
 %class IE(i1:I ext_fun:E)
-call_ext_only _ extfun:
-	proc.stack=stack; proc.sp=sp; stack=null; reg[0] = GET(extfun).invoke(proc, xregsArray(reg, GET(extfun).arity())); stack=proc.stack;
-
 call_ext _ extfun:
 	proc.stack=stack; proc.sp=sp; stack=null; reg[0] = GET(extfun).invoke(proc, xregsArray(reg, GET(extfun).arity())); stack=proc.stack;
 
+call_ext_only _ extfun:
+	proc.stack=stack; proc.sp=sp; stack=null; if (true) return GET(extfun).invoke(proc, xregsArray(reg, GET(extfun).arity()));
+
+
+%class IEI(i1:I ext_fun:E i3:I)
+call_ext_last arity extfun dealloc:
+	proc.stack=stack; proc.sp=sp -= GET(dealloc); stack=null; if (true) return GET(extfun).invoke(proc, xregsArray(reg, GET(extfun).arity()));
+
+%class II(i1:I i2:I)
+apply_last arity dealloc:
+	proc.stack=stack; proc.sp=sp -= GET(dealloc); stack=null; int arity = GET(arity); EFun fun = ERT.resolve_fun(reg[arity], reg[arity+1], arity); if (true) return fun.invoke(proc, xregsArray(reg, arity));
+
 ##########==========             BIFS       	  ==========##########
+
+#%class Bif(ext_fun:E args[0]:S args[1]:S dest:D label:L)
+
+%class Bif(ext_fun:E dest:D label:L0)
+bif0 bif dest onFail:
+	{System.err.println("INTP| invoking bif0 "+GET(bif)); EObject tmp = GET(bif).invoke(proc, new EObject[]{}); if (tmp==null) GOTO(onFail); SET(dest, tmp);}
 
 %class GcBif(ext_fun:E args[0]:S args[1]:S dest:D label:L)
 

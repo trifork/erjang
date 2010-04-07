@@ -651,8 +651,8 @@ public class BeamLoader extends CodeTables {
 			{
 				int arity = readCodeInteger();
 				int ext_fun_ref = readCodeInteger();
-				int save = readCodeInteger();
-				return new Insn.IEI(opcode, arity, extFun(ext_fun_ref), save);
+				int dealloc = readCodeInteger();
+				return new Insn.IEI(opcode, arity, extFun(ext_fun_ref), dealloc);
 			}
 
 			case put_list:
