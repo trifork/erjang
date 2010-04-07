@@ -25,6 +25,16 @@ bs_init_writable:
 func_info mod fun arity:
 	if (true) {System.err.println("INT| func_info: "+GET(mod)+":"+GET(fun)+"/"+GET(arity)); return ERT.func_info((EAtom)GET(mod), (EAtom)GET(fun), xregsSeq(reg, GET(arity)));}
 
+%class S(src:S)
+badmatch src:
+	if (true) return ERT.badmatch(GET(src));
+
+case_end src:
+	if (true) return ERT.case_end(GET(src));
+
+try_case_end src:
+	if (true) return ERT.try_case_end(GET(src));
+
 ##########==========        ALLOCATION      	  ==========##########
 
 %class I(i1:I)
@@ -46,6 +56,10 @@ test_heap alloc_size _live:
 init dest:
 	SET(dest, null);
 
+%class II(i1:I i2:I)
+trim amount remaining:
+	sp -= GET(amount);
+
 ##########==========  MOVE/CONSTRUCT/DECONSTRUCT  ==========##########
 
 %class SD(src:S dest:D)
@@ -63,7 +77,7 @@ get_list src h t:
 
 %class SID(src:S i:I dest:D)
 get_tuple_element src pos dst:
-	SET(dst, ((ETuple)GET(src)).elm(GET(pos)));
+	System.err.println("DB| get_tuple_element: "+GET(src)+", "+GET(pos)); SET(dst, ((ETuple)GET(src)).elm(1+GET(pos)));
 
 %class ID(i1:I dest:D)
 put_tuple size dst: encoder_side_effect(tuple_pos=0;)
@@ -113,7 +127,7 @@ is_bitstr lbl arg:
 
 %class LDI(label:L, dest:D, i:I)
 test_arity lbl arg arity:
-	if (GET(arg).testTuple() == null || ((ETuple)GET(arg)).arity() == GET(arity)) GOTO(lbl);
+	if (GET(arg).testTuple() == null || ((ETuple)GET(arg)).arity() != GET(arity)) GOTO(lbl);
 
 %class LSS(label:L, src1:S, src2:S)
 is_eq_exact lbl a b:
