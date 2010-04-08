@@ -274,8 +274,6 @@ public abstract class EFun extends EObject implements Opcodes {
 
 			data = weave(data);
 
-			System.out.println("defineClass "+self_type+" into "+loader);
-
 			Class<? extends EFun> clazz = ERT.defineClass(loader, self_type.replace('/', '.'), data, 0,
 					data.length);
 

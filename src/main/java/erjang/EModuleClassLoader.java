@@ -59,8 +59,6 @@ public class EModuleClassLoader extends URLClassLoader {
 	@Override
 	protected Class<?> findClass(String name) throws ClassNotFoundException {
 
-	    System.out.println("findClass "+name);
-
 		if (name.startsWith(ETUPLE_NAME)) {
 			int arity = Integer.parseInt(name.substring(ETUPLE_NAME.length()));
 			return ETuple.get_tuple_class(arity);
