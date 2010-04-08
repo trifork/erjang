@@ -68,7 +68,7 @@ public abstract class EModule {
 		    natives = (Class<? extends ENative>) Class.forName(nname, true,
 					getModuleClassLoader());
 		} catch (ClassNotFoundException e) {
-		         System.out.println("no native: " + nname);
+		    // System.out.println("no native: " + nname);
 			return;
 		}
 
