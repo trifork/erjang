@@ -172,9 +172,9 @@ public class ModuleAnalyzer implements ModuleVisitor {
 
 							String mod = e.ext_fun.mod.getName();
 							String fun = e.ext_fun.fun.getName();
-							Type[] parms = parmTypes(e.ext_fun.arity);
+							int arity = e.ext_fun.arity;
 							BuiltInFunction bif = BIFUtil.getMethod(mod,
-									fun, parms, false, false);
+									fun, arity, false, false);
 							
 							if (bif != null) {
 								self.is_pausable |= bif.isPausable();
@@ -210,7 +210,7 @@ public class ModuleAnalyzer implements ModuleVisitor {
 							SourceOperand[] srcs = bi.args;
 
 							bif = BIFUtil.getMethod("erlang",
-									name.getName(), parmTypes(srcs.length),
+									name.getName(), srcs.length,
 									false, true);
 							
 							if (bif == null) {
@@ -224,15 +224,6 @@ public class ModuleAnalyzer implements ModuleVisitor {
 							break;
 						}
 
-					}
-
-					private Type[] parmTypes(int length) {
-						// TODO: cache these!
-						Type[] res = new Type[length];
-						for (int i = 0; i < length; i++) {
-							res[i] = Type.getType(EObject.class);
-						}
-						return res;
 					}
 
 					@Override
