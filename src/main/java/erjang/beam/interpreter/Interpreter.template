@@ -48,6 +48,8 @@ import erjang.beam.BeamFileData;
 import erjang.beam.ModuleVisitor;
 import erjang.beam.FunctionVisitor;
 import erjang.beam.BlockVisitor;
+import erjang.beam.BIFUtil;
+import erjang.beam.BuiltInFunction;
 
 import erjang.beam.repr.Insn;
 import erjang.beam.repr.Operands;
@@ -95,7 +97,6 @@ public class Interpreter {
 			System.err.println("Interpreter code for module '"+moduleName+"':");
 
 			for (Backpatch bp : backpatches) {
-				System.err.println("INT| backpatching "+bp+" (label "+bp.label+") => "+label_map.get(bp.label));
 				bp.patch(label_map.get(bp.label));
 			}
 
@@ -179,7 +180,6 @@ public class Interpreter {
 				index = imports.size();
 				imports.add(new FunID(extfun.mod, extfun.fun, extfun.arity));
 				ext_fun_map.put(id, index);
-				System.err.println("INT| ext-fun mapping: "+index+" ==> "+extfun);
 			}
 			return index;
 		}
@@ -296,12 +296,24 @@ public class Interpreter {
 			for (int i=0; i<imports.size(); i++) {
 				FunID imp = imports.get(i);
 				System.err.println("INT| Import #"+i+": "+imp);
-				EModuleManager.add_import(imp, new ExtFunBinder(imp, i));
+
+				// If this is a BIF, resolve it right away:
+				BuiltInFunction bif =
+					BIFUtil.getMethod(imp.module.getName(),
+									  imp.function.getName(),
+									  imp.arity,
+									  false, false);
+				if (bif != null && java.lang.reflect.Modifier.isStatic(bif.javaMethod.getModifiers())) {
+					//TODO: make this work for virtual methods as well
+					ext_funs[i] = EFun.make(bif.javaMethod);
+				} else {
+					EModuleManager.add_import(imp, new ExtFunBinder(imp, i));
+				}
 			}
 
 			int j=0;
 			for (FunIDWithEntry fi : exports) {
-				System.err.println("INT| Export #"+(j++)+": "+fi);
+// 				System.err.println("INT| Export #"+(j++)+": "+fi);
 				EFun fun = EFun.get_fun_with_handler(fi.arity, new Function(fi.start_pc), getModuleClassLoader());
 				EModuleManager.add_export(this, fi, fun);
 			}
