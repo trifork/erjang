@@ -43,6 +43,17 @@ public class ErlFun {
 	public static EObject is_function(EObject a1, EObject a2) {
 		return a1.is_function(a2);
 	}
+
+	@BIF
+	public static EObject function_exported(EObject a1, EObject a2, EObject a3) {
+	    EAtom mod = a1.testAtom();
+	    EAtom fun = a2.testAtom();
+	    ESmall ary = a3.testSmall();
+
+	    return ERT.box(EModuleManager.function_exported(mod,fun,ary.value));
+	}
+
+        
 	
 	@BIF
 	public static EObject fun_info(EObject fun_arg, EObject spec_arg)

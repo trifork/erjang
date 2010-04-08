@@ -485,17 +485,6 @@ public class ErlProc {
 	}
 	
 	@BIF
-	static EObject function_exported(EObject mod, EObject fun, EObject arity) {
-		EAtom m = mod.testAtom();
-		EAtom f = fun.testAtom();
-		ESmall a = arity.testSmall();
-		
-		if (m==null||f==null||a==null) throw ERT.badarg(mod,fun,arity);
-		
-		return EModuleManager.function_exported (m,f,a.value) ? ERT.TRUE : ERT.FALSE;
-	}
-	
-	@BIF
 	static EAtom module_loaded(EObject mod) {
 		EAtom m;
 		if ((m=mod.testAtom()) == null) throw ERT.badarg(mod);

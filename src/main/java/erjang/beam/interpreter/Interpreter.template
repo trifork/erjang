@@ -305,6 +305,8 @@ public class Interpreter {
 				EFun fun = EFun.get_fun_with_handler(fi.arity, new Function(fi.start_pc), getModuleClassLoader());
 				EModuleManager.add_export(this, fi, fun);
 			}
+
+			load_native_bifs();
 		}
 
 		class ExtFunBinder extends EModuleManager.FunctionBinder {
