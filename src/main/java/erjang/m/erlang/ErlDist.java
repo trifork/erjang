@@ -57,8 +57,8 @@ public class ErlDist {
 	@Import(module="erlang", fun="dmonitor_node", arity=3)
 	static EFun dmonitor_node3_trap;
 	
-	@Import(module="erlang", fun="dgroup_leader", arity=3)
-	static EFun dgroup_leader3_trap;
+	@Import(module="erlang", fun="dgroup_leader", arity=2)
+	static EFun dgroup_leader2_trap;
 	
 	@Import(module="erlang", fun="dexit", arity=2)
 	static EFun dexit2_trap;
