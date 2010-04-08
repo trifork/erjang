@@ -64,6 +64,14 @@ public class EModuleManager {
 		Collection<FunctionBinder> resolve_points = new HashSet<FunctionBinder>();
 		private EFun error_handler;
 
+	        private ClassLoader getModuleClassLoader() {
+		    if (defining_module != null) {
+			return defining_module.getModuleClassLoader();
+		    } else {
+			return new EModuleClassLoader(null);
+		    }
+	        }
+
 		/**
 		 * @param ref
 		 * @throws IllegalAccessException
@@ -138,7 +146,8 @@ public class EModuleManager {
 								return uf.apply(proc, ufa);
 							}
 						}
-					});
+					},
+							 getModuleClassLoader());
 		}
 
 		/**
@@ -307,6 +316,7 @@ public class EModuleManager {
 	// EModule>();
 
 	static void setup_module(EModule mod_inst) throws Error {
+
 		ModuleInfo module_info = get_module_info(EAtom.intern(mod_inst.module_name()));
 		module_info.setModule(mod_inst);
 

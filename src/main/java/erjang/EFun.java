@@ -228,7 +228,7 @@ public abstract class EFun extends EObject implements Opcodes {
 
 	static Map<Integer, Constructor<? extends EFun>> handlers = new HashMap<Integer, Constructor<? extends EFun>>();
 
-	public static EFun get_fun_with_handler(int arity, EFunHandler handler) {
+    public static EFun get_fun_with_handler(int arity, EFunHandler handler, ClassLoader loader) {
 		Constructor<? extends EFun> h = handlers.get(arity);
 
 		if (h == null) {
@@ -274,8 +274,9 @@ public abstract class EFun extends EObject implements Opcodes {
 
 			data = weave(data);
 
-			Class<? extends EFun> clazz = ERT.defineClass(EFun.class
-					.getClassLoader(), self_type.replace('/', '.'), data, 0,
+			System.out.println("defineClass "+self_type+" into "+loader);
+
+			Class<? extends EFun> clazz = ERT.defineClass(loader, self_type.replace('/', '.'), data, 0,
 					data.length);
 
 			try {

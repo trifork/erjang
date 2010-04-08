@@ -34,6 +34,12 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
 public abstract class ECompiledModule extends EModule {
+
+
+        public ClassLoader getModuleClassLoader() {
+	    return this.getClass().getClassLoader();
+        }
+
 	public void registerImportsAndExports() throws Exception {
 		Class<? extends EModule> module_class = this.getClass();
 		Field[] fields = module_class.getDeclaredFields();

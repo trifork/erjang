@@ -27,6 +27,7 @@ import erjang.EModuleManager;
 import erjang.EFun;
 import erjang.EFunHandler;
 import erjang.FunID;
+import erjang.EModuleClassLoader;
 
 import erjang.ERT;
 import erjang.EProc;
@@ -262,6 +263,7 @@ public class Interpreter {
 		final private List<FunIDWithEntry> exports;
 		final private List<FunID> imports;
 		final private EFun[] ext_funs;
+        final private ClassLoader module_class_loader;
 
 		Module(String name,
 			   short[] code, EObject[] consts,
@@ -276,9 +278,14 @@ public class Interpreter {
 			this.exports = exports;
 			this.imports = imports;
 			ext_funs = new EFun[imports.size()];
+			this.module_class_loader = new EModuleClassLoader(null);
 			System.err.println("INT| Constructed module for "+this.name);
 			setup();
 		}
+
+        public ClassLoader getModuleClassLoader() {
+   	        return module_class_loader;
+        }
 
 		public String module_name() {return name;}
 
@@ -295,7 +302,7 @@ public class Interpreter {
 			int j=0;
 			for (FunIDWithEntry fi : exports) {
 				System.err.println("INT| Export #"+(j++)+": "+fi);
-				EFun fun = EFun.get_fun_with_handler(fi.arity, new Function(fi.start_pc));
+				EFun fun = EFun.get_fun_with_handler(fi.arity, new Function(fi.start_pc), getModuleClassLoader());
 				EModuleManager.add_export(this, fi, fun);
 			}
 		}

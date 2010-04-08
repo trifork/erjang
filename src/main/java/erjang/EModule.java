@@ -53,4 +53,6 @@ public abstract class EModule {
 	 * This method is used by EModuleManager in function resolution.
 	 */
 	public abstract void registerImportsAndExports() throws Exception;
+
+        public abstract ClassLoader getModuleClassLoader();
 }

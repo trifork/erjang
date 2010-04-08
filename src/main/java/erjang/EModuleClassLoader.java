@@ -27,7 +27,7 @@ import java.net.URLClassLoader;
 /**
  * Each module has it's own class loader.
  */
-class EModuleClassLoader extends URLClassLoader {
+public class EModuleClassLoader extends URLClassLoader {
 
 	/**
 	 * @param urls
@@ -58,6 +58,8 @@ class EModuleClassLoader extends URLClassLoader {
 	 */
 	@Override
 	protected Class<?> findClass(String name) throws ClassNotFoundException {
+
+	    System.out.println("findClass "+name);
 
 		if (name.startsWith(ETUPLE_NAME)) {
 			int arity = Integer.parseInt(name.substring(ETUPLE_NAME.length()));

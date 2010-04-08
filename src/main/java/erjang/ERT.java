@@ -175,8 +175,7 @@ public class ERT {
 		 */
 		Class<? extends T> res;
 		try {
-			res = (Class<? extends T>) definer.invoke(ETuple.class
-					.getClassLoader(), name.replace('/', '.'), data, 0,
+			res = (Class<? extends T>) definer.invoke(classLoader, name.replace('/', '.'), data, 0,
 					data.length);
 		} catch (Exception e) {
 			throw new RuntimeException(e);
