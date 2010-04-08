@@ -19,6 +19,7 @@
 
 package erjang;
 
+import erjang.m.erlang.DistEntry;
 import kilim.Pausable;
 import kilim.Task;
 
@@ -29,6 +30,7 @@ public class EInternalPID extends EPID implements ELocalHandle {
 
 	private EProc task;
 	private int id;
+	private DistEntry distEntry;
 	
 	public EInternalPID testInternalPID() {
 		return this;
@@ -182,5 +184,9 @@ public class EInternalPID extends EPID implements ELocalHandle {
 	 */
 	public void done() {
 		this.task = null;
+	}
+
+	public void set_dist_entry(DistEntry distEntry) {
+		this.distEntry = distEntry;
 	}
 }

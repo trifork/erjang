@@ -18,9 +18,18 @@
 
 package erjang.m.erlang;
 
+import java.util.regex.Pattern;
+
 import erjang.BIF;
+import erjang.EAtom;
+import erjang.EFun;
+import erjang.EInternalPID;
 import erjang.EObject;
+import erjang.EProc;
 import erjang.ERT;
+import erjang.ESmall;
+import erjang.ErlangError;
+import erjang.Import;
 import erjang.NotImplemented;
 
 /**
@@ -28,9 +37,40 @@ import erjang.NotImplemented;
  */
 public class ErlDist {
 
+	private static DistEntry this_dist_entry = null;
+	private static final EAtom am_net_kernel = EAtom.intern("net_kernel");
+
+	/** distribution traps */
+	
+	@Import(module="erlang", fun="dsend", arity=2)
+	static EFun dsend2_trap;
+	
+	@Import(module="erlang", fun="dsend", arity=3)
+	static EFun dsend3_trap;
+	
+	@Import(module="erlang", fun="dlink", arity=1)
+	static EFun dlink1_trap;
+	
+	@Import(module="erlang", fun="dunlink", arity=1)
+	static EFun dunlink1_trap;
+	
+	@Import(module="erlang", fun="dmonitor_node", arity=3)
+	static EFun dmonitor_node3_trap;
+	
+	@Import(module="erlang", fun="dgroup_leader", arity=3)
+	static EFun dgroup_leader3_trap;
+	
+	@Import(module="erlang", fun="dexit", arity=2)
+	static EFun dexit2_trap;
+
+	@Import(module="erlang", fun="dmonitor_p", arity=2)
+	static EFun dmonitor_p2_trap;
+
+	static EAtom erts_is_alive = ERT.FALSE;
+
 	@BIF
 	public static final EObject is_alive() {
-		return ERT.FALSE;
+		return erts_is_alive;
 	}
 	
 	@BIF
@@ -46,6 +86,46 @@ public class ErlDist {
 	@BIF
 	public static EObject dist_exit(EObject a1, EObject a2, EObject a3) {
 		throw new NotImplemented();
+	}
+	
+	@BIF
+	public static EObject set_node(EObject arg_node, EObject arg_creation)
+	{
+		int creation;
+		ESmall cr = arg_creation.testSmall();
+		EAtom node = arg_node.testAtom();
+		
+		if (cr == null || node == null || cr.value > 3 || !is_node_name_atom(node)) {
+			throw ERT.badarg(arg_node, arg_creation);
+		}
+
+		EObject net_kernel = ERT.whereis(am_net_kernel);		
+		EInternalPID nk = net_kernel.testInternalPID();
+		if (nk == null) {
+			throw new ErlangError(EAtom.intern("no_net_kernel"));
+		}
+		
+		nk.set_dist_entry(this_dist_entry);
+		// nk.add_flag( F_DISTRIBUTION );
+		
+		set_this_node(node, cr.value);
+		erts_is_alive = ERT.TRUE;
+		
+		return ERT.TRUE;
+	}
+
+	private static void set_this_node(EAtom node, int value) {
+		throw new erjang.NotImplemented();
+		
+	}
+
+	private static Pattern node_name_regex = Pattern.compile("([a-zA-Z0-9]-_)+@[^@]+");
+	private static boolean is_node_name_atom(EAtom node) {
+		if (node_name_regex.matcher(node.getName()).matches()) {
+			return true;
+		} else {
+			return false;
+		}
 	}
 
 }
