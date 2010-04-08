@@ -413,7 +413,7 @@ public class TCPINet extends EDriverInstance {
 	private boolean bit8 = false;
 	private int low;
 	private int high;
-	private int send_timeout;
+	private int send_timeout = INET_INFINITY;
 	private int tcp_add_flags;
 	private int read_packets;
 
@@ -1909,7 +1909,7 @@ public class TCPINet extends EDriverInstance {
 		}
 
 		InetSocketAddress res = new InetSocketAddress(addr, port);
-		System.out.println("addr: " + res);
+
 		return res;
 	}
 
