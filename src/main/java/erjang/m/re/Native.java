@@ -20,6 +20,7 @@ package erjang.m.re;
 import java.io.CharArrayWriter;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -34,7 +35,6 @@ import erjang.CharCollector;
 import erjang.EAtom;
 import erjang.EBigString;
 import erjang.EBinary;
-import erjang.EList;
 import erjang.ENative;
 import erjang.EObject;
 import erjang.ERT;
@@ -46,9 +46,13 @@ import erjang.ETuple2;
 import erjang.NotImplemented;
 import erjang.CharCollector.CollectingException;
 import erjang.CharCollector.InvalidElementException;
-import erjang.CharCollector.PartialDecodingException;
 
 public class Native extends ENative {
+	
+	/** Urgh! Returned index values needs to represent the index into the 
+	 * underlying UTF8 byte stream, if unicode is assumed... */
+	private static final boolean INDEX_COMPATIBLE = true;
+	
 	public static EAtom am_nomatch = EAtom.intern("nomatch");
 	public static EAtom am_match = EAtom.intern("match");
 	public static EAtom am_latin1  = EAtom.intern("latin1");
@@ -197,6 +201,18 @@ public class Native extends ENative {
 		int end = mr.end(group_index);
 
 		if (opts.capture_type  == am_index) {
+			
+			if (INDEX_COMPATIBLE && opts.unicode) {
+				try {
+					int istart = subject.substring(0, start).getBytes("UTF8").length;
+					int ilen = subject.substring(start, end).getBytes("UTF8").length;
+
+					return new ETuple2(ERT.box(istart), ERT.box(ilen));
+				} catch (UnsupportedEncodingException e) {
+					throw new InternalError();
+				}
+			}
+			
 			return new ETuple2(ERT.box(start), ERT.box(end-start));
 			
 		} else if (opts.capture_type == am_list) {
