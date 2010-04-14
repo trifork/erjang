@@ -85,7 +85,7 @@ public class CharCollector {
 		addBinary(ByteBuffer.wrap(data, offset, length), false);
 	}
 
-	private void addBinary(ByteBuffer data, boolean endOfInput)
+	public void addBinary(ByteBuffer data, boolean endOfInput)
 		throws IOException, PartialDecodingException
 	{
 		CoderResult res;
@@ -173,4 +173,5 @@ public class CharCollector {
 			if (free==0) flushBuffer();
 		}
 	}
+
 }

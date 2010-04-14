@@ -16,15 +16,24 @@
  * limitations under the License.
  **/
 
-
 package erjang.m.re;
 
+import java.util.regex.Pattern;
+
 import erjang.EPseudoTerm;
+import erjang.m.re.Native.Options;
 
 /**
  * Representation of a compiled regular expression
+ * 
  * @see http://www.erlang.org/doc/man/re.html mp().
  */
 public class ECompiledRE extends EPseudoTerm {
-	
+	final Pattern patt;
+	final Options options;
+
+	ECompiledRE(Options options, Pattern patt) {
+		this.options = options;
+		this.patt = patt;
+	}
 }
