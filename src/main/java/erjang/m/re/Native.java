@@ -83,6 +83,7 @@ public class Native extends ENative {
 	public static EAtom am_first = EAtom.intern("first");
 	public static EAtom am_all_but_first = EAtom.intern("all_but_first");
 	public static EAtom am_capture = EAtom.intern("capture");
+	public static EAtom am_offset = EAtom.intern("offset");
 
 	@BIF
 	public static EObject run(EObject subject, EObject pattern) {
@@ -128,8 +129,11 @@ public class Native extends ENative {
 			throw ERT.badarg(subj, re, opts);
 		}
 		
-
-		Matcher matcher = regex.patt.matcher(subject);
+		if (o2.offset > subject.length() || o2.offset < 0) {
+			throw ERT.badarg(subj, re, opts);
+		}
+		
+		Matcher matcher = regex.patt.matcher(subject.substring(o2.offset ));
 				
 		if (o2.global) {
 			
@@ -219,6 +223,8 @@ public class Native extends ENative {
 
 	static class Options implements java.lang.Cloneable{
 
+		public int offset = 0;
+
 		public EObject capture_type = am_index;
 
 		public EObject capture_spec = am_none;
@@ -262,6 +268,7 @@ public class Native extends ENative {
 				// | {newline, NLSpec}| bsr_anycrlf | bsr_unicode
 
 				ETuple tup;
+				ESmall off;
 				if (opt == am_unicode) {
 					unicode = true;
 				} else if (opt == am_anchored) {
@@ -271,21 +278,21 @@ public class Native extends ENative {
 				} else if (opt == am_caseless) {
 					flags |= Pattern.CASE_INSENSITIVE;
 				} else if (opt == am_dollar_endonly) {
-					// TODO: ok to ignore?
+					throw new NotImplemented("regex option "+opt);
 				} else if (opt == am_dotall) {
 					flags |= Pattern.DOTALL;
 				} else if (opt == am_extended) {
 					flags |= Pattern.COMMENTS;
 				} else if (opt == am_firstline) {
-					// TODO: ok to ignore?
+					throw new NotImplemented("regex option "+opt);
 				} else if (opt == am_multiline) {
 					flags |= Pattern.MULTILINE;
 				} else if (opt == am_no_auto_capture) {
-					// TODO: ok to ignore?
+					throw new NotImplemented("regex option "+opt);
 				} else if (opt == am_dupnames) {
-					// TODO: ok to ignore?
+					throw new NotImplemented("regex option "+opt);
 				} else if (opt == am_ungreedy) {
-					// TODO: ok to ignore?
+					throw new NotImplemented("regex option "+opt);
 				} else if (opt == am_bsr_anycrlf) {
 					newline_cr = true;
 					newline_crlf = true;
@@ -328,10 +335,45 @@ public class Native extends ENative {
 					this.capture_spec = tup.elm(2);
 					this.capture_type = tup.elm(3);
 
+				} else if (tup != null && tup.arity() == 2 
+						&& tup.elm(1) == am_offset
+						&& (off=tup.elm(2).testSmall()) != null) {
+					this.offset = off.value;
+
 				} else {
 					return false;
 				}
 
+			}
+			
+			ESeq spec;
+			if (capture_spec == am_all 
+				|| capture_spec == am_all_but_first
+				|| capture_spec == am_first
+				|| capture_spec == am_none
+				) {
+				// ok
+			} else if ((spec=capture_spec.testSeq()) != null) {
+				
+				// if it is a sequence, make sure elements are integers
+				while (!spec.isNil()) {
+					EObject val = spec.head();
+					if (val.testSmall() == null)
+						return false;
+					spec = spec.tail();
+				}
+				
+				// ok
+			} else {	
+				return false;
+			}
+			
+			if (capture_type == am_index
+				|| capture_type == am_list 
+				|| capture_type == am_binary) {
+				// ok
+			} else {
+				return false;
 			}
 
 			if (unicode == true && ((flags & Pattern.CASE_INSENSITIVE) != 0)) {
@@ -429,17 +471,5 @@ public class Native extends ENative {
 		}
 	}
 
-	private static String flatten(List<ByteBuffer> bb, Charset charset)
-			throws IOException, PartialDecodingException {
-		CharArrayWriter out = new CharArrayWriter();
-		CharCollector collector = new CharCollector(charset, out);
-
-		for (int i = 0; i < bb.size(); i++) {
-			ByteBuffer b = bb.get(i);
-			collector.addBinary(b, i == bb.size() - 1);
-		}
-
-		return out.toString();
-	}
 
 }
