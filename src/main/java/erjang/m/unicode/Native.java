@@ -58,6 +58,12 @@ public class Native extends ENative {
 							 CHAR_ARRAY_TO_LIST_CONVERTER);
 	}
 
+	@BIF
+	public static EObject characters_to_list(EObject charlist) {
+		return characters_to(charlist, UNICODE_ATOM,
+							 CHAR_ARRAY_TO_LIST_CONVERTER);
+	}
+
 	public static EObject characters_to(EObject charlist, EObject encodingSpec, CharArrayConverter output_converter) {
 		Charset encoding = encodingSpecToCharset(encodingSpec);
 		if (encoding == null)
