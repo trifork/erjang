@@ -46,6 +46,7 @@ import erjang.ETuple2;
 import erjang.NotImplemented;
 import erjang.CharCollector.CollectingException;
 import erjang.CharCollector.InvalidElementException;
+import erjang.CharCollector.PartialDecodingException;
 
 public class Native extends ENative {
 	
@@ -422,11 +423,14 @@ public class Native extends ENative {
 				CharCollector cc = new CharCollector(spec, out);
 				try {
 					io_or_char_list.collectCharList(cc);
+					cc.end();
 				} catch (CollectingException e) {
 					return null;
 				} catch (InvalidElementException e) {
 					return null;
 				} catch (IOException e) {
+					return null;
+				} catch (PartialDecodingException e) {
 					return null;
 				}
 				pattern = out.toString();
