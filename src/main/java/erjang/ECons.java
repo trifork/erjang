@@ -190,7 +190,12 @@ public abstract class ECons extends EObject {
 				binary.collectIOList(out);
 			} else if ((sublist = head.testNonEmptyList()) != null) {
 				sublist.collectIOList(out);
+			} else if (head.isNil()) {
+				// do nothing //
 			} else {
+				
+				System.err.println("head is "+head+"::"+head.getClass());
+				
 				// not a well-formed iolist
 				return false;
 			}

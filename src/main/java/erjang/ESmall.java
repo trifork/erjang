@@ -19,6 +19,8 @@
 package erjang;
 
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.util.List;
 
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -43,6 +45,14 @@ public final class ESmall extends EInteger {
 		return value;
 	}
 
+	@Override
+	public boolean collectIOList(List<ByteBuffer> out) {
+		ByteBuffer b = ByteBuffer.allocate(1);
+		b.put(0, (byte) value);
+		out.add(b);
+		return true;
+	}
+	
 	public boolean equals(EObject other) {
 		if (other == this) return true;
 		if (other instanceof ESmall)
