@@ -37,7 +37,7 @@ public class ESpawnDriverTask extends EDriverTask {
 	 * @param command 
 	 */
 	public ESpawnDriverTask(EProc proc, EDriver driver, EString command, EObject portSetting) {
-		super(proc, driver.start(command));
+		super(proc.self_handle(), driver.start(command));
 		this.command = command;
 		this.portSetting = portSetting;
 		super.parseOptions(command, portSetting);

@@ -63,7 +63,7 @@ public class EExecDriverTask extends EDriverTask {
 	 * @param portSetting
 	 */
 	public EExecDriverTask(EProc owner, ETuple2 name, EObject portSetting) {
-			super(owner, new ExecDriverInstance(name));
+			super(owner.self_handle(), new ExecDriverInstance(name));
 
 			this.name = name;
 			

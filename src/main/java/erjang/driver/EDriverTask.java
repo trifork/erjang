@@ -71,7 +71,7 @@ import erjang.NotImplemented;
 /**
  * Base class for the two kinds of driver tasks: drivers, and "exec"s
  */
-public abstract class EDriverTask extends ETask<EInternalPort> implements
+public class EDriverTask extends ETask<EInternalPort> implements
 		NIOHandler {
 
 	@Override
@@ -86,11 +86,15 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 	private final EDriverControl instance;
 
 	
+	public EPID owner() {
+		return owner;
+	}
+	
 	private	static ConcurrentHashMap<Integer,EDriverTask> all_ports 
 		= new ConcurrentHashMap<Integer,EDriverTask> ();
 
-	protected EDriverTask(EProc owner, EDriverInstance driver) {
-		this.owner = owner.self_handle();
+	public EDriverTask(EPID owner, EDriverInstance driver) {
+		this.owner = owner;
 		this.instance = driver;
 		this.port = new EInternalPort(this);
 		driver.task = this;
@@ -304,7 +308,8 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 			// System.err.println("task "+this+" exited with "+result);
 			do_proc_termination(result);
 
-			instance.stop();
+			EDriverControl i = instance;
+			if (i != null) i.stop();
 
 		} catch (ThreadDeath e) {
 			throw e;
