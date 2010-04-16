@@ -43,6 +43,7 @@ import erjang.driver.EDriverTask;
 import erjang.driver.EExecDriverTask;
 import erjang.driver.EFDDriverTask;
 import erjang.driver.ESpawnDriverTask;
+import erjang.driver.tcp_inet.TCPINet;
 
 /**
  * 
@@ -60,22 +61,35 @@ public class ErlPort {
 			throws Pausable {
 		EInternalPort p = port.testInternalPort();
 
+		if (ERT.DEBUG_PORT)
+		System.err.print("port_command "+port+", "+data);
+		
+
+		
 		if (p == null) {
 			port = ERT.whereis(port);
 			if (port == ERT.am_undefined)
 				port = null;
-
-			p = port.testInternalPort();
+			else
+				p = port.testInternalPort();
 		}
 
 		List<ByteBuffer> ovec = new ArrayList<ByteBuffer>();
 		if (p == null || !data.collectIOList(ovec)) {
+			if (ERT.DEBUG_PORT) {
+				System.err.println("collect failed! or p==null: "+p);
+			}
 			throw ERT.badarg(port, data);
 		}
 
 		ByteBuffer[] out = new ByteBuffer[ovec.size()];
 		ovec.toArray(out);
 
+		if (ERT.DEBUG_PORT) {
+			System.err.print("EVEC: ");
+			TCPINet.dump_write(out);
+		}
+		
 		// System.err.println("packing "+data+"::"+data.getClass().getName()+" -> "+ovec);
 
 		p.command(proc.self_handle(), out);
