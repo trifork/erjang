@@ -131,7 +131,13 @@ public abstract class EAbstractNode {
 	public EAbstractNode(EAtom node, EAtom cookie) {
 
         this.cookie = cookie;
-        
+        set(node, 0);
+	
+	}
+	
+	public void set(EAtom node, int cr) {
+	
+
         String name = node.getName();
 
         final int i = name.indexOf('@', 0);
@@ -147,8 +153,13 @@ public abstract class EAbstractNode {
             alive = alive.substring(0, 0xff);
         }
 
-        node = EAtom.intern( alive + "@" + host );
+        this.node = EAtom.intern( alive + "@" + host );
+
+        this.creation = cr;
+		
 	}
+
+
 	
     /**
      * Get the name of this node.

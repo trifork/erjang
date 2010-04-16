@@ -24,6 +24,7 @@ import erjang.BIF;
 import erjang.EAtom;
 import erjang.EFun;
 import erjang.EInternalPID;
+import erjang.EInternalPort;
 import erjang.EObject;
 import erjang.EProc;
 import erjang.ERT;
@@ -39,7 +40,16 @@ public class ErlDist {
 
 	private static DistEntry this_dist_entry = null;
 	private static final EAtom am_net_kernel = EAtom.intern("net_kernel");
+	private static final EAtom am_Noname = EAtom.intern("Noname");
 
+	// initialization from node_tables
+	static {
+		
+		this_dist_entry = new DistEntry(am_Noname, (EInternalPort) null);
+		
+	}
+	
+	
 	/** distribution traps */
 	
 	@Import(module="erlang", fun="dsend", arity=2)
@@ -89,13 +99,14 @@ public class ErlDist {
 	}
 	
 	@BIF
-	public static EObject set_node(EObject arg_node, EObject arg_creation)
+	public static EObject setnode(EObject arg_node, EObject arg_creation)
 	{
 		int creation;
 		ESmall cr = arg_creation.testSmall();
 		EAtom node = arg_node.testAtom();
 		
 		if (cr == null || node == null || cr.value > 3 || !is_node_name_atom(node)) {
+			System.err.println("cr="+cr+"; node="+node+"; is_name="+is_node_name_atom(node));
 			throw ERT.badarg(arg_node, arg_creation);
 		}
 
@@ -115,11 +126,10 @@ public class ErlDist {
 	}
 
 	private static void set_this_node(EAtom node, int value) {
-		throw new erjang.NotImplemented();
-		
+		ERT.getLocalNode().set(node, value);
 	}
 
-	private static Pattern node_name_regex = Pattern.compile("([a-zA-Z0-9]-_)+@[^@]+");
+	private static Pattern node_name_regex = Pattern.compile("([a-zA-Z0-9_]|-)+@[^@]+");
 	private static boolean is_node_name_atom(EAtom node) {
 		if (node_name_regex.matcher(node.getName()).matches()) {
 			return true;
