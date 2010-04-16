@@ -48,8 +48,8 @@ public class InetDatagramSocket extends InetSocket {
 
 
 	@Override
-	public SocketAddress getLocalSocketAddress() {
-		return ch.socket().getLocalSocketAddress();
+	public InetSocketAddress getLocalSocketAddress() {
+		return (InetSocketAddress) ch.socket().getLocalSocketAddress();
 	}
 
 	@Override

@@ -29,7 +29,7 @@ public abstract class InetSocket {
 
 	public abstract InetSocket accept() throws IOException;
 
-	public abstract SocketAddress getLocalSocketAddress();
+	public abstract InetSocketAddress getLocalSocketAddress();
 
 	public abstract void setReuseAddress(boolean reuse) throws IOException;
 
@@ -134,6 +134,12 @@ public abstract class InetSocket {
 	public void leaveGroup(SocketAddress mcastaddr, NetworkInterface netIf) throws IOException {
 		throw new PosixIOException(Posix.EINVAL,
 				"leaveGroup() not supported on "
+						+ this.getClass().getName());
+	}
+
+	public void setNonBlocking() throws IOException {
+		throw new PosixIOException(Posix.EINVAL,
+				"setNonBlocking() not supported on "
 						+ this.getClass().getName());
 	}
 

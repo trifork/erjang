@@ -94,8 +94,8 @@ public class InetClientSocket extends InetSocket {
 	}
 
 	@Override
-	public SocketAddress getLocalSocketAddress() {
-		return ch.socket().getLocalSocketAddress();
+	public InetSocketAddress getLocalSocketAddress() {
+		return (InetSocketAddress) ch.socket().getLocalSocketAddress();
 	}
 
 	@Override
@@ -112,4 +112,7 @@ public class InetClientSocket extends InetSocket {
 		ch.socket().setTrafficClass(ival);
 	}
 
+	public void setNonBlocking() throws IOException {
+		ch.configureBlocking(false);
+	}
 }

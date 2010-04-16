@@ -90,8 +90,8 @@ public class InetServerSocket extends InetSocket {
 	}
 
 	@Override
-	public SocketAddress getLocalSocketAddress() {
-		return ch.socket().getLocalSocketAddress();
+	public InetSocketAddress getLocalSocketAddress() {
+		return (InetSocketAddress) ch.socket().getLocalSocketAddress();
 	}
 
 	@Override
@@ -103,4 +103,9 @@ public class InetServerSocket extends InetSocket {
 	public void setKeepAlive(boolean on) throws IOException {
 		// ignored //
 	}
+	
+	public void setNonBlocking() throws IOException {
+		ch.configureBlocking(false);
+	}
+
 }

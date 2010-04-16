@@ -212,7 +212,10 @@ public class LazyInetSocket extends InetSocket {
 
 	@Override
 	public InetSocketAddress getLocalSocketAddress() {
-		return bindingAddress;
+		if (delegate == null)
+			return bindingAddress;
+		
+		return delegate.getLocalSocketAddress();
 	}
 
 	@Override
