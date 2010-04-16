@@ -57,6 +57,7 @@ public final class EProc extends ETask<EInternalPID> {
 	public static final EAtom am_stack_size = EAtom.intern("stack_size");
 	public static final EAtom am_reductions = EAtom.intern("reductions");
 	public static final EAtom am_initial_call = EAtom.intern("initial_call");
+	public static final EAtom am_current_function = EAtom.intern("current_function");
 	public static final EAtom am_priority = EAtom.intern("priority");
 	public static final EAtom am_monitor_nodes = EAtom.intern("monitor_nodes");
 	public static final EAtom am_registered_name = EAtom.intern("registered_name");
@@ -563,8 +564,12 @@ public final class EProc extends ETask<EInternalPID> {
 			return new ETuple2(am_reductions, ERT.box(this.reds));
 			
 		} else if (spec == am_initial_call) {
-			// TODO: Maybe use HotSpotDiagnosticMXBean ThreadStackSize property?
 			return new ETuple2(am_initial_call, 
+							   ETuple.make(spawn_mod, spawn_fun, ERT.box(spawn_args)));
+			
+		} else if (spec == am_current_function) {
+			/** TODO: fix this so we return something meaningful... */
+			return new ETuple2(am_current_function, 
 							   ETuple.make(spawn_mod, spawn_fun, ERT.box(spawn_args)));
 			
 		} else {
