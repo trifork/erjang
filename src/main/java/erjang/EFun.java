@@ -102,14 +102,26 @@ public abstract class EFun extends EObject implements Opcodes {
 	private static final String EOBJECT_DESC = EOBJECT_TYPE.getDescriptor();
 	static final String[] PAUSABLE_EX = new String[] { Type.getType(Pausable.class).getInternalName() };
 
-	/**
-	 * @param method
-	 * @param arity
-	 * @param name
-	 * @param module
-	 * @return
+
+	private static final HashMap<Method, EFun> method_fun_map = new HashMap<Method, EFun>();
+
+	/* TODO: Using a central database like this to avoid duplicate
+	 * definitions is a hack, perpetrated for the sake of moving
+	 * interpreter progress along, and may interfere with module
+	 * reloading.
+	 *
+	 * Treating native functions differently in EModule loading might
+	 * be a better solution.
 	 */
-	public static EFun make(Method method) {
+	public static synchronized EFun make(Method method) {
+		EFun fun = method_fun_map.get(method);
+		if (fun==null) {
+			method_fun_map.put(method, fun = do_make(method));
+		}
+		return fun;
+	}
+
+	private static EFun do_make(Method method) {
 
 		assert (Modifier.isStatic(method.getModifiers()));
 		assert (!Modifier.isPrivate(method.getModifiers()));

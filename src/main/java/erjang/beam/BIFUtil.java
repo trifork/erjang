@@ -46,6 +46,7 @@ import erjang.m.erlang.ErlBif;
  * @author krab
  */
 public class BIFUtil {
+	public static final Type EOBJECT_TYPE = Type.getType(EObject.class);
 
 	public static final Type EPROC_TYPE = Type.getType(EProc.class);
 	static Map<String, BIFHandler> bifs = new HashMap<String, BIFHandler>();
@@ -61,7 +62,6 @@ public class BIFUtil {
 	}
 
 	static class Args {
-		private static final Type EOBJECT_TYPE = null;
 		Class[] args;
 		private Args generic;
 		private int hashCode;
@@ -363,6 +363,22 @@ public class BIFUtil {
 				h.registerMethod(method);
 			}
 		}
+	}
+
+	public static BuiltInFunction getMethod(String module, String name, int arity,
+			boolean isGuard, boolean fail_when_missing)
+	{
+		return getMethod(module, name, eobjectParmTypes(arity),
+						 isGuard, fail_when_missing);
+	}
+
+	private static Type[] eobjectParmTypes(int length) {
+		// TODO: cache these!
+		Type[] res = new Type[length];
+		for (int i = 0; i < length; i++) {
+			res[i] = EOBJECT_TYPE;
+		}
+		return res;
 	}
 
 	/**

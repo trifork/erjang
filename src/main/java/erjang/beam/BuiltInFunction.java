@@ -31,6 +31,7 @@ import org.objectweb.asm.commons.Method;
  */
 public class BuiltInFunction {
 	public final Type owner;
+	public final java.lang.reflect.Method javaMethod;
 	public final Method method;
 	public final boolean isVirtual;
 	public final boolean isPausable;
@@ -47,6 +48,7 @@ public class BuiltInFunction {
 	 * @param m
 	 */
 	public BuiltInFunction(java.lang.reflect.Method m) {
+		this.javaMethod = m;
 		this.owner = Type.getType(m.getDeclaringClass());
 		this.method = new Method(m.getName(), 
 					Type.getType(m.getReturnType()),
