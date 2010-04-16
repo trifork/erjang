@@ -43,6 +43,7 @@ import erjang.EFun;
 import erjang.EHandle;
 import erjang.EInteger;
 import erjang.EModuleManager;
+import erjang.ENode;
 import erjang.ENumber;
 import erjang.EObject;
 import erjang.EPID;
@@ -609,7 +610,7 @@ public class ErlBif {
 	static public EAtom node(EObject name) {
 		
 		if (!ERT.getLocalNode().isALive()) {
-			
+			return ENode.am_nonode_at_nohost;
 		}
 		
 		ERef ref;
@@ -626,7 +627,22 @@ public class ErlBif {
 	@BIF(type = Type.GUARD, name = "node")
 	@ErlFun(export = true)
 	static public EAtom node$p(EObject name) {
-		return EAtom.intern("nonode@nohost"); // Until we go online
+		
+		if (!ERT.getLocalNode().isALive()) {
+			return ENode.am_nonode_at_nohost;
+		}
+		
+		EHandle handle;
+		if ((handle=name.testHandle()) != null) {
+			return handle.node();
+		}
+		
+		ERef ref;
+		if ((ref=name.testReference()) != null) {
+			return ref.node();
+		}
+		
+		return null;
 	}
 
 	// process dict
