@@ -631,6 +631,10 @@ public final class EProc extends ETask<EInternalPID> {
 			exit_hooks.remove(hook);
 		}
 	}
+
+	public Map<Integer, EAtom> getAtomCacheMap() {
+		return null;
+	}
 	
 	
 
