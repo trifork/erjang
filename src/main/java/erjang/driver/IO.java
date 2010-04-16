@@ -128,6 +128,9 @@ public class IO {
 			}
 		}
 		
+		System.err.println("unknown exception: "+e);
+		e.printStackTrace(System.err);
+		
 		// TODO: implement some more error codes here
 		return Posix.EUNKNOWN;
 	}
