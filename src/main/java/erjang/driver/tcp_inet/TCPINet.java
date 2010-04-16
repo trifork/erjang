@@ -29,8 +29,6 @@ package erjang.driver.tcp_inet;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.SocketException;
-import java.net.SocketImpl;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -50,19 +48,23 @@ import erjang.EAtom;
 import erjang.EBinList;
 import erjang.EBinary;
 import erjang.EHandle;
+import erjang.EInternalPID;
 import erjang.EInternalPort;
 import erjang.EObject;
 import erjang.EPID;
 import erjang.EPort;
+import erjang.EProc;
 import erjang.ERT;
 import erjang.ERef;
 import erjang.EString;
+import erjang.ETask;
 import erjang.ETuple;
 import erjang.ETuple2;
 import erjang.ErlangError;
 import erjang.NotImplemented;
 import erjang.driver.EAsync;
 import erjang.driver.EDriverInstance;
+import erjang.driver.EDriverTask;
 import erjang.driver.IO;
 import erjang.driver.SelectMode;
 import erjang.driver.efile.Posix;
@@ -71,7 +73,7 @@ import erjang.net.Protocol;
 import erjang.net.ProtocolFamily;
 import erjang.net.ProtocolType;
 
-public class TCPINet extends EDriverInstance {
+public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 
 	static class MultiTimerData {
 
@@ -401,12 +403,11 @@ public class TCPINet extends EDriverInstance {
 	private MultiTimerData mtd;
 	private boolean prebound;
 	private int event_mask;
-	private int event;
 	private PacketParseType htype = PacketParseType.TCP_PB_RAW;
 	private int hsz;
 	private int mode = INET_MODE_LIST;
 	private int deliver = INET_DELIVER_TERM;
-	private int bufsz;
+	private int bufsz = 1200;
 	private boolean exitf = true;
 	private int psize;
 	private boolean bit8f = false;
@@ -433,6 +434,27 @@ public class TCPINet extends EDriverInstance {
 		this.bufsz = INET_DEF_BUFFER;
 	}
 
+	public TCPINet copy(EPID caller2, InetSocket sock) {
+		
+		TCPINet copy;
+		try {
+			copy = (TCPINet) this.clone();
+		} catch (CloneNotSupportedException e) {
+			throw new InternalError("cannot clone");
+		}
+		
+		copy.fd =sock;
+		copy.caller = caller2;
+		
+		EDriverTask this_task = port().task();
+		EPID this_owner = this_task.owner();
+		EDriverTask driver = new EDriverTask(this_owner, copy);
+		
+		ERT.run(driver);
+
+		return copy;
+	}
+
 	@Override
 	protected synchronized void flush() {
 		throw new erjang.NotImplemented();
@@ -441,6 +463,7 @@ public class TCPINet extends EDriverInstance {
 
 	@Override
 	protected synchronized void output(ByteBuffer data) throws IOException {
+		System.err.println("OUTPUT!!");
 		throw new erjang.NotImplemented();
 
 	}
@@ -451,7 +474,7 @@ public class TCPINet extends EDriverInstance {
 
 		this.caller = caller;
 
-		if (!is_conected()) {
+		if (!is_connected()) {
 			if ((tcp_add_flags & TCP_ADDF_DELAYED_CLOSE_SEND) != 0) {
 				tcp_add_flags &= ~TCP_ADDF_DELAYED_CLOSE_SEND;
 				inet_reply_error(am_closed);
@@ -460,6 +483,8 @@ public class TCPINet extends EDriverInstance {
 			}
 		} else if (tcp_sendv(ev) == 0) {
 			inet_reply_ok();
+		} else {
+			System.err.println("bad output");
 		}
 
 	}
@@ -526,6 +551,9 @@ public class TCPINet extends EDriverInstance {
 				GatheringByteChannel gbc = (GatheringByteChannel) fd.channel();
 
 				try {
+					
+					// dump_write(ev);
+					
 					n = gbc.write(ev);
 				} catch (IOException e) {
 					int sock_errno = IO.exception_to_posix_code(e);
@@ -552,6 +580,34 @@ public class TCPINet extends EDriverInstance {
 		}
 		return 0;
 
+	}
+
+	public static void dump_write(ByteBuffer[] ev) {
+
+		System.err.println(" vec["+ev.length+"]:: ");
+		
+		for (int i = 0; i < ev.length; i++) {
+			
+			ByteBuffer evp = ev[i];
+			int off = 0;
+			for (int p = evp.position(); p < evp.limit(); p++) {
+				
+				if ((off % 0x10) == 0) System.err.print("0x" + Integer.toHexString(off) + " :");
+				
+				System.err.print(" ");
+				System.err.print(Integer.toHexString(evp.get(p) & 0xff));
+				
+				off += 1;
+				
+				if ((off % 0x10) == 0) System.err.println("");
+			}
+			
+			
+		}
+		
+		System.err.println(".");
+		
+		
 	}
 
 	private Object sock_sendv(InetSocket fd2, ByteBuffer[] ev, int[] np) {
@@ -627,7 +683,7 @@ public class TCPINet extends EDriverInstance {
 	@Override
 	protected synchronized void readyInput(SelectableChannel ch) {
 
-		if (is_conected()) {
+		if (is_connected()) {
 			tcp_recv(0);
 		}
 
@@ -716,14 +772,42 @@ public class TCPINet extends EDriverInstance {
 	}
 
 	private int tcp_recv_closed() {
-		throw new erjang.NotImplemented();
-
+		if (is_busy()) {
+			caller = busy_caller;
+			tcp_clear_output();
+			if (busy_on_send) {
+				driver_cancel_timer(port());
+				busy_on_send = false;
+			}
+			state &= ~INET_F_BUSY;
+			set_busy_port(false);
+			inet_reply_error(am_closed);
+		}
+		
+		if (active != ActiveType.PASSIVE) {
+			driver_cancel_timer(port());
+			tcp_clear_input();
+			if (exitf) {
+				tcp_clear_output();
+				desc_close();
+			} else {
+				desc_close_read();
+			}
+		} else {
+			tcp_clear_input();
+			tcp_closed_message();
+			if (exitf) {
+				driver_exit(0);
+			} else {
+				desc_close_read();
+			}
+		}
+		return -1;
 	}
 
-	private int sock_recv(EInternalPort port, InetSocket fd2, ByteBuffer iBuf,
-			int nread) {
+	private void tcp_clear_output() {
 		throw new erjang.NotImplemented();
-
+		
 	}
 
 	private int tcp_recv_error(int enomem) {
@@ -736,7 +820,7 @@ public class TCPINet extends EDriverInstance {
 
 		EInternalPort ix = port();
 
-		if (is_conected()) {
+		if (is_connected()) {
 			ByteBuffer[] iov;
 			if ((iov = driver_peekq()) == null) {
 				send_empty_out_q_msgs();
@@ -746,6 +830,7 @@ public class TCPINet extends EDriverInstance {
 			GatheringByteChannel gbc = (GatheringByteChannel) fd.channel();
 			long n;
 			try {
+				// dump_write(iov);
 				n = gbc.write(iov);
 			} catch (IOException e) {
 				tcp_send_error(IO.exception_to_posix_code(e));
@@ -755,7 +840,7 @@ public class TCPINet extends EDriverInstance {
 			if (driver_deq(n) <= low) {
 				if (is_busy()) {
 					caller = busy_caller;
-					state = ~INET_F_BUSY;
+					state &= ~INET_F_BUSY;
 					set_busy_port(port(), 0);
 					if (busy_on_send) {
 						driver_cancel_timer(port());
@@ -815,7 +900,7 @@ public class TCPINet extends EDriverInstance {
 					
 				}
 			} catch (IOException e) {
-				e.printStackTrace();
+				//e.printStackTrace();
 				async_error(IO.exception_to_posix_code(e));
 				return;
 			}
@@ -916,7 +1001,6 @@ public class TCPINet extends EDriverInstance {
 	private void desc_close() {
 
 		sock_select(ERL_DRV_USE, SelectMode.CLEAR);
-		event = INVALID_EVENT;
 		fd = null;
 		event_mask = 0;
 
@@ -956,6 +1040,15 @@ public class TCPINet extends EDriverInstance {
 		case INET_REQ_BIND:
 			return inet_bind(buf);
 
+		case INET_REQ_NAME:
+			return inet_name(buf);
+			
+		case TCP_REQ_LISTEN:
+			return tcp_listen(buf);
+
+		case TCP_REQ_ACCEPT:
+			return tcp_accept(caller, buf);
+
 		case INET_REQ_CONNECT:
 			return inet_connect(caller, buf);
 
@@ -978,6 +1071,116 @@ public class TCPINet extends EDriverInstance {
 
 		throw new erjang.NotImplemented("tcp_inet control(cmd=" + command + ")");
 
+	}
+
+	private ByteBuffer tcp_accept(EPID caller, ByteBuffer buf) {
+
+		
+		if ((state != TCP_STATE_LISTEN 
+				&& state != TCP_STATE_ACCEPTING
+				&& state != TCP_STATE_MULTI_ACCEPTING) || buf.remaining() != 4) {
+			return ctl_error(Posix.EINVAL);
+		}
+		
+		int timeout = buf.getInt();
+		
+		switch (state) {
+		case TCP_STATE_ACCEPTING:
+			throw new NotImplemented();
+			// break;
+			
+		case TCP_STATE_MULTI_ACCEPTING:
+			throw new NotImplemented();
+			// break;
+			
+		case TCP_STATE_LISTEN:
+			ByteBuffer reply = ByteBuffer.allocate(2);
+			InetSocket sock;
+			try {
+				sock = fd.accept();
+			} catch (IOException e) {
+				return ctl_error(IO.exception_to_posix_code(e));
+			}
+			if (sock == null) {
+				// async ...
+				ERef monitor = driver_monitor_process(caller);
+				enq_async_w_tmo(caller, reply, TCP_REQ_ACCEPT, timeout, monitor);
+				state = TCP_STATE_ACCEPTING;
+				sock_select(ERL_DRV_ACCEPT, SelectMode.SET);
+				if (timeout != INET_INFINITY) {
+					driver_set_timer(timeout);
+				}
+			} else {
+				// we got a connection
+				
+				try {
+					sock.setNonBlocking();
+				} catch (IOException e) {
+					return ctl_error(IO.exception_to_posix_code(e));
+				}
+				TCPINet accept_desc = this.copy(caller, sock);
+				accept_desc.state = TCP_STATE_CONNECTED;
+				enq_async(caller, reply, TCP_REQ_ACCEPT);
+				async_ok_port(caller, accept_desc.port());		
+			}
+			
+			return ctl_reply(INET_REP_OK, reply.array());
+			
+		default:
+			throw new InternalError();
+		}
+	}
+
+	private boolean async_ok_port(EPID caller, EInternalPort port2) {
+		AsyncOp op = deq_async();
+		if (op == null) {
+			return false;
+		}
+		return send_async_ok_port(op.id, caller, port2);
+	}
+
+	private ByteBuffer inet_name(ByteBuffer buf) {
+		
+		if (!is_bound()) {
+			return ctl_error(Posix.EINVAL);
+		}
+		
+		InetSocketAddress addr = (InetSocketAddress) fd.getLocalSocketAddress();
+		int port = addr.getPort();
+		byte[] ip = addr.getAddress().getAddress();
+		
+		ByteBuffer out = ByteBuffer.allocate(4 + ip.length );
+		
+		out.put(INET_REP_OK);
+		
+		out.put(encode_proto_family(this.sfamily));
+		out.putShort((short) port);
+		out.put(ip);
+		
+		System.err.println("bound to: "+addr);
+		
+		return out;
+	}
+
+	private ByteBuffer tcp_listen(ByteBuffer buf) {
+		if (state == TCP_STATE_CLOSED || !is_open()) {
+			return ctl_xerror(EXBADPORT);
+		} else if (!is_bound()) {
+			return ctl_xerror(EXBADSEQ);
+		} else if (buf.remaining() != 2) {
+			return ctl_error(Posix.EINVAL);
+		}
+		
+		int backlog = buf.getShort() & 0xffff;
+		
+		try {
+			this.fd.listen(backlog);
+		} catch (IOException e) {
+			return ctl_error(IO.exception_to_posix_code(e));
+		}
+		
+		state = TCP_STATE_LISTEN;
+		return ctl_reply(INET_REP_OK);
 	}
 
 	/*
@@ -1707,7 +1910,7 @@ public class TCPINet extends EDriverInstance {
 
 		if (!is_open()) {
 			return ctl_xerror(EXBADPORT);
-		} else if (is_conected()) {
+		} else if (is_connected()) {
 			return ctl_error(Posix.EISCONN);
 		} else if (!is_bound()) {
 			return ctl_xerror(EXBADSEQ);
@@ -1921,7 +2124,7 @@ public class TCPINet extends EDriverInstance {
 		return (state & INET_F_BOUND) == INET_F_BOUND;
 	}
 
-	private boolean is_conected() {
+	private boolean is_connected() {
 		return (state & INET_STATE_CONNECTED) == INET_STATE_CONNECTED;
 	}
 
@@ -1995,6 +2198,17 @@ public class TCPINet extends EDriverInstance {
 			return ProtocolFamily.ANY;
 		case INET_AF_LOOPBACK:
 			return ProtocolFamily.LOOPBACK;
+		default:
+			throw new NotImplemented();
+		}
+	}
+
+	private byte encode_proto_family(ProtocolFamily domain) {
+		switch (domain) {
+		case INET: return INET_AF_INET;
+		case INET6: return INET_AF_INET6;
+		case ANY: return INET_AF_ANY;
+		case LOOPBACK: return INET_AF_LOOPBACK;
 		default:
 			throw new NotImplemented();
 		}
