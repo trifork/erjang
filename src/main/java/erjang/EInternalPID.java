@@ -58,6 +58,7 @@ public class EInternalPID extends EPID implements ELocalHandle {
 	 * @see erjang.EHandle#self()
 	 */
 	@Override
+	public
 	EProc task() {
 		return task;
 	}
