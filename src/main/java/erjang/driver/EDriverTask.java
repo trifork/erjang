@@ -65,6 +65,7 @@ import erjang.ETuple3;
 import erjang.ETuple4;
 import erjang.ErlangError;
 import erjang.ErlangException;
+import erjang.ErlangExit;
 import erjang.ErlangExitSignal;
 import erjang.NotImplemented;
 
@@ -637,10 +638,11 @@ public class EDriverTask extends ETask<EInternalPort> implements
 	 * @param out
 	 */
 	public void output_from_driver(EObject out) {
-		owner.sendb(new ETuple2(port, new ETuple2(am_data, out)));
+		output_term_from_driver(new ETuple2(port, new ETuple2(am_data, out)));
 	}
 
 	public void output_term_from_driver(EObject out) {
+		System.err.println(""+owner+" ! "+out);
 		owner.sendb(out);
 	}
 
@@ -648,7 +650,7 @@ public class EDriverTask extends ETask<EInternalPort> implements
 	 * 
 	 */
 	public void eof_from_driver() {
-		owner.sendb(new ETuple2(port, am_eof));
+		output_term_from_driver(new ETuple2(port, am_eof));
 	}
 
 	public static ESeq all_ports() {
