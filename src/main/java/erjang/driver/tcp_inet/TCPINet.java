@@ -2245,4 +2245,42 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 		return ctl_reply(INET_REP_ERROR, id);
 	}
 
+	@Override
+	public String toString() {
+		StringBuffer sb = new StringBuffer("TCPIP@");
+		sb.append(System.identityHashCode(this));
+		sb.append('[');
+		
+		sb.append("sock=").append(fd);
+		
+		sb.append("; active=").append(active);
+		
+		sb.append("; deliver=").append(deliver);
+		
+		sb.append("; select=").append(Integer.toBinaryString(event_mask));
+
+		if (fd != null && fd.channel() != null) {
+			SelectionKey sk = NIOSelector.interest(fd.channel());
+			if (sk == null) {
+				sb.append("; nointrest");
+			} else if (!sk.isValid()){
+
+				sb.append("; cancelled");
+			} else {
+
+				try {
+				sb.append("; ready="+Integer.toBinaryString(sk.readyOps()));
+				sb.append("; interest="+Integer.toBinaryString(sk.interestOps()));
+				} catch (CancelledKeyException e) {
+					sb.append("; cancelled");
+				}
+			}
+		}
+		
+		sb.append(']');
+		
+		return sb.toString();
+		
+	}
+	
 }
