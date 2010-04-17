@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.concurrent.locks.Lock;
 
 import kilim.ReentrantLock;
+import erjang.EAtom;
 import erjang.EBinList;
 import erjang.EBinary;
 import erjang.EHandle;
@@ -36,8 +37,10 @@ import erjang.EPort;
 import erjang.ERT;
 import erjang.ERef;
 import erjang.EString;
+import erjang.ETask;
 import erjang.ETuple;
 import erjang.ErlangException;
+import erjang.driver.efile.Posix;
 
 /**
  * 
@@ -80,6 +83,11 @@ public abstract class EDriverInstance extends EDriverControl {
 			NIOSelector.clearInterest(ch, selectOps, releaseNotify, task);
 		}
 	}
+
+	protected void driver_exit(int i) {
+		this.task.exit(i==0?ETask.am_normal:EAtom.intern(Posix.errno_id(i)));
+	}
+
 
 	protected void driver_async(EAsync job) {
 		ERT.run_async(job, task);

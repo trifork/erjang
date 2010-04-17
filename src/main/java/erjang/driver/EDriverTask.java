@@ -672,4 +672,13 @@ public class EDriverTask extends ETask<EInternalPort> implements
 		
 	}
 
+	public void exit(final EObject reason) {
+		mbox.putb(new EPortControl() {
+			@Override
+			public void execute() throws Pausable, IOException {
+				throw new ErlangExit(reason);
+			}
+		});
+	}
+
 }
