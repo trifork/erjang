@@ -49,6 +49,10 @@ public class NIOSelector extends Thread {
 		start();
 	}
 
+	static public SelectionKey interest(SelectableChannel ch) {
+		return ch.keyFor(INSTANCE.selector);
+	}
+	
 	ConcurrentLinkedQueue<NIOChannelInfo.Interest> setting = new ConcurrentLinkedQueue<NIOChannelInfo.Interest>();
 	ConcurrentLinkedQueue<NIOChannelInfo.Interest> clearing = new ConcurrentLinkedQueue<NIOChannelInfo.Interest>();
 
@@ -105,6 +109,8 @@ public class NIOSelector extends Thread {
 			Set<SelectionKey> ready = selector.selectedKeys();
 
 			for (SelectionKey key : ready) {
+				System.err.println("READY: "+key.channel()+":"+Integer.toBinaryString(key.readyOps()));
+				
 				NIOChannelInfo req = (NIOChannelInfo) key.attachment();
 				req.ready(key);
 			}
@@ -124,7 +130,7 @@ public class NIOSelector extends Thread {
 		SelectionKey key = ch.keyFor(selector);
 		NIOHandler handler = interest.handler;
 
-		if (key == null) {
+		if (key == null || !key.isValid()) {
 			
 			// TODO: maybe this should be considered an error?
 			if (handler != null && interest.releaseNotify) {
@@ -166,9 +172,19 @@ public class NIOSelector extends Thread {
 		SelectionKey key = ch.keyFor(selector);
 		NIOChannelInfo info = null;
 		
-		if (key == null) {
+		if (key != null && !key.isValid()) {
 			try {
-				key = ch.register(selector, interest.ops, info = new NIOChannelInfo(interest));
+				selector.selectNow();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			key = null;
+		}
+		if (key == null || !key.isValid()) {
+			try {
+				key = ch.register(selector, interest.ops, 
+						info = new NIOChannelInfo(interest));
 			} catch (ClosedChannelException e) {
 				interest.handler.exception(ch, e);
 			}

@@ -39,6 +39,11 @@ class NIOChannelInfo {
 		int ops;
 		boolean releaseNotify;
 
+		@Override
+		public String toString() {
+			return "{ch="+ch+"; ops="+Integer.toBinaryString(ops)+"; release="+releaseNotify+"}";
+		}
+		
 		/**
 		 * @param op
 		 * @param timeout2
@@ -56,8 +61,7 @@ class NIOChannelInfo {
 		 * @return
 		 */
 		public Interest combine(Interest old) {
-			// TODO implement
-			return null;
+			return new Interest(ch, handler, ops|old.ops, releaseNotify||old.releaseNotify);
 		}
 
 	}
@@ -176,6 +180,8 @@ class NIOChannelInfo {
 				}
 			}
 		}
+		
+		key.interestOps(computeOps());
 		
 		if (interest.isEmpty()) {
 			key.cancel();
