@@ -40,12 +40,12 @@
 		<mkdir dir="target/compiled" />
 
 		<echo message="Compiling src ===================" />
-		<javac debug="on" srcdir="src/main/java" destdir="target/classes" classpathref="erjang.classpath" deprecation="on" debuglevel="-Xlint"/>
+		<javac debug="true" srcdir="src/main/java" destdir="target/classes" classpathref="erjang.classpath" deprecation="on" debuglevel="lines,vars,source"/>
 	</target>
 
 	<target name="testcompile" depends="compile">
 		<echo message="Compiling test ===================" />
-		<javac debug="on" srcdir="src/test/java" destdir="target/test-classes" classpathref="erjang.classpath" />
+		<javac debug="true" srcdir="src/test/java" destdir="target/test-classes" classpathref="erjang.classpath"  debuglevel="lines,vars,source"/>
 	</target>
 
 
