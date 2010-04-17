@@ -38,7 +38,7 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 
 	static Logger log = Logger.getLogger(ETask.class.getName());
 	
-	protected static final EAtom am_normal = EAtom.intern("normal");
+	public static final EAtom am_normal = EAtom.intern("normal");
 	protected static final EAtom am_java_exception = EAtom
 			.intern("java_exception");
 	private static final EAtom am_DOWN = EAtom.intern("DOWN");
