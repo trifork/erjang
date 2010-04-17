@@ -108,4 +108,13 @@ public class InetServerSocket extends InetSocket {
 		ch.configureBlocking(false);
 	}
 
+	@Override
+	public String toString() {		
+		return "InetServerSocket[" + ch.toString()  
+			+ " open="+ch.isOpen()
+			+ " blocking="+ch.isBlocking()
+			+ " addr="+ch.socket().getLocalSocketAddress()
+		    + "]";		
+	}
+
 }

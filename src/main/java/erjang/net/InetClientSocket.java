@@ -115,4 +115,14 @@ public class InetClientSocket extends InetSocket {
 	public void setNonBlocking() throws IOException {
 		ch.configureBlocking(false);
 	}
+	
+	@Override
+	public String toString() {
+		
+		return "InetClientSocket[" + ch.toString()  
+			+ " open="+ch.isOpen()
+			+ " addr="+ch.socket().getLocalSocketAddress()
+			+ " remote="+ch.socket().getRemoteSocketAddress()
+		    + "]";		
+	}
 }

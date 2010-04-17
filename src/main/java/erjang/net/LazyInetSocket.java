@@ -360,4 +360,23 @@ public class LazyInetSocket extends InetSocket {
 		
 		return (this.status & OPEN_FLAG) == OPEN_FLAG;
 	}
+	
+	@Override
+	public String toString() {
+		if (delegate == null) {
+			
+			return "LazySocket["
+				+ "bound="+this.bindingAddress
+				+ "; linger="+this.so_linger
+				+ "; rcvbuf="+this.so_rcv_buf
+				+ "; sndbuf="+this.so_snd_buf
+				+ "; timeout="+this.so_timeout
+				+ "; reuse="+this.so_reuse_addr
+				+ "; keepalive="+this.so_keep_alive 
+				+ "]";
+			
+		} else {
+			return delegate.toString();
+		}
+	}
 }
