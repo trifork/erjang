@@ -65,21 +65,30 @@ public class EInternalPort extends EPort implements ELocalHandle {
 	 * @see erjang.EHandle#link_oneway(erjang.EHandle)
 	 */
 	@Override
-	public void link_oneway(EHandle other) throws Pausable {
-		task.link_oneway(other);
+	public boolean link_oneway(EHandle other) {
+		return task.link_oneway(other);
 	}
 	
-	public ERef add_monitor(EHandle target, EObject object) {
+	public boolean add_monitor(EHandle target, ERef ref) {
 		// TODO: check if task is alive!
-		return task.add_monitor(target, object);
+		return task.add_monitor(target, ref);
 	}
 
 	@Override
-	public void remove_monitor(ERef r, boolean flush) {
+	public void remove_monitor(EHandle sender, ERef r, boolean flush) {
 		task.remove_monitor(r, flush);
 	}
 
-
+	@Override
+	public void send_monitor_exit(EHandle from, ERef ref, EObject reason)
+			throws Pausable {
+		EDriverTask task = this.task;
+		if (task != null) {
+			task.send_monitor_exit(from, ref, reason);
+		}
+		
+	}
+	
 
 	/* (non-Javadoc)
 	 * @see erjang.EHandle#self()
@@ -123,7 +132,7 @@ public class EInternalPort extends EPort implements ELocalHandle {
 	 * @return
 	 * @throws Pausable 
 	 */
-	public void command(EPID caller, ByteBuffer[] out) throws Pausable {
+	public void command(EHandle caller, ByteBuffer[] out) throws Pausable {
 		task.command(caller, out);
 	}
 
@@ -156,4 +165,11 @@ public class EInternalPort extends EPort implements ELocalHandle {
 		if (dt != null)
 			dt.port_data = data;		
 	}
+
+	public void set_owner(EInternalPID ipid) {
+		EDriverTask dt = task;
+		if (dt != null)
+			dt.owner(ipid);		
+	}
+
 }

@@ -213,13 +213,12 @@ public class ErlProc {
 		
 		ERef ref = null;
 		if (monitor) {
-			ref = self.monitor(p2.self_handle(), null);
+			ref = ERT.getLocalNode().createRef();
 			
-			if (ref == null) {
-				ref = ERT.getLocalNode().createRef();
-				self.mbox_send(ETuple.make(ERT.am_DOWN, ref, p2.self_handle(), ERT.am_noproc));
+			if (!self.monitor(p2.self_handle(), p2.self_handle(), ref)) {
+				throw new InternalError("cannot monitor new process?");
+				// self.mbox_send(ETuple.make(ERT.am_DOWN, ref, p2.self_handle(), ERT.am_noproc));
 			}
-			return ref;
 
 		}
 		
@@ -303,9 +302,8 @@ public class ErlProc {
 		EHandle h = EHandle.cast(pid);
 		if (h != null) 
 		{   
-			ERef ref = self.monitor(h, h); 
-			if (ref == null) {
-				ref = ERT.getLocalNode().createRef();
+			ERef ref = ERT.getLocalNode().createRef();
+			if (!self.monitor(h, h, ref)) {
 				self.mbox_send(ETuple.make(ERT.am_DOWN, ref, h, ERT.am_noproc));
 			}
 			return ref;
@@ -339,8 +337,12 @@ public class ErlProc {
 
 		boolean flush = (!o.isNil() && o.head()==am_flush);
 
-		self.demonitor(r, flush);
+		boolean found = self.demonitor(r, flush);
 
+		if (!found) {
+			return ERT.FALSE;
+		}
+		
 		if (flush) {
 			flush_monitor_message.invoke(self, new EObject[] {ref, ERT.am_ok});
 		}

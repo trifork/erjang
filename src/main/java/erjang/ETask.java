@@ -18,6 +18,8 @@
 
 package erjang;
 
+
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -50,7 +52,7 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 	public abstract H self_handle();
 
 	protected Set<EHandle> links = new ConcurrentSkipListSet<EHandle>();
-	protected Map<ERef,ETuple2> monitors = new ConcurrentHashMap<ERef, ETuple2>();
+	protected Map<ERef,EHandle> monitors = new ConcurrentHashMap<ERef, EHandle>();
 
 	public void unlink(EHandle handle) {
 		links.remove(handle);
@@ -61,27 +63,29 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 	 * @throws Pausable 
 	 */
 	public void link_to(ETask<?> task) throws Pausable {
-		link_oneway(task.self_handle());
-		task.self_handle().link_oneway((EHandle) self_handle());
+		link_to(task.self_handle());
 	}
 
 	public void link_to(EHandle handle) throws Pausable {
-		link_oneway(handle);
-		handle.link_oneway((EHandle) self_handle());
+		if (!link_oneway(handle) || !handle.link_oneway((EHandle) self_handle())) {
+			link_failure(handle);
+		}		
 	}
 
-	public void link_oneway(EHandle h) throws Pausable {
+	public boolean link_oneway(EHandle h) {
 		// TODO: check if h is valid.
 		
 		if (h.exists()) {
 			links.add(h);
+			return true;
 		} else {
-			link_failure(h);
+			return false;
 		}
 	}
 
 	/**
 	 * @param h
+	 * @throws Pausable 
 	 * @throws Pausable 
 	 * @throws Pausable 
 	 */
@@ -95,37 +99,40 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 		for (EHandle handle : links) {
 			handle.exit_signal(me, exit_reason);
 		}
-		for (Map.Entry<ERef, ETuple2> ent : monitors.entrySet()) {
-			ETuple2 pid_object = ent.getValue();
+		for (Map.Entry<ERef, EHandle> ent : monitors.entrySet()) {
+			EHandle pid = ent.getValue();
 			ERef ref = ent.getKey();
-			
-			EPID pid = (EPID) pid_object.elm(1);
-			EObject object = pid_object.elm(2);
-			
-			if (object == null) {
-				object = me;
-			}
-			
-			pid.send(ETuple.make(am_DOWN, ref, am_process, object, exit_reason));
+
+			pid.send_monitor_exit((EHandle)me, ref, exit_reason);
 		}
 	}
 	
 
+	public void send_monitor_exit(EHandle from, ERef ref, EObject reason) throws Pausable {
+		ETuple2 pair = is_monitoring.get(ref);
+		if (pair != null) {
+			mbox_send(ETuple.make(am_DOWN, ref, am_process, pair.elem2, reason));
+		}
+	}
+	
+	
+
 	// this is not synchronized, as we only mess with it from this proc
-	Map<ERef,EHandle> is_monitoring = new HashMap<ERef, EHandle>();
+	Map<ERef,ETuple2> is_monitoring = new HashMap<ERef, ETuple2>();
 
 	/**
-	 * @param selfHandle
 	 * @param object
+	 * @param ref TODO
+	 * @param selfHandle
 	 * @return
 	 */
-	public ERef monitor(EHandle observed, EObject object) {
-		ERef ref = observed.add_monitor(self_handle(), object);
-		if (ref == null) {
-			return ref;
+	public boolean monitor(EHandle observed, EObject object, ERef ref) {
+		if (!observed.add_monitor(self_handle(), ref)) {
+			System.err.println("unable to add monitor to self="+self_handle()+" pid="+observed+" ref="+ref);
+			return false;
 		}
-		this.is_monitoring.put(ref, observed);
-		return ref;
+		this.is_monitoring.put(ref, new ETuple2(observed, object));
+		return true;
 	}
 
 	/**
@@ -133,37 +140,45 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 	 * @param flush
 	 * @return
 	 */
-	public void demonitor(ERef r, boolean flush) {
-		EHandle h = is_monitoring.get(r);
-		if (h == null) {
-			throw ERT.badarg(r, flush ? ERT.NIL.cons(ErlProc.am_flush) : ERT.NIL);
+	public boolean demonitor(ERef r, boolean flush) {
+		ETuple2 pair = is_monitoring.remove(r);
+		if (pair == null) {
+			return false;
 		}
-
-		h.remove_monitor(r, flush);
+		EHandle h = pair.elem1.testHandle();
+		h.remove_monitor(self_handle(), r, flush);
+		return true;
 	}
 	
 	/**
+	 * @param ref TODO
 	 * @param self2
 	 * @return
 	 */
-	public ERef add_monitor(EHandle target, EObject object) {
-		ERef ref = ERT.getLocalNode().createRef();
-		monitors.put(ref, new ETuple2(target, object));
-		return ref;
+	public boolean add_monitor(EHandle target, ERef ref) {
+		monitors.put(ref, target);
+		return true;
 	}
 	
 	/**
 	 * @param r
 	 */
 	public void remove_monitor(ERef r, boolean flush) {
-		ETuple2 val = monitors.remove(r);
+		EHandle val = monitors.remove(r);
 		if (flush) {
 			// TODO: do we need to represent flush somehow?
 		}
 	}
 	
 	public EHandle get_monitored_process(ERef monitor) {
-		return is_monitoring.get(monitor);
+		ETuple2 tup = is_monitoring.get(monitor);
+		if (tup == null) return null;
+		return tup.elem1.testHandle();
+	}
+
+	public EObject get_monitored_object(ERef monitor) {
+		ETuple2 tup = is_monitoring.get(monitor);
+		return tup.elem2;
 	}
 
 

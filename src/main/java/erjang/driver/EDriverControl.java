@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectableChannel;
 
+import erjang.EHandle;
 import erjang.EObject;
 import erjang.EPID;
 import erjang.ERef;
@@ -55,7 +56,7 @@ public abstract class EDriverControl {
 	 * @param bufv
 	 * @throws IOException 
 	 */
-	protected void outputv(EPID caller, ByteBuffer[] bufv) throws IOException {
+	protected void outputv(EHandle caller, ByteBuffer[] bufv) throws IOException {
 		// TODO Auto-generated method stub
 		
 	}

@@ -27,10 +27,11 @@ import kilim.Task;
  */
 public abstract class EHandle extends EObject {
 
-	protected ENode node;
+	protected final EAbstractNode node;
 	protected EObject name = null;
 	
-	protected EHandle(ENode node) {
+	protected EHandle(EAbstractNode node) {
+		if (node == null) throw new IllegalArgumentException("node cannot be null");
 		this.node = node;
 	}
 
@@ -46,10 +47,11 @@ public abstract class EHandle extends EObject {
 	}
 	
 	/**
+	 * @param sender TODO
 	 * @param msg
 	 * @throws Pausable 
 	 */
-	public void send(EObject msg) throws Pausable {
+	public void send(EHandle sender, EObject msg) throws Pausable {
 		ETask<?> task = task();
 		if (task != null) {
 			
@@ -99,13 +101,13 @@ public abstract class EHandle extends EObject {
 	 * @param other
 	 * @throws Pausable 
 	 */
-	public abstract void link_oneway(EHandle other) throws Pausable;
+	public abstract boolean link_oneway(EHandle other);
 
 	/**
+	 * @param ref TODO
 	 * @param selfHandle
-	 * @param object
 	 */
-	public abstract ERef add_monitor(EHandle selfHandle, EObject object);
+	public abstract boolean add_monitor(EHandle observer, ERef ref);
 
 
 	/**
@@ -147,6 +149,8 @@ public abstract class EHandle extends EObject {
 	/**
 	 * @param r
 	 */
-	public abstract void remove_monitor(ERef r, boolean flush);
+	public abstract void remove_monitor(EHandle sender, ERef r, boolean flush);
+
+	public abstract void send_monitor_exit(EHandle from, ERef ref, EObject reason) throws Pausable;
 	
 }

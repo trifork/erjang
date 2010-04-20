@@ -18,6 +18,7 @@
 
 package erjang;
 
+import java.io.IOException;
 import java.util.Set;
 
 import erjang.m.ets.EMatchContext;
@@ -30,7 +31,7 @@ public abstract class EPID extends EHandle {
 	/**
 	 * 
 	 */
-	public EPID(ENode node) {
+	public EPID(EAbstractNode node) {
 		super(node);
 	}
 	
@@ -41,6 +42,15 @@ public abstract class EPID extends EHandle {
 	
 	public EPID testPID() {
 		return this;
+	}
+	
+	@Override
+	public String toString() {
+		if (node()==ERT.getLocalNode().node) {
+			return "<" + creation() + "." + serial() + "." + id() + ">";			
+		} else {
+			return "<" + node() + "." + creation() + "." + serial() + "." + id() + ">";
+		}
 	}
 
 	public boolean match(ETermPattern matcher, EMatchContext r) {
@@ -58,7 +68,12 @@ public abstract class EPID extends EHandle {
 	
 	@Override
 	int compare_same(EObject rhs) {
-		return toString().compareTo(rhs.toString());
+		if (rhs == this) return 0;
+		EPID op = (EPID) rhs;
+		if (id() != op.id()) { if (id() < op.id()) return -1; return 1; } 
+		if (serial() != op.serial()) { if (serial() < op.serial()) return -1; return 1; } 
+		if (creation() != op.creation()) { if (creation() < op.creation()) return -1; return 1; } 
+		return node().compareTo(op.node());
 	}
 
 	/**
@@ -76,8 +91,8 @@ public abstract class EPID extends EHandle {
 	 */
 	public abstract EObject process_info(EObject spec);
 
-	public static EPID read(EInputStream ei) {
-		throw new NotImplemented();
+	public static EPID read(EInputStream ei) throws IOException {
+		return ei.read_pid();
 	}
 
 	/**
@@ -88,7 +103,14 @@ public abstract class EPID extends EHandle {
 	 * @return
 	 */
 	public static EPID make(EAtom node, int id, int serial, int creation) {
-		throw new NotImplemented();
+		if (node == ERT.getLocalNode().node) {
+
+			EPID res = EProc.find(id, serial);
+			if (res != null) return res;
+			
+		}
+		EAbstractNode peer = EPeer.get(node, creation);
+		return new EExternalPID((EPeer) peer, id, serial, creation);
 	}
 
 	/**
@@ -97,7 +119,22 @@ public abstract class EPID extends EHandle {
 	public abstract boolean is_alive();
 
 	public void encode(EOutputStream eos) {
-		throw new NotImplemented();
+		eos.write_pid(node.node, id(), serial(), creation());
+	}
+
+	protected int serial() {
+		throw new erjang.NotImplemented();
+		
+	}
+
+	protected int id() {
+		throw new erjang.NotImplemented();
+		
+	}
+
+	protected int creation() {
+		throw new erjang.NotImplemented();
+		
 	}
 
 }

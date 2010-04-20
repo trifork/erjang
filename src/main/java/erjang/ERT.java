@@ -37,6 +37,7 @@ import erjang.driver.Drivers;
 import erjang.driver.EAsync;
 import erjang.driver.EDriver;
 import erjang.driver.EDriverTask;
+import erjang.m.erlang.ErlDist;
 
 @Module(value = "erlang")
 public class ERT {
@@ -466,13 +467,13 @@ public class ERT {
 
 		EHandle p;
 		if ((p = pid.testHandle()) != null) {
-			p.send(msg);
+			p.send(proc.self_handle(), msg);
 			return msg;
 		}
 
 		p = register.get(pid);
 		if (p != null) {
-			p.send(msg);
+			p.send(proc.self_handle(), msg);
 			return msg;
 		}
 
@@ -493,13 +494,28 @@ public class ERT {
 		
 		EHandle p;
 		if ((p = pid.testHandle()) != null) {
-			p.send(msg);
+			p.send(proc.self_handle(), msg);
 			return am_ok;
 		}
 
+		ETuple t;
+		if ((t = pid.testTuple()) != null 
+				&& t.arity()==2) {
+			
+			EAtom reg_name;
+			EAtom node_name;
+			if ((reg_name = t.elm(1).testAtom()) != null
+			 && (node_name = t.elm(2).testAtom()) != null
+			 && ErlDist.is_node_name_atom(node_name)) {
+				// !
+				throw new NotImplemented();
+			}
+			
+		}
+		
 		p = register.get(pid);
 		if (p != null) {
-			p.send(msg);
+			p.send(proc.self_handle(), msg);
 			return am_ok;
 		}
 
@@ -690,6 +706,7 @@ public class ERT {
 	public static EAtom am_local = EAtom.intern("local");
 	public static EAtom am_external = EAtom.intern("external");
 	public static EAtom am_DOWN = EAtom.intern("DOWN");
+	public static EAtom am_killed = EAtom.intern("killed");
 
 	public static void run(Task task) {
 		task.setScheduler(scheduler);

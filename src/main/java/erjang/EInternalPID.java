@@ -35,6 +35,26 @@ public class EInternalPID extends EPID implements ELocalHandle {
 	public EInternalPID testInternalPID() {
 		return this;
 	}
+	
+	@Override
+	protected int id() {
+		return id & 0x7fff;
+	}
+	
+	@Override
+	protected int serial() {
+		return id >>> 15;
+	}
+	
+	@Override
+	public EAtom node() {
+		return ERT.getLocalNode().node;
+	}
+	
+	@Override
+	protected int creation() {
+		return ERT.getLocalNode().creation;
+	}
 
 	public EInternalPID(EProc self) {
 		super(ERT.getLocalNode());
@@ -64,7 +84,7 @@ public class EInternalPID extends EPID implements ELocalHandle {
 	}
 	
 	@Override
-	public void send(EObject msg) throws Pausable {
+	public void send(EHandle sender, EObject msg) throws Pausable {
 		EProc task = this.task;
 		if (task != null) {
 			
@@ -78,43 +98,37 @@ public class EInternalPID extends EPID implements ELocalHandle {
 		}
 	}
 	
-	/* (non-Javadoc)
-	 * @see erjang.EPID#compare_same(erjang.EObject)
-	 */
-	@Override
-	int compare_same(EObject rhs) {
-		return rhs.r_compare_same(this);
-	}
-
-	/* (non-Javadoc)
-	 * @see erjang.EObject#r_compare_same(erjang.EInternalPID)
-	 */
-	@Override
-	int r_compare_same(EInternalPID lhs) {
-		return id - lhs.id;
-	}
 	
-
 	/* (non-Javadoc)
 	 * @see erjang.EHandle#link_oneway(erjang.EHandle)
 	 */
 	@Override
-	public void link_oneway(EHandle other) throws Pausable {
+	public boolean link_oneway(EHandle other) {
 		EProc task = this.task;
 		if (task != null)
-			task.link_oneway(other);
+			return task.link_oneway(other);
+		return false;
 	}
 	
-	public ERef add_monitor(EHandle target, EObject object) {
+	public boolean add_monitor(EHandle observer, ERef ref) {
 		EProc task = this.task;
 		if (task != null) 
-			return task.add_monitor(target, object);
+			return task.add_monitor(observer, ref);
 		else 
-			return null;
+			return false;
 	}
 	
 	@Override
-	public void remove_monitor(ERef r, boolean flush) {
+	public void send_monitor_exit(EHandle from, ERef ref, EObject reason) throws Pausable {
+		EProc task = this.task;
+		if (task != null) {
+			task.send_monitor_exit(from, ref, reason);
+		}
+		
+	}
+	
+	@Override
+	public void remove_monitor(EHandle sender, ERef r, boolean flush) {
 		EProc task = this.task;
 		if (task != null) 
 			task.remove_monitor(r, flush);
@@ -137,11 +151,14 @@ public class EInternalPID extends EPID implements ELocalHandle {
 	public int internal_pid_number() {
 		return id;
 	}
-	
+
+	/*
 	@Override
 	public String toString() {
+		
 		return "<" + (name==null?"":name)  + ":" + id + ">";
 	}
+	*/
 	
 	@Override
 	public EObject process_info() {
