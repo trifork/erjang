@@ -203,6 +203,7 @@ public final class EAtom extends EObject implements CharSequence {
 	 * @return
 	 */
 	public int compareTo(EAtom other) {
+		if (this == other) return 0;
 		return value.compareTo(other.value);
 	}
 	
