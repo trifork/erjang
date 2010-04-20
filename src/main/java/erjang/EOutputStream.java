@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.text.DecimalFormat;
 import java.util.zip.Deflater;
 
@@ -601,10 +602,10 @@ public class EOutputStream extends ByteArrayOutputStream {
      *            be used.
      * 
      */
-    public void write_pid(final String node, final int id, final int serial,
+    public void write_pid(final EAtom node, final int id, final int serial,
 	    final int creation) {
 	write1(EExternal.pidTag);
-	write_atom(node);
+	write_atom(node.getName());
 	write4BE(id & 0x7fff); // 15 bits
 	write4BE(serial & 0x1fff); // 13 bits
 	write1(creation & 0x3); // 2 bits
@@ -818,4 +819,8 @@ public class EOutputStream extends ByteArrayOutputStream {
 	write_atom(function);
 	write_long(arity);
     }
+
+	public ByteBuffer toByteBuffer() {
+    	return ByteBuffer.wrap(super.buf, 0, super.count);
+	}
 }
