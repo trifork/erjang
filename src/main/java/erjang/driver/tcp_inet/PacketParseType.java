@@ -4,23 +4,28 @@
 package erjang.driver.tcp_inet;
 
 public enum PacketParseType {
-    TCP_PB_RAW,
-    TCP_PB_1,
-    TCP_PB_2,
-    TCP_PB_4,
-    TCP_PB_ASN1,
-    TCP_PB_RM,
-    TCP_PB_CDR,
-    TCP_PB_FCGI,
-    TCP_PB_LINE_LF,
-    TCP_PB_TPKT,
-    TCP_PB_HTTP,
-    TCP_PB_HTTPH,
-    TCP_PB_SSL_TLS,
-    TCP_PB_HTTP_BIN,
-    TCP_PB_HTTPH_BIN
+    TCP_PB_RAW(0),
+    TCP_PB_1(1),
+    TCP_PB_2(2),
+    TCP_PB_4(3),
+    TCP_PB_ASN1(4),
+    TCP_PB_RM(5),
+    TCP_PB_CDR(6),
+    TCP_PB_FCGI(7),
+    TCP_PB_LINE_LF(8),
+    TCP_PB_TPKT(9),
+    TCP_PB_HTTP(10),
+    TCP_PB_HTTPH(11),
+    TCP_PB_SSL_TLS(12),
+    TCP_PB_HTTP_BIN(13),
+    TCP_PB_HTTPH_BIN(14)
 	;
 
+    public final int code;
+    private PacketParseType(int code) {
+    	this.code = code;
+	}
+    
 	public static PacketParseType valueOf(int ival) {
 		switch (ival) {
 		case 0: return TCP_PB_RAW;
