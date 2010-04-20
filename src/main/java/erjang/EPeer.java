@@ -281,6 +281,19 @@ public class EPeer extends EAbstractNode {
 				}
 				return;
 			}
+			
+			case EXIT:
+			case EXIT2:
+			{
+				EPID from_pid = head.elm(2).testPID();
+				EPID to_proc = head.elm(3).testPID();
+				reason = head.elm(4);
+
+				to_proc.exit_signal(from_pid, reason);
+				return;
+				
+			}
+			
 
 			case MONITOR_P: { // {19, FromPid, ToProc, Ref}
 				// FromPid = monitoring process

@@ -88,7 +88,7 @@ public abstract class EHandle extends EObject {
 	 * @param result
 	 * @throws Pausable 
 	 */
-	public void exit_signal(EHandle from, EObject reason) throws Pausable {
+	public void exit_signal(EHandle from, EObject reason) {
 		ETask<?> task = task();
 		if (task != null) {
 			task.send_exit(from, reason);

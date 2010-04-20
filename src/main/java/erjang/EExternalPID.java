@@ -78,7 +78,7 @@ public class EExternalPID extends EPID {
 	}
 
 	@Override
-	public void exit_signal(EHandle from_pid, EObject reason) throws Pausable {
+	public void exit_signal(EHandle from_pid, EObject reason)  {
 		peer().dsig_exit(from_pid, this, reason);
 	}
 	
