@@ -288,6 +288,7 @@ public class ERT {
 	public static final boolean DEBUG2 = false;
 	public static final boolean DEBUG_WAIT = false;
 	public static final boolean DEBUG_PORT = false;
+	public static final boolean DEBUG_INET = false;
 	public static final EBinary EMPTY_BINARY = new EBinary(new byte[0]);
 	public static final ByteBuffer[] EMPTY_BYTEBUFFER_ARR = new ByteBuffer[0];
 	public static final ByteBuffer EMPTY_BYTEBUFFER = ByteBuffer.allocate(0);
@@ -302,6 +303,7 @@ public class ERT {
 	public static final EObject am_ok = EAtom.intern("ok");
 	private static final EObject am_noconnect = EAtom.intern("noconnect");
 	public static final boolean DEVEL = true;
+	public static final boolean DEBUG_DIST = false;
 
 	public static EBitStringBuilder bs_init(int size, int flags) {
 		return new EBitStringBuilder(size, flags);
