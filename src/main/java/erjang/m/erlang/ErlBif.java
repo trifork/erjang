@@ -598,52 +598,6 @@ public class ErlBif {
 		throw new NotImplemented();
 	}
 
-	@BIF
-	@ErlFun(export = true)
-	static public EAtom node() {
-		EAtom val = ERT.getLocalNode().node();
-		return val;
-	}
-
-	@BIF
-	@ErlFun(export = true)
-	static public EAtom node(EObject name) {
-		
-		if (!ERT.getLocalNode().isALive()) {
-			return ENode.am_nonode_at_nohost;
-		}
-		
-		ERef ref;
-		if ((ref=name.testReference()) != null) 
-			return ref.node();
-		
-		EHandle handle;
-		if ((handle=name.testHandle()) != null) 
-			return handle.node();
-		
-		throw ERT.badarg(name);
-	}
-
-	@BIF(type = Type.GUARD, name = "node")
-	@ErlFun(export = true)
-	static public EAtom node$p(EObject name) {
-		
-		if (!ERT.getLocalNode().isALive()) {
-			return ENode.am_nonode_at_nohost;
-		}
-		
-		EHandle handle;
-		if ((handle=name.testHandle()) != null) {
-			return handle.node();
-		}
-		
-		ERef ref;
-		if ((ref=name.testReference()) != null) {
-			return ref.node();
-		}
-		
-		return null;
-	}
 
 	// process dict
 

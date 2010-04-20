@@ -99,6 +99,50 @@ public class ErlDist {
 	}
 	
 	@BIF
+	static public EAtom node() {
+		EAtom val = ERT.getLocalNode().node();
+		return val;
+	}
+
+	@BIF
+	static public EAtom node(EObject name) {
+		
+		if (!ERT.getLocalNode().isALive()) {
+			return ENode.am_nonode_at_nohost;
+		}
+		
+		ERef ref;
+		if ((ref=name.testReference()) != null) 
+			return ref.node();
+		
+		EHandle handle;
+		if ((handle=name.testHandle()) != null) 
+			return handle.node();
+		
+		throw ERT.badarg(name);
+	}
+
+	@BIF(type = Type.GUARD, name = "node")
+	static public EAtom node$p(EObject name) {
+		
+		if (!ERT.getLocalNode().isALive()) {
+			return ENode.am_nonode_at_nohost;
+		}
+		
+		EHandle handle;
+		if ((handle=name.testHandle()) != null) {
+			return handle.node();
+		}
+		
+		ERef ref;
+		if ((ref=name.testReference()) != null) {
+			return ref.node();
+		}
+		
+		return null;
+	}
+
+	@BIF
 	public static EObject setnode(EObject arg_node, EObject arg_creation)
 	{
 		int creation;
