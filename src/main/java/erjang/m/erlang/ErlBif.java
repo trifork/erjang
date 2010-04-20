@@ -28,6 +28,10 @@ import java.util.TimeZone;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import java.lang.management.GarbageCollectorMXBean;
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryMXBean;
+import java.lang.management.RuntimeMXBean;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 
@@ -77,6 +81,9 @@ public class ErlBif {
 	private static final TimeZone UTC_TIME_ZONE = TimeZone.getTimeZone("UTC");
 	private static Logger log = Logger.getLogger("erlang");
 	private static EAtom am_wall_clock = EAtom.intern("wall_clock");
+	private static EAtom am_reductions = EAtom.intern("reductions");
+	private static EAtom am_garbage_collection = EAtom.intern("garbage_collection");
+	private static EAtom am_runtime = EAtom.intern("runtime");
 	
 	@BIF
 	static EObject apply(EProc proc, EObject fun, EObject args) throws Pausable {
@@ -573,9 +580,11 @@ public class ErlBif {
 	
 	// TODO: figure out if this needs to be stored in the current process
 	static long last_wall_clock = wall_clock0;
+	static long last_reductions = 0;
+	static long last_runtime = 0;
 
 	@BIF
-	static public EObject statistics(EObject spec) {
+	static public EObject statistics(EProc proc, EObject spec) {
 		
 		if (spec == am_wall_clock) {
 			long now = System.currentTimeMillis();
@@ -583,6 +592,39 @@ public class ErlBif {
 			long since_epoch = now-wall_clock0;
 			last_wall_clock = now;
 			return ETuple.make(ERT.box(since_epoch), ERT.box(since_last));
+
+		} else if (spec == am_reductions) {
+			long current_reds = proc.reds;
+			long since_last = current_reds - last_reductions;
+			last_reductions = current_reds;
+			
+			return new ETuple2(ERT.box(current_reds),ERT.box(since_last));			
+
+		} else if (spec == am_runtime) {
+			
+			// TODO: should return cpu time spent; can do?
+			
+			RuntimeMXBean b = ManagementFactory.getRuntimeMXBean();
+			
+			long current_runtime = b.getUptime();
+			long since_last = current_runtime - last_runtime;
+			last_runtime = current_runtime;
+			
+			return new ETuple2(ERT.box(current_runtime),ERT.box(since_last));	
+			
+		} else if (spec == am_garbage_collection) {
+			
+			List<GarbageCollectorMXBean> b = ManagementFactory.getGarbageCollectorMXBeans();
+
+			long num_gcs = 0;
+			long time_gcs = 0;
+
+			for (GarbageCollectorMXBean bb : b) {
+				num_gcs += bb.getCollectionCount();
+				time_gcs += bb.getCollectionTime();
+			}
+			
+			return ETuple.make(ERT.box(num_gcs), ERT.box(time_gcs), ERT.box(0));
 		}
 		
 		throw new NotImplemented("erlang:statistics("+spec+")");
