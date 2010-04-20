@@ -91,11 +91,11 @@ public abstract class ErlangException extends RuntimeException {
 		protected ETuple instantiate() {
 			if (instance == null) {
 				if (e instanceof ErlangThrow) {
-					instance = new ETuple2(ERT.EXIT, e.reason);
+					instance = new ETuple2(ERT.am_EXIT, e.reason);
 				} else {
 					ETuple2 reason_plus_trace =
 						new ETuple2(e.reason, e.getTrace());
-					instance = new ETuple2(ERT.EXIT, reason_plus_trace);
+					instance = new ETuple2(ERT.am_EXIT, reason_plus_trace);
 				}
 			}
 			return instance;

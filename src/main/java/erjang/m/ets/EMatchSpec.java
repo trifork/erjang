@@ -417,7 +417,7 @@ public class EMatchSpec extends EPseudoTerm {
 					out = body[i].eval(ctx);
 				}
 			} catch (Exception e) {
-				out = ERT.EXIT;
+				out = ERT.am_EXIT;
 			}
 
 			return out;

@@ -271,7 +271,7 @@ public class ERT {
 	}
 
 	public static final ENil NIL = new ENil();
-	public static final EAtom EXIT = EAtom.intern("EXIT");
+	public static final EAtom am_EXIT = EAtom.intern("EXIT");
 	public static final EAtom IGNORED = EAtom.intern("ignored");
 	private static final EAtom am_badmatch = EAtom.intern("badmatch");
 	private static final EAtom am_case_clause = EAtom.intern("case_clause");

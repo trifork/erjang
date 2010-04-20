@@ -407,7 +407,7 @@ public class EDriverTask extends ETask<EInternalPort> implements
 			} else if ((t3 = ETuple3.cast(msg)) != null) {
 
 				// {'EXIT', From, Reason} comes in this way
-				if (t3.elem1 == ERT.EXIT) {
+				if (t3.elem1 == ERT.am_EXIT) {
 					// close is handled by exception handling code
 					return;
 				}
@@ -533,7 +533,7 @@ public class EDriverTask extends ETask<EInternalPort> implements
 		// TODO: do special things for reason=kill ?
 		
 		System.err.println("sending exit msg to self "+this);
-		mbox.put(ETuple.make(ERT.EXIT, from, reason));
+		mbox.put(ETuple.make(ERT.am_EXIT, from, reason));
 	}
 
 	/* (non-Javadoc)
@@ -543,7 +543,7 @@ public class EDriverTask extends ETask<EInternalPort> implements
 	protected void do_proc_termination(EObject result) throws Pausable {
 		super.do_proc_termination(result);
 		if (result != am_normal) {
-			owner.send(ETuple.make(ERT.EXIT, self_handle(), result));
+			owner.send(self_handle(), ETuple.make(ERT.am_EXIT, self_handle(), result));
 		}
 		//this.port.done();
 		all_ports.remove(this.id);
