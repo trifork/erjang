@@ -110,6 +110,10 @@ public class IO {
 	 */
 	public static int exception_to_posix_code(IOException e) {
 		
+		if (e instanceof java.nio.channels.ClosedChannelException) {
+			return Posix.ENOTCONN;
+		}
+		
 		if ("Broken pipe".equals(e.getMessage())) {
 			return Posix.ENOTCONN;
 		}

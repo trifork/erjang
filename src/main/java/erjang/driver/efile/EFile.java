@@ -36,6 +36,7 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.locks.Lock;
 
+import kilim.Pausable;
 import erjang.EBinary;
 import erjang.EHandle;
 import erjang.EPort;
@@ -173,7 +174,7 @@ public class EFile extends EDriverInstance {
 
 		// called from the DriverTask
 		@Override
-		public void ready() {
+		public void ready() throws Pausable {
 			if (reply) {
 				if (!result_ok) {
 					reply_posix_error(posix_errno);
@@ -364,8 +365,10 @@ public class EFile extends EDriverInstance {
 
 	/**
 	 * @param command
+	 * @param driver 
 	 */
-	public EFile(EString command) {
+	public EFile(EString command, Driver driver) {
+		super(driver);
 		this.command = command;
 
 		this.fd = (FileChannel) null;
@@ -388,8 +391,9 @@ public class EFile extends EDriverInstance {
 
 	/**
 	 * @param replySize
+	 * @throws Pausable 
 	 */
-	public void reply_Uint(int value) {
+	public void reply_Uint(int value) throws Pausable {
 		ByteBuffer response = ByteBuffer.allocate(4);
 		response.putInt(value);
 		driver_output2(response, null);
@@ -397,8 +401,9 @@ public class EFile extends EDriverInstance {
 
 	/**
 	 * @param error
+	 * @throws Pausable 
 	 */
-	public void reply_posix_error(int posix_errno) {
+	public void reply_posix_error(int posix_errno) throws Pausable {
 		ByteBuffer response = ByteBuffer.allocate(256);
 		response.put(FILE_RESP_ERROR);
 		String err = Posix.errno_id(posix_errno);
@@ -409,7 +414,7 @@ public class EFile extends EDriverInstance {
 
 
 	@Override
-	protected void flush() {
+	protected void flush() throws Pausable {
 		int r = flush_write(null);
 		assert (r == 0);
 		cq_execute();
@@ -454,7 +459,7 @@ public class EFile extends EDriverInstance {
 		 */
 		protected abstract void run();
 
-		public void ready() {
+		public void ready() throws Pausable {
 			reply(EFile.this);
 		}
 
@@ -466,7 +471,7 @@ public class EFile extends EDriverInstance {
 	 * @see erjang.driver.EDriverInstance#outputv(java.nio.ByteBuffer[])
 	 */
 	@Override
-	protected void outputv(EHandle caller, ByteBuffer[] ev) {
+	protected void outputv(EHandle caller, ByteBuffer[] ev) throws Pausable {
 
 		if (ev.length == 0 || ev[0].remaining() == 0) {
 			reply_posix_error(Posix.EINVAL);
@@ -512,7 +517,7 @@ public class EFile extends EDriverInstance {
 				}
 
 				@Override
-				public void ready() {
+				public void ready() throws Pausable {
 					if (result_ok) {
 						reply_ok();
 					} else {
@@ -591,7 +596,7 @@ public class EFile extends EDriverInstance {
 				}
 
 				@Override
-				public void ready() {
+				public void ready() throws Pausable {
 					if (!result_ok) {
 						reply_posix_error(posix_errno);
 						return;
@@ -691,7 +696,7 @@ public class EFile extends EDriverInstance {
 				}
 
 				@Override
-				public void ready() {
+				public void ready() throws Pausable {
 					
 					if (!result_ok) {
 						reply_posix_error(posix_errno);
@@ -755,7 +760,7 @@ public class EFile extends EDriverInstance {
 	};
 
 	@Override
-	protected void output(ByteBuffer data) {
+	protected void output(ByteBuffer data) throws Pausable {
 		FileAsync d;
 		byte cmd = data.get();
 		switch (cmd) {
@@ -846,7 +851,7 @@ public class EFile extends EDriverInstance {
 				}
 
 				@Override
-				public void ready() {
+				public void ready() throws Pausable {
 					if (!result_ok) {
 						reply_posix_error(posix_errno);
 					} else {
@@ -901,7 +906,7 @@ public class EFile extends EDriverInstance {
 				}
 
 				@Override
-				public void ready() {
+				public void ready() throws Pausable {
 					if (result_ok) {
 						EFile.this.fd = fd;
 						reply_Uint(1234); /* TODO: fd */
@@ -965,7 +970,7 @@ public class EFile extends EDriverInstance {
 				}
 				
 				@Override
-				public void ready() {
+				public void ready() throws Pausable {
 					if (!this.result_ok) {
 						reply_posix_error(posix_errno);
 						return;
@@ -1056,7 +1061,7 @@ public class EFile extends EDriverInstance {
 				}
 
 				@Override
-				public void ready() {
+				public void ready() throws Pausable {
 					if (!this.result_ok) {
 						reply_posix_error(posix_errno);
 						return;
@@ -1122,13 +1127,13 @@ public class EFile extends EDriverInstance {
 	
 	
 	@Override
-	public void processExit(ERef monitor) {
+	public void processExit(ERef monitor) throws Pausable {
 		// TODO Auto-generated method stub
 
 	}
 
 	@Override
-	protected void readyAsync(EAsync data) {
+	protected void readyAsync(EAsync data) throws Pausable {
 		FileAsync d = (FileAsync) data;
 
 		if (try_again(d))
@@ -1168,19 +1173,19 @@ public class EFile extends EDriverInstance {
 	}
 
 	@Override
-	protected void readyInput(SelectableChannel ch) {
+	protected void readyInput(SelectableChannel ch) throws Pausable {
 		// TODO Auto-generated method stub
 
 	}
 
 	@Override
-	protected void readyOutput(SelectableChannel evt) {
+	protected void readyOutput(SelectableChannel evt) throws Pausable {
 		// TODO Auto-generated method stub
 
 	}
 
 	@Override
-	protected void timeout() {
+	protected void timeout() throws Pausable {
 		TimerState timer_state = this.timer_state;
 		this.timer_state = TimerState.IDLE;
 		switch (timer_state) {
@@ -1251,7 +1256,7 @@ public class EFile extends EDriverInstance {
 		return cq.poll();
 	}
 
-	private void cq_execute() {
+	private void cq_execute() throws Pausable {
 		if (timer_state == TimerState.AGAIN)
 			return;
 
@@ -1271,23 +1276,24 @@ public class EFile extends EDriverInstance {
 
 	//
 
-	void reply_buf(ByteBuffer buf) {
+	void reply_buf(ByteBuffer buf) throws Pausable {
 		ByteBuffer header = ByteBuffer.allocate(1 + 4 + 4);
 		header.put(FILE_RESP_DATA);
 		header.putLong(buf.position());
 		driver_output2(header, buf);
 	}
 
-	void reply_eof() {
+	void reply_eof() throws Pausable {
 		ByteBuffer header = ByteBuffer.allocate(1);
 		header.put(FILE_RESP_EOF);
 		driver_output2(header, null);
 	}
 
 	/**
+	 * @throws Pausable 
 	 * 
 	 */
-	public void reply_ok() {
+	public void reply_ok() throws Pausable {
 		ByteBuffer header = ByteBuffer.allocate(1);
 		header.put(FILE_RESP_OK);
 		driver_output2(header, null);

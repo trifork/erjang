@@ -43,6 +43,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
+import kilim.Lock;
 import kilim.Pausable;
 import kilim.Task;
 import erjang.EAbstractNode;
@@ -102,11 +103,20 @@ public class EDriverTask extends ETask<EInternalPort> implements
 	private	static ConcurrentHashMap<Integer,EDriverTask> all_ports 
 		= new ConcurrentHashMap<Integer,EDriverTask> ();
 
-	public EDriverTask(EPID owner, EDriverInstance driver) {
+	public EDriverTask(EPID owner, EDriverControl driver) {
+
+		EDriver drv = driver.getDriver();
+		if (drv.useDriverLevelLocking() == true) {
+			System.err.println("DRIVER_LEVEL_LOCK: "+driver);
+			driver = new LockingDriverInstance(driver, drv.getLock());
+		} else {
+			driver = new LockingDriverInstance(driver, new Lock());
+		}
+		
 		this.owner = owner;
 		this.instance = driver;
 		this.port = new EInternalPort(this);
-		driver.task = this;
+		driver.setTask(this);
 		
 
 		all_ports.put(id, this);
@@ -460,8 +470,9 @@ public class EDriverTask extends ETask<EInternalPort> implements
 	 * 
 	 * @param op
 	 * @param cmd2
+	 * @throws Pausable 
 	 */
-	public EObject control(EProc caller, int op, ByteBuffer cmd2) {
+	public EObject control(EProc caller, int op, ByteBuffer cmd2) throws Pausable {
 
 		if (pstate == State.RUNNING || pstate == State.INIT) {
 			// ok
@@ -515,8 +526,9 @@ public class EDriverTask extends ETask<EInternalPort> implements
 	 * @param op
 	 * @param data
 	 * @return
+	 * @throws Pausable 
 	 */
-	public EObject call(EProc caller, int op, EObject data) {
+	public EObject call(EProc caller, int op, EObject data) throws Pausable {
 		if (pstate != State.RUNNING) {
 			throw ERT.badarg();
 		}
@@ -665,20 +677,22 @@ public class EDriverTask extends ETask<EInternalPort> implements
 
 	/**
 	 * @param out
+	 * @throws Pausable 
 	 */
-	public void output_from_driver(EObject out) {
+	public void output_from_driver(EObject out) throws Pausable {
 		output_term_from_driver(new ETuple2(port, new ETuple2(am_data, out)));
 	}
 
-	public void output_term_from_driver(EObject out) {
+	public void output_term_from_driver(EObject out) throws Pausable {
 		if (ERT.DEBUG_PORT) System.err.println(""+owner+" ! "+out);
-		owner.sendb(out);
+		owner.send(port, out);
 	}
 
 	/**
+	 * @throws Pausable 
 	 * 
 	 */
-	public void eof_from_driver() {
+	public void eof_from_driver() throws Pausable {
 		output_term_from_driver(new ETuple2(port, am_eof));
 	}
 
@@ -722,8 +736,8 @@ public class EDriverTask extends ETask<EInternalPort> implements
 	}
 
 	/** magic direct call ! */
-	public void outputv(EHandle sender, ByteBuffer[] ev) throws IOException {
-		instance.outputv(sender, ev);
+	public void outputv(EHandle sender, ByteBuffer[] ev) throws IOException, Pausable {
+		this.command(sender, ev);
 	}
 
 

@@ -21,6 +21,8 @@ package erjang.driver.efile;
 
 import java.nio.channels.FileChannel;
 
+import kilim.Pausable;
+
 import erjang.driver.EAsync;
 
 /**
@@ -41,7 +43,7 @@ public abstract class FileAsync implements EAsync {
 	public abstract void async();
 	
 	@Override
-	public abstract void ready();
+	public abstract void ready() throws Pausable;
 
 	/**
 	 * Used by WriteAsync and PWriteVAsync to deque output buffer
@@ -49,7 +51,7 @@ public abstract class FileAsync implements EAsync {
 	public void deq_free_size() {
 	}
 	
-	protected void reply(EFile efile) {
+	protected void reply(EFile efile) throws Pausable {
 		if (result_ok) { 
 			efile.reply_ok();
 		} else {

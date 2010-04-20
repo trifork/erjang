@@ -103,14 +103,14 @@ public class EInternalPID extends EPID implements ELocalHandle {
 	 * @see erjang.EHandle#link_oneway(erjang.EHandle)
 	 */
 	@Override
-	public boolean link_oneway(EHandle other) {
+	public boolean link_oneway(EHandle other) throws Pausable {
 		EProc task = this.task;
 		if (task != null)
 			return task.link_oneway(other);
 		return false;
 	}
 	
-	public boolean add_monitor(EHandle observer, ERef ref) {
+	public boolean add_monitor(EHandle observer, ERef ref) throws Pausable {
 		EProc task = this.task;
 		if (task != null) 
 			return task.add_monitor(observer, ref);
@@ -128,7 +128,7 @@ public class EInternalPID extends EPID implements ELocalHandle {
 	}
 	
 	@Override
-	public void remove_monitor(EHandle sender, ERef r, boolean flush) {
+	public void remove_monitor(EHandle sender, ERef r, boolean flush) throws Pausable {
 		EProc task = this.task;
 		if (task != null) 
 			task.remove_monitor(r, flush);

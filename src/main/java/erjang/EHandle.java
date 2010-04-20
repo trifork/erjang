@@ -72,23 +72,13 @@ public abstract class EHandle extends EObject {
 		}
 	}
 
-	/** send non-blocking
-	 * @return true if message was sent */
-	public boolean sendnb(EObject msg) {
-		ETask<?> task = task();
-		if (task != null) {
-			return task.mbox().putnb(msg);
-		} else {
-			return false;
-		}
-	}
-
 	/**
 	 * @param self
 	 * @param result
 	 * @throws Pausable 
+	 * @throws Pausable 
 	 */
-	public void exit_signal(EHandle from, EObject reason) {
+	public void exit_signal(EHandle from, EObject reason) throws Pausable {
 		ETask<?> task = task();
 		if (task != null) {
 			task.send_exit(from, reason);
@@ -100,14 +90,16 @@ public abstract class EHandle extends EObject {
 	 * 
 	 * @param other
 	 * @throws Pausable 
+	 * @throws Pausable 
 	 */
-	public abstract boolean link_oneway(EHandle other);
+	public abstract boolean link_oneway(EHandle other) throws Pausable;
 
 	/**
 	 * @param ref TODO
 	 * @param selfHandle
+	 * @throws Pausable 
 	 */
-	public abstract boolean add_monitor(EHandle observer, ERef ref);
+	public abstract boolean add_monitor(EHandle observer, ERef ref) throws Pausable;
 
 
 	/**
@@ -148,8 +140,9 @@ public abstract class EHandle extends EObject {
 
 	/**
 	 * @param r
+	 * @throws Pausable 
 	 */
-	public abstract void remove_monitor(EHandle sender, ERef r, boolean flush);
+	public abstract void remove_monitor(EHandle sender, ERef r, boolean flush) throws Pausable;
 
 	public abstract void send_monitor_exit(EHandle from, ERef ref, EObject reason) throws Pausable;
 	

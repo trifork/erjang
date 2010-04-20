@@ -33,7 +33,8 @@ public interface EAsync {
 	void async();
 
 	/**
+	 * @throws Pausable 
 	 * 
 	 */
-	void ready();
+	void ready() throws Pausable;
 }

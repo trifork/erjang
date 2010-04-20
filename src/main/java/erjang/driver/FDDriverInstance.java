@@ -27,6 +27,8 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.SelectableChannel;
 
+import kilim.Pausable;
+
 import erjang.EBinary;
 import erjang.EObject;
 import erjang.EPID;
@@ -53,6 +55,8 @@ public class FDDriverInstance extends EDriverInstance {
 	 * @param out
 	 */
 	public FDDriverInstance(int in, int out) {
+		super (new FDDriver());
+		
 		this.in = in;
 		this.out = out;
 		
@@ -70,18 +74,25 @@ public class FDDriverInstance extends EDriverInstance {
 		// that's it.
 	}
 
+	@Override
+	protected void readyAsync(EAsync data) throws Pausable {
+		data.ready();
+	}
+
 	public void setup() {
+		
+		
 		if (ins != null) {
 			new Thread() {
 				{ setDaemon(true); start(); }
-				
-				@Override
-				public void run() {
-					byte[] buffer = new byte[1024];
-					while (true) {
-						try {
-							int howmany = ins.read(buffer);
-							
+
+				void finish(final int howmany, final byte[] buffer) {
+					final EDriverTask dt = FDDriverInstance.this.task;
+					ERT.run_async(new EAsync() {
+						
+						@Override
+						public void ready() throws Pausable {
+
 							if (howmany < 0) {
 								if (task.send_eof) {
 									task.eof_from_driver();
@@ -99,10 +110,30 @@ public class FDDriverInstance extends EDriverInstance {
 								EString str = EString.make(ob);
 								task.output_from_driver(str);
 							}
-
-						} catch (EOFException ex) {
-							if (task.send_eof) {
-								task.eof_from_driver();
+							
+						}
+						
+						@Override
+						public void async() {
+							// do nothing //
+						}
+					}, dt);
+					
+				}
+				
+				@Override
+				public void run() {
+					
+					byte[] buffer = new byte[1024];
+					while (true) {
+						try {
+							int howmany;
+							
+							try {
+								howmany = ins.read(buffer);
+								finish(howmany, buffer);
+							} catch (EOFException e) {
+								finish(-1, buffer);								
 							}
 							
 						} catch (IOException e) {
@@ -122,7 +153,7 @@ public class FDDriverInstance extends EDriverInstance {
 	}
 
 	@Override
-	protected ByteBuffer control(EPID caller, int command, ByteBuffer out) {
+	protected ByteBuffer control(EPID caller, int command, ByteBuffer out) throws Pausable {
 		if (command == CTRL_OP_GET_WINSIZE) {
 			// TODO: hmm, how do we do that?
 			// for now, we always respond 80x25.
@@ -137,18 +168,18 @@ public class FDDriverInstance extends EDriverInstance {
 	}
 	
 	@Override
-	protected EObject call(EPID caller, int command, EObject data) {
+	protected EObject call(EPID caller, int command, EObject data) throws Pausable {
 		// allways return null
 		return null;
 	}
 
 
 	@Override
-	protected void flush() {
+	protected void flush() throws Pausable {
 	}
 
 	@Override
-	protected void output(ByteBuffer data) throws IOException {
+	protected void output(ByteBuffer data) throws IOException, Pausable {
 		if (outs != null) {
 			if (data.hasArray()) {
 				outs.write(data.array(), data.arrayOffset(), data.remaining());
@@ -159,28 +190,24 @@ public class FDDriverInstance extends EDriverInstance {
 	}
 
 	@Override
-	public void processExit(ERef monitor) {
+	public void processExit(ERef monitor) throws Pausable {
 		// TODO Auto-generated method stub
 
 	}
 
-	@Override
-	protected void readyAsync(EAsync data) {
-		// only called if we issue async commands
-	}
 
 	@Override
-	protected void readyInput(SelectableChannel ch) {
+	protected void readyInput(SelectableChannel ch) throws Pausable {
 
 	}
 
 	@Override
-	protected void readyOutput(SelectableChannel evt) {
+	protected void readyOutput(SelectableChannel evt) throws Pausable {
 
 	}
 
 	@Override
-	protected void timeout() {
+	protected void timeout() throws Pausable {
 
 	}
 

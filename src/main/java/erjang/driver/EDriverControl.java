@@ -23,6 +23,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectableChannel;
 
+import kilim.Pausable;
+
 import erjang.EHandle;
 import erjang.EObject;
 import erjang.EPID;
@@ -33,20 +35,24 @@ import erjang.ERef;
  */
 public abstract class EDriverControl {
 
+	abstract void setTask(EDriverTask task);
+	
 	public void setup() {}
 
 	/**
+	 * @throws Pausable 
 	 * 
 	 */
-	protected void stop() {
+	protected void stop() throws Pausable {
 		// TODO Auto-generated method stub
 		
 	}
 
 	/**
+	 * @throws Pausable 
 	 * 
 	 */
-	protected void timeout() {
+	protected void timeout() throws Pausable {
 		// TODO Auto-generated method stub
 		
 	}
@@ -55,8 +61,9 @@ public abstract class EDriverControl {
 	 * @param caller TODO
 	 * @param bufv
 	 * @throws IOException 
+	 * @throws Pausable 
 	 */
-	protected void outputv(EHandle caller, ByteBuffer[] bufv) throws IOException {
+	protected void outputv(EHandle caller, ByteBuffer[] bufv) throws IOException, Pausable {
 		// TODO Auto-generated method stub
 		
 	}
@@ -66,56 +73,63 @@ public abstract class EDriverControl {
 	 * @param op
 	 * @param cmd2
 	 * @return
+	 * @throws Pausable 
 	 */
-	protected ByteBuffer control(EPID pid, int op, ByteBuffer cmd2) {
+	protected ByteBuffer control(EPID pid, int op, ByteBuffer cmd2) throws Pausable {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	/**
 	 * @param ch
+	 * @throws Pausable 
 	 */
-	protected void readyInput(SelectableChannel ch) {
+	protected void readyInput(SelectableChannel ch) throws Pausable {
 		// TODO Auto-generated method stub
 		
 	}
 
 	/**
 	 * @param ch
+	 * @throws Pausable 
 	 */
-	protected void readyOutput(SelectableChannel ch) {
+	protected void readyOutput(SelectableChannel ch) throws Pausable {
 		// TODO Auto-generated method stub
 		
 	}
 
 	/**
 	 * @param ch
+	 * @throws Pausable 
 	 */
-	public void readyConnect(SelectableChannel ch) {
+	public void readyConnect(SelectableChannel ch) throws Pausable {
 		// TODO Auto-generated method stub
 		
 	}
 
 	/**
 	 * @param ch
+	 * @throws Pausable 
 	 */
-	public void readyAccept(SelectableChannel ch) {
+	public void readyAccept(SelectableChannel ch) throws Pausable {
 		// TODO Auto-generated method stub
 		
 	}
 
 	/**
 	 * @param ch
+	 * @throws Pausable 
 	 */
-	protected void stopSelect(SelectableChannel ch) {
+	protected void stopSelect(SelectableChannel ch) throws Pausable {
 		// TODO Auto-generated method stub
 		
 	}
 
 	/**
 	 * @param job
+	 * @throws Pausable 
 	 */
-	protected void readyAsync(EAsync job) {
+	protected void readyAsync(EAsync job) throws Pausable {
 		// TODO Auto-generated method stub
 		
 	}
@@ -124,14 +138,17 @@ public abstract class EDriverControl {
 	 * @param op
 	 * @param data
 	 * @return
+	 * @throws Pausable 
 	 */
-	protected EObject call(EPID caller, int op, EObject data) {
+	protected EObject call(EPID caller, int op, EObject data) throws Pausable {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
-	public void processExit(ERef ref) {
+	public void processExit(ERef ref) throws Pausable {
 		
 	}
+
+	public abstract EDriver getDriver();
 
 }

@@ -136,7 +136,7 @@ public class ErlPort {
 
 	@BIF
 	static EObject port_control(EProc proc, EObject port, EObject operation,
-			EObject data) {
+			EObject data) throws Pausable {
 		
 			try {
 				return port_control0(proc, port, operation, data);
@@ -150,7 +150,7 @@ public class ErlPort {
 		}
 
 	static EObject port_control0(EProc proc, EObject port, EObject operation,
-			EObject data) {
+			EObject data) throws Pausable {
 		EInternalPort p = port.testInternalPort();
 
 		if (p == null) {
@@ -198,7 +198,7 @@ public class ErlPort {
 
 	@BIF
 	static EObject port_call(EProc proc, EObject port, EObject operation,
-			EObject data) {
+			EObject data) throws Pausable {
 		EInternalPort p = port.testInternalPort();
 
 		if (p == null) {
@@ -264,6 +264,7 @@ public class ErlPort {
 			
 			if (in == null || out == null) throw ERT.badarg(portName, portSetting);
 			
+			System.err.println("creating fd driver in="+in+"; out="+out);
 			task = new EFDDriverTask(proc, in.value, out.value, portSetting);
 			
 		}

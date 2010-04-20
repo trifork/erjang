@@ -25,6 +25,7 @@ import java.nio.channels.SelectionKey;
 import java.util.ArrayList;
 import java.util.concurrent.locks.Lock;
 
+import kilim.Pausable;
 import kilim.ReentrantLock;
 import erjang.EAtom;
 import erjang.EBinList;
@@ -42,20 +43,33 @@ import erjang.ETuple;
 import erjang.ErlangException;
 import erjang.NotImplemented;
 import erjang.driver.efile.Posix;
-import erjang.m.erlang.ErlDist;
 
 /**
  * 
  */
 public abstract class EDriverInstance extends EDriverControl {
 
+	EDriver driver;
 	EDriverTask task;
 	Lock pdl;
 	
+	public EDriverInstance(EDriver driver) {
+		this.driver = driver;
+	}
+
+	public EDriver getDriver() {
+		return driver;
+	}
+
 	protected EInternalPort port() {
 		return task.self_handle();
 	}
 
+	@Override
+	void setTask(EDriverTask task) {
+		this.task = task;
+	}
+	
 	protected static final int ERL_DRV_READ = SelectionKey.OP_READ;
 	protected static final int ERL_DRV_WRITE = SelectionKey.OP_WRITE;
 	protected static final int ERL_DRV_ACCEPT = SelectionKey.OP_ACCEPT;
@@ -95,7 +109,7 @@ public abstract class EDriverInstance extends EDriverControl {
 		ERT.run_async(job, task);
 	}
 
-	protected void driver_output2(ByteBuffer header, ByteBuffer buf) {
+	protected void driver_output2(ByteBuffer header, ByteBuffer buf) throws Pausable {
 
 		int status = task.status;
 		
@@ -131,7 +145,7 @@ public abstract class EDriverInstance extends EDriverControl {
 		task.output_from_driver(out);
 	}
 
-	protected void driver_output(ByteBuffer buf) {
+	protected void driver_output(ByteBuffer buf) throws Pausable {
 		
 		int status = task.status;
 		
@@ -164,15 +178,16 @@ public abstract class EDriverInstance extends EDriverControl {
 		task.output_from_driver(out);
 	}
 	
-	protected void driver_output_term(EObject term) {
+	protected void driver_output_term(EObject term) throws Pausable {
 		task.output_term_from_driver(term);
 	}
 
 	/**
 	 * @param fileRespOkHeader
 	 * @param binp
+	 * @throws Pausable 
 	 */
-	protected void driver_output_binary(byte[] header, ByteBuffer binp) {
+	protected void driver_output_binary(byte[] header, ByteBuffer binp) throws Pausable {
 		EObject out = EBinary.make(binp);
 		if (header.length > 0) {
 			out = new EBinList(header, out);
@@ -217,7 +232,7 @@ public abstract class EDriverInstance extends EDriverControl {
 		return this.caller;
 	}
 
-	protected boolean driver_demonitor_process(ERef monitor) {
+	protected boolean driver_demonitor_process(ERef monitor) throws Pausable {
 		try {
 			task.demonitor(monitor, false);
 			return true;
@@ -235,11 +250,11 @@ public abstract class EDriverInstance extends EDriverControl {
 	}
 
 	
-	protected ERef driver_monitor_process(EPID pid) {
+	protected ERef driver_monitor_process(EPID pid) throws Pausable {
 		ERef ref = ERT.getLocalNode().createRef();
 		
 		if (!task.monitor(pid, pid, ref)) {
-			port().sendnb(ETuple.make(ERT.am_DOWN, ref, pid, ERT.am_noproc));
+			port().send(port(), ETuple.make(ERT.am_DOWN, ref, pid, ERT.am_noproc));
 		}
 		
 		return ref;
@@ -312,7 +327,7 @@ public abstract class EDriverInstance extends EDriverControl {
 	 * Called on behalf of driver_select when it is safe to release 'event'. A
 	 * typical unix driver would call close(event)
 	 */
-	protected void stopSelect(SelectableChannel event) {
+	protected void stopSelect(SelectableChannel event) throws Pausable {
 	}
 
 	/**
@@ -328,72 +343,74 @@ public abstract class EDriverInstance extends EDriverControl {
 	 * behavior is to do nothing.
 	 */
 
-	protected void stop() {
+	protected void stop() throws Pausable {
 	}
 
 	/*
 	 * called when we have output from erlang to the port
 	 */
-	protected abstract void output(ByteBuffer data) throws IOException;
+	protected abstract void output(ByteBuffer data) throws IOException, Pausable;
 
 	/*
 	 * called when we have output from erlang to the port, and the iodata()
 	 * passed in contains multiple fragments. Default behavior is to flatten the
 	 * input vector, and call EDriverInstance#output(ByteBuffer).
 	 */
-	protected void outputv(EHandle caller, ByteBuffer[] ev) throws IOException {
+	protected void outputv(EHandle caller, ByteBuffer[] ev) throws IOException, Pausable {
 		output(flatten(ev));
 	}
 
 	/*
 	 * called when we have input from one of the driver's handles)
 	 */
-	protected abstract void readyInput(SelectableChannel ch);
+	protected abstract void readyInput(SelectableChannel ch) throws Pausable;
 
 	/*
 	 * called when output is possible to one of the driver's handles
 	 */
-	protected abstract void readyOutput(SelectableChannel evt);
+	protected abstract void readyOutput(SelectableChannel evt) throws Pausable;
 
 	/* called when "action" is possible, async job done */
-	protected abstract void readyAsync(EAsync data);
+	protected abstract void readyAsync(EAsync data) throws Pausable;
 
 	/*
 	 * "ioctl" for drivers - invoked by port_control/3)
 	 */
-	protected ByteBuffer control(EPID pid, int command, ByteBuffer cmd) {
+	protected ByteBuffer control(EPID pid, int command, ByteBuffer cmd) throws Pausable {
 		throw ERT.badarg();
 	}
 
 	/* Handling of timeout in driver */
-	protected abstract void timeout();
+	protected abstract void timeout() throws Pausable;
 
 	/*
 	 * called when the port is about to be closed, and there is data in the
 	 * driver queue that needs to be flushed before 'stop' can be called
 	 */
-	protected abstract void flush();
+	protected abstract void flush() throws Pausable;
 
 	/*
 	 * Works mostly like 'control', a syncronous call into the driver.
 	 */
-	protected EObject call(EPID caller, int command, EObject data) {
+	protected EObject call(EPID caller, int command, EObject data) throws Pausable {
 		throw ERT.badarg();
 	}
 
 
 	/**
 	 * @param ch
+	 * @throws Pausable 
 	 */
-	public void readyConnect(SelectableChannel evt) {
+	public void readyConnect(SelectableChannel evt) throws Pausable {
 		// TODO Auto-generated method stub
 
 	}
 
 	/**
 	 * @param ch
+	 * @throws Pausable 
 	 */
-	public void readyAccept(SelectableChannel ch) {
+	public void readyAccept(SelectableChannel ch) throws Pausable {
 
 	}
 

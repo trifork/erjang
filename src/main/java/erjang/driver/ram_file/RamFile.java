@@ -40,6 +40,8 @@ import java.util.zip.Inflater;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectableChannel;
 
+import kilim.Pausable;
+
 import static java.util.zip.GZIPInputStream.GZIP_MAGIC;
 
 import static erjang.driver.efile.EFile.FILE_OPEN;
@@ -79,11 +81,12 @@ public class RamFile extends EDriverInstance {
 	private ByteBuffer contents;
 	private int flags;
 
-	RamFile(EString command) {
+	RamFile(EString command, Driver driver) {
+		super(driver);
 	}
 
 	@Override
-	protected void outputv(EHandle caller, ByteBuffer[] ev) throws IOException {
+	protected void outputv(EHandle caller, ByteBuffer[] ev) throws IOException, Pausable {
 		if (ev.length == 0 || ev[0].remaining() == 0) {
 			reply_posix_error(Posix.EINVAL);
 			return;
@@ -107,7 +110,7 @@ public class RamFile extends EDriverInstance {
 			output(flatten(ev));
 		} // switch
 	}
-	protected void output(ByteBuffer data) throws IOException {
+	protected void output(ByteBuffer data) throws IOException, Pausable {
 		byte cmd = data.get();
 		switch (cmd) {
  		case FILE_OPEN: {
@@ -170,20 +173,20 @@ public class RamFile extends EDriverInstance {
 	}
 
 
-	public void reply_ok() {
+	public void reply_ok() throws Pausable {
 		ByteBuffer header = ByteBuffer.allocate(1);
 		header.put(FILE_RESP_OK);
 		driver_output2(header, null);
 	}
 
-	public void reply_number(int val) {
+	public void reply_number(int val) throws Pausable {
 		ByteBuffer reply = ByteBuffer.allocate(1 + 4);
 		reply.put(FILE_RESP_NUMBER);
 		reply.putInt(val);
 		driver_output2(reply, null);
 	}
 
-	void reply_buf(ByteBuffer buf) {
+	void reply_buf(ByteBuffer buf) throws Pausable {
 		ByteBuffer header = ByteBuffer.allocate(1 + 4);
 		header.put(FILE_RESP_DATA);
 		header.putInt(buf.position());
@@ -192,8 +195,9 @@ public class RamFile extends EDriverInstance {
 
 	/**
 	 * @param reply_Uint
+	 * @throws Pausable 
 	 */
-	public void reply_Uint(int value) {
+	public void reply_Uint(int value) throws Pausable {
 		ByteBuffer response = ByteBuffer.allocate(4);
 		response.putInt(value);
 		driver_output2(response, null);
@@ -201,8 +205,9 @@ public class RamFile extends EDriverInstance {
 
 	/**
 	 * @param error
+	 * @throws Pausable 
 	 */
-	public void reply_posix_error(int posix_errno) {
+	public void reply_posix_error(int posix_errno) throws Pausable {
 		ByteBuffer response = ByteBuffer.allocate(256);
 		response.put(FILE_RESP_ERROR);
 		String err = Posix.errno_id(posix_errno);
@@ -212,41 +217,41 @@ public class RamFile extends EDriverInstance {
 	}
 
 	@Override
-	protected EObject call(EPID caller, int command, EObject data) {
+	protected EObject call(EPID caller, int command, EObject data) throws Pausable {
 		// TODO
 		return null;
 	}
 
 	@Override
-	protected void flush() {
+	protected void flush() throws Pausable {
 		// TODO
 	}
 
 	@Override
-	public void processExit(ERef monitor) {
+	public void processExit(ERef monitor) throws Pausable {
 		// TODO
 
 	}
 
 	@Override
-	protected void readyInput(SelectableChannel ch) {
+	protected void readyInput(SelectableChannel ch) throws Pausable {
 		// TODO Auto-generated method stub
 
 	}
 
 	@Override
-	protected void readyOutput(SelectableChannel evt) {
+	protected void readyOutput(SelectableChannel evt) throws Pausable {
 		// TODO Auto-generated method stub
 
 	}
 
 	@Override
-	protected void timeout() {
+	protected void timeout() throws Pausable {
 		// TODO
 	}
 
 	@Override
-	protected void readyAsync(EAsync data) {
+	protected void readyAsync(EAsync data) throws Pausable {
 		// TODO
 	}
 }

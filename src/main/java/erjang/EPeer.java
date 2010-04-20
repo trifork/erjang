@@ -84,7 +84,7 @@ public class EPeer extends EAbstractNode {
 
 	}
 
-	public void net_message(EInternalPort port, ByteBuffer hdr, ByteBuffer buf) {
+	public void net_message(EInternalPort port, ByteBuffer hdr, ByteBuffer buf) throws Pausable {
 		try {
 			net_message2(port, hdr, buf);
 		} catch (IOException e) {
@@ -103,7 +103,7 @@ public class EPeer extends EAbstractNode {
 	}
 
 	public void net_message2(EInternalPort port, ByteBuffer hdr, ByteBuffer buf)
-			throws IOException {
+			throws IOException, Pausable {
 
 		if (buf.remaining() == 0) {
 			if (ERT.DEBUG_DIST) {
@@ -274,6 +274,29 @@ public class EPeer extends EAbstractNode {
 				return;
 			}
 			
+			case MONITOR_P_EXIT:
+			{ // {21, FromProc, ToPid, Ref, Reason}
+				
+				EPID from_pid = head.elm(2).testPID();
+				EPID to_proc = head.elm(3).testPID();
+				ERef ref = head.elm(4).testReference();
+				reason = head.elm(5);
+
+				if (to_proc == null) {
+					EAtom am = head.elm(3).testAtom();
+					if (am == null) {
+						throw new IOException("protocol error: " + head);
+					}
+					to_proc = ERT.whereis(am).testPID();
+				}
+				if (to_proc == null) {
+					throw new IOException("protocol error: " + head);
+				}
+
+				to_proc.send_monitor_exit(from_pid, ref, reason);
+				return;
+			}
+
 			default:
 				throw new NotImplemented("dmesg: " + head);
 			}
@@ -368,7 +391,7 @@ public class EPeer extends EAbstractNode {
 		return peers.get(node);
 	}
 
-	void dsig_cast(EHandle sender, ETuple hdr) {
+	void dsig_cast(EHandle sender, ETuple hdr) throws Pausable {
 
 		ByteBuffer disthdr = ByteBuffer.allocate(3);
 		disthdr.put((byte) 131);
@@ -392,7 +415,7 @@ public class EPeer extends EAbstractNode {
 
 	}
 
-	void dsig_cast(EHandle sender, ETuple hdr, EObject payload) {
+	void dsig_cast(EHandle sender, ETuple hdr, EObject payload) throws Pausable {
 
 		ByteBuffer disthdr = ByteBuffer.allocate(3);
 		disthdr.put((byte) 131);
@@ -417,20 +440,20 @@ public class EPeer extends EAbstractNode {
 
 	}
 
-	public void dsig_send(EHandle sender, EExternalPID pid, EObject msg) {
+	public void dsig_send(EHandle sender, EExternalPID pid, EObject msg) throws Pausable {
 		ETuple hdr = ETuple.make(ERT.box(SEND), (EAtom) am_, pid);
 		dsig_cast(sender, hdr, msg);
 	}
 
 	public void dsig_send_monitor_exit(EHandle sender, EPID to_pid,
-			ERef ref, EObject reason) {
+			ERef ref, EObject reason) throws Pausable {
 
 		ETuple hdr = ETuple.make(ERT.box(MONITOR_P_EXIT), sender, to_pid,
 				reason);
 		dsig_cast(sender, hdr);
 	}
 
-	public void dsig_monitor(EHandle sender, EExternalPID to_pid, ERef ref) {
+	public void dsig_monitor(EHandle sender, EExternalPID to_pid, ERef ref) throws Pausable {
 
 		ETuple hdr = ETuple.make(ERT.box(MONITOR_P), sender, to_pid, ref);
 		dsig_cast(sender, hdr);
@@ -438,19 +461,19 @@ public class EPeer extends EAbstractNode {
 	}
 
 	public void dsig_exit(EHandle sender, EPID to_pid,
-			EObject reason) {
+			EObject reason) throws Pausable {
 		ETuple hdr = ETuple.make(ERT.box(EXIT), sender, to_pid, reason);
 		dsig_cast(sender, hdr);
 		
 	}
 
-	public void dsig_link(EHandle sender, EExternalPID to_pid) {
+	public void dsig_link(EHandle sender, EExternalPID to_pid) throws Pausable {
 		ETuple hdr = ETuple.make(ERT.box(LINK), sender, to_pid);
 		dsig_cast(sender, hdr);
 	}
 
 	public void dsig_demonitor(EHandle sender, ERef ref,
-			EExternalPID to_pid) {
+			EExternalPID to_pid) throws Pausable {
 		ETuple hdr = ETuple.make(ERT.box(DEMONITOR_P), sender, to_pid, ref);
 		dsig_cast(sender, hdr);
 	}

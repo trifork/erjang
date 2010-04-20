@@ -125,8 +125,9 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 	 * @param ref TODO
 	 * @param selfHandle
 	 * @return
+	 * @throws Pausable 
 	 */
-	public boolean monitor(EHandle observed, EObject object, ERef ref) {
+	public boolean monitor(EHandle observed, EObject object, ERef ref) throws Pausable {
 		if (!observed.add_monitor(self_handle(), ref)) {
 			System.err.println("unable to add monitor to self="+self_handle()+" pid="+observed+" ref="+ref);
 			return false;
@@ -139,8 +140,9 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 	 * @param r
 	 * @param flush
 	 * @return
+	 * @throws Pausable 
 	 */
-	public boolean demonitor(ERef r, boolean flush) {
+	public boolean demonitor(ERef r, boolean flush) throws Pausable {
 		ETuple2 pair = is_monitoring.remove(r);
 		if (pair == null) {
 			return false;
@@ -258,6 +260,7 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 				// we have already received one exit signal, ignore
 				// subsequent ones...
 			case EXIT_SIG:
+			case SENDING_EXIT:
 				// TODO: warn that this process is not yet dead. why?
 				return;
 

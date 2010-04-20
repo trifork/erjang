@@ -18,9 +18,10 @@
 
 package erjang.driver.tcp_inet;
 
+import kilim.Lock;
 import erjang.EString;
 import erjang.driver.EDriver;
-import erjang.driver.EDriverInstance;
+import erjang.driver.EDriverControl;
 import erjang.net.Protocol;
 
 public class Driver implements EDriver {
@@ -35,13 +36,19 @@ public class Driver implements EDriver {
 	}
 
 	@Override
-	public EDriverInstance start(EString command) {
-		return new TCPINet(Protocol.TCP);
+	public EDriverControl start(EString command) {
+		TCPINet inst = new TCPINet(Protocol.TCP, this);
+		return inst;
 	}
 
 	@Override
 	public boolean useDriverLevelLocking() {
-		return true;
+		return false;
 	}
 
+	@Override
+	public Lock getLock() {
+		throw new erjang.NotImplemented();
+		
+	}
 }

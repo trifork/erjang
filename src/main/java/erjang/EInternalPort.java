@@ -65,17 +65,17 @@ public class EInternalPort extends EPort implements ELocalHandle {
 	 * @see erjang.EHandle#link_oneway(erjang.EHandle)
 	 */
 	@Override
-	public boolean link_oneway(EHandle other) {
+	public boolean link_oneway(EHandle other) throws Pausable {
 		return task.link_oneway(other);
 	}
 	
-	public boolean add_monitor(EHandle target, ERef ref) {
+	public boolean add_monitor(EHandle target, ERef ref) throws Pausable {
 		// TODO: check if task is alive!
 		return task.add_monitor(target, ref);
 	}
 
 	@Override
-	public void remove_monitor(EHandle sender, ERef r, boolean flush) {
+	public void remove_monitor(EHandle sender, ERef r, boolean flush) throws Pausable {
 		task.remove_monitor(r, flush);
 	}
 
@@ -112,8 +112,9 @@ public class EInternalPort extends EPort implements ELocalHandle {
 	 * @param op
 	 * @param cmd
 	 * @return
+	 * @throws Pausable 
 	 */
-	public EObject control(EProc caller, int op, ByteBuffer cmd) {
+	public EObject control(EProc caller, int op, ByteBuffer cmd) throws Pausable {
 		return task.control(caller, op, cmd);
 	}
 
@@ -121,8 +122,9 @@ public class EInternalPort extends EPort implements ELocalHandle {
 	 * @param value
 	 * @param data
 	 * @return
+	 * @throws Pausable 
 	 */
-	public EObject call(EProc caller, int op, EObject data) {
+	public EObject call(EProc caller, int op, EObject data) throws Pausable {
 		return task.call(caller, op, data);
 	}
 

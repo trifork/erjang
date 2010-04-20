@@ -19,14 +19,17 @@
 
 package erjang.driver.ram_file;
 
+import kilim.Lock;
 import erjang.EString;
 import erjang.driver.EDriver;
-import erjang.driver.EDriverInstance;
+import erjang.driver.EDriverControl;
 
 /**
  *
  */
 public class Driver implements EDriver {
+	private Lock lock;
+
 	@Override
 	public String driverName() {
 		return "ram_file_drv";
@@ -37,13 +40,21 @@ public class Driver implements EDriver {
 	}
 
 	@Override
-	public EDriverInstance start(EString command) {
- 		return new RamFile(command);
+	public EDriverControl start(EString command) {
+ 		return new RamFile(command, this);
 	}
 
 
 	@Override
 	public boolean useDriverLevelLocking() {
 		return false;
+	}
+	
+	@Override
+	public Lock getLock() {
+		if (this.lock == null) {
+			this.lock = new kilim.Lock();
+		}
+		return this.lock;
 	}
 }

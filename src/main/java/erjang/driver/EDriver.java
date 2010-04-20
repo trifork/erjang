@@ -19,6 +19,7 @@
 
 package erjang.driver;
 
+import kilim.Lock;
 import erjang.EString;
 
 /**
@@ -29,7 +30,7 @@ public interface EDriver {
 
 	/* called when open_port/2 is invoked.
 	   return value null means failure. */
-	EDriverInstance start(EString command); 
+	EDriverControl start(EString command); 
 	
 	/* called before unloading the driver -
 	   DYNAMIC DRIVERS ONLY */
@@ -41,5 +42,8 @@ public interface EDriver {
 	
 	/** override this to return true if you want driver-level locking */
 	boolean useDriverLevelLocking();
+
+	/** get the shared lock for all instances of this driver */
+	Lock getLock();
 	
 }

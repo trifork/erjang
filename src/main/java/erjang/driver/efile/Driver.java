@@ -19,14 +19,18 @@
 
 package erjang.driver.efile;
 
+import kilim.Lock;
 import erjang.EString;
+import erjang.NotImplemented;
 import erjang.driver.EDriver;
-import erjang.driver.EDriverInstance;
+import erjang.driver.EDriverControl;
 
 /**
  * 
  */
 public class Driver implements EDriver {
+
+	private Lock lock;
 
 	@Override
 	public String driverName() {
@@ -38,13 +42,18 @@ public class Driver implements EDriver {
 	}
 
 	@Override
-	public EDriverInstance start(EString command) {
-		return new EFile(command);
+	public EDriverControl start(EString command) {
+		return new EFile(command, this);
 	}
 
 	@Override
 	public boolean useDriverLevelLocking() {
-		return true;
+		return false;
+	}
+
+	@Override
+	public Lock getLock() {
+		throw new NotImplemented();
 	}
 
 }

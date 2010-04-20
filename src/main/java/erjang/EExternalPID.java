@@ -78,24 +78,24 @@ public class EExternalPID extends EPID {
 	}
 
 	@Override
-	public void exit_signal(EHandle from_pid, EObject reason)  {
+	public void exit_signal(EHandle from_pid, EObject reason) throws Pausable  {
 		peer().dsig_exit(from_pid, this, reason);
 	}
 	
 	@Override
-	public boolean add_monitor(EHandle from_pid, ERef ref) {
+	public boolean add_monitor(EHandle from_pid, ERef ref) throws Pausable {
 		peer().dsig_monitor(from_pid, this, ref);
 		return true;
 	}
 
 	@Override
-	public boolean link_oneway(EHandle other)  {
+	public boolean link_oneway(EHandle other) throws Pausable  {
 		peer().dsig_link(other, this);
 		return true;
 	}
 
 	@Override
-	public void remove_monitor(EHandle sender, ERef ref, boolean flush) {
+	public void remove_monitor(EHandle sender, ERef ref, boolean flush) throws Pausable {
 		peer().dsig_demonitor(sender, ref, this);
 	}
 	
