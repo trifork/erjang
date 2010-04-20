@@ -19,6 +19,8 @@
 
 package erjang;
 
+import java.io.IOException;
+
 /**
  * 
  */
@@ -70,7 +72,17 @@ public final class ERef extends EObject {
 
 	@Override
 	int compare_same(EObject rhs) {
-		ERef oref = (ERef) rhs;
+
+		int val = compare_same2(rhs);
+		// System.err.println("compare_same "+this+" <=> "+rhs+"  ==> "+val);
+    	return val;
+	}
+    
+	int compare_same2(EObject rhs) {
+
+        	// System.err.println("compare_same "+this+" <=> "+rhs);
+
+        	ERef oref = (ERef) rhs;
 		
 		int cmp = node.compareTo(oref.node);
 		if (cmp != 0) return cmp;
@@ -106,21 +118,31 @@ public final class ERef extends EObject {
      * @return true if the refs are equal, false otherwise.
      */
     @Override
-    public boolean equals(final Object o) {
+	public boolean equals(Object rhs) {
+
+    	boolean val = equals2(rhs);
+    	// System.err.println("equals "+this+" =:= "+rhs+"  ==> "+val);
+    	return val;
+	}
+    
+    public boolean equals2(final Object o) {
+    	
         if (!(o instanceof ERef)) {
             return false;
         }
 
         final ERef ref = (ERef) o;
 
-        if (!(node.equals(ref.node()) && creation == ref.creation())) {
+        if ((node != ref.node()) || creation != ref.creation()) {
             return false;
         }
 
         if (isNewRef() && ref.isNewRef()) {
-            return ids[0] == ref.ids[0] && ids[1] == ref.ids[1]
-                    && ids[2] == ref.ids[2];
+            return ids[0] == ref.ids[0]
+                && ids[1] == ref.ids[1]
+                && ids[2] == ref.ids[2];
         }
+        
         return ids[0] == ref.ids[0];
     }
 
@@ -186,9 +208,9 @@ public final class ERef extends EObject {
      */
     @Override
     public String toString() {
-        String s = "#Ref<" + node;
+        String s = "#Ref<" + node + "." + creation();
 
-        for (int i = 0; i < ids.length; i++) {
+        for (int i = ids.length-1; i >= 0; i--) {
             s += "." + ids[i];
         }
 
@@ -204,8 +226,8 @@ public final class ERef extends EObject {
 		throw new NotImplemented();
 	}
 
-	public static ERef read(EInputStream ei) {
-		throw new NotImplemented();
+	public static ERef read(EInputStream ei) throws IOException {
+		return ei.read_ref();
 	}
 
 	/* (non-Javadoc)
