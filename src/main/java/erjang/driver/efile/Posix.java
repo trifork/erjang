@@ -43,6 +43,7 @@ public class Posix {
 	public static final int ENOTCONN = 13;
 	public static final int EINTR = 14;
 	public static final int EAGAIN = 15;
+	public static final int EALREADY = 16;
 
 	private static final String[] err_id = { 
 			"einval",
@@ -61,6 +62,7 @@ public class Posix {
 			"enotconn",
 			"eintr",
 			"eagain",
+			"ealready",
 	};
 
 
