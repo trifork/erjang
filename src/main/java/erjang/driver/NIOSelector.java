@@ -93,6 +93,22 @@ public class NIOSelector extends Thread {
 
 			} else {
 
+				if (false) {
+					System.err.println("select loop");
+					
+					for (SelectionKey key : selector.keys()) {
+						if (key.isValid()) {
+							
+							SelectableChannel ch = key.channel();
+							int interst = key.interestOps();
+							System.err.println(Integer.toBinaryString(interst) + ":" 
+									+ ch);
+							
+						}
+					}
+				}
+				
+				
 				try {
 					num = selector.select();
 				} catch (ClosedSelectorException e) {
@@ -109,7 +125,7 @@ public class NIOSelector extends Thread {
 			Set<SelectionKey> ready = selector.selectedKeys();
 
 			for (SelectionKey key : ready) {
-				System.err.println("READY: "+key.channel()+":"+Integer.toBinaryString(key.readyOps()));
+				// System.err.println("READY: "+key.channel()+":"+Integer.toBinaryString(key.readyOps()));
 				
 				NIOChannelInfo req = (NIOChannelInfo) key.attachment();
 				req.ready(key);
