@@ -43,6 +43,8 @@ public class EInputStream extends ByteArrayInputStream {
 
 	private final int flags;
 
+	private EAtom[] atom_cache_refs;
+
 	/**
 	 * @param buf
 	 */
@@ -359,6 +361,11 @@ public class EInputStream extends ByteArrayInputStream {
 
 		tag = read1skip_version();
 
+		if (tag == EExternal.atomCacheRef) {
+			int index = read1() & 0xff;
+			return atom_cache_refs[index];
+		}
+		
 		if (tag != EExternal.atomTag) {
 			throw new IOException("wrong tag encountered, expected "
 					+ EExternal.atomTag + ", got " + tag);
@@ -1150,9 +1157,10 @@ public class EInputStream extends ByteArrayInputStream {
 		case EExternal.largeBigTag:
 			return EInteger.read(this);
 
+		case EExternal.atomCacheRef:
 		case EExternal.atomTag:
 			return EAtom.read(this);
-
+			
 		case EExternal.floatTag:
 		case EExternal.newFloatTag:
 			return EDouble.read(this);
@@ -1202,5 +1210,9 @@ public class EInputStream extends ByteArrayInputStream {
 		default:
 			throw new IOException("Unknown data type: " + tag + " at position " + getPos());
 		}
+	}
+
+	public void setAtomCacheRefs(EAtom[] atomCacheRefs) {
+		this.atom_cache_refs = atomCacheRefs;		
 	}
 }

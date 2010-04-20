@@ -91,6 +91,9 @@ public class EExternal {
     /** The tag used for compressed terms */
     public static final int compressedTag = 80;
 
+    /** The tag used for atom cache refs */
+    public static final int atomCacheRef = 82;
+
     /** The version number used to mark serialized Erlang terms */
     public static final int versionTag = 131;
 
