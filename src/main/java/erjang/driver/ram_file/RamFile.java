@@ -19,6 +19,7 @@
 
 package erjang.driver.ram_file;
 
+import erjang.EHandle;
 import erjang.EObject;
 import erjang.EPID;
 import erjang.EString;
@@ -82,7 +83,7 @@ public class RamFile extends EDriverInstance {
 	}
 
 	@Override
-	protected void outputv(EPID caller, ByteBuffer[] ev) throws IOException {
+	protected void outputv(EHandle caller, ByteBuffer[] ev) throws IOException {
 		if (ev.length == 0 || ev[0].remaining() == 0) {
 			reply_posix_error(Posix.EINVAL);
 			return;

@@ -23,6 +23,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectableChannel;
 import java.util.concurrent.locks.Lock;
 
+import erjang.EHandle;
 import erjang.EObject;
 import erjang.EPID;
 import erjang.ERef;
@@ -85,7 +86,7 @@ class LockingDriverInstance extends EDriverInstance {
 	}
 
 	@Override
-	protected void outputv(EPID caller, ByteBuffer[] ev) throws IOException {
+	protected void outputv(EHandle caller, ByteBuffer[] ev) throws IOException {
 		lock.lock();
 		try {
 			target.outputv(null, ev);

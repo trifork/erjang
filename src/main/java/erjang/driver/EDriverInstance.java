@@ -304,7 +304,7 @@ public abstract class EDriverInstance extends EDriverControl {
 	 * passed in contains multiple fragments. Default behavior is to flatten the
 	 * input vector, and call EDriverInstance#output(ByteBuffer).
 	 */
-	protected void outputv(EPID caller, ByteBuffer[] ev) throws IOException {
+	protected void outputv(EHandle caller, ByteBuffer[] ev) throws IOException {
 		output(flatten(ev));
 	}
 
