@@ -40,7 +40,9 @@ import erjang.EString;
 import erjang.ETask;
 import erjang.ETuple;
 import erjang.ErlangException;
+import erjang.NotImplemented;
 import erjang.driver.efile.Posix;
+import erjang.m.erlang.ErlDist;
 
 /**
  * 
@@ -94,10 +96,27 @@ public abstract class EDriverInstance extends EDriverControl {
 	}
 
 	protected void driver_output2(ByteBuffer header, ByteBuffer buf) {
+
+		int status = task.status;
+		
+		if ((status & EDriverTask.ERTS_PORT_SFLG_CLOSING) != 0) {
+			return;
+		}
+		
 		header.flip();
 		if (buf != null)
 			buf.flip();
+		
 
+		if ((status & EDriverTask.ERTS_PORT_SFLG_DISTRIBUTION) != 0) {
+			task.node().net_message(task.self_handle(), null, buf);
+			return;
+		}
+		
+		if ((status & EDriverTask.ERTS_PORT_SFLG_LINEBUF_IO) != 0) {
+			throw new NotImplemented();
+		}
+		
 		EObject tail = null;
 		if (buf == null || !buf.hasRemaining()) {
 			tail = ERT.NIL;
@@ -107,12 +126,31 @@ public abstract class EDriverInstance extends EDriverControl {
 			tail = EString.make(buf);
 		}
 
+		
 		EBinList out = new EBinList(header, tail);
 		task.output_from_driver(out);
 	}
 
 	protected void driver_output(ByteBuffer buf) {
+		
+		int status = task.status;
+		
+		if ((status & EDriverTask.ERTS_PORT_SFLG_CLOSING) != 0) {
+			return;
+		}
+		
 		buf.flip();
+		
+		if ((status & EDriverTask.ERTS_PORT_SFLG_DISTRIBUTION) != 0) {
+			task.node().net_message(task.self_handle(), null, buf);
+			return;
+		}
+		
+		if ((status & EDriverTask.ERTS_PORT_SFLG_LINEBUF_IO) != 0) {
+			throw new NotImplemented();
+		}
+		
+
 		EObject out;
 		
 		if (buf == null || !buf.hasRemaining()) {
@@ -198,10 +236,9 @@ public abstract class EDriverInstance extends EDriverControl {
 
 	
 	protected ERef driver_monitor_process(EPID pid) {
-		ERef ref = task.monitor(pid, pid);
+		ERef ref = ERT.getLocalNode().createRef();
 		
-		if (ref == null) {
-			ref = ERT.getLocalNode().createRef();
+		if (!task.monitor(pid, pid, ref)) {
 			port().sendnb(ETuple.make(ERT.am_DOWN, ref, pid, ERT.am_noproc));
 		}
 		

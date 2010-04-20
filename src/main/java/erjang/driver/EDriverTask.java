@@ -45,13 +45,17 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import kilim.Pausable;
 import kilim.Task;
+import erjang.EAbstractNode;
 import erjang.EAtom;
 import erjang.EBinary;
 import erjang.ECons;
 import erjang.EHandle;
+import erjang.EInternalPID;
 import erjang.EInternalPort;
+import erjang.ENode;
 import erjang.EObject;
 import erjang.EPID;
+import erjang.EPeer;
 import erjang.EPort;
 import erjang.EProc;
 import erjang.ERT;
@@ -89,6 +93,10 @@ public class EDriverTask extends ETask<EInternalPort> implements
 	
 	public EPID owner() {
 		return owner;
+	}
+	
+	public void owner(EInternalPID ipid) {
+		this.owner = ipid;
 	}
 	
 	private	static ConcurrentHashMap<Integer,EDriverTask> all_ports 
@@ -133,6 +141,26 @@ public class EDriverTask extends ETask<EInternalPort> implements
 
 	/** state controlled from elsewhere... erlang:port_set_data/2*/
 	public EObject port_data;
+	
+	public static final int ERTS_PORT_SFLG_CONNECTED = 1<<0;
+	public static final int ERTS_PORT_SFLG_EXITING = 1<<1;
+	public static final int ERTS_PORT_SFLG_DISTRIBUTION = 1<<2;
+	public static final int ERTS_PORT_SFLG_BINARY_IO = 1<<3;
+	public static final int ERTS_PORT_SFLG_SOFT_EOF = 1<<4;
+	public static final int ERTS_PORT_SFLG_PORT_BUSY = 1<<5;
+	public static final int ERTS_PORT_SFLG_CLOSING = 1<<6;
+	public static final int ERTS_PORT_SFLG_SEND_CLOSED = 1<<7;
+	public static final int ERTS_PORT_SFLG_LINEBUF_IO = 1<<8;
+	public static final int ERTS_PORT_SFLG_IMMORTAL = 1<<9;
+	public static final int ERTS_PORT_SFLG_FREE = 1<<10;
+	public static final int ERTS_PORT_SFLG_FREE_SCHEDULED = 1<<11;
+	public static final int ERTS_PORT_SFLG_INITIALIZING = 1<<12;
+	public static final int ERTS_PORT_SFLG_PORT_SPECIFIC_LOCK = 1<<13;
+	public static final int ERTS_PORT_SFLG_INVALID = 1<<14;
+	public static final int ERTS_PORT_SFLG_DEBUG = 1<<31;
+	
+	public int status;
+	private EPeer peer;
 
 	/**
 	 * @param cmd
@@ -386,8 +414,8 @@ public class EDriverTask extends ETask<EInternalPort> implements
 						EPID old_owner = this.owner;
 						this.owner = new_owner;
 
-						old_owner.send(ETuple.make(this.self_handle(),
-								EPort.am_connected));
+						old_owner.send(this.port, ETuple.make(this.self_handle(),
+										EPort.am_connected));
 
 						continue next_message;
 
@@ -438,6 +466,7 @@ public class EDriverTask extends ETask<EInternalPort> implements
 		if (pstate == State.RUNNING || pstate == State.INIT) {
 			// ok
 		} else {
+			System.err.println("port "+this.self_handle()+" in state: "+pstate);
 			throw ERT.badarg();
 		}
 
@@ -509,7 +538,7 @@ public class EDriverTask extends ETask<EInternalPort> implements
 	 * @return
 	 * @throws Pausable
 	 */
-	public void command(final EPID caller, final ByteBuffer[] out) throws Pausable {
+	public void command(final EHandle caller, final ByteBuffer[] out) throws Pausable {
 
 		if (mode != Mode.STREAM) {
 			// do we need to encode the packet length here?
@@ -642,7 +671,7 @@ public class EDriverTask extends ETask<EInternalPort> implements
 	}
 
 	public void output_term_from_driver(EObject out) {
-		System.err.println(""+owner+" ! "+out);
+		if (ERT.DEBUG_PORT) System.err.println(""+owner+" ! "+out);
 		owner.sendb(out);
 	}
 
@@ -682,5 +711,20 @@ public class EDriverTask extends ETask<EInternalPort> implements
 			}
 		});
 	}
+
+	public EPeer node() {
+		return this.peer;
+	}
+
+	public void node(EPeer peer) {
+		this.peer = peer;
+		this.status |= ERTS_PORT_SFLG_DISTRIBUTION;
+	}
+
+	/** magic direct call ! */
+	public void outputv(EHandle sender, ByteBuffer[] ev) throws IOException {
+		instance.outputv(sender, ev);
+	}
+
 
 }

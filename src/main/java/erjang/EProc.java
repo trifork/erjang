@@ -218,7 +218,7 @@ public final class EProc extends ETask<EInternalPID> {
 		} else if (trap_exit == ERT.TRUE) {
 			// we're trapping exits, so we in stead send an {'EXIT', from,
 			// reason} to self
-			ETuple msg = ETuple.make(ERT.EXIT, from, reason);
+			ETuple msg = ETuple.make(ERT.am_EXIT, from, reason);
 			// System.err.println("kill message to self: "+msg);
 			mbox_send(msg);
 			
@@ -635,8 +635,14 @@ public final class EProc extends ETask<EInternalPID> {
 	public Map<Integer, EAtom> getAtomCacheMap() {
 		return null;
 	}
-	
-	
+
+	public static EInternalPID find(int id, int serial) {
+		int key = (serial << 15) | (id & 0x7fff);
+		EProc task = all_tasks.get(key);
+		if (task != null) return task.self_handle();
+		return null;
+	}
+
 
 
 
