@@ -129,76 +129,8 @@ public class EPeer extends EAbstractNode {
 
 			switch (first) {
 			case 131:
-				if (ERT.DEBUG_DIST) 
-					System.err.println("parsing distribuionHeader....");
-				int datum = ibuf.read1();
-
-				if (datum != 68) {
-					close_and_finish(port);
+				if (!process_distribution_header(port, ibuf))
 					return;
-				}
-				int numberOfAtomCacheRefs = ibuf.read1() & 0xff;
-				atom_cache_refs = new EAtom[numberOfAtomCacheRefs];
-
-				if (numberOfAtomCacheRefs == 0) {
-					// do nothing //
-				} else {
-
-					int nflag_bytes = numberOfAtomCacheRefs / 2 + 1;
-					byte[] flags = new byte[nflag_bytes * 2];
-					int pos = 0;
-					for (int i = 0; i < nflag_bytes; i++) {
-						int twoflags = ibuf.read1() & 0xff;
-						// System.err.println("flag["+i+"]="+Integer.toBinaryString(twoflags));
-						flags[pos++] = (byte) (twoflags & 0xf);
-						flags[pos++] = (byte) (twoflags >>> 4);
-						// System.err.println("flags["+(pos-2)+"]="+Integer.toBinaryString(flags[pos-2]));
-						// System.err.println("flags["+(pos-1)+"]="+Integer.toBinaryString(flags[pos-1]));
-					}
-
-					boolean longAtoms = (flags[numberOfAtomCacheRefs] & 0x01) == 1;
-
-					if (longAtoms) {
-						System.err.println("LONGATOMS!");
-					}
-
-					for (int i = 0; i < numberOfAtomCacheRefs; i++) {
-
-						int segment_index = flags[i] & 7;
-						int index = ibuf.read1();
-
-						/*
-						System.err.print("cache[" + i + "] -> ref["
-								+ segment_index + "][" + index + "]");
-						 */
-						
-						if ((flags[i] & 8) == 8) {
-							// it's new!
-
-							int len = ibuf.read1() & 0xff;
-							if (longAtoms) {
-								len <<= 8;
-								len |= (ibuf.read1() & 0xff);
-							}
-							byte[] atom_text = new byte[len];
-							ibuf.read(atom_text);
-
-							atom_cache[segment_index][index] = EAtom
-									.intern(atom_text);
-
-						} else {
-							// it's old
-						}
-
-						atom_cache_refs[i] = atom_cache[segment_index][index];
-
-						/*
-						System.err.println(" => " + atom_cache_refs[i]);
-						*/
-					}
-
-					ibuf.setAtomCacheRefs(atom_cache_refs);
-				}
 
 			case passThrough:
 				break;
@@ -341,12 +273,91 @@ public class EPeer extends EAbstractNode {
 				to_proc.remove_monitor(from_pid, ref, false);
 				return;
 			}
-
+			
 			default:
 				throw new NotImplemented("dmesg: " + head);
 			}
 
 		} while (false); // end receive_loop
+	}
+
+	private boolean process_distribution_header(EInternalPort port,
+			EInputStream ibuf) throws IOException {
+		EAtom[] atom_cache_refs;
+		if (ERT.DEBUG_DIST) 
+			System.err.println("parsing distribuionHeader....");
+		
+		int datum = ibuf.read1();
+
+		if (datum != 68) {
+			close_and_finish(port);
+			return false;
+		}
+		
+		int numberOfAtomCacheRefs = ibuf.read1() & 0xff;
+		atom_cache_refs = new EAtom[numberOfAtomCacheRefs];
+
+		if (numberOfAtomCacheRefs == 0) {
+			// do nothing //
+		} else {
+
+			int nflag_bytes = numberOfAtomCacheRefs / 2 + 1;
+			byte[] flags = new byte[nflag_bytes * 2];
+			int pos = 0;
+			for (int i = 0; i < nflag_bytes; i++) {
+				int twoflags = ibuf.read1() & 0xff;
+				// System.err.println("flag["+i+"]="+Integer.toBinaryString(twoflags));
+				flags[pos++] = (byte) (twoflags & 0xf);
+				flags[pos++] = (byte) (twoflags >>> 4);
+				// System.err.println("flags["+(pos-2)+"]="+Integer.toBinaryString(flags[pos-2]));
+				// System.err.println("flags["+(pos-1)+"]="+Integer.toBinaryString(flags[pos-1]));
+			}
+
+			boolean longAtoms = (flags[numberOfAtomCacheRefs] & 0x01) == 1;
+
+			if (longAtoms) {
+				System.err.println("LONGATOMS!");
+			}
+
+			for (int i = 0; i < numberOfAtomCacheRefs; i++) {
+
+				int segment_index = flags[i] & 7;
+				int index = ibuf.read1();
+
+				/*
+				System.err.print("cache[" + i + "] -> ref["
+						+ segment_index + "][" + index + "]");
+				 */
+				
+				if ((flags[i] & 8) == 8) {
+					// it's new!
+
+					int len = ibuf.read1() & 0xff;
+					if (longAtoms) {
+						len <<= 8;
+						len |= (ibuf.read1() & 0xff);
+					}
+					byte[] atom_text = new byte[len];
+					ibuf.read(atom_text);
+
+					atom_cache[segment_index][index] = EAtom
+							.intern(atom_text);
+
+				} else {
+					// it's old
+				}
+
+				atom_cache_refs[i] = atom_cache[segment_index][index];
+
+				/*
+				System.err.println(" => " + atom_cache_refs[i]);
+				*/
+			}
+
+			ibuf.setAtomCacheRefs(atom_cache_refs);
+		}
+		
+		return true;
 	}
 
 	private void close_and_finish(EInternalPort port) {
