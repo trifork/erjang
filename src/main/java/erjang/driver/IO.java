@@ -110,6 +110,10 @@ public class IO {
 	 */
 	public static int exception_to_posix_code(IOException e) {
 		
+		if ("Broken pipe".equals(e.getMessage())) {
+			return Posix.ENOTCONN;
+		}
+		
 		if (e instanceof ConnectException) {
 			if ("Connection refused".equals(e.getMessage())) {
 				return Posix.ECONNREFUSED;
