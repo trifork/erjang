@@ -42,8 +42,18 @@ public class InetClientSocket extends InetSocket {
 	}
 	
 	@Override
+	public boolean getKeepAlive() throws IOException {
+		return ch.socket().getKeepAlive();
+	}
+	
+	@Override
 	public void setReuseAddress(boolean reuse) throws IOException {
 		ch.socket().setReuseAddress(reuse);
+	}
+
+	@Override
+	public boolean getReuseAddress() throws IOException {
+		return ch.socket().getReuseAddress();
 	}
 	
 	@Override
@@ -62,6 +72,11 @@ public class InetClientSocket extends InetSocket {
 	}
 	
 	@Override
+	public int getReceiveBufferSize() throws IOException {
+		return ch.socket().getReceiveBufferSize();
+	}
+	
+	@Override
 	public void setTimeout(int timeout) throws IOException {
 		ch.socket().setSoTimeout(timeout);
 	}
@@ -69,6 +84,11 @@ public class InetClientSocket extends InetSocket {
 	@Override
 	public void setSendBufferSize(int size) throws IOException {
 		ch.socket().setSendBufferSize(size);
+	}
+	
+	@Override
+	public int getSendBufferSize() throws IOException {
+		return ch.socket().getSendBufferSize();
 	}
 	
 	@Override
@@ -114,6 +134,11 @@ public class InetClientSocket extends InetSocket {
 
 	public void setNonBlocking() throws IOException {
 		ch.configureBlocking(false);
+	}
+	
+	@Override
+	public InetSocketAddress getRemoteAddress() {
+		return (InetSocketAddress) ch.socket().getRemoteSocketAddress();
 	}
 	
 	@Override

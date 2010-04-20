@@ -7,6 +7,8 @@ import java.nio.channels.SelectableChannel;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
+import erjang.driver.efile.Posix;
+
 public class InetServerSocket extends InetSocket {
 
 	ServerSocketChannel ch;
@@ -66,6 +68,11 @@ public class InetServerSocket extends InetSocket {
 	}
 	
 	@Override
+	public int getReceiveBufferSize() throws IOException {
+		return ch.socket().getReceiveBufferSize();
+	}
+	
+	@Override
 	public void setTimeout(int timeout) throws IOException {
 		ch.socket().setSoTimeout(timeout);
 	}
@@ -75,6 +82,15 @@ public class InetServerSocket extends InetSocket {
 		// ignore //
 	}
 
+	public boolean getReuseAddress() throws IOException {
+		return ch.socket().getReuseAddress();
+	}
+
+	@Override
+	public int getLocalPort() {
+		return ch.socket().getLocalPort();
+	}
+	
 	@Override
 	public void bind(InetSocketAddress addr) throws IOException {
 		if (backlog == null) {

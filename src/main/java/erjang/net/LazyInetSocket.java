@@ -246,6 +246,17 @@ public class LazyInetSocket extends InetSocket {
 			delegate.setKeepAlive(val);
 		}
 	}
+	
+	@Override
+	public boolean getKeepAlive() throws IOException {
+		if (delegate == null) {
+			return delegate.getKeepAlive();
+		} else {
+			return so_keep_alive == null ? false : so_keep_alive.booleanValue();
+		}
+	}
+
+
 
 	@Override
 	public void setOOBInline(boolean val) throws IOException {
@@ -266,11 +277,30 @@ public class LazyInetSocket extends InetSocket {
 	}
 
 	@Override
+	public boolean getReuseAddress() throws IOException {
+		if (delegate == null) {
+			return delegate.getReuseAddress();
+		} else {
+			return so_reuse_addr == null ? false : so_reuse_addr.booleanValue();
+		}
+	}
+
+
+	@Override
 	public void setTcpNoDelay(boolean val) throws IOException {
 		if (delegate == null) {
 			so_nodelay = Boolean.valueOf(val);
 		} else {
 			delegate.setTcpNoDelay(val);
+		}
+	}
+	
+	@Override
+	public boolean getNoDelay() throws IOException {
+		if (delegate == null) {
+			return delegate.getNoDelay();
+		} else {
+			return so_nodelay == null ? false : so_nodelay.booleanValue();
 		}
 	}
 
@@ -291,8 +321,6 @@ public class LazyInetSocket extends InetSocket {
 			delegate.setTrafficClass(ival);
 		}
 	}
-
-
 	
 	@Override
 	public void setReceiveBufferSize(int size) throws IOException {
@@ -302,6 +330,15 @@ public class LazyInetSocket extends InetSocket {
 			delegate.setReceiveBufferSize(size);
 		}
 	}
+	
+	@Override
+	public int getReceiveBufferSize() throws IOException {
+		if (delegate == null) {
+			return delegate.getReceiveBufferSize();
+		} else {
+			return so_rcv_buf == null ? 0 : so_rcv_buf.intValue();
+		}
+	}
 
 	@Override
 	public void setSendBufferSize(int size) throws IOException {
@@ -309,6 +346,15 @@ public class LazyInetSocket extends InetSocket {
 			so_snd_buf = new Integer(size);
 		} else {
 			delegate.setSendBufferSize(size);
+		}
+	}
+
+	@Override
+	public int getSendBufferSize() throws IOException {
+		if (delegate == null) {
+			return delegate.getSendBufferSize();
+		} else {
+			return so_snd_buf == null ? 0 : so_snd_buf.intValue();
 		}
 	}
 

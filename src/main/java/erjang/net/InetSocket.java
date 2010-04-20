@@ -143,5 +143,40 @@ public abstract class InetSocket {
 						+ this.getClass().getName());
 	}
 
+	public boolean getNoDelay() throws IOException {
+		throw new PosixIOException(Posix.EINVAL,
+				"getNoDelay() not supported on "
+						+ this.getClass().getName());
+	}
+
+	public boolean getKeepAlive() throws IOException {
+		throw new PosixIOException(Posix.EINVAL,
+				"getKeepAlive() not supported on "
+						+ this.getClass().getName());
+	}
+
+	public boolean getReuseAddress() throws IOException {
+		throw new PosixIOException(Posix.EINVAL,
+				"getReuseAddress() not supported on "
+						+ this.getClass().getName());
+	}
+
+	public int getSendBufferSize() throws IOException {
+		throw new PosixIOException(Posix.EINVAL,
+				"getSendBufferSize() not supported on "
+						+ this.getClass().getName());
+	}
+
+	public int getReceiveBufferSize() throws IOException {
+		throw new PosixIOException(Posix.EINVAL,
+				"getReceiveBufferSize() not supported on "
+						+ this.getClass().getName());
+	}
+
+	public InetSocketAddress getRemoteAddress() {
+		throw new erjang.NotImplemented();
+		
+	}
+
 
 }
