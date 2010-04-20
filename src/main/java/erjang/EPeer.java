@@ -106,7 +106,9 @@ public class EPeer extends EAbstractNode {
 			throws IOException {
 
 		if (buf.remaining() == 0) {
-			System.err.println("received tick from " + this.node);
+			if (ERT.DEBUG_DIST) {
+				System.err.println("received tick from " + this.node);
+			}
 			return;
 		}
 
