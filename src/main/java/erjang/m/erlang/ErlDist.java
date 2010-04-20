@@ -18,20 +18,31 @@
 
 package erjang.m.erlang;
 
+import java.nio.ByteBuffer;
 import java.util.regex.Pattern;
 
 import erjang.BIF;
+import erjang.EAbstractNode;
 import erjang.EAtom;
 import erjang.EFun;
+import erjang.EHandle;
 import erjang.EInternalPID;
 import erjang.EInternalPort;
+import erjang.ENode;
 import erjang.EObject;
+import erjang.EPeer;
 import erjang.EProc;
 import erjang.ERT;
+import erjang.ERef;
 import erjang.ESmall;
+import erjang.ETuple;
+import erjang.ETuple2;
+import erjang.ErlFun;
 import erjang.ErlangError;
 import erjang.Import;
 import erjang.NotImplemented;
+import erjang.BIF.Type;
+import erjang.driver.EDriverTask;
 
 /**
  * BIFs supporting distribution
@@ -174,11 +185,78 @@ public class ErlDist {
 	}
 
 	private static Pattern node_name_regex = Pattern.compile("([a-zA-Z0-9_]|-)+@[^@]+");
-	private static boolean is_node_name_atom(EAtom node) {
+	public static boolean is_node_name_atom(EAtom node) {
 		if (node_name_regex.matcher(node.getName()).matches()) {
 			return true;
 		} else {
 			return false;
+		}
+	}
+
+	/**********************************************************************
+	 ** Allocate a dist entry, set node name install the connection handler
+	 ** setnode_3({name@host, Creation}, Cid, {Type, Version, Initial, IC, OC})
+	 ** Type = flag field, where the flags are specified in dist.h
+	 ** Version = distribution version, >= 1
+	 ** IC = in_cookie (ignored)
+	 ** OC = out_cookie (ignored)
+	 **
+	 ** Note that in distribution protocols above 1, the Initial parameter
+	 ** is always NIL and the cookies are always the atom '', cookies are not
+	 ** sent in the distribution messages but are only used in 
+	 ** the handshake.
+	 **
+	 ***********************************************************************/
+
+	@BIF
+	public static EObject setnode(EObject node_arg, EObject cid_arg, EObject type_arg)
+	{
+		System.err.println("SETNODE("+node_arg+", "+cid_arg+", "+type_arg+")");
+		
+		EAtom node;
+		int creation = 0;
+		
+		ETuple2 tup;
+		if ((tup=ETuple2.cast(node_arg)) != null) {
+			node = tup.elem1.testAtom();
+			ESmall sm = tup.elem2.testSmall();
+			
+			if (node == null || sm==null || !is_node_name_atom(node)) 
+				throw ERT.badarg(node_arg, cid_arg, type_arg);
+			
+			creation = sm.value;
+		} else if ((node=node_arg.testAtom()) != null && is_node_name_atom(node)) {
+			// ok
+		} else {
+			throw ERT.badarg(node_arg, cid_arg, type_arg);
+		}
+		
+		/** first arg is ok */
+		
+		EInternalPort port = cid_arg.testInternalPort();
+		if (port == null) {
+			throw ERT.badarg(node_arg, cid_arg, type_arg);
+		}
+
+		ETuple t = type_arg.testTuple();
+		if (t.arity() != 4) {
+			throw ERT.badarg(node_arg, cid_arg, type_arg);
+		}
+		
+		ESmall flags = t.elm(1).testSmall();
+		ESmall version = t.elm(2).testSmall();
+		if (flags == null || version == null) {
+			throw ERT.badarg(node_arg, cid_arg, type_arg);
+		}
+
+		EPeer n = EPeer.get_or_create(node, creation, port, flags.value, version.value);
+		
+		EDriverTask task = port.task();
+		if (task != null) { 
+			task.node(n);
+			return ERT.TRUE;
+		} else {
+			return ERT.FALSE;
 		}
 	}
 
