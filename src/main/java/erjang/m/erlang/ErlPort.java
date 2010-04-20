@@ -25,6 +25,7 @@ import java.util.List;
 import kilim.Pausable;
 import erjang.BIF;
 import erjang.EAtom;
+import erjang.EInternalPID;
 import erjang.EInternalPort;
 import erjang.EObject;
 import erjang.EPort;
@@ -56,6 +57,42 @@ public class ErlPort {
 	static EAtom am_spawn_driver = EAtom.intern("spawn_driver");
 	static EAtom am_spawn_executable = EAtom.intern("spawn_executable");
 
+	@BIF
+	static EObject port_connect(EProc proc, EObject arg_port, EObject arg_pid)
+	{
+		EInternalPort iport;
+		EInternalPID ipid;
+		
+		if ((iport=arg_port.testInternalPort()) == null) {
+			EAtom port_name = arg_port.testAtom();
+			EObject resolved;
+			if (port_name != null 
+				&& (resolved=ERT.whereis(port_name)) != ERT.am_undefined
+				&& (iport=resolved.testInternalPort()) != null) {
+				// ok //
+			} else {
+				throw ERT.badarg(arg_port, arg_pid);
+			}
+		}
+
+		if ((ipid=arg_pid.testInternalPID()) == null) {
+			EAtom pid_name = arg_pid.testAtom();
+			EObject resolved;
+			if (pid_name != null 
+				&& (resolved=ERT.whereis(pid_name)) != ERT.am_undefined
+				&& (ipid=resolved.testInternalPID()) != null) {
+				// ok //
+			} else {
+				throw ERT.badarg(arg_port, arg_pid);
+			}
+		}
+
+		iport.set_owner(ipid);
+		
+		return ERT.TRUE;
+		
+	}
+	
 	@BIF
 	static EObject port_command(EProc proc, EObject port, EObject data)
 			throws Pausable {
@@ -272,11 +309,13 @@ public class ErlPort {
 	}
 	
 	@BIF
-	static public EObject port_info(EObject a1, EObject a2) {
+	static public EObject port_info(EProc proc, EObject a1, EObject a2) {
 		EPort p = a1.testPort();
 		EAtom spec = a2.testAtom();
 		if (p==null || spec==null) throw ERT.badarg();
-		return p.port_info(spec);
+		EObject info = p.port_info(spec);
+		System.err.println(""+proc.self_handle()+"::port_info ("+a1+") => "+info);
+		return info;
 	}
 	
 	@BIF
