@@ -19,6 +19,8 @@
 
 package erjang.driver.efile;
 
+import java.util.concurrent.locks.ReentrantLock;
+
 import kilim.Lock;
 import erjang.EString;
 import erjang.NotImplemented;
@@ -52,7 +54,7 @@ public class Driver implements EDriver {
 	}
 
 	@Override
-	public Lock getLock() {
+	public ReentrantLock getLock() {
 		throw new NotImplemented();
 	}
 

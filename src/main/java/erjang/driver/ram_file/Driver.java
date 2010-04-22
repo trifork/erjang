@@ -19,6 +19,8 @@
 
 package erjang.driver.ram_file;
 
+import java.util.concurrent.locks.ReentrantLock;
+
 import kilim.Lock;
 import erjang.EString;
 import erjang.driver.EDriver;
@@ -28,7 +30,7 @@ import erjang.driver.EDriverControl;
  *
  */
 public class Driver implements EDriver {
-	private Lock lock;
+	private kilim.ReentrantLock lock;
 
 	@Override
 	public String driverName() {
@@ -51,9 +53,9 @@ public class Driver implements EDriver {
 	}
 	
 	@Override
-	public Lock getLock() {
+	public ReentrantLock getLock() {
 		if (this.lock == null) {
-			this.lock = new kilim.Lock();
+			this.lock = new kilim.ReentrantLock();
 		}
 		return this.lock;
 	}

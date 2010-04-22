@@ -19,7 +19,8 @@
 
 package erjang.driver;
 
-import kilim.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
 import erjang.EString;
 
 /**
@@ -44,6 +45,6 @@ public interface EDriver {
 	boolean useDriverLevelLocking();
 
 	/** get the shared lock for all instances of this driver */
-	Lock getLock();
+	ReentrantLock getLock();
 	
 }

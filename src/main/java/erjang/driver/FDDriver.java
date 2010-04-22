@@ -1,6 +1,7 @@
 package erjang.driver;
 
-import kilim.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
 import erjang.EString;
 
 public class FDDriver implements EDriver {
@@ -29,7 +30,7 @@ public class FDDriver implements EDriver {
 	}
 
 	@Override
-	public Lock getLock() {
+	public ReentrantLock getLock() {
 		throw new erjang.NotImplemented();
 		
 	}

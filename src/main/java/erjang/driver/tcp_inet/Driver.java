@@ -18,7 +18,8 @@
 
 package erjang.driver.tcp_inet;
 
-import kilim.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
 import erjang.EString;
 import erjang.driver.EDriver;
 import erjang.driver.EDriverControl;
@@ -47,7 +48,7 @@ public class Driver implements EDriver {
 	}
 
 	@Override
-	public Lock getLock() {
+	public ReentrantLock getLock() {
 		throw new erjang.NotImplemented();
 		
 	}

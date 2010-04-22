@@ -21,6 +21,7 @@ package erjang.driver;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectableChannel;
+import java.util.concurrent.locks.ReentrantLock;
 
 import kilim.Lock;
 import kilim.Pausable;
@@ -37,13 +38,13 @@ import erjang.ERef;
  */
 class LockingDriverInstance extends EDriverControl {
 
-	private final Lock lock;
+	private final ReentrantLock lock;
 	private final EDriverControl target;
 
 	/**
 	 * 
 	 */
-	public LockingDriverInstance(EDriverControl target, Lock lock) {
+	public LockingDriverInstance(EDriverControl target, ReentrantLock lock) {
 		this.target = target;
 		this.lock = lock;
 	}

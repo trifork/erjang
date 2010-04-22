@@ -1,6 +1,7 @@
 package erjang.driver;
 
-import kilim.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
 import erjang.EString;
 import erjang.ETuple2;
 
@@ -34,7 +35,7 @@ public class ExecDriver implements EDriver {
 	}
 	
 	@Override
-	public Lock getLock() {
+	public ReentrantLock getLock() {
 		throw new erjang.NotImplemented();
 		
 	}
