@@ -366,6 +366,7 @@ public class Interpreter {
 
 				while (true) {
 					final int opcode = code[pc++];
+					//System.err.print("STACK| "); for (int i=0; i<=sp; i++) {System.err.print("  "+i+":"+stack[i]);} System.err.println();
 					System.err.println("INTP| (pc="+(pc-1)+"; sp="+sp+")"+opcode+"   "+reg[0]);
 					switch (opcode) {
 					case ENSURE_REG_CAPACITY: {
@@ -373,6 +374,10 @@ public class Interpreter {
 						System.err.println("INTP| Ensure reg capacity: "+max_x);
 						reg = ensureCapacity(reg, max_x);
 					} break;
+#INTERPRET<-STACK_ALLOC(n) {stack = ensureCapacity(stack, sp+n, sp+1); sp += n;}#
+#INTERPRET<-STACK_DEALLOC(n) {for (int _i=0; _i<n; _i++) stack[sp--] = null;}#
+#INTERPRET<-PRE_CALL()  {proc.stack=stack; proc.sp=sp; stack=null;}#
+#INTERPRET<-POST_CALL() {stack=proc.stack; assert(proc.sp==sp);}#
 #INTERPRET#
 					default:
 						throw new Error();

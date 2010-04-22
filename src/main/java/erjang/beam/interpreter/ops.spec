@@ -3,7 +3,7 @@
 # label L: ignore
 
 K_return:
-	if (true) return reg[0];
+	PRE_CALL(); return reg[0];
 send:
 	//TODO
 remove_message:
@@ -23,30 +23,30 @@ bs_init_writable:
 
 %class AAI(a1:A, a2:A, i3:I)
 func_info mod fun arity:
-	if (true) {System.err.println("INT| func_info: "+GET(mod)+":"+GET(fun)+"/"+GET(arity)); return ERT.func_info((EAtom)GET(mod), (EAtom)GET(fun), xregsSeq(reg, GET(arity)));}
+	{System.err.println("INT| func_info: "+GET(mod)+":"+GET(fun)+"/"+GET(arity)); PRE_CALL(); return ERT.func_info((EAtom)GET(mod), (EAtom)GET(fun), xregsSeq(reg, GET(arity)));}
 
 %class S(src:S)
 badmatch src:
-	if (true) return ERT.badmatch(GET(src));
+	/*PRE_CALL();*/ return ERT.badmatch(GET(src));
 
 case_end src:
-	if (true) return ERT.case_end(GET(src));
+	/*PRE_CALL();*/ return ERT.case_end(GET(src));
 
 try_case_end src:
-	if (true) return ERT.try_case_end(GET(src));
+	/*PRE_CALL();*/ return ERT.try_case_end(GET(src));
 
 ##########==========        ALLOCATION      	  ==========##########
 
 %class I(i1:I)
 allocate slots:
-	stack = ensureCapacity(stack, sp+GET(slots), sp); sp += GET(slots);
+	STACK_ALLOC(GET(slots));
 
 deallocate slots:
-	sp -= GET(slots);
+	STACK_DEALLOC(GET(slots));
 
 %class II(i1:I, i2:I)
 allocate_zero slots _live:
-	stack = ensureCapacity(stack, sp+GET(slots), sp); sp += GET(slots);
+	STACK_ALLOC(GET(slots));
 
 %class WI(al:W, i2:I)
 test_heap alloc_size _live:
@@ -58,7 +58,7 @@ init dest:
 
 %class II(i1:I i2:I)
 trim amount remaining:
-	sp -= GET(amount);
+	STACK_DEALLOC(GET(amount));
 
 ##########==========  MOVE/CONSTRUCT/DECONSTRUCT  ==========##########
 
@@ -161,27 +161,27 @@ call_only keep lbl:
 	GOTO(lbl);
 
 call keep lbl:
-	proc.stack=stack; proc.sp=sp; reg[0] = invoke(proc, reg, GET(keep), GET_PC(lbl));
+	PRE_CALL(); reg[0] = invoke(proc, reg, GET(keep), GET_PC(lbl)); POST_CALL();
 
 %class IE(i1:I ext_fun:E)
 call_ext _ extfun:
-	proc.stack=stack; proc.sp=sp; stack=null; reg[0] = GET(extfun).invoke(proc, xregsArray(reg, GET(extfun).arity())); stack=proc.stack;
+	PRE_CALL(); reg[0] = GET(extfun).invoke(proc, xregsArray(reg, GET(extfun).arity())); POST_CALL();
 
 call_ext_only _ extfun:
-	proc.stack=stack; proc.sp=sp; stack=null; if (true) return GET(extfun).invoke(proc, xregsArray(reg, GET(extfun).arity()));
+	PRE_CALL(); return GET(extfun).invoke(proc, xregsArray(reg, GET(extfun).arity()));
 
 
 %class IEI(i1:I ext_fun:E i3:I)
 call_ext_last arity extfun dealloc:
-	proc.stack=stack; proc.sp=sp -= GET(dealloc); stack=null; if (true) return GET(extfun).invoke(proc, xregsArray(reg, GET(extfun).arity()));
+	STACK_DEALLOC(GET(dealloc)); PRE_CALL(); return GET(extfun).invoke(proc, xregsArray(reg, GET(extfun).arity()));
 
 %class II(i1:I i2:I)
 apply_last arity dealloc:
-	proc.stack=stack; proc.sp=sp -= GET(dealloc); stack=null; int arity = GET(arity); EFun fun = ERT.resolve_fun(reg[arity], reg[arity+1], arity); if (true) return fun.invoke(proc, xregsArray(reg, arity));
+	STACK_DEALLOC(GET(dealloc)); int arity = GET(arity); EFun fun = ERT.resolve_fun(reg[arity], reg[arity+1], arity); PRE_CALL(); return fun.invoke(proc, xregsArray(reg, arity));
 
 %class ILI(i1:I label:L i3:I)
 call_last keep lbl dealloc:
-	sp -= GET(dealloc); GOTO(lbl);
+	STACK_DEALLOC(GET(dealloc)); GOTO(lbl);
 
 ##########==========             BIFS       	  ==========##########
 

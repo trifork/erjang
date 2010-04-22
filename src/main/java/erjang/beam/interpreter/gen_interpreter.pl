@@ -82,8 +82,49 @@ sub subst {
 
 sub multi_subst {
     my ($template, $map) = @_;
-    $template =~ s/\#(\w+)\#/$map->{$1} or die "Don't know what to substitute for #$1#"/ge;
+    my $back_subst_map = {};
+    # Register and remove back-substitution declarations:
+    $template =~ s/\#(\w+)<-(\w+)\(([^()]*)\)\s*(.*)\#/$back_subst_map->{$1}->{$2} = [$3,$4]; ""/ge;
+    $template =~ s/\#(\w+)\#/(exists $map->{$1})? back_subst($map->{$1}, $back_subst_map->{$1}) : (die "Don't know what to substitute for #$1#")/ge;
     return $template;
+}
+
+my $BALANCED_NO_TOPLEVEL_COMMA_RE = '(?:(?(DEFINE)(?<BALANCED>[^()]+|\((?&BALANCED)\)))([^(),]+|\((?&BALANCED)\))+)';
+sub back_subst {
+    my ($subject, $subst_map) = @_;
+    foreach $macro (keys %{$subst_map}) {
+	my @macro_info = @{$subst_map->{$macro}};
+	if (scalar @macro_info == 1) { # Argument-less macro
+	    my ($body) = @macro_info;
+	    $subject =~ s/\b$macro\b/$body/ge;
+	} else {
+	    my ($formals, $body) = @macro_info;
+	    my @formals = split(/,/, $formals);
+	    # Substitute macro "$macro":
+	    $subject =~ s/\b$macro\b\(($BALANCED_NO_TOPLEVEL_COMMA_RE?)\)/{
+my @actuals = split_into_args($1);
+die "Wrong number of arguments to macro '$macro' (expected ".scalar @formals.", found ".scalar @actuals.")" unless ($#actuals==$#formals);
+my $arg_map = make_map(\@formals, \@actuals);
+back_subst($body, $arg_map)
+            }/ge; # /
+	}
+    }
+    return $subject;
+}
+
+sub split_into_args {
+    my ($s) = @_;
+    my @res = ();
+    while ($s =~ /($BALANCED_NO_TOPLEVEL_COMMA_RE),?/g) {push(@res,$1);}
+    return @res;
+}
+
+sub make_map {
+    my ($key_list, $value_list) = @_;
+    my %res = ();
+    my $last_index = scalar(@{$key_list}-1);
+    for my $i (0..$last_index) {$res{$key_list->[$i]} = [$value_list->[$i]];}
+    return \%res;
 }
 
 sub base_types {
@@ -160,6 +201,8 @@ sub process_instruction_rec {
 		    $emitted++;
 
 		    my $decl = "int _$arg = code[pc++];\n\t\t";
+# 		    $decl .= "System.err.println(\"DB| fetch: _$arg = \"+_$arg);\n\t\t";
+
 		    $new_code_acc .= $decl;
 		} else {
 		    $encoder_code .= "if (typed_insn.$arg_src_name == null) {\n";
@@ -188,7 +231,9 @@ sub process_instruction_rec {
 	    $encoder_code .= "${eindent}nop(opcode_pos);";
 	} else {
 	    $enum_code .= "\tpublic static final short $insname = $enum_count;\n"; $enum_count++;
-	    $interp_code .= "\tcase $insname: {\n".
+	    # The "if (true)" wrapping in the following line is present in
+	    # order to eliminate 'unreachable' compiler warnings.
+	    $interp_code .= "\tcase $insname: if (true) {\n".
 		"\t\t$code_acc$action\n".
 		"\t} break;\n";
 	    $encoder_code .= "${eindent}emitAt(opcode_pos, $insname);\n";
