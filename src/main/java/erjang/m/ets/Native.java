@@ -249,7 +249,47 @@ public class Native extends ENative {
 		return ERT.TRUE;
 	}
 
+	@BIF
+	public static EObject lookup_element(EProc proc, EObject tab, EObject key, EObject pos) {
+		
+		ESmall p = pos.testSmall();
+		
+		// test arguments
+		ETable table = resolve(proc, tab, true);
+		if (table == null || p == null) {
+			throw ERT.badarg(tab, key);
+		}
 
+		ESeq ent = table.lookup(key);
+		if (ent == ERT.NIL) {
+			throw ERT.badarg(tab, key, pos);
+		}
+		
+		if (table.type == am_set || table.type == am_ordered_set) {
+			return get_elm(tab, key, p, ent);
+		} else {
+			ESeq res = ERT.NIL;
+			
+			for (; !ent.isNil(); ent = ent.tail()) {
+				res = res.cons( get_elm(tab, key, p, ent) );
+			}
+			return res;
+		}
+	}
+
+	private static EObject get_elm(EObject tab, EObject key, ESmall p,
+			ESeq ent) {
+		
+		ETuple tup = ent.head().testTuple();
+		if (tup == null || p.value < 1 || p.value > tup.arity()) {
+			throw ERT.badarg(tab, key, p);
+		}
+		
+		return tup.elm(p.value);
+	}
+
+	
+	
 	@BIF
 	public static EObject lookup(EProc proc, EObject tab, EObject key) {
 		
