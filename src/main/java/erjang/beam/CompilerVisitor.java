@@ -203,6 +203,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 		add_module_annotation(cv);
 
+		cv.visitSource(name.getName()+".S", null);
 	}
 
 	private void add_module_annotation(ClassVisitor cv) {
@@ -737,6 +738,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 			mv.visitLabel(blockLabel);
 			label_inserted.add(label);
+			mv.visitLineNumber(label & 0x7fff, blockLabel);
 			return new ASMBlockVisitor(label);
 		}
 
