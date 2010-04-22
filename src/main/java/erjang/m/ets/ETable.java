@@ -217,7 +217,7 @@ abstract class ETable implements ExitHook {
 
 	protected abstract void insert_new_many(ESeq values);
 
-	protected abstract EObject lookup(EObject key);
+	protected abstract ESeq lookup(EObject key);
 
 	protected abstract ESeq match(EPattern matcher);
 

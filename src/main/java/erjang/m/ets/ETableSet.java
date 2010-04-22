@@ -45,8 +45,6 @@ public class ETableSet extends ETable {
 				type == Native.am_set 
 						? PersistentHashMap.EMPTY 
 						: PersistentTreeMap.EMPTY);
-		
-		
 	}
 	
 	@Override
@@ -81,7 +79,7 @@ public class ETableSet extends ETable {
 	}
 	
 	@Override
-	protected EObject lookup(EObject key) {
+	protected ESeq lookup(EObject key) {
 		ESeq res = ERT.NIL;
 		
 		// no need to run in_tx if we're only reading

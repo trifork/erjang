@@ -137,7 +137,7 @@ public class ETableBag extends ETable {
 
 	/** return a list of elements at given key */
 	@Override
-	protected EObject lookup(EObject key) {
+	protected ESeq lookup(EObject key) {
 		IPersistentMap ipm = deref();
 		IPersistentCollection set = (IPersistentCollection) ipm.valAt(key);
 		ESeq res = ERT.NIL;
