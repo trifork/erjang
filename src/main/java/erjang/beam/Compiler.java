@@ -49,6 +49,7 @@ import erjang.ETuple;
 import erjang.beam.analysis.BeamTypeAnalysis;
 
 import erjang.beam.loader.ErjangBeamDisLoader;
+import erjang.util.Progress;
 
 public class Compiler implements Opcodes {
 	private ClassRepo classRepo;
@@ -257,6 +258,8 @@ public class Compiler implements Opcodes {
 
 	public static File compile(String name, EBinary beam_data, BeamLoader beam_parser) throws IOException {
 
+		Progress.activity();
+		
 		long crc = beam_data.crc();
 
 		File jarFile = new File(erjdir(), name + "-" + Long.toHexString(crc)
