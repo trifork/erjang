@@ -264,7 +264,7 @@ public class ErlPort {
 			
 			if (in == null || out == null) throw ERT.badarg(portName, portSetting);
 			
-			System.err.println("creating fd driver in="+in+"; out="+out);
+			// System.err.println("creating fd driver in="+in+"; out="+out);
 			task = new EFDDriverTask(proc, in.value, out.value, portSetting);
 			
 		}

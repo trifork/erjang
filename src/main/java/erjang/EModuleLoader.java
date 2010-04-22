@@ -47,7 +47,7 @@ import java.net.URL;
  *  - Module creation: From beam representation to executable module (EModule).
  */
 class EModuleLoader {
-	public static final boolean DEBUG_MODULE_LOAD = true;
+	public static final boolean DEBUG_MODULE_LOAD = false;
 
 	final static BeamLoader beamParser = new ErjangBeamDisLoader();
 
