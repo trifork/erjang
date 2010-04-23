@@ -699,11 +699,6 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 
 	}
 
-	private Object sock_sendv(InetSocket fd2, ByteBuffer[] ev, int[] np) {
-		throw new erjang.NotImplemented();
-
-	}
-
 	private long remaining(ByteBuffer[] ev) {
 		long res = 0;
 		for (int i = 0; i < ev.length; i++) {
@@ -1000,13 +995,13 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 	@Override
 	protected void readyOutput(SelectableChannel evt)  throws Pausable {
 
-		select(evt, ERL_DRV_WRITE, SelectMode.SET);
 
 		EInternalPort ix = port();
 
 		if (is_connected()) {
 			ByteBuffer[] iov;
 			if ((iov = driver_peekq()) == null) {
+				select(evt, ERL_DRV_WRITE, SelectMode.CLEAR);
 				send_empty_out_q_msgs();
 				return;
 			}
@@ -1020,8 +1015,13 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 				tcp_send_error(IO.exception_to_posix_code(e));
 				return;
 			}
-
-			if (driver_sizeq() <= low) {
+			
+			int dsq = driver_sizeq();
+			if (dsq != 0) {
+				select(evt, ERL_DRV_WRITE, SelectMode.SET);
+			}
+			
+			if (dsq <= low) {
 				if (is_busy()) {
 					caller = busy_caller;
 					state &= ~INET_F_BUSY;
