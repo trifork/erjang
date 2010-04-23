@@ -2690,31 +2690,31 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 	}
 
-	static Method IS_NONEMPTY_LIST_TEST = Method
+	final static Method IS_NONEMPTY_LIST_TEST = Method
 			.getMethod("erjang.ECons testNonEmptyList()");
-	static Method IS_LIST_TEST = Method.getMethod("erjang.ECons testCons()");
-	static Method IS_TUPLE_TEST = Method.getMethod("erjang.ETuple testTuple()");
-	static Method IS_INTEGER_TEST = Method
+	final static Method IS_LIST_TEST = Method.getMethod("erjang.ECons testCons()");
+	final static Method IS_TUPLE_TEST = Method.getMethod("erjang.ETuple testTuple()");
+	final static Method IS_INTEGER_TEST = Method
 			.getMethod("erjang.EInteger testInteger()");
-	static Method IS_ATOM_TEST = Method.getMethod("erjang.EAtom testAtom()");
-	static Method IS_FLOAT_TEST = Method
+	final static Method IS_ATOM_TEST = Method.getMethod("erjang.EAtom testAtom()");
+	final static Method IS_FLOAT_TEST = Method
 			.getMethod("erjang.EDouble testFloat()");
-	static Method IS_NIL_TEST = Method.getMethod("erjang.ENil testNil()");
-	static Method IS_BOOLEAN_TEST = Method
+	final static Method IS_NIL_TEST = Method.getMethod("erjang.ENil testNil()");
+	final static Method IS_BOOLEAN_TEST = Method
 			.getMethod("erjang.EAtom testBoolean()");
-	static Method IS_NUMBER_TEST = Method
+	final static Method IS_NUMBER_TEST = Method
 			.getMethod("erjang.ENumber testNumber()");
-	static Method IS_BINARY_TEST = Method
+	final static Method IS_BINARY_TEST = Method
 	.getMethod("erjang.EBinary testBinary()");
-	static Method IS_BITSTRING_TEST = Method
+	final static Method IS_BITSTRING_TEST = Method
 	.getMethod("erjang.EBitString testBitString()");
-	static Method IS_PID_TEST = Method.getMethod("erjang.EPID testPID()");
-	static Method IS_PORT_TEST = Method.getMethod("erjang.EPort testPort()");
-	static Method IS_REFERENCE_TEST = Method.getMethod(ERef.class.getName()
+	final static Method IS_PID_TEST = Method.getMethod("erjang.EPID testPID()");
+	final static Method IS_PORT_TEST = Method.getMethod("erjang.EPort testPort()");
+	final static Method IS_REFERENCE_TEST = Method.getMethod(ERef.class.getName()
 			+ " testReference()");
-	static Method IS_FUNCTION_TEST = Method
+	final static Method IS_FUNCTION_TEST = Method
 			.getMethod("erjang.EFun testFunction()");
-	static Method IS_FUNCTION2_TEST = Method
+	final static Method IS_FUNCTION2_TEST = Method
 			.getMethod("erjang.EFun testFunction(int nargs)");
 
 	Map<String, ExtFun> imported = new HashMap<String, ExtFun>();
