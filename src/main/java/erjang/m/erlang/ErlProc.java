@@ -336,7 +336,7 @@ public class ErlProc {
 				
 			} else {
 				
-				EPeer peer = (EPeer) EPeer.get(node, 0);
+				EPeer peer = (EPeer) EPeer.get(node);
 				if (peer != null) {
 					ERef ref = ERT.getLocalNode().createRef();
 					self.monitor(tup, ref);

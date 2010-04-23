@@ -123,11 +123,11 @@ class LockingDriverInstance extends EDriverControl {
 	}
 
 	@Override
-	protected void stop() throws Pausable {
+	protected void stop(EObject reason) throws Pausable {
 		// System.err.println(Task.getCurrentTask() + ">>stop");
 		lock.lock();
 		try {
-			target.stop();
+			target.stop(reason);
 		} finally {
 			// System.err.println(Task.getCurrentTask() + "<<stop");
 			lock.unlock();

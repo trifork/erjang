@@ -40,10 +40,11 @@ public abstract class EDriverControl {
 	public void setup() {}
 
 	/**
+	 * @param reason TODO
 	 * @throws Pausable 
 	 * 
 	 */
-	protected void stop() throws Pausable {
+	protected void stop(EObject reason) throws Pausable {
 		// TODO Auto-generated method stub
 		
 	}

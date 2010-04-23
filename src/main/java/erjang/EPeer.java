@@ -20,7 +20,9 @@ package erjang;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import kilim.Pausable;
 
@@ -387,7 +389,9 @@ public class EPeer extends EAbstractNode {
 		port.task().exit(ERT.am_killed);
 	}
 
-	public static EAbstractNode get(EAtom node, int creation) {
+	public static EAbstractNode get(EAtom node) {
+		if (node == ERT.getLocalNode().node())
+			return ERT.getLocalNode();
 		return peers.get(node);
 	}
 
@@ -478,9 +482,12 @@ public class EPeer extends EAbstractNode {
 		dsig_cast(sender, hdr);
 	}
 
-	public void dsig_reg_send(EInternalPID sender, EAtom to_name, EObject msg) throws Pausable {
+	public EObject dsig_reg_send(EInternalPID sender, EAtom to_name, EObject msg) throws Pausable {
 		ETuple hdr = ETuple.make(ERT.box(REG_SEND), sender, am_, to_name);
 		dsig_cast(sender, hdr, msg);
+		return msg;
 	}
+
+	
 
 }

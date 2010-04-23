@@ -348,7 +348,7 @@ public class EDriverTask extends ETask<EInternalPort> implements
 			do_proc_termination(result);
 
 			EDriverControl i = instance;
-			if (i != null) i.stop();
+			if (i != null) i.stop(result);
 
 		} catch (ThreadDeath e) {
 			throw e;

@@ -453,8 +453,11 @@ public class ERT {
 		return send_task.ref;
 	}
 	
-	@Import(module="net_kernel", fun="connect", arity=1)
-	static EFun net_kernel__connect_1;
+	@Import(module="erlang", fun="dsend", arity=2)
+	static EFun erlang__dsend__2;
+	
+	@Import(module="erlang", fun="dsend", arity=3)
+	static EFun erlang__dsend__3;
 	
 	/**
 	 * @param owner
@@ -491,21 +494,12 @@ public class ERT {
 			&& (name=tup.elm(1).testAtom()) != null
 			&& (node=tup.elm(2).testAtom()) != null){
 			
-			EPeer peer = (EPeer) EPeer.get(node, 0);
+			EAbstractNode peer = EPeer.get(node);
 			if (peer == null) {
-				System.err.println("connecting to "+node);
-				EFun f = EModuleManager.resolve(new FunID("net_kernel", "connect", 1));
-				EObject conn = f.invoke(proc, new EObject[]{node});
-				if (conn == TRUE) {
-					System.err.println("success!");
-					peer = (EPeer) EPeer.get(node, 0);
-				} else {
-					System.err.println("failed: "+conn);
-					return msg;
-				}
+				return erlang__dsend__2.invoke(proc, new EObject[] { pid, msg });
+			} else {				
+				return peer.dsig_reg_send(proc.self_handle(), name, msg);
 			}
-			
-			peer.dsig_reg_send(proc.self_handle(), name, msg);
 		}
 
 		throw badarg(pid, msg);				
@@ -532,10 +526,15 @@ public class ERT {
 			EAtom reg_name;
 			EAtom node_name;
 			if ((reg_name = t.elm(1).testAtom()) != null
-			 && (node_name = t.elm(2).testAtom()) != null
-			 && ErlDist.is_node_name_atom(node_name)) {
-				// !
-				throw new NotImplemented();
+			 && (node_name = t.elm(2).testAtom()) != null) {
+				
+				EAbstractNode node = EPeer.get(node_name);
+				if (node == null) {
+					return erlang__dsend__3.invoke(proc, new EObject[] { pid, msg, options });
+				} else {
+					node.dsig_reg_send(proc.self_handle(), reg_name, msg);
+					return am_ok;
+				}
 			}
 			
 		}
@@ -546,11 +545,8 @@ public class ERT {
 			return am_ok;
 		}
 
-		if (pid.testAtom() == null) {
-			throw badarg(pid, msg);
-		}
-
-		return am_noconnect;
+		log.info("trying to send message to "+pid+" failed.");			
+		throw badarg(pid, msg);
 	}
 
 	/**

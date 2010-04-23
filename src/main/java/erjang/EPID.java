@@ -109,7 +109,7 @@ public abstract class EPID extends EHandle {
 			if (res != null) return res;
 			
 		}
-		EAbstractNode peer = EPeer.get(node, creation);
+		EAbstractNode peer = EPeer.get(node);
 		return new EExternalPID((EPeer) peer, id, serial, creation);
 	}
 

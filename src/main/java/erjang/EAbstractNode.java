@@ -25,6 +25,11 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import kilim.Pausable;
 
 
 /**
@@ -36,6 +41,7 @@ public abstract class EAbstractNode {
 	 * 
 	 */
 	public static final EAtom am_nonode_at_nohost = EAtom.intern("nonode@nohost");
+	public static final EAtom am_nodedown = EAtom.intern("nodedown");
 	static String localHost = null;
     EAtom node = am_nonode_at_nohost;
     String host;
@@ -238,4 +244,36 @@ public abstract class EAbstractNode {
     }
 
 
+	ConcurrentHashMap<EHandle,AtomicInteger> node_monitors = new ConcurrentHashMap<EHandle,AtomicInteger>();
+	
+	public void monitor_node(EHandle caller, boolean on) {
+		node_monitors.putIfAbsent(caller, new AtomicInteger());
+		AtomicInteger ami = node_monitors.get(caller);
+		if (on) {
+			ami.incrementAndGet();
+		} else {
+			ami.decrementAndGet();
+		}
+	}
+	
+	/** network driver exited! 
+	 * @throws Pausable */
+	public void node_going_down(EHandle sender, EObject reason) throws Pausable {
+		
+		for (Map.Entry<EHandle,AtomicInteger> ent : node_monitors.entrySet()) {
+			EHandle handle = ent.getKey();
+			AtomicInteger howmany = ent.getValue();
+			
+			ETuple nd = ETuple.make(am_nodedown, this.node());
+			while (howmany.decrementAndGet() >= 0) {			
+				handle.send(sender, nd);
+			}
+		}
+		
+		node_monitors.clear();
+		
+	}
+
+	public abstract EObject dsig_reg_send(EInternalPID caller, EAtom name,
+			EObject msg) throws Pausable;
 }

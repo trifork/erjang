@@ -34,6 +34,7 @@ import erjang.EHandle;
 import erjang.EInternalPort;
 import erjang.EObject;
 import erjang.EPID;
+import erjang.EPeer;
 import erjang.EPort;
 import erjang.ERT;
 import erjang.ERef;
@@ -144,7 +145,7 @@ public abstract class EDriverInstance extends EDriverControl {
 		EBinList out = new EBinList(header, tail);
 		task.output_from_driver(out);
 	}
-
+	
 	protected void driver_output(ByteBuffer buf) throws Pausable {
 		
 		int status = task.status;
@@ -343,7 +344,17 @@ public abstract class EDriverInstance extends EDriverControl {
 	 * behavior is to do nothing.
 	 */
 
-	protected void stop() throws Pausable {
+	protected void stop(EObject reason) throws Pausable {
+		if ((task.status & EDriverTask.ERTS_PORT_SFLG_DISTRIBUTION) != 0) {
+			
+			EPeer node = task.node();
+			
+			if (node != null) {
+				node.node_going_down(port(), reason);
+			}
+			
+			task.status &= ~EDriverTask.ERTS_PORT_SFLG_DISTRIBUTION;
+		}
 	}
 
 	/*
