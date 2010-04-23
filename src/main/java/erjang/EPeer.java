@@ -411,7 +411,7 @@ public class EPeer extends EAbstractNode {
 		ByteBuffer[] ev = new ByteBuffer[] { disthdr, barr };
 
 		try {
-			this.port.task().outputv(sender, ev);
+			this.port.task().outputv(null, ev);
 		} catch (IOException e) {
 			e.printStackTrace();
 			close_and_finish(port);
@@ -436,7 +436,7 @@ public class EPeer extends EAbstractNode {
 		ByteBuffer[] ev = new ByteBuffer[] { disthdr, barr };
 
 		try {
-			this.port.task().outputv(sender, ev);
+			this.port.task().outputv(null, ev);
 		} catch (IOException e) {
 			e.printStackTrace();
 			close_and_finish(port);
