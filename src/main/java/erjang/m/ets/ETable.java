@@ -282,5 +282,7 @@ abstract class ETable implements ExitHook {
 			
 		}
 	}
+
+	protected abstract void delete_object(ETuple obj);
 	
 }

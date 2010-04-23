@@ -146,6 +146,7 @@ public class ETableBag extends ETable {
 		IPersistentMap ipm = deref();
 		IPersistentCollection set = (IPersistentCollection) ipm.valAt(key);
 		ESeq res = ERT.NIL;
+		if (set == null) return res;
 		for(ISeq s = set.seq(); s != null; s = s.next())
 		{
 			res = res.cons((EObject) s.first());
@@ -203,6 +204,52 @@ public class ETableBag extends ETable {
 		});
 	}
 
+	@Override
+	protected void delete_object(final ETuple obj) {
+		in_tx(new WithMap<Object>() {
+			@Override
+			protected Object run(IPersistentMap map) {
+				EObject key = get_key(obj);
+				IPersistentCollection empty = empty();
+				IPersistentCollection c =
+					(IPersistentCollection) map.valAt(key, empty);
+				
+				if (c == null || c.count()==0)
+					return null;
+				
+				IPersistentCollection out = empty();
+				int deleted = 0;
+				
+				for (ISeq s = c.seq(); s != null; s = s.next()) {
+					EObject val = (EObject) s.first();
+					if (val == null) break;
+					
+					if (! obj.equals(val)) {
+						out = out.cons(val);
+					} else {
+						deleted += 1;
+					}
+				}
+				
+				if (out.count() == 0) {
+					try {
+						map = map.without(key);
+					} catch (Exception e) {
+						throw new Error(e);
+					}
+				} else {
+					map = map.assoc(key, out);
+				}
+				
+				set(map);
+				sizeRef.set((Integer)sizeRef.deref() - deleted);
+				return null;
+			}
+		});
+
+	
+	}
+	
 	@Override
 	protected EInteger select_delete(final EMatchSpec matcher) {
 

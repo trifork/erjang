@@ -201,6 +201,30 @@ public class ETableSet extends ETable {
 	}
 
 	@Override
+	protected void delete_object(final ETuple obj) {
+		in_tx(new WithMap<Object>() {
+
+			@Override
+			protected Object run(IPersistentMap map) {
+			
+				EObject key = get_key(obj);
+				
+				EObject candidate = (EObject)map.entryAt(key);
+				if (obj.equals(candidate)) {
+					try {
+						map = map.without(key);
+						set(map);
+					} catch (Exception e) {
+						throw new Error(e);
+					}
+				}
+				
+				return null;
+			}
+		});
+	}
+	
+	@Override
 	public EInteger select_delete(final EMatchSpec matcher) {		
 		int delete_count = in_tx(new WithMap<Integer>() {
 

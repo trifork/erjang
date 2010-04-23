@@ -449,8 +449,18 @@ public class Native extends ENative {
 	}
 
 	/** this is not documented anywhere, but referenced from the module global */
-	@BIF static public EObject delete_object(EObject obj1, EObject obj2) {
-		throw new NotImplemented(); 
+	@BIF static public EObject delete_object(EProc proc, EObject tab, EObject obj) {
+		
+		
+		// test arguments
+		ETable table = resolve(proc, tab, true);
+		ETuple one = obj.testTuple();
+		if (table == null || one == null ) {
+			throw ERT.badarg(tab, obj);
+		}
+
+		table.delete_object(one);
+		return ERT.TRUE;
 	}
 
 	/** this is not documented anywhere, but referenced from the module global */
