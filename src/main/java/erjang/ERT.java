@@ -452,6 +452,10 @@ public class ERT {
 
 		return send_task.ref;
 	}
+	
+	@Import(module="net_kernel", fun="connect", arity=1)
+	static EFun net_kernel__connect_1;
+	
 	/**
 	 * @param owner
 	 * @param make
@@ -471,17 +475,40 @@ public class ERT {
 			return msg;
 		}
 
-		p = register.get(pid);
-		if (p != null) {
-			p.send(proc.self_handle(), msg);
-			return msg;
+		EAtom name;
+		if ((name=pid.testAtom()) != null) {
+			p = register.get(name);
+			if (p != null) {
+				p.send(proc.self_handle(), msg);
+				return msg;
+			}
 		}
 
-		if (pid.testAtom() == null) {
-			throw badarg(pid, msg);
+		ETuple tup;
+		EAtom node;
+		if ((tup=pid.testTuple()) != null 
+			&& tup.arity()==2 
+			&& (name=tup.elm(1).testAtom()) != null
+			&& (node=tup.elm(2).testAtom()) != null){
+			
+			EPeer peer = (EPeer) EPeer.get(node, 0);
+			if (peer == null) {
+				System.err.println("connecting to "+node);
+				EFun f = EModuleManager.resolve(new FunID("net_kernel", "connect", 1));
+				EObject conn = f.invoke(proc, new EObject[]{node});
+				if (conn == TRUE) {
+					System.err.println("success!");
+					peer = (EPeer) EPeer.get(node, 0);
+				} else {
+					System.err.println("failed: "+conn);
+					return msg;
+				}
+			}
+			
+			peer.dsig_reg_send(proc.self_handle(), name, msg);
 		}
 
-		return msg;
+		throw badarg(pid, msg);				
 	}
 
 	@BIF
