@@ -866,6 +866,75 @@ public class EFile extends EDriverInstance {
 			break;
 		}
 
+		case FILE_LSEEK: {
+			final long off = data.getLong();
+			final int whence = data.getInt();
+			final FileChannel fch = fd;
+			
+			d = new FileAsync() {
+
+				{
+					this.level = 1;
+					this.fd = fch;
+				}
+				
+				long out_pos;
+				
+				@Override
+				public void async() {
+
+					if ((flags & EFILE_COMPRESSED) != 0) {
+						this.result_ok = false;
+						this.posix_errno = Posix.EINVAL;
+					}
+					
+					try {
+					
+						switch (whence) {
+						case EFILE_SEEK_SET:
+							fd.position(out_pos=off);
+							break;
+							
+						case EFILE_SEEK_CUR:
+							long cur = fd.position();
+							fd.position(out_pos= cur + off);
+							break;
+							
+						case EFILE_SEEK_END:
+							cur = fd.size();
+							fd.position(out_pos = cur - off);
+							break;
+							
+						default:
+							this.result_ok = false;
+							this.posix_errno = Posix.EINVAL;
+						}
+					
+					} catch (IOException e) {
+						this.result_ok = false;
+						this.posix_errno = IO.exception_to_posix_code(e);
+					}
+					
+					this.result_ok = true;
+				}
+
+				
+				@Override
+				public void ready() throws Pausable {
+					if (result_ok) {
+						EFile.this.fd = fd;
+						ByteBuffer response = ByteBuffer.allocate(8);
+						response.putLong(out_pos);
+						driver_output2(response, null);
+					} else {
+						reply_posix_error(posix_errno);
+					}
+				}
+				
+
+			};
+		}
+		
 		case FILE_OPEN: {
 			final int mode = data.getInt();
 			final String file_name = IO.strcpy(data);
@@ -886,10 +955,10 @@ public class EFile extends EDriverInstance {
 						} else {
 							switch (mode & EFILE_MODE_READ_WRITE) {
 							case EFILE_MODE_READ:
-								fd = new FileInputStream(file).getChannel();
+								fd = new RandomAccessFile(file,"r").getChannel();
 								break;
 							case EFILE_MODE_WRITE:
-								fd = new FileOutputStream(file,append).getChannel();
+								fd = new RandomAccessFile(file,"w").getChannel();
 								break;
 							case EFILE_MODE_READ_WRITE:
 								fd = new RandomAccessFile(file,"rw").getChannel();
