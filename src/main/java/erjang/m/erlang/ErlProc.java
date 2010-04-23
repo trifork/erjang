@@ -36,6 +36,7 @@ import erjang.EHandle;
 import erjang.EModuleManager;
 import erjang.EObject;
 import erjang.EPID;
+import erjang.EPeer;
 import erjang.EProc;
 import erjang.ERT;
 import erjang.ERef;
@@ -300,6 +301,9 @@ public class ErlProc {
 			throw ERT.badarg(how, pid);
 		
 		EHandle h = EHandle.cast(pid);
+		if (h == null) {
+			h = ERT.whereis(pid).testHandle();
+		}
 		if (h != null) 
 		{   
 			ERef ref = ERT.getLocalNode().createRef();
@@ -309,7 +313,43 @@ public class ErlProc {
 			return ref;
 		}
 
-		throw new NotImplemented();
+		ETuple tup;
+		EAtom name;
+		EAtom node;
+		if ((tup=pid.testTuple()) != null
+			&& tup.arity()==2
+			&& (name=tup.elm(1).testAtom()) != null
+			&& (node=tup.elm(2).testAtom()) != null) 
+		{
+			if (node == ErlDist.node()) {
+				
+				h = ERT.whereis(pid).testHandle();
+				if (h != null) 
+				{   
+					ERef ref = ERT.getLocalNode().createRef();
+					if (!self.monitor(h, h, ref)) {
+						self.mbox_send(ETuple.make(ERT.am_DOWN, ref, h, ERT.am_noproc));
+					}
+					return ref;
+				}
+
+				
+			} else {
+				
+				EPeer peer = (EPeer) EPeer.get(node, 0);
+				if (peer != null) {
+					ERef ref = ERT.getLocalNode().createRef();
+					self.monitor(tup, ref);
+					peer.dsig_monitor(self.self_handle(), name, ref);
+					return ref;
+				}
+				
+				throw new NotImplemented("monitor ("+pid+")");				
+			}
+		}
+		
+		throw ERT.badarg(how, pid);
+		
 	}
 
 	@Import(module="erlang", fun="flush_monitor_message", arity=2)

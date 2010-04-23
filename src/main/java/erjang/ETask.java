@@ -136,6 +136,12 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 		return true;
 	}
 
+	public boolean monitor(EObject object, ERef ref) throws Pausable {
+		this.is_monitoring.put(ref, new ETuple2(object, object));
+		return true;
+	}
+
+
 	/**
 	 * @param r
 	 * @param flush
