@@ -42,6 +42,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import kilim.Lock;
 import kilim.Pausable;
@@ -79,6 +81,8 @@ import erjang.NotImplemented;
  */
 public class EDriverTask extends ETask<EInternalPort> implements
 		NIOHandler {
+
+	static Logger log = Logger.getLogger(EProc.class.getName());
 
 	@Override
 	public String toString() {
@@ -315,6 +319,10 @@ public class EDriverTask extends ETask<EInternalPort> implements
 				main_loop();
 
 				result = am_normal;
+
+			} catch (NotImplemented e) {
+				log.log(Level.SEVERE, "exiting "+self_handle(), e);
+				result = e.reason();
 
 			} catch (ErlangException e) {
 				// e.printStackTrace();
@@ -582,6 +590,7 @@ public class EDriverTask extends ETask<EInternalPort> implements
 	 */
 	@Override
 	protected void do_proc_termination(EObject result) throws Pausable {
+		
 		super.do_proc_termination(result);
 		if (result != am_normal) {
 			owner.send(self_handle(), ETuple.make(ERT.am_EXIT, self_handle(), result));

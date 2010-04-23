@@ -95,6 +95,8 @@ public class EInternalPID extends EPID implements ELocalHandle {
 			}
 
 			task.mbox.put(msg);
+		} else {
+			ERT.log.info("sending message to dead process ignore "+this+" ! "+msg);
 		}
 	}
 	

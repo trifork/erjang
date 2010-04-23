@@ -62,6 +62,8 @@ public abstract class EHandle extends EObject {
 			}
 			
 			task.mbox_send(msg);
+		} else {
+			ERT.log.info("sending message to dead process/port ignored "+this+" ! "+msg);
 		}
 	}
 
