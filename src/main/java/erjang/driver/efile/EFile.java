@@ -744,7 +744,7 @@ public class EFile extends EDriverInstance {
 		default:
 			// undo the get() we did to find command
 			ev[0].position(ev[0].position() - 1);
-			output(flatten(ev));
+			output(caller, flatten(ev));
 		}
 
 		cq_execute();
@@ -760,12 +760,12 @@ public class EFile extends EDriverInstance {
 	};
 
 	@Override
-	protected void output(ByteBuffer data) throws Pausable {
+	protected void output(EHandle caller, ByteBuffer buf) throws Pausable {
 		FileAsync d;
-		byte cmd = data.get();
+		byte cmd = buf.get();
 		switch (cmd) {
 		case FILE_MKDIR: {
-			d = new SimpleFileAsync(cmd, IO.strcpy(data)) {
+			d = new SimpleFileAsync(cmd, IO.strcpy(buf)) {
 				public void run() {
 					result_ok = file.mkdir();
 					if (!result_ok) {
@@ -784,7 +784,7 @@ public class EFile extends EDriverInstance {
 		}
 
 		case FILE_RMDIR: {
-			d = new SimpleFileAsync(cmd, IO.strcpy(data)) {
+			d = new SimpleFileAsync(cmd, IO.strcpy(buf)) {
 				public void run() {
 					result_ok = file.isDirectory() && file.delete();
 					if (!result_ok) {
@@ -805,7 +805,7 @@ public class EFile extends EDriverInstance {
 		}
 
 		case FILE_DELETE: {
-			d = new SimpleFileAsync(cmd, IO.strcpy(data)) {
+			d = new SimpleFileAsync(cmd, IO.strcpy(buf)) {
 				public void run() {
 					result_ok = file.isFile() && file.delete();
 					if (!result_ok) {
@@ -825,7 +825,7 @@ public class EFile extends EDriverInstance {
 
 
 		case FILE_PWD: {
-			int drive = data.get();
+			int drive = buf.get();
 			char dr = drive==0 ? '?' : (char)('A'+drive);
 			
 			d = new FileAsync() {
@@ -867,8 +867,8 @@ public class EFile extends EDriverInstance {
 		}
 
 		case FILE_LSEEK: {
-			final long off = data.getLong();
-			final int whence = data.getInt();
+			final long off = buf.getLong();
+			final int whence = buf.getInt();
 			final FileChannel fch = fd;
 			
 			d = new FileAsync() {
@@ -936,8 +936,8 @@ public class EFile extends EDriverInstance {
 		}
 		
 		case FILE_OPEN: {
-			final int mode = data.getInt();
-			final String file_name = IO.strcpy(data);
+			final int mode = buf.getInt();
+			final String file_name = IO.strcpy(buf);
 
 			d = new SimpleFileAsync(cmd, file_name) {
 				public void run() {
@@ -991,7 +991,7 @@ public class EFile extends EDriverInstance {
 		case FILE_FSTAT: 
 		case FILE_LSTAT: {
 			
-			final String file_name = IO.strcpy(data);
+			final String file_name = IO.strcpy(buf);
 			final File file = new File(file_name);
 			
 			d = new FileAsync() {
@@ -1094,7 +1094,7 @@ public class EFile extends EDriverInstance {
 		
 		case FILE_READDIR: {
 			
-			final String dir_name = IO.strcpy(data);
+			final String dir_name = IO.strcpy(buf);
 			final File dir = new File(dir_name);
 			
 			
@@ -1157,8 +1157,8 @@ public class EFile extends EDriverInstance {
 		}
 		
 		case FILE_RENAME: {
-			final String from_name = IO.getstr(data, true);
-			final File to_name   = new File(IO.getstr(data, true));
+			final String from_name = IO.getstr(buf, true);
+			final File to_name   = new File(IO.getstr(buf, true));
 			
 			d = new SimpleFileAsync(cmd, from_name) {
 				public void run() {
@@ -1181,7 +1181,7 @@ public class EFile extends EDriverInstance {
 		
 		default:
 			throw new NotImplemented("file_output cmd:" + ((int) cmd) + " "
-					+ EBinary.make(data));
+					+ EBinary.make(buf));
 			/** ignore everything else - let the caller hang */
 			// return;
 		}

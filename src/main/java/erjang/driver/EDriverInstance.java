@@ -183,6 +183,13 @@ public abstract class EDriverInstance extends EDriverControl {
 		task.output_term_from_driver(term);
 	}
 
+	protected void driver_send_term(EHandle caller, ETuple msg) throws Pausable {
+		if (caller != null) {
+			caller.send(task.self_handle(), msg);
+		}
+	}
+
+
 	/**
 	 * @param fileRespOkHeader
 	 * @param binp
@@ -360,7 +367,7 @@ public abstract class EDriverInstance extends EDriverControl {
 	/*
 	 * called when we have output from erlang to the port
 	 */
-	protected abstract void output(ByteBuffer data) throws IOException, Pausable;
+	protected abstract void output(EHandle caller, ByteBuffer buf) throws IOException, Pausable;
 
 	/*
 	 * called when we have output from erlang to the port, and the iodata()
@@ -368,7 +375,7 @@ public abstract class EDriverInstance extends EDriverControl {
 	 * input vector, and call EDriverInstance#output(ByteBuffer).
 	 */
 	protected void outputv(EHandle caller, ByteBuffer[] ev) throws IOException, Pausable {
-		output(flatten(ev));
+		output(caller, flatten(ev));
 	}
 
 	/*

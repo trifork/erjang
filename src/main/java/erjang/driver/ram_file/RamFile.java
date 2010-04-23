@@ -107,10 +107,10 @@ public class RamFile extends EDriverInstance {
 		default:
 			// undo the get() we did to find command
 			ev[0].position(ev[0].position() - 1);
-			output(flatten(ev));
+			output(caller, flatten(ev));
 		} // switch
 	}
-	protected void output(ByteBuffer data) throws IOException, Pausable {
+	protected void output(EHandle caller, ByteBuffer data) throws IOException, Pausable {
 		byte cmd = data.get();
 		switch (cmd) {
  		case FILE_OPEN: {
