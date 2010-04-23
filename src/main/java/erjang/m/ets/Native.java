@@ -255,7 +255,7 @@ public class Native extends ENative {
 		ESmall p = pos.testSmall();
 		
 		// test arguments
-		ETable table = resolve(proc, tab, true);
+		ETable table = resolve(proc, tab, false);
 		if (table == null || p == null) {
 			throw ERT.badarg(tab, key);
 		}
@@ -291,10 +291,10 @@ public class Native extends ENative {
 	
 	
 	@BIF
-	public static EObject lookup(EProc proc, EObject tab, EObject key) {
+	public static ESeq lookup(EProc proc, EObject tab, EObject key) {
 		
 		// test arguments
-		ETable table = resolve(proc, tab, true);
+		ETable table = resolve(proc, tab, false);
 		if (table == null) {
 			throw ERT.badarg(tab, key);
 		}
@@ -378,9 +378,15 @@ public class Native extends ENative {
 		throw new NotImplemented(); 
 	}
 
-	@BIF static public EObject first(EObject obj) {
-		throw new NotImplemented(); 
+	@BIF public static EObject first(EProc proc, EObject tab) {
+		ETable table = resolve(proc, tab, false);
+		if (table == null) {
+			throw ERT.badarg(tab);
+		}
+
+		return table.first();
 	}
+	
 
 	@BIF static public EObject last(EObject obj) {
 		throw new NotImplemented(); 
@@ -390,12 +396,23 @@ public class Native extends ENative {
 		throw new NotImplemented(); 
 	}
 
-	@BIF static public EObject match_object(EObject obj, EObject obj2) {
-		throw new NotImplemented(); 
+	@BIF static public EObject match_object(EProc caller, EObject nameOrTid, EObject spec) {
+		ETuple ts = spec.testTuple();
+		ETable table = resolve(caller, nameOrTid, false);
+		if (ts == null || table == null) throw ERT.badarg(nameOrTid, spec);
+		
+		EPattern matcher = new EPattern(table.keypos1, ts);
+		
+		return table.match(matcher);
 	}
 
-	@BIF static public EObject next(EObject obj, EObject obj2) {
-		throw new NotImplemented(); 
+	@BIF static public EObject next(EProc proc, EObject tab, EObject key) {
+		ETable table = resolve(proc, tab, false);
+		if (table == null) {
+			throw ERT.badarg(tab);
+		}
+
+		return table.next(key);
 	}
 
 	@BIF static public EObject safe_fixtable(EObject obj, EObject obj2) {

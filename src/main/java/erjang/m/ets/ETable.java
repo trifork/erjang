@@ -22,9 +22,14 @@ import java.lang.ref.WeakReference;
 import java.util.concurrent.Callable;
 
 import clojure.lang.APersistentMap;
+import clojure.lang.IMapEntry;
 import clojure.lang.IPersistentMap;
+import clojure.lang.ISeq;
 import clojure.lang.LockingTransaction;
+import clojure.lang.PersistentTreeMap;
+import clojure.lang.RT;
 import clojure.lang.Ref;
+import clojure.lang.Var;
 import erjang.EAtom;
 import erjang.EInteger;
 import erjang.EInternalPID;
@@ -50,6 +55,11 @@ import erjang.NotImplemented;
  * 
  */
 abstract class ETable implements ExitHook {
+
+	static {
+		Object o = RT.IN;
+	}
+	
 
 	public static final EAtom am_stm = EAtom.intern("stm");
 	
@@ -221,6 +231,8 @@ abstract class ETable implements ExitHook {
 
 	protected abstract ESeq match(EPattern matcher);
 
+	protected abstract ESeq match_object(EPattern matcher);
+
 	protected abstract void delete(EObject key);
 
 	protected abstract EInteger select_delete(EMatchSpec matcher);
@@ -236,4 +248,39 @@ abstract class ETable implements ExitHook {
 		});
 	}
 
+	protected abstract EObject first();
+
+	protected EObject next(EObject from) {
+		IPersistentMap map = deref();
+
+		if (map instanceof PersistentTreeMap) {
+			PersistentTreeMap ptm = (PersistentTreeMap) map;
+			ISeq seq = ptm.seqFrom(from, true);
+			if (seq == null) return Native.am_$end_of_table;
+			seq = seq.next();
+			if (seq == null) return Native.am_$end_of_table;
+			IMapEntry ent = (IMapEntry) seq.first();
+			if (ent == null) return Native.am_$end_of_table;
+			return (EObject) ent.getKey();
+			
+		} else {
+			
+			for (ISeq seq = map.seq();seq != null;seq = seq.next()) {
+				IMapEntry ent = (IMapEntry) seq.first(); 
+				if (ent == null) return Native.am_$end_of_table;
+				EObject key = (EObject) ent.getKey();
+				if (key.equals(from)) {
+					seq = seq.next();
+					if (seq == null) return Native.am_$end_of_table;
+					ent = (IMapEntry) seq.first(); 
+					if (ent == null) return Native.am_$end_of_table;
+					return (EObject) ent.getKey();
+				}
+			}
+				 
+			return Native.am_$end_of_table;
+			
+		}
+	}
+	
 }

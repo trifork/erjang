@@ -20,14 +20,16 @@ package erjang.m.ets;
 
 import java.util.Map;
 
+import clojure.lang.IMapEntry;
 import clojure.lang.IPersistentCollection;
 import clojure.lang.IPersistentMap;
 import clojure.lang.IPersistentSet;
 import clojure.lang.ISeq;
-import clojure.lang.PersistentHashMap;
 import clojure.lang.PersistentHashSet;
-import clojure.lang.PersistentList;
+import clojure.lang.PersistentTreeMap;
+import clojure.lang.RT;
 import clojure.lang.Ref;
+import clojure.lang.Var;
 import erjang.EAtom;
 import erjang.EInteger;
 import erjang.EObject;
@@ -37,13 +39,16 @@ import erjang.ERT;
 import erjang.ESeq;
 import erjang.ETuple;
 import erjang.NotImplemented;
-import erjang.m.ets.ETable.WithMap;
 
 /**
  * 
  */
 public class ETableBag extends ETable {
 
+	static {
+		Var in = RT.IN;
+	}
+	
 	/** holds an Integer with the bag size */
 	Ref sizeRef;
 	
@@ -59,7 +64,7 @@ public class ETableBag extends ETable {
 			  EObject heirData)
 	{
 		super(owner, type, tid, aname, access, keypos, isNamed, heirPid,
-				heirData, PersistentHashMap.EMPTY);
+				heirData, PersistentTreeMap.EMPTY);
 		try {
 			sizeRef = new Ref(new Integer(0));
 		} catch (Exception e) {
@@ -149,12 +154,31 @@ public class ETableBag extends ETable {
 	}
 
 	@Override
+	protected EObject first() {
+		// no need to run in_tx if we're only reading
+		IPersistentMap map = deref();
+		
+		if (map.count() == 0) {
+			return Native.am_$end_of_table;
+		} else {
+			ISeq entseq = map.seq();
+			IMapEntry ent = (IMapEntry) entseq.first();
+			return (EObject) ent.getKey();
+		}
+	}
+	
+	@Override
 	int size() {
 		return (Integer)sizeRef.deref();
 	}
 
 	@Override
 	public ESeq match(EPattern matcher) {		
+		throw new NotImplemented();
+	}
+
+	@Override
+	public ESeq match_object(EPattern matcher) {		
 		throw new NotImplemented();
 	}
 

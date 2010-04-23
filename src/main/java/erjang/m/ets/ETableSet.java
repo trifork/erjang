@@ -21,7 +21,9 @@ package erjang.m.ets;
 
 import java.util.Map;
 
+import clojure.lang.IMapEntry;
 import clojure.lang.IPersistentMap;
+import clojure.lang.ISeq;
 import clojure.lang.PersistentHashMap;
 import clojure.lang.PersistentTreeMap;
 import erjang.EAtom;
@@ -90,6 +92,23 @@ public class ETableSet extends ETable {
 			return res;
 		}
 	}
+	
+	@Override
+	protected EObject first() {
+		// no need to run in_tx if we're only reading
+		IPersistentMap map = deref();
+		
+		if (map.count() == 0) {
+			return Native.am_$end_of_table;
+		} else {
+			ISeq entseq = map.seq();
+			if (entseq == null) return Native.am_$end_of_table;
+			IMapEntry ent = (IMapEntry) entseq.first();
+			if (ent == null) return Native.am_$end_of_table;
+			return (EObject) ent.getKey();
+		}
+	}
+
 
 	@Override
 	protected void insert_new_many(final ESeq values) {	
@@ -144,6 +163,25 @@ public class ETableSet extends ETable {
 		
 		return res;
 	}
+	
+	@Override
+	public ESeq match_object(EPattern matcher) {		
+		IPersistentMap map = deref();
+		ESeq res = ERT.NIL;
+		
+		EObject key = matcher.getKey(keypos1);
+		if (key == null) {
+			res = matcher.match_members(res, (Map<EObject, ETuple>) map);
+		} else {
+			ETuple candidate = (ETuple) map.valAt(key);
+			if (candidate != null) {
+				res =  matcher.match_members(res, candidate);
+			}
+		}
+		
+		return res;
+	}
+
 
 	@Override
 	protected void delete(final EObject key) {

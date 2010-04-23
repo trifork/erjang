@@ -93,10 +93,9 @@ public class EPattern {
 				
 		for (ETuple elm : in.values())
 		{
-			ETuple val = elm.testTuple();
-			EMatchContext res = new EMatchContext(out_length, val);
-			if (matcher.match(val, res)) {
-				out = out.cons(val);
+			EMatchContext res = new EMatchContext(out_length, elm);
+			if (matcher.match(elm, res)) {
+				out = out.cons(elm);
 			}
 		}
 		
@@ -358,6 +357,16 @@ public class EPattern {
 		
 		if (matcher.match(val, res)) {
 			out = out.cons(ETuple.make(res.vars));
+		}
+		
+		return out;	
+	}
+
+	ESeq match_members(ESeq out, ETuple val) {
+		EMatchContext res = new EMatchContext(out_length, val);
+		
+		if (matcher.match(val, res)) {
+			out = out.cons(val);
 		}
 		
 		return out;	
