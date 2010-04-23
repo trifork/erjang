@@ -180,11 +180,11 @@ public class EDriverTask extends ETask<EInternalPort> implements
 	 * @param cmd
 	 * @param portSetting
 	 */
-	protected void parseOptions(ESeq command, EObject portSetting) {
+	protected void parseOptions(String[] cmd, EObject portSetting) {
 		// TODO: most of this is way too expensive for non-exec ports
 
 		// set by options
-		this.cmd = new String[] { command.stringValue() };
+		this.cmd = cmd;
 		this.cwd = System.getProperty("user.dir");
 		this.env = new HashMap<String, String>(System.getenv());
 

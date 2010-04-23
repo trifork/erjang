@@ -39,6 +39,7 @@ import erjang.EString;
 import erjang.ETuple2;
 import erjang.ErlangError;
 import erjang.NotImplemented;
+import erjang.m.erlang.ErlPort;
 
 
 /**
@@ -81,7 +82,16 @@ public class EExecDriverTask extends EDriverTask {
 			}
 		}
 		
-		parseOptions(es, portSetting);
+		String full_cmd = es.stringValue();
+		
+		String[] cmd;
+		if (name.elem1 == ErlPort.am_spawn) {
+			cmd = full_cmd.split(" +");
+		} else {
+			cmd = new String[] { full_cmd };
+		}
+		
+		parseOptions(cmd, portSetting);
 		
 
 		String[] envp = new String[env.size()];
@@ -90,12 +100,34 @@ public class EExecDriverTask extends EDriverTask {
 			envp[pos++] = e.getKey() + "=" + e.getValue();
 		}
 
-		File file = new File(cmd[0]);
-		if (!file.exists()) {
+		
+		File f = new File(cmd[0]);
+		if (f.exists() && f.canExecute()) {
+			// ok !
+		} else if (f.isAbsolute()) {
+			throw new ErlangError(EAtom.intern("enoent"));
+		} else {
+
+			String cmd_path = env.get("PATH");
+			for (String elm : cmd_path.split(File.pathSeparator)) {
+				File dir = new File(elm);
+				f = new File(dir, cmd[0]);
+				if (f.exists()) {
+					cmd[0] = f.getAbsolutePath();
+					break;
+				} else {
+					f = null;
+				}
+			}
+		}
+
+		System.err.println("executing "+f);		
+		
+		if (f == null) {
 			throw new ErlangError(EAtom.intern("enoent"));
 		}
 
-		if (!file.canExecute()) {
+		if (!f.canExecute()) {
 			throw new ErlangError(EAtom.intern("eaccess"));
 		}
 
