@@ -256,10 +256,10 @@ bs_test_tail2 failLabel src bits_left:
 
 %class YL(y:y, label:L)
 K_catch y lbl:
-	System.err.println("INT| push-exh: "+exh_pc+"/"+exh_link+"/"+GET_PC(lbl)); SET(y, exh_link = MAKE_EXH_LINK()); exh_pc = GET_PC(lbl);
+	System.err.println("INT| push-exh: "+exh+"/"+GET_PC(lbl)); SET(y, exh); exh = MAKE_EXH_LINK(GET_PC(lbl), false);
 
 %class Y(y:y)
 catch_end y:
-	System.err.println("INT| pop-exh: "+exh_pc+"/"+exh_link); RESTORE_EXH(GET(y));
+	System.err.println("INT| pop-exh: "+exh); RESTORE_EXH(GET(y));
 
 ##########==========       FLOATING-POINT    	  ==========##########

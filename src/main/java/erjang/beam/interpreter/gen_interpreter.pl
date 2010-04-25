@@ -108,7 +108,7 @@ sub back_subst {
 	    $subject =~ s/\b$macro\b/$body/ge;
 	} else {
 	    my ($formals, $body) = @macro_info;
-	    my @formals = split(/,/, $formals);
+	    my @formals = split(/\s*,\s*/, $formals);
 	    # Substitute macro "$macro":
 	    $subject =~ s/\b$macro\b\(($BALANCED_RE?)\)/{
 my @actuals = split_into_args($1);

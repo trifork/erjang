@@ -30,10 +30,12 @@ import erjang.EModuleClassLoader;
 
 import erjang.ERT;
 import erjang.ErlangError;
+import erjang.ErlangException;
 
 import erjang.EObject;
 import erjang.EAtom;
 import erjang.ESeq;
+import erjang.ETuple3;
 import erjang.EPseudoTerm;
 
 import erjang.beam.ModuleVisitor;
@@ -331,19 +333,44 @@ public class AbstractInterpreter {
 		}
 	}
 
-	static class ExceptionHandlerStackElement extends EPseudoTerm {
-		final int exh_pc;
+	static abstract class ExceptionHandlerStackElement extends EPseudoTerm {
+		final int pc;
 		final ExceptionHandlerStackElement next;
 
-		public ExceptionHandlerStackElement(int exh_pc,
+		public ExceptionHandlerStackElement(int pc,
 											ExceptionHandlerStackElement next)
 		{
-			this.exh_pc=exh_pc;
+			this.pc = pc;
 			this.next = next;
 		}
 
 		public String toString() {
-			return "ExhElem("+exh_pc+","+next+")";
+			return "ExhElem("+pc+","+next+")";
+		}
+
+		public abstract void catchAction(ErlangException e, EObject[] reg);
+	}
+
+	static class CatchExceptionHandler extends ExceptionHandlerStackElement {
+		public CatchExceptionHandler(int pc, ExceptionHandlerStackElement next) {
+			super(pc, next);
+		}
+
+		public void catchAction(ErlangException e, EObject[] reg) {
+			reg[0] = e.getCatchValue();
+		}
+	}
+
+	static class TryExceptionHandler extends ExceptionHandlerStackElement {
+		public TryExceptionHandler(int pc, ExceptionHandlerStackElement next) {
+			super(pc, next);
+		}
+
+		public void catchAction(ErlangException e, EObject[] reg) {
+			ETuple3 tmp = e.getTryValue();
+			reg[0] = tmp.elem1;
+			reg[1] = tmp.elem2;
+			reg[2] = tmp.elem3;
 		}
 	}
 }

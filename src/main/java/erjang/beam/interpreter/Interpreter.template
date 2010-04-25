@@ -201,8 +201,7 @@ public class Interpreter extends AbstractInterpreter {
 				int sp = proc.sp;
 
 				// For exception handling:
-				int exh_pc = -1;
-				ExceptionHandlerStackElement exh_link = null;
+				ExceptionHandlerStackElement exh = null;
 
 				// For tuple construction:
 				ETuple curtuple = null;
@@ -227,8 +226,8 @@ public class Interpreter extends AbstractInterpreter {
 #INTERPRET<-REGS_AS_ARRAY(arity) xregsArray(reg,arity)#
 #INTERPRET<-LOCAL_CALL(keep,label) invoke_local(proc, reg, keep,label)#
 #INTERPRET<-MAKE_CLOSURE(env,arity,label) (EFun.get_fun_with_handler(arity, new Closure(env, label), getModuleClassLoader()))#
-#INTERPRET<-MAKE_EXH_LINK() (new ExceptionHandlerStackElement(exh_pc, exh_link))#
-#INTERPRET<-RESTORE_EXH(exh_elm) {ExceptionHandlerStackElement typed_exh_elm = (ExceptionHandlerStackElement) exh_elm; exh_pc = typed_exh_elm.exh_pc; exh_link = typed_exh_elm.next;}#
+#INTERPRET<-MAKE_EXH_LINK(new_exh_pc, is_try) (is_try ? new TryExceptionHandler(new_exh_pc, exh) : new CatchExceptionHandler(new_exh_pc, exh))#
+#INTERPRET<-RESTORE_EXH(exh_elm) {exh = (ExceptionHandlerStackElement) exh_elm;}#
 
 #INTERPRET#
 
@@ -240,10 +239,11 @@ public class Interpreter extends AbstractInterpreter {
 						if (stack==null) { // POST_CALL():
 							stack=proc.stack; assert(proc.sp==sp);
 						}
-						
-						if (exh_pc >= 0) {
+
+						if (exh != null) {
 							proc.last_exception = e;
-							pc = exh_pc;
+							exh.catchAction(e,reg);
+							pc = exh.pc;
 							continue;
 						} else throw(e);
 					}
