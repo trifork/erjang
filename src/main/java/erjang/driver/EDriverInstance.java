@@ -51,7 +51,7 @@ import erjang.driver.efile.Posix;
 public abstract class EDriverInstance extends EDriverControl {
 
 	EDriver driver;
-	EDriverTask task;
+	protected EDriverTask task;
 	Lock pdl;
 	
 	public EDriverInstance(EDriver driver) {
