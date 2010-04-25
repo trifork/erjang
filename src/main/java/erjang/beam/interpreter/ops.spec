@@ -5,25 +5,29 @@
 K_return:
 	PRE_CALL(); return reg[0];
 send:
-	//TODO
+	ERT.send(proc, reg[0], reg[1]);
+
 remove_message:
-	//TODO
-timeout:
-	//TODO
-if_end:
-	//TODO
+	ERT.remove_message(proc);
+
+
 int_code_end:
-	{}
-fclearerror:
-	//TODO
-bs_init_writable:
-	//TODO
+ 	{}
+
+# fclearerror:
+# 	//TODO
+# bs_init_writable:
+# 	//TODO
 
 ##########==========     ERROR REPORTING    	  ==========##########
 
+%class Insn()
+if_end:
+	return ERT.if_end();
+
 %class AAI(a1:A, a2:A, i3:I)
 func_info mod fun arity:
-	{System.err.println("INT| func_info: "+GET(mod)+":"+GET(fun)+"/"+GET(arity)); PRE_CALL(); return ERT.func_info((EAtom)GET(mod), (EAtom)GET(fun), xregsSeq(reg, GET(arity)));}
+	{System.err.println("INT| func_info: "+GET(mod)+":"+GET(fun)+"/"+GET(arity)+" called with "+REGS_AS_SEQ(GET(arity))); PRE_CALL(); return ERT.func_info((EAtom)GET(mod), (EAtom)GET(fun), REGS_AS_SEQ(GET(arity)));}
 
 %class S(src:S)
 badmatch src:
@@ -47,6 +51,13 @@ deallocate slots:
 %class II(i1:I, i2:I)
 allocate_zero slots _live:
 	STACK_ALLOC(GET(slots));
+
+%class IWI(i1:I, i2:W, i3:I)
+allocate_heap      stacksize _heapsize _live:
+	STACK_ALLOC(GET(stacksize));
+allocate_heap_zero stacksize _heapsize _live:
+	STACK_ALLOC(GET(stacksize));
+
 
 %class WI(al:W, i2:I)
 test_heap alloc_size _live:
@@ -77,7 +88,7 @@ get_list src h t:
 
 %class SID(src:S i:I dest:D)
 get_tuple_element src pos dst:
-	System.err.println("DB| get_tuple_element: "+GET(src)+", "+GET(pos)); SET(dst, ((ETuple)GET(src)).elm(1+GET(pos)));
+	SET(dst, ((ETuple)GET(src)).elm(1+GET(pos)));
 
 %class ID(i1:I dest:D)
 put_tuple size dst: encoder_side_effect(tuple_pos=0;)
@@ -86,6 +97,11 @@ put_tuple size dst: encoder_side_effect(tuple_pos=0;)
 %class S(src:S)
 put src: encode(++tuple_pos)(index)
 	curtuple.set(GET(index), GET(src));
+
+%class SDI(src:S dest:D i:I)
+set_tuple_element src dest index:
+        ((ETuple)GET(dest)).set(GET(index)+1, GET(src));
+
 
 
 ##########==========  TESTS & CONTROL FLOW	  ==========##########
@@ -150,9 +166,13 @@ is_lt lbl a b:
 is_ge lbl a b:
 	if (GET(a).compareTo(GET(b)) >= 0) GOTO(lbl);
 
-%class Select(src:S jumpTable:J defaultLabel:L)
+%class Select(src:S jumpTable:JV defaultLabel:L)
 select_val src table lbl:
 	TABLEJUMP(table, GET(src), GET_PC(lbl));
+
+%class Select(src:S jumpTable:JA defaultLabel:L)
+select_tuple_arity src table lbl:
+	{ETuple tuple_val = GET(src).testTuple(); if (tuple_val == null) GOTO(lbl); else {int arity=tuple_val.arity(); System.err.println("INT| select_tuple_arity: arity="+arity); TABLEJUMP(table, arity, GET_PC(lbl));}}
 
 ##########==========       FUNCTION CALLS   	  ==========##########
 
@@ -161,7 +181,7 @@ call_only keep lbl:
 	GOTO(lbl);
 
 call keep lbl:
-	PRE_CALL(); reg[0] = invoke(proc, reg, GET(keep), GET_PC(lbl)); POST_CALL();
+	PRE_CALL(); reg[0] = LOCAL_CALL(GET(keep), GET_PC(lbl)); POST_CALL();
 
 %class IE(i1:I ext_fun:E)
 call_ext _ extfun:
@@ -175,13 +195,24 @@ call_ext_only _ extfun:
 call_ext_last arity extfun dealloc:
 	STACK_DEALLOC(GET(dealloc)); PRE_CALL(); return GET(extfun).invoke(proc, xregsArray(reg, GET(extfun).arity()));
 
+%class I(i1:I)
+apply arity:
+	PRE_CALL(); int ary=GET(arity); reg[0] = ERT.resolve_fun(reg[ary], reg[ary+1], ary).invoke(proc, REGS_AS_ARRAY(ary)); POST_CALL();
+
+call_fun arity:
+	PRE_CALL(); int ary=GET(arity); reg[0] = ((EFun)reg[ary]).invoke(proc, REGS_AS_ARRAY(ary)); POST_CALL();
+
 %class II(i1:I i2:I)
 apply_last arity dealloc:
-	STACK_DEALLOC(GET(dealloc)); int arity = GET(arity); EFun fun = ERT.resolve_fun(reg[arity], reg[arity+1], arity); PRE_CALL(); return fun.invoke(proc, xregsArray(reg, arity));
+	STACK_DEALLOC(GET(dealloc)); int ary = GET(arity); EFun fun = ERT.resolve_fun(reg[ary], reg[ary+1], ary); PRE_CALL(); return fun.invoke(proc, REGS_AS_ARRAY(ary));
 
 %class ILI(i1:I label:L i3:I)
 call_last keep lbl dealloc:
 	STACK_DEALLOC(GET(dealloc)); GOTO(lbl);
+
+%class F(anon_fun.total_arity:I, anon_fun.free_vars:I, anon_fun.label:IL)
+make_fun2 total_arity free_vars label:
+	reg[0] = MAKE_CLOSURE(REGS_AS_ARRAY(GET(free_vars)), GET(total_arity)-GET(free_vars), GET_PC(label));
 
 ##########==========             BIFS       	  ==========##########
 
@@ -191,6 +222,19 @@ call_last keep lbl dealloc:
 bif0 bif dest onFail:
 	{System.err.println("INTP| invoking bif0 "+GET(bif)); EObject tmp = GET(bif).invoke(proc, new EObject[]{}); if (tmp==null) GOTO(onFail); SET(dest, tmp);}
 
+%class Bif(ext_fun:E args[0]:S dest:D label:L0)
+bif1 bif arg1 dest onFail:
+	{System.err.println("INTP| invoking bif1 "+GET(bif)); EObject tmp = GET(bif).invoke(proc, new EObject[]{GET(arg1)}); if (tmp==null) GOTO(onFail); SET(dest, tmp);}
+
+%class Bif(ext_fun:E args[0]:S args[1]:S dest:D label:L0)
+bif2 bif arg1 arg2 dest onFail:
+	{System.err.println("INTP| invoking bif2 "+GET(bif)); EObject tmp = GET(bif).invoke(proc, new EObject[]{GET(arg1), GET(arg2)}); if (tmp==null) GOTO(onFail); SET(dest, tmp);}
+
+%class GcBif(ext_fun:E args[0]:S dest:D label:L)
+
+gc_bif1 bif arg1 dest onFail:
+	{System.err.println("INTP| invoking bif "+GET(bif)+" with "+GET(arg1)); EObject tmp = GET(bif).invoke(proc, new EObject[]{GET(arg1)}); if (tmp==null) GOTO(onFail); SET(dest, tmp);}
+
 %class GcBif(ext_fun:E args[0]:S args[1]:S dest:D label:L)
 
 gc_bif2 bif arg1 arg2 dest onFail:
@@ -198,7 +242,27 @@ gc_bif2 bif arg1 arg2 dest onFail:
 # TODO: Streamline these calls - e.g. cast to EFun2 instead of creating array
 
 
-##########==========      BINARY MANIPULATION	  ==========##########
+##########==========           RECEIVE            ==========##########
+%class LD(label:L, dest:D)
+loop_rec label dest:
+	EObject tmp = ERT.loop_rec(proc); if (tmp==null) GOTO(label); else SET(dest, tmp);
+
+%class L(label:L)
+wait label:
+	ERT.wait(proc); GOTO(label);
+
+loop_rec_end label:
+	ERT.loop_rec_end(proc); GOTO(label);
+
+%class LS(label:L src:S)
+wait_timeout label millis:
+	if (ERT.wait_timeout(proc, GET(millis))) GOTO(label);
+
+%class Insn()
+timeout:
+	ERT.timeout(proc);
+
+##########==========       MATCHING OF BINARIES    ==========##########
 %class LDIID(label:L dest:D i3:I i4:I dest5:D)
 bs_start_match2 failLabel src _ slots dest:
 	EObject tmp = EBinMatchState.bs_start_match2(GET(src), GET(slots)); if (tmp==null) GOTO(failLabel); else SET(dest, tmp);
@@ -224,12 +288,32 @@ bs_test_tail2 failLabel src bits_left:
 
 #bs_test_unit:
 
+##########==========    CONSTRUCTION OF BINARIES  ==========##########
+
+#%class LSIIID()
 
 ##########==========      EXCEPTION HANDLING	  ==========##########
 
-#%class YL(y:y, label:L)
-#K_catch y lbl:
-#	SET(y, makeExceptionHandler(sp,exh));
-#exh = GET(lbl);
+%class YL(y:y, label:L)
+K_catch y lbl:
+	System.err.println("INT| push-exh: "+exh+"/"+GET_PC(lbl)); SET(y, exh); exh = MAKE_EXH_LINK(GET_PC(lbl), false);
+
+K_try y lbl:
+	System.err.println("INT| push-exh: "+exh+"/"+GET_PC(lbl)); SET(y, exh); exh = MAKE_EXH_LINK(GET_PC(lbl), true);
+
+%class Y(y:y)
+catch_end y:
+	System.err.println("INT| pop-exh: "+exh); RESTORE_EXH(GET(y));
+
+try_end y:
+	System.err.println("INT| pop-exh: "+exh); RESTORE_EXH(GET(y));
+
+%class Insn()
+try_case:
+	{/* Work done by TryExceptionHandler. */}
+
+%class SS(src1:S src2:S)
+raise value trace:
+	throw ERT.raise(reg[0], GET(value), GET(trace));
 
 ##########==========       FLOATING-POINT    	  ==========##########
