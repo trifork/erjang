@@ -5,19 +5,23 @@
 K_return:
 	PRE_CALL(); return reg[0];
 send:
-	//TODO
+	ERT.send(proc, reg[0], reg[1]);
+
 remove_message:
-	//TODO
-timeout:
-	//TODO
-if_end:
-	//TODO
+	ERT.remove_message(proc);
+
+# timeout:
+# 	//TODO
+# if_end:
+# 	//TODO
+
 int_code_end:
-	{}
-fclearerror:
-	//TODO
-bs_init_writable:
-	//TODO
+ 	{}
+
+# fclearerror:
+# 	//TODO
+# bs_init_writable:
+# 	//TODO
 
 ##########==========     ERROR REPORTING    	  ==========##########
 
@@ -47,6 +51,13 @@ deallocate slots:
 %class II(i1:I, i2:I)
 allocate_zero slots _live:
 	STACK_ALLOC(GET(slots));
+
+%class IWI(i1:I, i2:W, i3:I)
+allocate_heap      stacksize _heapsize _live:
+	STACK_ALLOC(GET(stacksize));
+allocate_heap_zero stacksize _heapsize _live:
+	STACK_ALLOC(GET(stacksize));
+
 
 %class WI(al:W, i2:I)
 test_heap alloc_size _live:
@@ -86,6 +97,11 @@ put_tuple size dst: encoder_side_effect(tuple_pos=0;)
 %class S(src:S)
 put src: encode(++tuple_pos)(index)
 	curtuple.set(GET(index), GET(src));
+
+%class SDI(src:S dest:D i:I)
+set_tuple_element src dest index:
+        ((ETuple)GET(dest)).set(GET(index)+1, GET(src));
+
 
 
 ##########==========  TESTS & CONTROL FLOW	  ==========##########
@@ -224,6 +240,13 @@ loop_rec label dest:
 %class L(label:L)
 wait label:
 	ERT.wait(proc); GOTO(label);
+
+loop_rec_end label:
+	ERT.loop_rec_end(proc); GOTO(label);
+
+%class LS(label:L src:S)
+wait_timeout label millis:
+	if (ERT.wait_timeout(proc, GET(millis))) GOTO(label);
 
 ##########==========    MANIPULATION OF BINARIES  ==========##########
 %class LDIID(label:L dest:D i3:I i4:I dest5:D)
