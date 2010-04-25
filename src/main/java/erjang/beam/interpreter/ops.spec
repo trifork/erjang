@@ -23,7 +23,7 @@ bs_init_writable:
 
 %class AAI(a1:A, a2:A, i3:I)
 func_info mod fun arity:
-	{System.err.println("INT| func_info: "+GET(mod)+":"+GET(fun)+"/"+GET(arity)); PRE_CALL(); return ERT.func_info((EAtom)GET(mod), (EAtom)GET(fun), REGS_AS_SEQ(GET(arity)));}
+	{System.err.println("INT| func_info: "+GET(mod)+":"+GET(fun)+"/"+GET(arity)+" called with "+REGS_AS_SEQ(GET(arity))); PRE_CALL(); return ERT.func_info((EAtom)GET(mod), (EAtom)GET(fun), REGS_AS_SEQ(GET(arity)));}
 
 %class S(src:S)
 badmatch src:
@@ -187,9 +187,9 @@ apply_last arity dealloc:
 call_last keep lbl dealloc:
 	STACK_DEALLOC(GET(dealloc)); GOTO(lbl);
 
-%class F(anon_fun.total_arity:I, anon_fun.free_vars:I, anon_fun.label:I)
+%class F(anon_fun.total_arity:I, anon_fun.free_vars:I, anon_fun.label:IL)
 make_fun2 total_arity free_vars label:
-	reg[0] = MAKE_CLOSURE(REGS_AS_ARRAY(GET(free_vars)), GET(total_arity)-GET(free_vars), GET(label));
+	reg[0] = MAKE_CLOSURE(REGS_AS_ARRAY(GET(free_vars)), GET(total_arity)-GET(free_vars), GET_PC(label));
 
 
 ##########==========             BIFS       	  ==========##########
@@ -200,6 +200,11 @@ make_fun2 total_arity free_vars label:
 bif0 bif dest onFail:
 	{System.err.println("INTP| invoking bif0 "+GET(bif)); EObject tmp = GET(bif).invoke(proc, new EObject[]{}); if (tmp==null) GOTO(onFail); SET(dest, tmp);}
 
+%class GcBif(ext_fun:E args[0]:S dest:D label:L)
+
+gc_bif1 bif arg1 dest onFail:
+	{System.err.println("INTP| invoking bif "+GET(bif)+" with "+GET(arg1)); EObject tmp = GET(bif).invoke(proc, new EObject[]{GET(arg1)}); if (tmp==null) GOTO(onFail); SET(dest, tmp);}
+
 %class GcBif(ext_fun:E args[0]:S args[1]:S dest:D label:L)
 
 gc_bif2 bif arg1 arg2 dest onFail:
@@ -207,7 +212,16 @@ gc_bif2 bif arg1 arg2 dest onFail:
 # TODO: Streamline these calls - e.g. cast to EFun2 instead of creating array
 
 
-##########==========      BINARY MANIPULATION	  ==========##########
+##########==========           RECEIVE            ==========##########
+%class LD(label:L, dest:D)
+loop_rec label dest:
+	EObject tmp = ERT.loop_rec(proc); if (tmp==null) GOTO(label); else SET(dest, tmp);
+
+%class L(label:L)
+wait label:
+	ERT.wait(proc); GOTO(label);
+
+##########==========    MANIPULATION OF BINARIES  ==========##########
 %class LDIID(label:L dest:D i3:I i4:I dest5:D)
 bs_start_match2 failLabel src _ slots dest:
 	EObject tmp = EBinMatchState.bs_start_match2(GET(src), GET(slots)); if (tmp==null) GOTO(failLabel); else SET(dest, tmp);

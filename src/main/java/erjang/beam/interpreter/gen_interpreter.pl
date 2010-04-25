@@ -14,6 +14,7 @@ my %TYPES_OPERAND_CLASS =
      'y' => "Operands.YReg",
      'c' => "Operands.Literal",
      'I' => "int",
+     'IL' => "int", # Integer-as-label
      'L' => "Operands.Label",
      'E' => "ExtFun",
      'JV' => "Operands.SelectList",
@@ -25,6 +26,7 @@ my %TYPES_DECODE =
      'x' => "reg[#]",
      'y' => "stack[sp - (#)]",
      'I' => "(#)",
+     'IL' => "(#)",
      'L' => "(#)",
      'nolabel' => "nofailLabel()",
      'E' => "ext_funs[#]",
@@ -37,6 +39,7 @@ my %TYPES_ENCODE =
  'x' => "#.nr",
  'y' => "#.nr",
  'I' => "#",
+ 'IL' => "encodeLabel(#)",
  'L' => "encodeLabel(#.nr)",
  'E' => "encodeExtFun(#)",
  'JV' => "encodeValueJumpTable(#)",
@@ -55,6 +58,7 @@ my %TYPES_ALLOWED_OPS =
      'y' => {'GET'=>1, 'SET'=>1},
      'c' => {'GET'=>1},
      'I' => {'GET'=>1},
+     'IL' => {'GOTO'=>1, 'GET_PC'=>1},
      'L' => {'GOTO'=>1, 'GET_PC'=>1},
      'nolabel' => {'GOTO'=>1},
      'E' => {'GET'=>1},
@@ -62,7 +66,7 @@ my %TYPES_ALLOWED_OPS =
      'JA' => {'TABLEJUMP'=>1}
      );
 
-my %PRIMITIVE_TYPES = ('I' => 1);
+my %PRIMITIVE_TYPES = ('I' => 1, 'IL'=>1);
 
 my @METAS = ('GET', 'SET', 'GOTO', 'TABLEJUMP', 'GET_PC');
 

@@ -208,11 +208,11 @@ public class Interpreter extends AbstractInterpreter {
 				while (true) {
 					final int opcode = code[pc++];
 					//System.err.print("STACK| "); for (int i=0; i<=sp; i++) {System.err.print("  "+i+":"+stack[i]);} System.err.println();
-					System.err.println("INTP| (pc="+(pc-1)+"; sp="+sp+")"+opcode+"   "+reg[0]);
+					System.err.println("INTP|"+proc.self_handle()+" (pc="+(pc-1)+"; sp="+sp+")"+opcode+"   "+reg[0]);
 					switch (opcode) {
 					case ENSURE_REG_CAPACITY: {
 						int max_x = code[pc++];
-						System.err.println("INTP| Ensure reg capacity: "+max_x);
+						System.err.println("INTP|"+proc.self_handle()+" Ensure reg capacity: "+max_x);
 						reg = ensureCapacity(reg, max_x);
 					} break;
 #INTERPRET<-STACK_ALLOC(n) {stack = ensureCapacity(stack, sp+n, sp+1); sp += n;}#
@@ -247,7 +247,7 @@ public class Interpreter extends AbstractInterpreter {
 				EObject[] reg = new EObject[argCnt+envCnt+12]; //??
 				for (int i=0; i<argCnt; i++) {reg[i] = args[i];} //??
 				for (int i=0; i<envCnt; i++) {reg[argCnt+i] = env[i];}
-				for (int i=0; i<argCnt+envCnt; i++) System.err.println("INT| arg#"+i+"="+args[i]);
+				for (int i=0; i<argCnt+envCnt; i++) System.err.println("INT| reg#"+i+"="+reg[i]);
 				return interpret(proc, start_pc, reg);
 			}
 		}
