@@ -16,7 +16,8 @@ my %TYPES_OPERAND_CLASS =
      'I' => "int",
      'L' => "Operands.Label",
      'E' => "ExtFun",
-     'J' => "Operands.SelectList"
+     'JV' => "Operands.SelectList",
+     'JA' => "Operands.SelectList"
      );
 my %TYPES_DECODE =
     (
@@ -27,7 +28,8 @@ my %TYPES_DECODE =
      'L' => "(#)",
      'nolabel' => "nofailLabel()",
      'E' => "ext_funs[#]",
-     'J' => "value_jump_tables[#]"
+     'JV' => "value_jump_tables[#]",
+     'JA' => "arity_jump_tables[#]"
      );
 my %TYPES_ENCODE =
 (
@@ -37,7 +39,8 @@ my %TYPES_ENCODE =
  'I' => "#",
  'L' => "encodeLabel(#.nr)",
  'E' => "encodeExtFun(#)",
- 'J' => "encodeValueJumpTable(#)"
+ 'JV' => "encodeValueJumpTable(#)",
+ 'JA' => "encodeArityJumpTable(#)"
  );
 # my %TYPES_JAVATYPE =
 #     (
@@ -55,7 +58,8 @@ my %TYPES_ALLOWED_OPS =
      'L' => {'GOTO'=>1, 'GET_PC'=>1},
      'nolabel' => {'GOTO'=>1},
      'E' => {'GET'=>1},
-     'J' => {'TABLEJUMP'=>1}
+     'JV' => {'TABLEJUMP'=>1},
+     'JA' => {'TABLEJUMP'=>1}
      );
 
 my %PRIMITIVE_TYPES = ('I' => 1);
@@ -89,6 +93,7 @@ sub multi_subst {
     return $template;
 }
 
+my $BALANCED_RE = '(?:(?(DEFINE)(?<BALANCED>[^()]+|\((?&BALANCED)\)))([^()]+|\((?&BALANCED)\))+)';
 my $BALANCED_NO_TOPLEVEL_COMMA_RE = '(?:(?(DEFINE)(?<BALANCED>[^()]+|\((?&BALANCED)\)))([^(),]+|\((?&BALANCED)\))+)';
 sub back_subst {
     my ($subject, $subst_map) = @_;
@@ -101,7 +106,7 @@ sub back_subst {
 	    my ($formals, $body) = @macro_info;
 	    my @formals = split(/,/, $formals);
 	    # Substitute macro "$macro":
-	    $subject =~ s/\b$macro\b\(($BALANCED_NO_TOPLEVEL_COMMA_RE?)\)/{
+	    $subject =~ s/\b$macro\b\(($BALANCED_RE?)\)/{
 my @actuals = split_into_args($1);
 die "Wrong number of arguments to macro '$macro' (expected ".scalar @formals.", found ".scalar @actuals.")" unless ($#actuals==$#formals);
 my $arg_map = make_map(\@formals, \@actuals);
@@ -286,7 +291,7 @@ sub parse() {
 	    my $tmp = $2;
 	    @cls_arg_names = @cls_arg_types = ();
 	    for my $arg (split(/\s+/, $tmp)) {
-		die "Bad class field syntax ($tmp)" unless ($arg =~ /^([\w.\[\]]+):(\w\d?),?$/);
+		die "Bad class field syntax ($tmp)" unless ($arg =~ /^([\w.\[\]]+):(\w[\w\d]?),?$/);
 		push(@cls_arg_names, $1);
 		push(@cls_arg_types, $2);
 	    }

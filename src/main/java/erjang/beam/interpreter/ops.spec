@@ -23,7 +23,7 @@ bs_init_writable:
 
 %class AAI(a1:A, a2:A, i3:I)
 func_info mod fun arity:
-	{System.err.println("INT| func_info: "+GET(mod)+":"+GET(fun)+"/"+GET(arity)); PRE_CALL(); return ERT.func_info((EAtom)GET(mod), (EAtom)GET(fun), xregsSeq(reg, GET(arity)));}
+	{System.err.println("INT| func_info: "+GET(mod)+":"+GET(fun)+"/"+GET(arity)); PRE_CALL(); return ERT.func_info((EAtom)GET(mod), (EAtom)GET(fun), REGS_AS_SEQ(GET(arity)));}
 
 %class S(src:S)
 badmatch src:
@@ -150,9 +150,13 @@ is_lt lbl a b:
 is_ge lbl a b:
 	if (GET(a).compareTo(GET(b)) >= 0) GOTO(lbl);
 
-%class Select(src:S jumpTable:J defaultLabel:L)
+%class Select(src:S jumpTable:JV defaultLabel:L)
 select_val src table lbl:
 	TABLEJUMP(table, GET(src), GET_PC(lbl));
+
+%class Select(src:S jumpTable:JA defaultLabel:L)
+select_tuple_arity src table lbl:
+	{ETuple tuple_val = GET(src).testTuple(); if (tuple_val == null) GOTO(lbl); else {int arity=tuple_val.arity(); System.err.println("INT| select_tuple_arity: arity="+arity); TABLEJUMP(table, arity, GET_PC(lbl));}}
 
 ##########==========       FUNCTION CALLS   	  ==========##########
 
@@ -161,7 +165,7 @@ call_only keep lbl:
 	GOTO(lbl);
 
 call keep lbl:
-	PRE_CALL(); reg[0] = invoke(proc, reg, GET(keep), GET_PC(lbl)); POST_CALL();
+	PRE_CALL(); reg[0] = LOCAL_CALL(GET(keep), GET_PC(lbl)); POST_CALL();
 
 %class IE(i1:I ext_fun:E)
 call_ext _ extfun:
@@ -177,11 +181,16 @@ call_ext_last arity extfun dealloc:
 
 %class II(i1:I i2:I)
 apply_last arity dealloc:
-	STACK_DEALLOC(GET(dealloc)); int arity = GET(arity); EFun fun = ERT.resolve_fun(reg[arity], reg[arity+1], arity); PRE_CALL(); return fun.invoke(proc, xregsArray(reg, arity));
+	STACK_DEALLOC(GET(dealloc)); int ary = GET(arity); EFun fun = ERT.resolve_fun(reg[ary], reg[ary+1], ary); PRE_CALL(); return fun.invoke(proc, REGS_AS_ARRAY(ary));
 
 %class ILI(i1:I label:L i3:I)
 call_last keep lbl dealloc:
 	STACK_DEALLOC(GET(dealloc)); GOTO(lbl);
+
+%class F(anon_fun.total_arity:I, anon_fun.free_vars:I, anon_fun.label:I)
+make_fun2 total_arity free_vars label:
+	reg[0] = MAKE_CLOSURE(REGS_AS_ARRAY(GET(free_vars)), GET(total_arity)-GET(free_vars), GET(label));
+
 
 ##########==========             BIFS       	  ==========##########
 

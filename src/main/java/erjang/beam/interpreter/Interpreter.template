@@ -67,9 +67,11 @@ public class Interpreter extends AbstractInterpreter {
 		protected EModule makeModule(String name,
 									 short[] code, EObject[] consts,
 									 ValueJumpTable[] value_jump_tables,
+									 ArityJumpTable[] arity_jump_tables,
 									 List<FunIDWithEntry> exports, List<FunID> imports)
 		{
-			return new Module(name, code, consts, value_jump_tables,
+			return new Module(name, code, consts,
+							  value_jump_tables, arity_jump_tables,
 							  exports, imports);
 		}
 
@@ -116,6 +118,7 @@ public class Interpreter extends AbstractInterpreter {
 		final private short[] code;
 		final private EObject[] consts;
 		final private ValueJumpTable[] value_jump_tables;
+		final private ArityJumpTable[] arity_jump_tables;
 		final private List<FunIDWithEntry> exports;
 		final private List<FunID> imports;
 		final private EFun[] ext_funs;
@@ -123,12 +126,14 @@ public class Interpreter extends AbstractInterpreter {
 		Module(String name,
 			   short[] code, EObject[] consts,
 			   ValueJumpTable[] value_jump_tables,
+			   ArityJumpTable[] arity_jump_tables,
 			   List<FunIDWithEntry> exports, List<FunID> imports)
 		{
 			super(name, true);
 			this.code = code;
 			this.consts = consts;
 			this.value_jump_tables = value_jump_tables;
+			this.arity_jump_tables = arity_jump_tables;
 			this.exports = exports;
 			this.imports = imports;
 			ext_funs = new EFun[imports.size()];
@@ -176,17 +181,23 @@ public class Interpreter extends AbstractInterpreter {
 			}
 
 			public EObject invoke(final EProc proc, final EObject[] args) throws Pausable {
-				return invoke(proc, args, args.length, start_pc);
-			}
-
-			public EObject invoke(final EProc proc, final EObject[] args, int argCnt, int pc) throws Pausable {
-				System.err.println("INT| invoking "+name+"@"+pc+"...");
-				final short[] code = Module.this.code;
-				EObject stack[] = proc.stack;
-				int sp = proc.sp;
+				int argCnt = args.length;
 				EObject[] reg = new EObject[argCnt+12]; //??
 				for (int i=0; i<argCnt; i++) {reg[i] = args[i];} //??
 				for (int i=0; i<argCnt; i++) System.err.println("INT| arg#"+i+"="+args[i]);
+				return interpret(proc, start_pc, reg);
+			}
+
+			/** Local call - with given PC and register array */
+			public EObject invoke_local(final EProc proc, final EObject[] reg, int argCnt, int pc) throws Pausable {
+				System.err.println("INT| invoking "+name+"@"+pc+"...");
+				return interpret(proc, pc, reg);
+			}
+
+			public EObject interpret(final EProc proc, int pc, EObject[] reg) throws Pausable {
+				final short[] code = Module.this.code;
+				EObject stack[] = proc.stack;
+				int sp = proc.sp;
 
 				// For exception handling:
 				int exh = -1;
@@ -210,6 +221,8 @@ public class Interpreter extends AbstractInterpreter {
 #INTERPRET<-POST_CALL() {stack=proc.stack; assert(proc.sp==sp);}#
 #INTERPRET<-REGS_AS_SEQ(arity) xregsSeq(reg,arity)#
 #INTERPRET<-REGS_AS_ARRAY(arity) xregsArray(reg,arity)#
+#INTERPRET<-LOCAL_CALL(keep,label) invoke_local(proc, reg, keep,label)#
+#INTERPRET<-MAKE_CLOSURE(env,arity,label) (EFun.get_fun_with_handler(arity, new Closure(env, label), getModuleClassLoader()))#
 
 #INTERPRET#
 					default:
@@ -218,5 +231,26 @@ public class Interpreter extends AbstractInterpreter {
 				}
 			}
 		} // class Function
+
+		class Closure extends Function {
+			final EObject[] env;
+
+			public Closure(EObject[] env, int start_pc) {
+				super(start_pc);
+				this.env = env;
+			}
+
+			public EObject invoke(final EProc proc, final EObject[] args) throws Pausable {
+				System.err.println("INT| Closure invoked @ "+start_pc);
+				int argCnt = args.length;
+				int envCnt = env.length;
+				EObject[] reg = new EObject[argCnt+envCnt+12]; //??
+				for (int i=0; i<argCnt; i++) {reg[i] = args[i];} //??
+				for (int i=0; i<envCnt; i++) {reg[argCnt+i] = env[i];}
+				for (int i=0; i<argCnt+envCnt; i++) System.err.println("INT| arg#"+i+"="+args[i]);
+				return interpret(proc, start_pc, reg);
+			}
+		}
+
     } // class Module
 } // class Interpreter

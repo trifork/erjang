@@ -52,6 +52,7 @@ public class AbstractInterpreter {
 		final ArrayList<Short>     code      = new ArrayList<Short>();
 		final ArrayList<EObject>   consts    = new ArrayList<EObject>();
 		final ArrayList<ValueJumpTable> value_jump_tables = new ArrayList<ValueJumpTable>();
+		final ArrayList<ArityJumpTable> arity_jump_tables = new ArrayList<ArityJumpTable>();
 		final HashMap<EObject,Integer>	const_map = new HashMap<EObject,Integer>();
 		final HashMap<Integer,Integer>	label_map = new HashMap<Integer,Integer>();
 		final ArrayList<Backpatch>	    backpatches = new ArrayList<Backpatch>();
@@ -89,16 +90,19 @@ public class AbstractInterpreter {
 			short[] codeArray = toShortArray(code);
 			EObject[] constArray = consts.toArray(new EObject[consts.size()]);
 			ValueJumpTable[] valueJumpTableArray = value_jump_tables.toArray(new ValueJumpTable[value_jump_tables.size()]);
+			ArityJumpTable[] arityJumpTableArray = arity_jump_tables.toArray(new ArityJumpTable[arity_jump_tables.size()]);
 			List<FunIDWithEntry> exports = convertExports(raw_exports);
 			System.err.println("INT| Constructing module for "+moduleName.getName());
 			return makeModule(moduleName.getName(),
-								  codeArray, constArray, valueJumpTableArray,
-								  exports, imports);
+							  codeArray, constArray,
+							  valueJumpTableArray, arityJumpTableArray,
+							  exports, imports);
 		}
 
 		protected abstract EModule makeModule(String name,
 											  short[] code, EObject[] consts,
 											  ValueJumpTable[] value_jump_tables,
+											  ArityJumpTable[] arity_jump_tables,
 											  List<FunIDWithEntry> exports, List<FunID> imports);
 
 		static short[] toShortArray(List<Short> org) {
@@ -171,12 +175,30 @@ public class AbstractInterpreter {
 				int label = jumpTable.getLabel(i).nr;
 				table.put(value, -12347);
 				backpatches.add(new Backpatch(label) {
+					public String toString() {return "Backpatch<value jump table "+label+">";}
 					public void patch(int labelOffset) {
 						table.put(value, labelOffset);
 					}});
 			}
 			int index = value_jump_tables.size();
 			value_jump_tables.add(table);
+			return index;
+		}
+
+		protected int encodeArityJumpTable(Operands.SelectList jumpTable) {
+			final ArityJumpTable table = new ArityJumpTable();
+			for (int i=0; i<jumpTable.size(); i++) {
+				final int arity = ((Operands.CodeInt)jumpTable.getValue(i)).value;
+				int label = jumpTable.getLabel(i).nr;
+				table.put(arity, -12346);
+				backpatches.add(new Backpatch(label) {
+					public String toString() {return "Backpatch<arity jump table "+label+">";}
+					public void patch(int labelOffset) {
+						table.put(arity, labelOffset);
+					}});
+			}
+			int index = arity_jump_tables.size();
+			arity_jump_tables.add(table);
 			return index;
 		}
 
@@ -187,6 +209,7 @@ public class AbstractInterpreter {
 				if (label!=0) {
 					final int codePos = codePos();
 					backpatches.add(new Backpatch(label) {
+						public String toString() {return "Backpatch<encoded label "+label+" @ "+codePos+">";}
 						public void patch(int labelOffset) {
 							emitAt(codePos, labelOffset);
 						}});
@@ -270,6 +293,13 @@ public class AbstractInterpreter {
 
 	static class ValueJumpTable extends HashMap<EObject,Integer> {
 		public int lookup(EObject key, int defaultLabel) {
+			Integer lbl = get(key);
+			return (lbl != null) ? lbl.intValue() : defaultLabel;
+		}
+	}
+
+	static class ArityJumpTable extends HashMap<Integer,Integer> {
+		public int lookup(int key, int defaultLabel) {
 			Integer lbl = get(key);
 			return (lbl != null) ? lbl.intValue() : defaultLabel;
 		}
