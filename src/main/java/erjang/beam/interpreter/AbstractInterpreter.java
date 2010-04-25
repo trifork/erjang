@@ -34,6 +34,7 @@ import erjang.ErlangError;
 import erjang.EObject;
 import erjang.EAtom;
 import erjang.ESeq;
+import erjang.EPseudoTerm;
 
 import erjang.beam.ModuleVisitor;
 import erjang.beam.FunctionVisitor;
@@ -327,6 +328,22 @@ public class AbstractInterpreter {
 
 		public void bind(EFun value) {
 			vector[index] = value;
+		}
+	}
+
+	static class ExceptionHandlerStackElement extends EPseudoTerm {
+		final int exh_pc;
+		final ExceptionHandlerStackElement next;
+
+		public ExceptionHandlerStackElement(int exh_pc,
+											ExceptionHandlerStackElement next)
+		{
+			this.exh_pc=exh_pc;
+			this.next = next;
+		}
+
+		public String toString() {
+			return "ExhElem("+exh_pc+","+next+")";
 		}
 	}
 }
