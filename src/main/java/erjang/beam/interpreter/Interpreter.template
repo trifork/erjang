@@ -183,7 +183,7 @@ public class Interpreter extends AbstractInterpreter {
 
 			public EObject invoke(final EProc proc, final EObject[] args) throws Pausable {
 				int argCnt = args.length;
-				EObject[] reg = new EObject[argCnt+12]; //??
+				EObject[] reg = new EObject[1024]; //??
 				for (int i=0; i<argCnt; i++) {reg[i] = args[i];} //??
 				for (int i=0; i<argCnt; i++) System.err.println("INT| arg#"+i+"="+args[i]);
 				return interpret(proc, start_pc, reg);
@@ -210,7 +210,7 @@ public class Interpreter extends AbstractInterpreter {
 						while (true) {
 							final int opcode = code[pc++];
 							//System.err.print("STACK| "); for (int i=0; i<=sp; i++) {System.err.print("  "+i+":"+stack[i]);} System.err.println();
-							System.err.println("INTP|"+proc.self_handle()+" (pc="+(pc-1)+"; sp="+sp+")"+opcode+"   "+reg[0]);
+							//System.err.println("INTP|"+proc.self_handle()+" (pc="+(pc-1)+"; sp="+sp+")"+opcode+"   "+reg[0]);
 							switch (opcode) {
 							case ENSURE_REG_CAPACITY: {
 								int max_x = code[pc++];
@@ -232,7 +232,7 @@ public class Interpreter extends AbstractInterpreter {
 #INTERPRET#
 
 							default:
-								throw new Error();
+								throw new Error("Unimplemented internal opcode: "+opcode+" at "+module_name()+"@"+(pc-1));
 							}
 						}
 					} catch (ErlangException e) {
@@ -262,7 +262,7 @@ public class Interpreter extends AbstractInterpreter {
 				System.err.println("INT| Closure invoked @ "+start_pc);
 				int argCnt = args.length;
 				int envCnt = env.length;
-				EObject[] reg = new EObject[argCnt+envCnt+12]; //??
+				EObject[] reg = new EObject[1024]; //??
 				for (int i=0; i<argCnt; i++) {reg[i] = args[i];} //??
 				for (int i=0; i<envCnt; i++) {reg[argCnt+i] = env[i];}
 				for (int i=0; i<argCnt+envCnt; i++) System.err.println("INT| reg#"+i+"="+reg[i]);

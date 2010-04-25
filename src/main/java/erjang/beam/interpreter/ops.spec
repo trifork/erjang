@@ -10,10 +10,6 @@ send:
 remove_message:
 	ERT.remove_message(proc);
 
-# timeout:
-# 	//TODO
-# if_end:
-# 	//TODO
 
 int_code_end:
  	{}
@@ -24,6 +20,10 @@ int_code_end:
 # 	//TODO
 
 ##########==========     ERROR REPORTING    	  ==========##########
+
+%class Insn()
+if_end:
+	return ERT.if_end();
 
 %class AAI(a1:A, a2:A, i3:I)
 func_info mod fun arity:
@@ -88,7 +88,7 @@ get_list src h t:
 
 %class SID(src:S i:I dest:D)
 get_tuple_element src pos dst:
-	System.err.println("DB| get_tuple_element: "+GET(src)+", "+GET(pos)); SET(dst, ((ETuple)GET(src)).elm(1+GET(pos)));
+	SET(dst, ((ETuple)GET(src)).elm(1+GET(pos)));
 
 %class ID(i1:I dest:D)
 put_tuple size dst: encoder_side_effect(tuple_pos=0;)
@@ -195,6 +195,13 @@ call_ext_only _ extfun:
 call_ext_last arity extfun dealloc:
 	STACK_DEALLOC(GET(dealloc)); PRE_CALL(); return GET(extfun).invoke(proc, xregsArray(reg, GET(extfun).arity()));
 
+%class I(i1:I)
+apply arity:
+	PRE_CALL(); int ary=GET(arity); reg[0] = ERT.resolve_fun(reg[ary], reg[ary+1], ary).invoke(proc, REGS_AS_ARRAY(ary)); POST_CALL();
+
+call_fun arity:
+	PRE_CALL(); int ary=GET(arity); reg[0] = ((EFun)reg[ary]).invoke(proc, REGS_AS_ARRAY(ary)); POST_CALL();
+
 %class II(i1:I i2:I)
 apply_last arity dealloc:
 	STACK_DEALLOC(GET(dealloc)); int ary = GET(arity); EFun fun = ERT.resolve_fun(reg[ary], reg[ary+1], ary); PRE_CALL(); return fun.invoke(proc, REGS_AS_ARRAY(ary));
@@ -207,7 +214,6 @@ call_last keep lbl dealloc:
 make_fun2 total_arity free_vars label:
 	reg[0] = MAKE_CLOSURE(REGS_AS_ARRAY(GET(free_vars)), GET(total_arity)-GET(free_vars), GET_PC(label));
 
-
 ##########==========             BIFS       	  ==========##########
 
 #%class Bif(ext_fun:E args[0]:S args[1]:S dest:D label:L)
@@ -215,6 +221,10 @@ make_fun2 total_arity free_vars label:
 %class Bif(ext_fun:E dest:D label:L0)
 bif0 bif dest onFail:
 	{System.err.println("INTP| invoking bif0 "+GET(bif)); EObject tmp = GET(bif).invoke(proc, new EObject[]{}); if (tmp==null) GOTO(onFail); SET(dest, tmp);}
+
+%class Bif(ext_fun:E args[0]:S dest:D label:L0)
+bif1 bif arg1 dest onFail:
+	{System.err.println("INTP| invoking bif1 "+GET(bif)); EObject tmp = GET(bif).invoke(proc, new EObject[]{GET(arg1)}); if (tmp==null) GOTO(onFail); SET(dest, tmp);}
 
 %class Bif(ext_fun:E args[0]:S args[1]:S dest:D label:L0)
 bif2 bif arg1 arg2 dest onFail:
@@ -248,7 +258,11 @@ loop_rec_end label:
 wait_timeout label millis:
 	if (ERT.wait_timeout(proc, GET(millis))) GOTO(label);
 
-##########==========    MANIPULATION OF BINARIES  ==========##########
+%class Insn()
+timeout:
+	ERT.timeout(proc);
+
+##########==========       MATCHING OF BINARIES    ==========##########
 %class LDIID(label:L dest:D i3:I i4:I dest5:D)
 bs_start_match2 failLabel src _ slots dest:
 	EObject tmp = EBinMatchState.bs_start_match2(GET(src), GET(slots)); if (tmp==null) GOTO(failLabel); else SET(dest, tmp);
@@ -274,6 +288,9 @@ bs_test_tail2 failLabel src bits_left:
 
 #bs_test_unit:
 
+##########==========    CONSTRUCTION OF BINARIES  ==========##########
+
+#%class LSIIID()
 
 ##########==========      EXCEPTION HANDLING	  ==========##########
 
@@ -281,8 +298,22 @@ bs_test_tail2 failLabel src bits_left:
 K_catch y lbl:
 	System.err.println("INT| push-exh: "+exh+"/"+GET_PC(lbl)); SET(y, exh); exh = MAKE_EXH_LINK(GET_PC(lbl), false);
 
+K_try y lbl:
+	System.err.println("INT| push-exh: "+exh+"/"+GET_PC(lbl)); SET(y, exh); exh = MAKE_EXH_LINK(GET_PC(lbl), true);
+
 %class Y(y:y)
 catch_end y:
 	System.err.println("INT| pop-exh: "+exh); RESTORE_EXH(GET(y));
+
+try_end y:
+	System.err.println("INT| pop-exh: "+exh); RESTORE_EXH(GET(y));
+
+%class Insn()
+try_case:
+	{/* Work done by TryExceptionHandler. */}
+
+%class SS(src1:S src2:S)
+raise value trace:
+	throw ERT.raise(reg[0], GET(value), GET(trace));
 
 ##########==========       FLOATING-POINT    	  ==========##########
