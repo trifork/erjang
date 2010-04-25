@@ -200,6 +200,10 @@ make_fun2 total_arity free_vars label:
 bif0 bif dest onFail:
 	{System.err.println("INTP| invoking bif0 "+GET(bif)); EObject tmp = GET(bif).invoke(proc, new EObject[]{}); if (tmp==null) GOTO(onFail); SET(dest, tmp);}
 
+%class Bif(ext_fun:E args[0]:S args[1]:S dest:D label:L0)
+bif2 bif arg1 arg2 dest onFail:
+	{System.err.println("INTP| invoking bif2 "+GET(bif)); EObject tmp = GET(bif).invoke(proc, new EObject[]{GET(arg1), GET(arg2)}); if (tmp==null) GOTO(onFail); SET(dest, tmp);}
+
 %class GcBif(ext_fun:E args[0]:S dest:D label:L)
 
 gc_bif1 bif arg1 dest onFail:
@@ -250,9 +254,12 @@ bs_test_tail2 failLabel src bits_left:
 
 ##########==========      EXCEPTION HANDLING	  ==========##########
 
-#%class YL(y:y, label:L)
-#K_catch y lbl:
-#	SET(y, makeExceptionHandler(sp,exh));
-#exh = GET(lbl);
+%class YL(y:y, label:L)
+K_catch y lbl:
+	System.err.println("INT| push-exh: "+exh_pc+"/"+exh_link+"/"+GET_PC(lbl)); SET(y, exh_link = MAKE_EXH_LINK()); exh_pc = GET_PC(lbl);
+
+%class Y(y:y)
+catch_end y:
+	System.err.println("INT| pop-exh: "+exh_pc+"/"+exh_link); RESTORE_EXH(GET(y));
 
 ##########==========       FLOATING-POINT    	  ==========##########
