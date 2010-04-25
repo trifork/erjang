@@ -21,6 +21,8 @@ package erjang.m.erlang;
 import java.nio.ByteBuffer;
 import java.util.regex.Pattern;
 
+import kilim.Pausable;
+
 import erjang.BIF;
 import erjang.EAbstractNode;
 import erjang.EAtom;
@@ -34,6 +36,7 @@ import erjang.EPeer;
 import erjang.EProc;
 import erjang.ERT;
 import erjang.ERef;
+import erjang.ESeq;
 import erjang.ESmall;
 import erjang.ETuple;
 import erjang.ETuple2;
@@ -100,8 +103,29 @@ public class ErlDist {
 	}
 
 	@BIF
-	public static EObject monitor_node(EObject a1, EObject a2, EObject a3) {
-		throw new NotImplemented();
+	public static EObject monitor_node(EProc proc, EObject node, EObject flag, EObject opts) throws Pausable {
+		
+		EAtom aname = node.testAtom();
+		EAtom aflag = flag.testAtom();
+		ESeq sopts = opts.testSeq();
+		
+		if (aname == null || aflag == null || sopts == null) {
+			throw ERT.badarg(node, flag);
+		}
+		
+		EAbstractNode n = EPeer.get(aname);
+		if (n == null) {
+			return dmonitor_node3_trap.invoke(proc, new EObject[]{aname, aflag, opts});
+		} else {			
+			n.monitor_node(proc.self_handle(), aflag==ERT.TRUE);
+			return ERT.TRUE;
+		}
+		
+	}
+
+	@BIF
+	public static EObject monitor_node(EProc proc, EObject node, EObject flag) throws Pausable {
+		return monitor_node(proc, node, flag, ERT.NIL);
 	}
 
 	@BIF

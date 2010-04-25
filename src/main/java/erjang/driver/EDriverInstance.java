@@ -34,6 +34,7 @@ import erjang.EHandle;
 import erjang.EInternalPort;
 import erjang.EObject;
 import erjang.EPID;
+import erjang.EPeer;
 import erjang.EPort;
 import erjang.ERT;
 import erjang.ERef;
@@ -144,7 +145,7 @@ public abstract class EDriverInstance extends EDriverControl {
 		EBinList out = new EBinList(header, tail);
 		task.output_from_driver(out);
 	}
-
+	
 	protected void driver_output(ByteBuffer buf) throws Pausable {
 		
 		int status = task.status;
@@ -181,6 +182,13 @@ public abstract class EDriverInstance extends EDriverControl {
 	protected void driver_output_term(EObject term) throws Pausable {
 		task.output_term_from_driver(term);
 	}
+
+	protected void driver_send_term(EHandle caller, ETuple msg) throws Pausable {
+		if (caller != null) {
+			caller.send(task.self_handle(), msg);
+		}
+	}
+
 
 	/**
 	 * @param fileRespOkHeader
@@ -343,13 +351,23 @@ public abstract class EDriverInstance extends EDriverControl {
 	 * behavior is to do nothing.
 	 */
 
-	protected void stop() throws Pausable {
+	protected void stop(EObject reason) throws Pausable {
+		if ((task.status & EDriverTask.ERTS_PORT_SFLG_DISTRIBUTION) != 0) {
+			
+			EPeer node = task.node();
+			
+			if (node != null) {
+				node.node_going_down(port(), reason);
+			}
+			
+			task.status &= ~EDriverTask.ERTS_PORT_SFLG_DISTRIBUTION;
+		}
 	}
 
 	/*
 	 * called when we have output from erlang to the port
 	 */
-	protected abstract void output(ByteBuffer data) throws IOException, Pausable;
+	protected abstract void output(EHandle caller, ByteBuffer buf) throws IOException, Pausable;
 
 	/*
 	 * called when we have output from erlang to the port, and the iodata()
@@ -357,7 +375,7 @@ public abstract class EDriverInstance extends EDriverControl {
 	 * input vector, and call EDriverInstance#output(ByteBuffer).
 	 */
 	protected void outputv(EHandle caller, ByteBuffer[] ev) throws IOException, Pausable {
-		output(flatten(ev));
+		output(caller, flatten(ev));
 	}
 
 	/*

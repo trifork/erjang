@@ -40,7 +40,7 @@ public class EFDDriverTask extends EDriverTask {
 	 */
 	public EFDDriverTask(EProc owner, int in, int out, EObject portSetting) {
 		super(owner.self_handle(), new FDDriverInstance(in, out));
-		super.parseOptions(EString.fromString("fd"), portSetting);
+		super.parseOptions(new String[]{"fd"}, portSetting);
 		super.setupInstance();
 	}
 

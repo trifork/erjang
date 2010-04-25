@@ -18,6 +18,7 @@
 
 package erjang.m.ets;
 
+import clojure.lang.IMapEntry;
 import clojure.lang.IPersistentCollection;
 import clojure.lang.IPersistentMap;
 import clojure.lang.ISeq;
@@ -94,8 +95,8 @@ public class PersistentBag extends Object implements IPersistentBag {
 
 		@Override
 		public Object first() {
-			ISeq elem_count_pair = (ISeq) pairs.first();
-			return elem_count_pair.first();
+			IMapEntry elem_count_pair = (IMapEntry) pairs.first();
+			return elem_count_pair.getKey();
 		}
 
 		@Override
@@ -108,8 +109,8 @@ public class PersistentBag extends Object implements IPersistentBag {
 
 		@Override
 		public ISeq next() {
-			ISeq elem_count_pair = (ISeq) pairs.first();
-			int count = (Integer) elem_count_pair.next().first();
+			IMapEntry elem_count_pair = (IMapEntry) pairs.first();
+			int count = (Integer) elem_count_pair.getValue();
 			if (count == pos + 1) {
 				ISeq succ = pairs.next();
 				if (succ == null) {
@@ -162,6 +163,7 @@ public class PersistentBag extends Object implements IPersistentBag {
 	 */
 	@Override
 	public ISeq seq() {
+		if (count() == 0) return null;
 		return new ElemSeq(impl.seq(), 0, count);
 	}
 

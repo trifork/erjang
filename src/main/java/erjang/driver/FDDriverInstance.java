@@ -30,6 +30,7 @@ import java.nio.channels.SelectableChannel;
 import kilim.Pausable;
 
 import erjang.EBinary;
+import erjang.EHandle;
 import erjang.EObject;
 import erjang.EPID;
 import erjang.ERT;
@@ -179,10 +180,10 @@ public class FDDriverInstance extends EDriverInstance {
 	}
 
 	@Override
-	protected void output(ByteBuffer data) throws IOException, Pausable {
+	protected void output(EHandle caller, ByteBuffer buf) throws IOException, Pausable {
 		if (outs != null) {
-			if (data.hasArray()) {
-				outs.write(data.array(), data.arrayOffset(), data.remaining());
+			if (buf.hasArray()) {
+				outs.write(buf.array(), buf.arrayOffset(), buf.remaining());
 			} else {
 				throw new NotImplemented();
 			}

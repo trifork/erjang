@@ -25,6 +25,7 @@ import java.nio.channels.SelectableChannel;
 
 import kilim.Pausable;
 
+import erjang.EHandle;
 import erjang.EObject;
 import erjang.EPID;
 import erjang.ERef;
@@ -64,9 +65,8 @@ public class ExecDriverInstance extends EDriverInstance {
 	 * @see erjang.driver.EDriverInstance#output(java.nio.ByteBuffer)
 	 */
 	@Override
-	protected void output(ByteBuffer data) throws IOException, Pausable {
+	protected void output(EHandle caller, ByteBuffer buf) throws IOException, Pausable {
 		// TODO Auto-generated method stub
-
 	}
 
 	/* (non-Javadoc)

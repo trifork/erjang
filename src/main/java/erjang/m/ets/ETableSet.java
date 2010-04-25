@@ -21,7 +21,9 @@ package erjang.m.ets;
 
 import java.util.Map;
 
+import clojure.lang.IMapEntry;
 import clojure.lang.IPersistentMap;
+import clojure.lang.ISeq;
 import clojure.lang.PersistentHashMap;
 import clojure.lang.PersistentTreeMap;
 import erjang.EAtom;
@@ -45,8 +47,6 @@ public class ETableSet extends ETable {
 				type == Native.am_set 
 						? PersistentHashMap.EMPTY 
 						: PersistentTreeMap.EMPTY);
-		
-		
 	}
 	
 	@Override
@@ -81,7 +81,7 @@ public class ETableSet extends ETable {
 	}
 	
 	@Override
-	protected EObject lookup(EObject key) {
+	protected ESeq lookup(EObject key) {
 		ESeq res = ERT.NIL;
 		
 		// no need to run in_tx if we're only reading
@@ -92,6 +92,23 @@ public class ETableSet extends ETable {
 			return res;
 		}
 	}
+	
+	@Override
+	protected EObject first() {
+		// no need to run in_tx if we're only reading
+		IPersistentMap map = deref();
+		
+		if (map.count() == 0) {
+			return Native.am_$end_of_table;
+		} else {
+			ISeq entseq = map.seq();
+			if (entseq == null) return Native.am_$end_of_table;
+			IMapEntry ent = (IMapEntry) entseq.first();
+			if (ent == null) return Native.am_$end_of_table;
+			return (EObject) ent.getKey();
+		}
+	}
+
 
 	@Override
 	protected void insert_new_many(final ESeq values) {	
@@ -146,6 +163,25 @@ public class ETableSet extends ETable {
 		
 		return res;
 	}
+	
+	@Override
+	public ESeq match_object(EPattern matcher) {		
+		IPersistentMap map = deref();
+		ESeq res = ERT.NIL;
+		
+		EObject key = matcher.getKey(keypos1);
+		if (key == null) {
+			res = matcher.match_members(res, (Map<EObject, ETuple>) map);
+		} else {
+			ETuple candidate = (ETuple) map.valAt(key);
+			if (candidate != null) {
+				res =  matcher.match_members(res, candidate);
+			}
+		}
+		
+		return res;
+	}
+
 
 	@Override
 	protected void delete(final EObject key) {
@@ -164,6 +200,30 @@ public class ETableSet extends ETable {
 		});
 	}
 
+	@Override
+	protected void delete_object(final ETuple obj) {
+		in_tx(new WithMap<Object>() {
+
+			@Override
+			protected Object run(IPersistentMap map) {
+			
+				EObject key = get_key(obj);
+				
+				EObject candidate = (EObject)map.entryAt(key);
+				if (obj.equals(candidate)) {
+					try {
+						map = map.without(key);
+						set(map);
+					} catch (Exception e) {
+						throw new Error(e);
+					}
+				}
+				
+				return null;
+			}
+		});
+	}
+	
 	@Override
 	public EInteger select_delete(final EMatchSpec matcher) {		
 		int delete_count = in_tx(new WithMap<Integer>() {

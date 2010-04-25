@@ -18,16 +18,28 @@
 
 package erjang;
 
-public class NotImplemented extends Error {
+public class NotImplemented extends RuntimeException {
+
+	static EAtom am_not_implemented = EAtom.intern("not_implemented");
+	EObject reason;
+	
 	/**
 	 * 
 	 */
 	public NotImplemented() {
+	 reason = (ETuple.make(am_not_implemented, ERT.NIL,
+			      ErlangException.decodeTrace(new Throwable().getStackTrace()) ));
 	}
 	
 	public NotImplemented(String message) {
 		super(message);
+	 reason = (ETuple.make(am_not_implemented, EString.fromString(message),
+			      ErlangException.decodeTrace(new Throwable().getStackTrace()) ));
 	}
 	
+	
+	public EObject reason() {
+		return reason;
+	}
 	
 }

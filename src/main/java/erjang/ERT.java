@@ -452,6 +452,13 @@ public class ERT {
 
 		return send_task.ref;
 	}
+	
+	@Import(module="erlang", fun="dsend", arity=2)
+	static EFun erlang__dsend__2;
+	
+	@Import(module="erlang", fun="dsend", arity=3)
+	static EFun erlang__dsend__3;
+	
 	/**
 	 * @param owner
 	 * @param make
@@ -471,17 +478,31 @@ public class ERT {
 			return msg;
 		}
 
-		p = register.get(pid);
-		if (p != null) {
-			p.send(proc.self_handle(), msg);
-			return msg;
+		EAtom name;
+		if ((name=pid.testAtom()) != null) {
+			p = register.get(name);
+			if (p != null) {
+				p.send(proc.self_handle(), msg);
+				return msg;
+			}
 		}
 
-		if (pid.testAtom() == null) {
-			throw badarg(pid, msg);
+		ETuple tup;
+		EAtom node;
+		if ((tup=pid.testTuple()) != null 
+			&& tup.arity()==2 
+			&& (name=tup.elm(1).testAtom()) != null
+			&& (node=tup.elm(2).testAtom()) != null){
+			
+			EAbstractNode peer = EPeer.get(node);
+			if (peer == null) {
+				return erlang__dsend__2.invoke(proc, new EObject[] { pid, msg });
+			} else {				
+				return peer.dsig_reg_send(proc.self_handle(), name, msg);
+			}
 		}
 
-		return msg;
+		throw badarg(pid, msg);				
 	}
 
 	@BIF
@@ -505,10 +526,15 @@ public class ERT {
 			EAtom reg_name;
 			EAtom node_name;
 			if ((reg_name = t.elm(1).testAtom()) != null
-			 && (node_name = t.elm(2).testAtom()) != null
-			 && ErlDist.is_node_name_atom(node_name)) {
-				// !
-				throw new NotImplemented();
+			 && (node_name = t.elm(2).testAtom()) != null) {
+				
+				EAbstractNode node = EPeer.get(node_name);
+				if (node == null) {
+					return erlang__dsend__3.invoke(proc, new EObject[] { pid, msg, options });
+				} else {
+					node.dsig_reg_send(proc.self_handle(), reg_name, msg);
+					return am_ok;
+				}
 			}
 			
 		}
@@ -519,11 +545,8 @@ public class ERT {
 			return am_ok;
 		}
 
-		if (pid.testAtom() == null) {
-			throw badarg(pid, msg);
-		}
-
-		return am_noconnect;
+		log.info("trying to send message to "+pid+" failed.");			
+		throw badarg(pid, msg);
 	}
 
 	/**

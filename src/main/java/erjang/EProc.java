@@ -447,18 +447,23 @@ public final class EProc extends ETask<EInternalPID> {
 				
 				result = am_normal;
 
+			} catch (NotImplemented e) {
+				System.err.print("exiting "+self_handle()+" with: ");
+				log.log(Level.SEVERE, "[fail] exiting "+self_handle(), e);
+				result = e.reason();
+
 			} catch (ErlangException e) {
-				log.log(Level.FINE, "exiting "+self_handle(), e);
+				log.log(Level.FINE, "[erl] exiting "+self_handle(), e);
 				last_exception = e;
 				result = e.reason();
 
 			} catch (ErlangExitSignal e) {
-				log.log(Level.FINE, "exiting "+self_handle(), e);
+				log.log(Level.FINE, "[signal] exiting "+self_handle(), e);
 				result = e.reason();
 
 			} catch (Throwable e) {
 
-				System.err.print("exiting "+self_handle()+" with: ");
+				System.err.print("[java] exiting "+self_handle()+" with: ");
 				e.printStackTrace();
 
 				ESeq erl_trace = ErlangError.decodeTrace(e.getStackTrace());

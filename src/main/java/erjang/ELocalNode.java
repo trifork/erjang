@@ -19,6 +19,8 @@
 
 package erjang;
 
+import kilim.Pausable;
+
 
 /**
  * 
@@ -91,5 +93,11 @@ public class ELocalNode extends EAbstractNode {
         }
         return portCount;
     }
+    
+	public EObject dsig_reg_send(EInternalPID caller, EAtom name,
+			EObject msg) throws Pausable {
+		return ERT.send(caller.task(), name, msg);
+	}
+
     
 }

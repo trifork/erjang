@@ -53,7 +53,7 @@ public class ErlPort {
 
 	public static final EAtom am_fd = EAtom.intern("fd");
 	private static final ByteBuffer EMPTY_BYTEBUFFER = ByteBuffer.allocate(0);
-	static EAtom am_spawn = EAtom.intern("spawn");
+	public static EAtom am_spawn = EAtom.intern("spawn");
 	static EAtom am_spawn_driver = EAtom.intern("spawn_driver");
 	static EAtom am_spawn_executable = EAtom.intern("spawn_executable");
 

@@ -5,6 +5,7 @@ if [ "x${OTPROOT}" == "x" ]; then
 fi
 
 java -server -jar erjang-0.1.jar \
+    -home $HOME \
     -root $OTPROOT \
     $*
 

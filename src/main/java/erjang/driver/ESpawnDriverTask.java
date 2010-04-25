@@ -40,6 +40,6 @@ public class ESpawnDriverTask extends EDriverTask {
 		super(proc.self_handle(), driver.start(command));
 		this.command = command;
 		this.portSetting = portSetting;
-		super.parseOptions(command, portSetting);
+		super.parseOptions(new String[]{command.stringValue()}, portSetting);
 	}
 }
