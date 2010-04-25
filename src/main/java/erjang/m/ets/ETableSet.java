@@ -33,7 +33,10 @@ import erjang.EPID;
 import erjang.EProc;
 import erjang.ERT;
 import erjang.ESeq;
+import erjang.ESmall;
 import erjang.ETuple;
+import erjang.NotImplemented;
+import erjang.m.erlang.ErlBif;
 
 /**
  * 
@@ -261,5 +264,68 @@ public class ETableSet extends ETable {
 			}});
 		
 		return ERT.box(delete_count);
+	}
+
+	public EObject update_counter(final EObject key, final EObject upd) {
+		return in_tx(new WithMap<EObject>() {
+
+			@Override
+			protected EObject run(IPersistentMap map) {
+				ETuple rec = (ETuple) map.valAt(key);
+				if (rec == null)
+					return null; // fail with badarg
+				
+				// TODO: figure out match/equals semantics
+				if (type == Native.am_set) {
+					if (!key.equalsExactly( get_key(rec) )) {
+						return null;
+					}
+				}
+
+				EInteger incr;
+				ETuple one;
+				if ((incr=upd.testInteger()) != null) {
+					int idx = keypos1+1;
+					
+					rec = update(rec, idx, incr);
+					if (rec == null) return null;
+					map = map.assoc(get_key(rec), rec);
+					
+					set(map);
+					return rec.elm(idx);
+					
+				} else if ((one=upd.testTuple()) != null) {
+					
+					if (one.arity() == 2) {
+						ESmall eidx = one.elm(1).testSmall();
+						if (eidx == null || eidx.value > rec.arity()) return null;
+						int idx = eidx.value;
+						
+						rec = update(rec, idx, incr);
+						if (rec == null) return null;
+						map = map.assoc(get_key(rec), rec);
+						
+						set(map);
+						return rec.elm(idx);
+
+					} else {
+						throw new NotImplemented();
+					}
+					
+				} else {
+					throw new NotImplemented();
+				}
+				
+			}
+
+			private ETuple update(ETuple rec, int idx, EInteger incr) {
+
+				EInteger old = rec.elm(idx).testInteger();
+				if (old == null) return null;
+				EObject val = old.add(incr);
+				rec = ErlBif.setelement(keypos1+1, rec, val);
+
+				return rec;
+			}});
 	}
 }

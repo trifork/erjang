@@ -403,7 +403,7 @@ public class Native extends ENative {
 		
 		EPattern matcher = new EPattern(table.keypos1, ts);
 		
-		return table.match(matcher);
+		return table.match_object(matcher);
 	}
 
 	@BIF static public EObject next(EProc proc, EObject tab, EObject key) {
@@ -464,8 +464,22 @@ public class Native extends ENative {
 	}
 
 	/** this is not documented anywhere, but referenced from the module global */
-	@BIF static public EObject update_counter(EObject obj1, EObject obj2, EObject obj3) {
-		throw new NotImplemented(); 
+	@BIF static public EObject update_counter(EProc proc, EObject tab, EObject key, EObject upd) {
+		ETable table = resolve(proc, tab, true);
+		
+		if (table == null || !(table.type==am_set || table.type==am_ordered_set)) {
+			throw ERT.badarg(tab,key,upd);
+		}
+		
+		ETableSet ets = (ETableSet) table;
+		
+		EObject res = ets.update_counter(key, upd);
+		
+		if (res == null) {
+			throw ERT.badarg(tab,key,upd);			
+		}
+		
+		return res;
 	}
 
 

@@ -18,6 +18,7 @@
 
 package erjang.m.ets;
 
+import java.util.Collection;
 import java.util.Map;
 
 import clojure.lang.IMapEntry;
@@ -29,6 +30,7 @@ import clojure.lang.PersistentHashSet;
 import clojure.lang.PersistentTreeMap;
 import clojure.lang.RT;
 import clojure.lang.Ref;
+import clojure.lang.Seqable;
 import clojure.lang.Var;
 import erjang.EAtom;
 import erjang.EInteger;
@@ -179,8 +181,32 @@ public class ETableBag extends ETable {
 	}
 
 	@Override
-	public ESeq match_object(EPattern matcher) {		
-		throw new NotImplemented();
+	public ESeq match_object(final EPattern matcher) {		
+		
+		EObject key = matcher.getKey(keypos1);
+		if (key == null) {
+			
+			// oops, .. tablescan
+			ESeq res = ERT.NIL;
+			
+			IPersistentMap map = deref();
+			for (ISeq entseq = map.seq(); entseq != null; entseq = entseq.next()) {
+				IMapEntry ent = (IMapEntry) entseq.first();
+
+				if (ent == null) break;
+				
+				Seqable coll = (Seqable)ent.getValue();
+				res = matcher.match_members(ERT.NIL, coll.seq());
+			}
+			
+			return res;
+		}
+		
+		IPersistentMap map = deref();
+		IPersistentCollection coll = (IPersistentCollection) map.valAt(key);
+		if (coll == null) return ERT.NIL;
+		
+		return matcher.match_members(ERT.NIL, coll.seq());
 	}
 
 	@Override
