@@ -281,8 +281,16 @@ public class EBinMatchState extends EPseudoTerm {
 	}
 
 	public EObject bs_skip_bits2(EObject count_o, int bits, int flags) {
+		
+		if (count_o == ATOM_ALL) {
+			long bitLength = bitsLeft();
+			offset += bitLength;
+			return ERT.TRUE;
+		}
+		
 		EInteger count;
 		if ((count = count_o.testInteger()) == null) {
+			
 			// throw badarg?
 			return null;
 		}
