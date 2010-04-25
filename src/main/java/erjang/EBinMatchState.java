@@ -62,8 +62,8 @@ public class EBinMatchState extends EPseudoTerm {
 	public static EBitString bs_context_to_binary (EObject obj) {
 		EBinMatchState bms;
 		if ((bms=obj.testBinMatchState()) != null) {
-		    if (bms.offset % 8 == 0) {
-				int start_byte = (int)(bms.offset/8);
+		    if (bms.start_offset % 8 == 0) {
+				int start_byte = (int)(bms.start_offset/8);
 				EBitString result = EBitString.makeByteOffsetTail(bms.bin, start_byte);
 				return result;
 			} else {
@@ -123,6 +123,7 @@ public class EBinMatchState extends EPseudoTerm {
 				EBinMatchState res = new EBinMatchState(bms.bin, slots);
 				res.offset = bms.offset;
 				res.save_offset[0] = bms.save_offset[0];
+				return res;
 			}
 			return bms;
 		}
