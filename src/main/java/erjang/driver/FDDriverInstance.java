@@ -180,10 +180,10 @@ public class FDDriverInstance extends EDriverInstance {
 	}
 
 	@Override
-	protected void output(EHandle caller, ByteBuffer buf) throws IOException, Pausable {
+	protected void output(EHandle caller, ByteBuffer data) throws IOException, Pausable {
 		if (outs != null) {
-			if (buf.hasArray()) {
-				outs.write(buf.array(), buf.arrayOffset(), buf.remaining());
+			if (data.hasArray()) {
+				outs.write(data.array(), data.arrayOffset(), data.remaining());
 			} else {
 				throw new NotImplemented();
 			}
