@@ -44,6 +44,7 @@ import erjang.ETuple;
 import erjang.ErlangException;
 import erjang.NotImplemented;
 import erjang.driver.efile.Posix;
+import erjang.m.erlang.ErlProc;
 
 /**
  * 
@@ -242,8 +243,7 @@ public abstract class EDriverInstance extends EDriverControl {
 
 	protected boolean driver_demonitor_process(ERef monitor) throws Pausable {
 		try {
-			task.demonitor(monitor, false);
-			return true;
+			return ErlProc.demonitor(task, monitor, ERT.NIL) == ERT.TRUE;
 		} catch (ErlangException e) {
 			if (ERT.DEBUG_PORT) {
 				e.printStackTrace();

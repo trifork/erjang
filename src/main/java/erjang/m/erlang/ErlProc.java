@@ -29,11 +29,13 @@ import java.util.logging.Logger;
 
 import kilim.Pausable;
 import erjang.BIF;
+import erjang.EAbstractNode;
 import erjang.EAtom;
 import erjang.ECons;
 import erjang.EFun;
 import erjang.EHandle;
 import erjang.EModuleManager;
+import erjang.ENode;
 import erjang.EObject;
 import erjang.EPID;
 import erjang.EPeer;
@@ -43,6 +45,7 @@ import erjang.ERef;
 import erjang.ESeq;
 import erjang.ESmall;
 import erjang.EString;
+import erjang.ETask;
 import erjang.ETuple;
 import erjang.ETuple2;
 import erjang.ErlFun;
@@ -51,6 +54,7 @@ import erjang.ErlangError;
 import erjang.ErlangExit;
 import erjang.Import;
 import erjang.NotImplemented;
+import erjang.driver.EDriverTask;
 
 /**
  * 
@@ -343,8 +347,8 @@ public class ErlProc {
 					peer.dsig_monitor(self.self_handle(), name, ref);
 					return ref;
 				}
-				
-				throw new NotImplemented("monitor ("+pid+")");				
+
+				return ErlDist.dmonitor_p2_trap.invoke(self, new EObject[] {how, pid});
 			}
 		}
 		
@@ -361,13 +365,16 @@ public class ErlProc {
 	    return demonitor(self, ref, ERT.NIL);
 	}
 
-    /* TODO: Split option parsing from the action; used the action
+	/* TODO: Split option parsing from the action; used the action
 	 * part more directly in demonitor/1.
 	 * TODO: Support the 'info' option.
 	 */
 	@BIF
-	@ErlFun(export = true)
 	static public EObject demonitor(EProc self, EObject ref, EObject options) throws Pausable {
+		return demonitor((ETask)self, ref, options);
+	}
+
+	static public EObject demonitor(ETask self, EObject ref, EObject options) throws Pausable {
 		ERef r = ref.testReference();
 		
 		ESeq o = options.testSeq();
@@ -377,14 +384,32 @@ public class ErlProc {
 
 		boolean flush = (!o.isNil() && o.head()==am_flush);
 
-		boolean found = self.demonitor(r, flush);
+		EObject found = self.demonitor(r);
 
-		if (!found) {
+		if (found == null) {
 			return ERT.FALSE;
 		}
 		
-		if (flush) {
-			flush_monitor_message.invoke(self, new EObject[] {ref, ERT.am_ok});
+		EHandle h;
+		ETuple tup;
+		EAtom name;
+		EAtom node;
+		if ((h=found.testHandle()) != null) {
+			h.remove_monitor(self.self_handle(), r, flush);
+		} else if ((tup=found.testTuple()) != null 
+					&& tup.arity()==2
+					&& (name=tup.elm(1).testAtom()) != null
+					&& (node=tup.elm(2).testAtom()) != null) {
+			
+			EAbstractNode n = EAbstractNode.get_or_connect(self, node);
+			if (n != null) {
+				n.dsig_demonitor(self.self_handle(), r, name);
+			}
+		}
+
+		
+		if (flush && (self instanceof EProc)) {
+			flush_monitor_message.invoke((EProc) self, new EObject[] {ref, ERT.am_ok});
 		}
 		
 		return ERT.TRUE;

@@ -66,6 +66,10 @@ public class ErlDist {
 	
 	/** distribution traps */
 	
+
+	@Import(module="net_kernel", fun="connect", arity=1)
+	public static EFun net_kernel__connect__1;
+	
 	@Import(module="erlang", fun="dsend", arity=2)
 	static EFun dsend2_trap;
 	

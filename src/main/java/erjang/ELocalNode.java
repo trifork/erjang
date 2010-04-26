@@ -99,5 +99,22 @@ public class ELocalNode extends EAbstractNode {
 		return ERT.send(caller.task(), name, msg);
 	}
 
+	public void dsig_demonitor(EHandle sender, ERef ref,
+			EObject to_pid_or_name) throws Pausable
+	{
+		EInternalPID pid;
+		EAtom name;
+		if ((pid=to_pid_or_name.testInternalPID()) != null) {
+			EProc task = pid.task();
+			if (task != null) task.demonitor(ref);
+		} else if ((name=to_pid_or_name.testAtom()) != null) {
+			EObject local = ERT.whereis(name);
+			if ((pid=local.testInternalPID()) != null) {
+				EProc task = pid.task();
+				if (task != null) task.demonitor(ref);
+			}
+		}
+	}
+
     
 }

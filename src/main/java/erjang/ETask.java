@@ -141,21 +141,18 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 		return true;
 	}
 
-
 	/**
 	 * @param r
-	 * @param flush
 	 * @return
 	 * @throws Pausable 
 	 */
-	public boolean demonitor(ERef r, boolean flush) throws Pausable {
+	public EObject demonitor(ERef r) throws Pausable {
 		ETuple2 pair = is_monitoring.remove(r);
 		if (pair == null) {
-			return false;
+			return null;
 		}
-		EHandle h = pair.elem1.testHandle();
-		h.remove_monitor(self_handle(), r, flush);
-		return true;
+		
+		return pair.elem1;
 	}
 	
 	/**
