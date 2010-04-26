@@ -386,7 +386,7 @@ public abstract class EObject implements Comparable<EObject> {
 	}
 
 	public void encode(EOutputStream eos) {
-		throw new NotImplemented();
+		throw new NotImplemented("Encode for "+getClass().getName());
 	}
 
 	final public boolean is_eq(EObject other) {
