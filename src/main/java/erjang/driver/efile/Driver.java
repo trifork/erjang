@@ -21,7 +21,6 @@ package erjang.driver.efile;
 
 import java.util.concurrent.locks.ReentrantLock;
 
-import kilim.Lock;
 import erjang.EString;
 import erjang.NotImplemented;
 import erjang.driver.EDriver;
@@ -31,8 +30,6 @@ import erjang.driver.EDriverControl;
  * 
  */
 public class Driver implements EDriver {
-
-	private Lock lock;
 
 	@Override
 	public String driverName() {

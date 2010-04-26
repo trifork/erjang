@@ -45,17 +45,14 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import kilim.Lock;
 import kilim.Pausable;
 import kilim.Task;
-import erjang.EAbstractNode;
 import erjang.EAtom;
 import erjang.EBinary;
 import erjang.ECons;
 import erjang.EHandle;
 import erjang.EInternalPID;
 import erjang.EInternalPort;
-import erjang.ENode;
 import erjang.EObject;
 import erjang.EPID;
 import erjang.EPeer;

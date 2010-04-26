@@ -3,7 +3,7 @@
 	<property name="erjang.version" value="0.1" />
 	<path id="erjang.classpath">
 		<pathelement location="target/classes/" />
-		<pathelement location="lib/kilim-0.6-krab.jar" />
+		<pathelement location="lib/kilim.jar" />
 		<pathelement location="lib/OtpErlang.jar" />
 		<pathelement location="lib/junit.jar" />
 		<pathelement location="lib/clojure-slim.jar" />
@@ -13,7 +13,7 @@
 	<path id="erjang.testwovenclasspath">
 		<pathelement location="target/classes/" />
 		<pathelement location="target/test-classes/" />
-		<pathelement location="lib/kilim-0.6-krab.jar" />
+		<pathelement location="lib/kilim.jar" />
 		<pathelement location="lib/OtpErlang.jar" />
 		<pathelement location="lib/clojure-slim.jar" />
 		<pathelement location="lib/junit.jar" />

@@ -28,6 +28,7 @@ import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import erjang.kilim.EMailbox;
 import erjang.m.erlang.ErlProc;
 
 import kilim.Mailbox;
@@ -193,7 +194,7 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 
 
 	static final int MAX_MAILBOX_SIZE = 1000;
-	protected Mailbox<EObject> mbox = new Mailbox<EObject>(10, MAX_MAILBOX_SIZE);
+	protected EMailbox<EObject> mbox = new EMailbox<EObject>(10, MAX_MAILBOX_SIZE);
 
 	protected static enum State {
 		INIT, // has not started yet

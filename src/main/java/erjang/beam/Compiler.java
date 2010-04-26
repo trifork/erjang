@@ -65,6 +65,9 @@ public class Compiler implements Opcodes {
 	}
 
 	public static void compile(BeamFileData data, ClassRepo repo) throws IOException {
+		
+		ClassWeaver.reset();
+		
 		// class writer, phase 4
 		ClassWriter cw = new ClassWriter(true);
 
@@ -100,7 +103,7 @@ public class Compiler implements Opcodes {
 		}
 		*/
 		boolean written = false;
-		ClassWeaver cwe = new ClassWeaver(byteArray, new ErjangDetector(
+		ClassWeaver cwe =  new ClassWeaver(byteArray, new ErjangDetector(
 				cv.getInternalClassName(), cv.non_pausable_methods));
 		for (ClassInfo ci : cwe.getClassInfos()) {
 			String name = ci.className;
