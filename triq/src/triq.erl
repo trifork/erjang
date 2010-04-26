@@ -20,7 +20,7 @@
 
 -export([quickcheck/1]).
 
--import(triq_domain, [generate/2, generates/2]).
+-import(triq_domain, [generate/2]).
 
 -record(triq, {count=0,
 	      context=[],

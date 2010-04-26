@@ -20,8 +20,7 @@
 
 -record('@domain',
 	{kind,
-	 generate=fun triq_domain:generate/2,
-	 generates=fun triq_domain:generates/2,
+	 generate=fun triq_domain:generate_internal/2,
 	 simplify=fun triq_simplify:simplify_internal/2
 	 }).
 

@@ -22,8 +22,7 @@
 -include("triq_domain.hrl").
 
 -export([simplify_value/2, simplify_internal/2]).
--import(triq_domain, [generate/2, generates/2, elem_gen/2]).
-
+-import(triq_domain, [generate/2, elem_gen/2]).
 
 %%
 %% public API looks like this
@@ -35,6 +34,17 @@ simplify_value(Dom,Val) ->
     simplify_internal(Dom,Val).
 
 
+%%
+%% when the domain is a tuple...
+%%
+simplify_tuple(TupDom,Tup,0) ->
+    Tup;
+
+simplify_tuple(TupDom,Tup,NAttempts) when is_tuple(TupDom), is_tuple(Tup) ->
+    case simplify_member(Tup, TupDom, random:uniform(len(Tup)+1)) of
+	Tup -> simplify_tuple(TupDom, Tup, NAttempts-1);
+	NewTup -> NewTup
+    end.
 
 %%
 %% the meat of the shrinking function
@@ -42,6 +52,12 @@ simplify_value(Dom,Val) ->
 simplify_internal(_, []) -> 
     [];
 
+simplify_internal(_, {}) -> 
+    {};
+
+simplify_internal(TupDom,Tup) when is_tuple(TupDom), is_tuple(Tup) ->
+    %% try to simplify it 10 times...
+    simplify_tuple(TupDom, Tup, 10);
 
 %%
 %% aggregates (tuple or list) are simplified either by 
@@ -57,12 +73,12 @@ simplify_internal(AggrDom,Aggr) when is_list(Aggr); is_tuple(Aggr)->
 
     %% if the above did not change anything; 
     %% or the change was illegal according to AggrDom ...
-    case (Aggr==NewAggr) or (not generates(AggrDom,NewAggr)) of 
-	true -> case random:uniform(2) of
+    case NewAggr of 
+	Aggr -> case random:uniform(2) of
 		    1 -> simplify_value(AggrDom,Aggr);
 		    2 -> Aggr
 		end;
-	false -> NewAggr
+	NewAggr -> NewAggr
     end    
     ;
 
