@@ -70,6 +70,10 @@ public abstract class EAbstractNode {
     static final int dFlagBitBinaries = 0x400;
     static final int dFlagNewFloats = 0x800;
 
+    static final int dFUnicodeIO = 0x1000;
+    static final int dFDistHdrAtomCache = 0x2000;
+    static final int dFlagSmallAtoms = 0x4000;
+
     int ntype = NTYPE_R6;
     int proto = 0; // tcp/ip
     int distHigh = 5; // Cannot talk to nodes before R6
