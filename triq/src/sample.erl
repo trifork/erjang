@@ -2,7 +2,7 @@
 
 -include("triq.hrl").
 
--export([prop_append/0, main/0]).
+-export([prop_append/0, prop_echo/0, main/0]).
 
 prop_append() ->
     ?FORALL({Xs,Ys},{list(int()),list(int())},
@@ -36,8 +36,10 @@ prop_binop() ->
 	    end
 	   ).
 
+prop_echo() ->
+    ?FORALL(X, any(), 
+	    X == X).
+
 main() ->
-    triq:quickcheck(prop_binop()),
-    triq:quickcheck(prop_delete_2()),
-    triq:quickcheck(prop_append())
+    triq:check(?MODULE)
 .

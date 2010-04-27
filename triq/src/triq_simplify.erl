@@ -37,12 +37,29 @@ simplify_value(Dom,Val) ->
 %%
 %% when the domain is a tuple...
 %%
+simplify_tuple(TupDom,{},_) ->
+    {};
+
 simplify_tuple(TupDom,Tup,0) ->
     Tup;
 
 simplify_tuple(TupDom,Tup,NAttempts) when is_tuple(TupDom), is_tuple(Tup) ->
     case simplify_member(Tup, TupDom, random:uniform(len(Tup)+1)) of
 	Tup -> simplify_tuple(TupDom, Tup, NAttempts-1);
+	NewTup -> NewTup
+    end.
+
+%%
+%% atoms...
+%%
+simplify_atom(_,'',_) ->
+    '';
+simplify_atom(TupDom,Tup,0) ->
+    Tup;
+
+simplify_atom(TupDom,Tup,NAttempts) when is_atom(Tup) ->
+    case simplify_member(Tup, TupDom, random:uniform(len(Tup)+1)) of
+	Tup -> simplify_atom(TupDom, Tup, NAttempts-1);
 	NewTup -> NewTup
     end.
 
@@ -55,9 +72,24 @@ simplify_internal(_, []) ->
 simplify_internal(_, {}) -> 
     {};
 
+simplify_internal(_, '') -> 
+    '';
+
+simplify_internal(_, 0) -> 
+    0;
+
+simplify_internal(#?DOM{kind=any}=Dom, Val) when is_tuple(Val) ->
+    list_to_tuple(simplify_internal(Dom,tuple_to_list(Val)));
+
+simplify_internal(#?DOM{kind=any}=Dom, Val) when is_atom(Val) ->
+    list_to_atom(simplify_internal(Dom,atom_to_list(Val)));
+
+
+
 simplify_internal(TupDom,Tup) when is_tuple(TupDom), is_tuple(Tup) ->
     %% try to simplify it 10 times...
     simplify_tuple(TupDom, Tup, 10);
+
 
 %%
 %% aggregates (tuple or list) are simplified either by 
@@ -97,7 +129,19 @@ simplify_internal(_NumDom,Num) when is_integer(Num), Num > 0 ->
 simplify_internal(_NumDom,Num) when is_integer(Num), Num < 0 ->
     Num+1;
 
-simplify_internal(Any,Any) -> Any.
+
+simplify_internal(Any,Any) -> Any;
+
+
+simplify_internal(_,Any) ->
+    if 
+	is_integer(Any) ->
+	    erlang:throw({int, Any});
+	is_float(Any) ->
+	    erlang:throw({float, Any});
+	is_atom(Any) ->
+	    erlang:throw({atom, Any})
+    end.
 
 
 
@@ -145,9 +189,13 @@ simplify_member(List, ListDom, HowMany) when is_list(List) ->
     simplify_member(NextList, ListDom,HowMany-1);
 
 simplify_member(Tuple, TupleDom, HowMany) when is_tuple(Tuple) ->
-    erlang:list_to_tuple(simplify_member(erlang:tuple_to_list(Tuple), TupleDom, HowMany)).
+    erlang:list_to_tuple(simplify_member(erlang:tuple_to_list(Tuple), TupleDom, HowMany));
+    
+simplify_member(Atom, AtomDom, HowMany) when is_atom(Atom) ->
+    erlang:list_to_atom(simplify_member(erlang:atom_to_list(Atom), AtomDom, HowMany)).
     
 
 len(T) when is_tuple(T) -> erlang:tuple_size(T);
-len(T) when is_list(T) -> length(T).
+len(T) when is_list(T) -> length(T);
+len(T) when is_atom(T) -> length(atom_to_list(T)).
 

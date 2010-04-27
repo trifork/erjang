@@ -53,6 +53,8 @@ tuple(ElemGen) ->
 				list_to_tuple(generate_list(Len, EG, GS))
 		     end}.
 
+elem_gen(_, #?DOM{kind=any}=ElemGen) ->
+    ElemGen;
 elem_gen(_, #?DOM{kind={list,ElemGen}}) ->
     ElemGen;
 elem_gen(_, #?DOM{kind={tuple,ElemGen}}) ->
@@ -157,7 +159,8 @@ elements(L) when is_list(L) ->
     #?DOM{kind={elements,L,length(L)}, 
 	 generate=fun(#?DOM{kind={elements,L2,Len}},_GS) ->			  
 			  lists:nth(random:uniform(Len), L2)
-		  end}.
+		  end,
+	 simplify=fun(Dom,Val) -> Val end}.
 
 
 any()  ->

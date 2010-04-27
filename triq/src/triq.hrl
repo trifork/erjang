@@ -21,9 +21,9 @@
 
 %% properties
 -define(FORALL(X,Gen,Property),
-	{'prop:forall', Gen, ??X, fun(X)-> begin Property end end}).
+	{'prop:forall', Gen, ??X, fun(X)-> begin Property end end, ??Property}).
 -define(IMPLIES(Pre, Property), 
-	{'prop:implies', Pre, ??Pre, fun() -> Property end}).
+	{'prop:implies', Pre, ??Pre, fun() -> Property end, ??Property}).
 
 %% value domains
 -define(LET(X,Gen1,Gen2), 

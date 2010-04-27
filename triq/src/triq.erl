@@ -18,7 +18,7 @@
 
 -module(triq).
 
--export([quickcheck/1]).
+-export([check/1]).
 
 -import(triq_domain, [generate/2]).
 
@@ -27,7 +27,8 @@
 	      size=100,
 	      report= fun(pass,_)->ok;
 			 (fail,_)->ok;
-			 (skip,_)->ok end}).
+			 (skip,_)->ok end,
+	      body}).
 
 
 report(pass,_) ->
@@ -50,18 +51,18 @@ check(Fun,Input,IDom,#triq{count=Count,report=DoReport}=QCT) ->
 	{success, NewCount} -> 
 	    {success, NewCount};
 	
-	{failure, _, _, _}=Fail -> 
+	{failure, _, _, _, _}=Fail -> 
 	    Fail;
 	
-	{'prop:implies', false, _, _} ->
+	{'prop:implies', false, _, _, _} ->
 	    DoReport(skip,true),
 	    {success, Count};
 	
-	{'prop:implies', true, _Syntax, Fun2} ->
-	    check(fun(none)->Fun2()end,none,none,QCT);
+	{'prop:implies', true, _Syntax, Fun2, Body2} ->
+	    check(fun(none)->Fun2()end,none,none,QCT#triq{body=Body2});
 	
-	{'prop:forall', Dom2, Syntax2, Fun2} ->
-	    check_forall(0, Dom2, Fun2, Syntax2, QCT);
+	{'prop:forall', Dom2, Syntax2, Fun2, Body2} ->
+	    check_forall(0, Dom2, Fun2, Syntax2, QCT#triq{body=Body2});
 
 	Any ->
 	    DoReport(fail,Any),
@@ -88,32 +89,53 @@ check_forall(N,Dom,Fun,Syntax,#triq{size=GS,context=Context}=QCT) ->
 
 
 
+zip2([X | Xs], [Y | Ys]) ->
+     [{X, Y} | zip2(Xs, Ys)];
+zip2([], []) -> [].
 
-quickcheck(Property) ->
+
+check(Module) when is_atom(Module) ->
+    Info = Module:module_info(exports),
+    lists:all(fun({Fun,0}) ->
+		      case atom_to_list(Fun) of
+			  "prop_" ++ _ ->
+			      io:format("Testing ~p:~p/0~n", [Module, Fun]),
+			      check(Module:Fun());
+			  _ -> true
+		      end;
+		 ({_,_}) -> true
+	      end,
+	     Info);
+
+
+check(Property) ->
 
     case check(fun(nil)->Property end, 
 	       nil,
 	       nil,
 	       #triq{report=fun report/2}) of
 
-	{failure, Fun, Input, InputDom, #triq{count=Count,context=Ctx}} ->
+	{failure, Fun, Input, InputDom, #triq{count=Count,context=Ctx,body=Body}} ->
 
 	    io:format("~nFailed after ~p tests~n", [Count]),
 
 	    Context = lists:reverse(Ctx),
-	    lists:foreach(fun({Syn,_,Val,_}) ->
-			     io:format("\t~s = ~w~n", [Syn,Val])
-			  end,
-			 Context),
+	    %io:format("Context: ~p~n", [Context]),
+	    %lists:foreach(fun({Syn,_,Val,_}) ->
+	    %		     io:format("\t~s = ~w~n", [Syn,Val])
+	    %		  end,
+	    %		 Context),
 
-	    Simp = simplify(Fun,Input,InputDom,300,Context),
+	    Simp = simplify(Fun,Input,InputDom,1000,tl(Context)),
 
 	    io:format("Simplified:~n"),
+
+	    AA = Context,
 
 	    lists:foreach(fun({{Syn,_,_,_},Val}) ->
 			     io:format("\t~s = ~w~n", [Syn,Val])
 			  end,
-			 lists:zip(Context,Simp)),
+			 zip2(AA,Simp)),
 
 	    false;
 
@@ -124,6 +146,7 @@ quickcheck(Property) ->
     end
 .
 
+
 %%
 %% when the property has nested ?FORALL statements,
 %% this is the function that tries to make the inner 
@@ -131,7 +154,7 @@ quickcheck(Property) ->
 %%
 
 simplify_deeper(Input,[{_,F1,I1,G1}|T]) -> 
-    [Input] ++ simplify(F1,I1,G1,100,T);
+    [Input | simplify(F1,I1,G1,100,T)];
 simplify_deeper(Input,[]) -> [Input].
 
 
@@ -142,10 +165,12 @@ simplify(Fun,Input,InputDom,GS,Context) ->
 
 	%% value was unchanged
 	Input -> 
+	    %io:format("s1 ~p -> ~p~n", [Input,Input]),
 	    simplify_deeper(Input,Context);
 
 	%% value was changed!
 	NewInput ->
+	    %io:format("s2 ~p -> ~p~n", [Input,NewInput]),
 	    case check (Fun,NewInput,InputDom,#triq{size=GS}) of
 		
 		%% still failed, try to simplify some more
