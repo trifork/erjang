@@ -28,6 +28,8 @@ import java.nio.ByteBuffer;
 import java.text.DecimalFormat;
 import java.util.zip.Deflater;
 
+import erjang.driver.IO;
+
 /**
  * Provides a stream for encoding Erlang terms to external format, for
  * transmission or storage.
@@ -49,6 +51,8 @@ public class EOutputStream extends ByteArrayOutputStream {
     private static final BigDecimal ten = new BigDecimal(10.0);
     private static final BigDecimal one = new BigDecimal(1.0);
 
+	private int flags;
+
     /**
      * Create a stream with the default initial size (2048 bytes).
      */
@@ -60,8 +64,13 @@ public class EOutputStream extends ByteArrayOutputStream {
      * Create a stream with the specified initial size.
      */
     public EOutputStream(final int size) {
-	super(size);
-    }
+    	super(size);
+        }
+
+    public EOutputStream(final int size, int flags) {
+    	super(size);
+    	this.flags = flags;
+        }
 
     /**
      * Create a stream containing the encoded version of the given Erlang term.
@@ -326,9 +335,22 @@ public class EOutputStream extends ByteArrayOutputStream {
      *            the string to write.
      */
     public void write_atom(final String atom) {
-	write1(EExternal.atomTag);
-	write2BE(atom.length());
-	writeN(atom.getBytes());
+    	
+		int len = Math.min(EExternal.maxAtomLength, atom.length());
+		if (len < 256 && (flags & EAbstractNode.dFlagSmallAtoms) != 0)
+		{
+			write1(EExternal.smallAtomTag);
+			write1(len);
+		} else {			
+			write1(EExternal.atomTag);
+			write2BE(atom.length());
+		}
+
+		byte[] out = new byte[len];
+		for (int i = 0; i < len; i++) {
+			out[i] = (byte) (atom.charAt(i) & 0xff);
+		}
+		writeN(out);
     }
 
     /**
