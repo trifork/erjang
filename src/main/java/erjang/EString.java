@@ -306,7 +306,7 @@ public class EString extends ESeq implements CharSequence {
 	 */
 	@Override
 	public ESeq tail() {
-		if (off == data.length)
+		if (off == data.length-1)
 			return ERT.NIL;
 		return new EString(data, off + 1);
 	}
