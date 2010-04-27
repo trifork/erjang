@@ -94,7 +94,7 @@ public final class EAtom extends EObject implements CharSequence {
 		StringBuffer sb = new StringBuffer();
 		for (int i = 0; i < seq.length(); i++) {
 			char ch = seq.charAt(i);
-			if ((ch >= 0x20 && ch <= 0xff) && ch != '\'' && ch != 0x7f) {
+			if ((ch >= 0x20 && ch <= 0x7f) && ch != '\'' && ch != 0x7f) {
 				sb.append(ch);
 			} else {
 				switch (ch) {
@@ -118,8 +118,9 @@ public final class EAtom extends EObject implements CharSequence {
 					break;
 				default:
 					sb.append("\\");
-					String.format("%2x", (int) ch);
-					// TODO: figure out if this is right
+					sb.append('x');
+					if (ch < 0x10) sb.append('0');
+					sb.append(Integer.toHexString(ch).toUpperCase());
 				}
 			}
 		}
