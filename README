@@ -61,6 +61,13 @@ PREREQUISITES
 
 I have only been testing this with Erlang/OTP R13B02.
 
+If you run with a different erts (Erlang runtime system), then you can 
+use the +e <ErsVsn> flag, like this:
+
+   ./erl.sh +e 5.7.5
+
+To tun with erts-5.7.5.
+
 To run the tests, you need an OTP distribution, and go edit src/test/java/erjang/AllTests.java
 to tell it where your OTP_HOME is.
 

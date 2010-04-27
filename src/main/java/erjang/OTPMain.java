@@ -40,7 +40,8 @@ public class OTPMain {
 	public static EDriver[] DRIVERS = new EDriver[] {
 	    new erjang.driver.efile.Driver(),
 	    new erjang.driver.ram_file.Driver(),
-	    new erjang.driver.tcp_inet.Driver()
+	    new erjang.driver.tcp_inet.Driver(),
+	    new erjang.driver.inet_gethost.Driver()
 	};
 
 	public static void main(String[] args) throws ClassNotFoundException, InstantiationException, IllegalAccessException, IOException {
@@ -48,6 +49,7 @@ public class OTPMain {
 	    Handler fh = new FileHandler("erjang.log");
 	    Logger.getLogger("").addHandler(fh);
 	    Logger.getLogger("erjang").setLevel(Level.FINE);
+	    //Logger.getLogger("kilim.Task").setLevel(Level.FINEST);
 
 		for (String m : MODULES) {
 			ERT.load_module(EAtom.intern(m));

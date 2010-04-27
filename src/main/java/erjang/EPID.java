@@ -107,10 +107,19 @@ public abstract class EPID extends EHandle {
 
 			EPID res = EProc.find(id, serial);
 			if (res != null) return res;
-			
+
+			// return DEADPID?
 		}
 		EAbstractNode peer = EPeer.get(node);
-		return new EExternalPID((EPeer) peer, id, serial, creation);
+		
+		if (peer instanceof EPeer) {
+			return new EExternalPID((EPeer) peer, id, serial, creation);
+		} else {
+			System.err.println("localnode="+ERT.getLocalNode().node+"; asking="+node);
+			
+			// must be local with different name
+			return new  EExternalPID(EPeer.get_or_create(node, creation, null, 0, 0), id, serial, creation);
+		}
 	}
 
 	/**

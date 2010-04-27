@@ -141,10 +141,17 @@ public final class EAtom extends EObject implements CharSequence {
 	}
 
 	public static EAtom intern(String name) {
-
+		
 		EAtom res = interns.get(name);
 		if (res == null) {
-			EAtom new_val = new EAtom(name);
+			
+			char[] data = name.toCharArray();
+			byte[] data2 = new byte[data.length];
+			for (int i = 0; i < data.length; i++) {
+				data2[i] = (byte) (0xff & data[i]);
+			}
+
+			EAtom new_val = new EAtom(new String(data2));
 			do {
 				res = interns.putIfAbsent(name, new_val);
 			} while (res == null);

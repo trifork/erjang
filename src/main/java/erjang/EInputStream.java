@@ -366,16 +366,26 @@ public class EInputStream extends ByteArrayInputStream {
 			return atom_cache_refs[index];
 		}
 		
-		if (tag != EExternal.atomTag) {
-			throw new IOException("wrong tag encountered, expected "
-					+ EExternal.atomTag + ", got " + tag);
+		if (tag == EExternal.smallAtomTag) {
+			len = read1();
+		} else {
+			if (tag != EExternal.atomTag) {
+				throw new IOException("wrong tag encountered, expected "
+						+ EExternal.atomTag + ", got " + tag);
+			}
+	
+			len = read2BE();
 		}
-
-		len = read2BE();
-
+		
 		strbuf = new byte[len];
 		this.readN(strbuf);
-		atom = new String(strbuf, IO.ISO_LATIN_1);
+		
+		char[] in = new char[len];
+		for (int i = 0; i < len; i++) {
+			in[i] = (char) (strbuf[i] & 0xff);
+		}
+		
+		atom = new String(in);
 
 		if (atom.length() > EExternal.maxAtomLength) {
 			atom = atom.substring(0, EExternal.maxAtomLength);
@@ -1159,6 +1169,7 @@ public class EInputStream extends ByteArrayInputStream {
 
 		case EExternal.atomCacheRef:
 		case EExternal.atomTag:
+		case EExternal.smallAtomTag:
 			return EAtom.read(this);
 			
 		case EExternal.floatTag:

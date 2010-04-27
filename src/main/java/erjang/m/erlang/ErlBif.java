@@ -374,8 +374,8 @@ public class ErlBif {
 		if (k == ERT.am_module) {
 			return mod;
 		}
-		
-		throw new NotImplemented("get_module_info "+mod+", "+key);
+
+		return ERT.am_undefined;
 	}
 
 	public static final String[] PRE_LOADED_MODULES = new String[] {
@@ -680,6 +680,12 @@ public class ErlBif {
 	private static void test_zero(double v1, double v2) {
 		if (v2 == 0.0)
 			throw new ErlangError(ERT.AM_BADARITH, ERT.NIL.cons(v2).cons(v1));
+	}
+
+	@BIF(type = Type.ARITHBIF)
+	static public double fdiv(EDouble v1, double v2) {
+		test_zero(v1.value, v2);
+		return v1.value / v2;
 	}
 
 	@BIF(type = Type.ARITHBIF)

@@ -18,10 +18,13 @@
 
 package erjang.m.ets;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+
+import clojure.lang.ISeq;
 
 import erjang.EAtom;
 import erjang.EBitString;
@@ -44,16 +47,18 @@ public class EPattern {
 	TuplePattern matcher;
 	private final ETuple spec; 
 	private int out_length;
+	private final int keyidx;
 	
 	@Override
 	public String toString() {
-		return "#Pattern<" + spec.toString() + ">";
+		return "#Pattern<keyidx=" + keyidx + ";" + spec.toString() + ">";
 	}
 	
 	/**
 	 * @param spec
 	 */
 	public EPattern(int keyidx, ETuple spec) {
+		this.keyidx = keyidx;
 		this.spec = spec;
 		Set<Integer> out = new HashSet<Integer>();
 		
@@ -74,6 +79,22 @@ public class EPattern {
 		this.out_length = max;
 	}
 
+	
+	ESeq match_members(ESeq out, Collection<ETuple> in) {
+				
+		for (EObject elm : in)
+		{
+			EMatchContext res = new EMatchContext(out_length, elm);
+			if (matcher.match(elm, res)) {
+				out = out.cons(elm);
+			}
+		}
+		
+		return out;
+	}
+	
+	
+	
 	ESeq match(ESeq out, Map<EObject, ETuple> in) {
 				
 		for (ETuple elm : in.values())
@@ -97,6 +118,24 @@ public class EPattern {
 			if (matcher.match(elm, res)) {
 				out = out.cons(elm);
 			}
+		}
+		
+		return out;
+	}
+	
+	/** return list of matching members */
+	ESeq match_members(ESeq out, ISeq in) {
+				
+		while (in != null) {
+			ETuple elm = (ETuple) in.first();
+			if (elm == null) break;
+			
+			EMatchContext res = new EMatchContext(out_length, elm);
+			if (matcher.match(elm, res)) {
+				out = out.cons(elm);
+			}
+			
+			in = in.next();
 		}
 		
 		return out;
@@ -208,6 +247,13 @@ public class EPattern {
 			}
 		}
 
+		public boolean match(EObject elm, EMatchContext res) {
+			ETuple tup;
+			if ((tup=elm.testTuple()) == null)
+				return false;
+			return match(tup, res);
+		}
+
 		public boolean match(ETuple t, EMatchContext r) {
 			if (t.arity() != arity)
 				return false;
@@ -288,7 +334,13 @@ public class EPattern {
 	 * @return
 	 */
 	public static ETermPattern compilePattern(ETuple tup, Set<Integer> out) {
-		return new TuplePattern(tup, out);
+		TuplePattern tp = new TuplePattern(tup, out);
+		for (int i = 0; i < tp.elems.length; i++) {
+			if (!(tp.elems[i] instanceof ValuePattern)) {
+				return tp;
+			}
+		}
+		return new ValuePattern(tup);
 	}
 
 	/** generic compare-equals matcher */

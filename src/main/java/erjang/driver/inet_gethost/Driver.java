@@ -1,7 +1,7 @@
 /**
  * This file is part of Erjang - A JVM-based Erlang VM
  *
- * Copyright (c) 2010 by Trifork
+ * Copyright (c) 2009 by Trifork
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,39 @@
  * limitations under the License.
  **/
 
-package erjang.driver.tcp_inet;
+package erjang.driver.inet_gethost;
 
-public abstract class PacketCallbacks<T> {
-	abstract void http_error(T src, byte[] data, int pos, int len);
+import java.util.concurrent.locks.ReentrantLock;
+
+import erjang.EString;
+import erjang.driver.EDriver;
+import erjang.driver.EDriverControl;
+
+public class Driver implements EDriver {
+
+	@Override
+	public String driverName() {
+		return "inet_gethost";
+	}
+
+	@Override
+	public boolean useDriverLevelLocking() {
+		return false;
+	}
+
+	@Override
+	public void finish() {
+	}
+
+	@Override
+	public ReentrantLock getLock() {
+		throw new erjang.NotImplemented();
+
+	}
+
+	@Override
+	public EDriverControl start(EString command) {
+		return new GetHostDriver(this, command);
+	}
+
 }

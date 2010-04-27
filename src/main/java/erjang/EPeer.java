@@ -403,7 +403,7 @@ public class EPeer extends EAbstractNode {
 		disthdr.put((byte) 0);
 		disthdr.flip();
 
-		EOutputStream eos = new EOutputStream();
+		EOutputStream eos = new EOutputStream(1024,flags);
 		hdr.encode(eos);
 
 		ByteBuffer barr = eos.toByteBuffer();
@@ -477,8 +477,8 @@ public class EPeer extends EAbstractNode {
 	}
 
 	public void dsig_demonitor(EHandle sender, ERef ref,
-			EExternalPID to_pid) throws Pausable {
-		ETuple hdr = ETuple.make(ERT.box(DEMONITOR_P), sender, to_pid, ref);
+			EObject to_pid_or_name) throws Pausable {
+		ETuple hdr = ETuple.make(ERT.box(DEMONITOR_P), sender, to_pid_or_name, ref);
 		dsig_cast(sender, hdr);
 	}
 

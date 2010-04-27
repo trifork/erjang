@@ -121,7 +121,7 @@ public class EExecDriverTask extends EDriverTask {
 			}
 		}
 
-		System.err.println("executing "+f);		
+		System.err.println("lauching "+cmd[0]+" "+(f==null?"(not found)":""));		
 		
 		if (f == null) {
 			throw new ErlangError(EAtom.intern("enoent"));

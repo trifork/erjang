@@ -559,13 +559,6 @@ public class EDriverTask extends ETask<EInternalPort> implements
 	 * @throws Pausable
 	 */
 	public void command(final EHandle caller, final ByteBuffer[] out) throws Pausable {
-
-		if (mode != Mode.STREAM) {
-			// do we need to encode the packet length here?
-			// guess so, if we are non-stream mode
-			throw new NotImplemented();
-		}
-
 		mbox.put(new EPortControl() {
 			@Override
 			public void execute() throws Pausable, IOException {

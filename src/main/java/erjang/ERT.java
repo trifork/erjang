@@ -870,7 +870,12 @@ public class ERT {
 	 * @return
 	 */
 	public static EDriver find_driver(EString command) {
-		return Drivers.getDriver(command.stringValue());
+		String name = command.stringValue();
+		int idx = name.indexOf(' ');
+		if (idx != -1) {
+			name = name.substring(0, idx);
+		}
+		return Drivers.getDriver(name);
 	}
 
 	/**

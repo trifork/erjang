@@ -29,6 +29,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import erjang.m.erlang.ErlDist;
+
 import kilim.Pausable;
 
 
@@ -67,6 +69,10 @@ public abstract class EAbstractNode {
     static final int dFlagExportPtrTag = 0x200; // NOT SUPPORTED
     static final int dFlagBitBinaries = 0x400;
     static final int dFlagNewFloats = 0x800;
+
+    static final int dFUnicodeIO = 0x1000;
+    static final int dFDistHdrAtomCache = 0x2000;
+    static final int dFlagSmallAtoms = 0x4000;
 
     int ntype = NTYPE_R6;
     int proto = 0; // tcp/ip
@@ -276,4 +282,19 @@ public abstract class EAbstractNode {
 
 	public abstract EObject dsig_reg_send(EInternalPID caller, EAtom name,
 			EObject msg) throws Pausable;
+
+	public abstract void dsig_demonitor(EHandle sender, ERef ref,
+			EObject to_pid_or_name) throws Pausable;
+
+	
+	
+	public static EAbstractNode get_or_connect(ETask proc, EAtom n) throws Pausable {
+		EAbstractNode res = EPeer.get(n);
+		if (res == null && (proc instanceof EProc)) {			
+			if (ErlDist.net_kernel__connect__1.invoke((EProc) proc, new EObject[] { n }) == ERT.TRUE) {
+				return EPeer.get(n);
+			} 
+		}
+		return res;
+	}
 }
