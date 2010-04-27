@@ -43,7 +43,7 @@ public abstract class ESeq extends ECons {
 	public EObject[] toArray() {
 		List<EObject> out = new ArrayList<EObject>();
 		ESeq curr = this;
-		while (curr != ERT.NIL) {
+		while (!curr.isNil()) {
 			out.add(curr.head());
 			curr = curr.tail();
 		}
