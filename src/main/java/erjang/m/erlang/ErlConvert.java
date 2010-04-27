@@ -74,6 +74,11 @@ public class ErlConvert {
 		eos.write_any(obj);
 		return eos.getBinaryContent();		
 	}
+	
+	@BIF
+	public static ESeq fun_to_list(EObject fun) {
+		return EString.fromString("#Fun<" + fun.toString() + ">");
+	}
 
 	@BIF
 	public static EBinary term_to_binary(EObject obj, EObject spec) {
