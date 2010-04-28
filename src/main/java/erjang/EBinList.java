@@ -211,6 +211,10 @@ public class EBinList extends ECons {
 			return EBinList.this.head();
 		}
 
+		@Override
+		public void encode(EOutputStream eos) {
+			EBinList.this.encode(eos);
+		}
 	}
 	
 	private boolean all_printable() {
