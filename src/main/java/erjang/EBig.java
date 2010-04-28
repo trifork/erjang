@@ -202,18 +202,18 @@ public final class EBig extends EInteger {
 	}
 
 	public ENumber multiply(EObject other) {
-		return other.multiply(value);
+		return other.r_multiply(value);
 	}
 
-	public ENumber multiply(int lhs) {
+	public ENumber r_multiply(int lhs) {
 		return ERT.box(BigInteger.valueOf(lhs).multiply(value));
 	}
 
-	public EDouble multiply(double lhs) {
+	public EDouble r_multiply(double lhs) {
 		return ERT.box(lhs * value.doubleValue());
 	}
 	
-	public ENumber multiply(BigInteger lhs) {
+	public ENumber r_multiply(BigInteger lhs) {
 		return ERT.box(lhs.multiply(value));
 	}
 

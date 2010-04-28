@@ -210,10 +210,10 @@ public abstract class EObject implements Comparable<EObject> {
 	EDouble r_divide(BigInteger lhs) { throw ERT.badarith(lhs, this); }
 
 	@BIF(name="*")
-	public ENumber multiply(EObject rhs) { throw ERT.badarg(this, rhs); }
-	public ENumber multiply(int lhs) { throw ERT.badarg(this, new ESmall(lhs)); }
-	public EDouble multiply(double lhs) { throw ERT.badarg(this, new EDouble(lhs)); }
-	public ENumber multiply(BigInteger lhs) { throw ERT.badarg(this, new EBig(lhs)); }
+	public ENumber multiply(EObject rhs) { throw ERT.badarith(this, rhs); }
+	public ENumber r_multiply(int lhs) { throw ERT.badarith(new ESmall(lhs), this); }
+	public EDouble r_multiply(double lhs) { throw ERT.badarith(new EDouble(lhs), this); }
+	public ENumber r_multiply(BigInteger lhs) { throw ERT.badarith(new EBig(lhs), this); }
 
 	@BIF(name="bsr")
 	public EInteger bsr(EObject rhs) { throw ERT.badarith(this, rhs); }

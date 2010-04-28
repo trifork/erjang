@@ -179,18 +179,18 @@ public class EDouble extends ENumber {
 	}
 
 	public EDouble multiply(EObject other) {
-		return other.multiply(value);
+		return other.r_multiply(value);
 	}
 
-	public ENumber multiply(int lhs) {
+	public ENumber r_multiply(int lhs) {
 		return ERT.box(lhs * value);
 	}
 
-	public EDouble multiply(double lhs) {
+	public EDouble r_multiply(double lhs) {
 		return ERT.box(lhs * value);
 	}
 
-	public ENumber multiply(BigInteger lhs) {
+	public ENumber r_multiply(BigInteger lhs) {
 		return ERT.box(lhs.doubleValue() * value);
 	}
 
