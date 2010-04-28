@@ -114,7 +114,8 @@ public class IO {
 			return Posix.ENOTCONN;
 		}
 		
-		if ("Broken pipe".equals(e.getMessage())) {
+		if ("Broken pipe".equals(e.getMessage())
+			|| "Connection reset by peer".equals(e.getMessage())) {
 			return Posix.ENOTCONN;
 		}
 		
