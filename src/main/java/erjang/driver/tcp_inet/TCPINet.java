@@ -2174,7 +2174,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 				//System.err.println("deliver.2.1");
 				/* something after? */
 				if (i_ptr_start + len == i_buf.position()) { /* no */
-					code = tcp_reply_binary_data(i_buf.array(), i_buf
+					code = tcp_reply_data(i_buf.array(), i_buf
 							.arrayOffset()
 							+ i_ptr_start, len);
 					tcp_clear_input();
@@ -2183,7 +2183,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 					bin.put(i_buf.array(), i_buf.arrayOffset() + i_ptr_start
 							+ len, i_buf.position() - len - i_ptr_start);
 
-					code = tcp_reply_binary_data(i_buf.array(), i_buf
+					code = tcp_reply_data(i_buf.array(), i_buf
 							.arrayOffset()
 							+ i_ptr_start, len);
 					i_buf = bin;
