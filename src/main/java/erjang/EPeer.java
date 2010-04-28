@@ -194,7 +194,7 @@ public class EPeer extends EAbstractNode {
 				if (dst == null)
 					throw new IOException("protocol error");
 				if (dst != null) {
-					dst.sendb(msg);
+					dst.send(null, msg);
 				}
 				return;
 			}
