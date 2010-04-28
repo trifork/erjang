@@ -363,7 +363,11 @@ public class EInputStream extends ByteArrayInputStream {
 
 		if (tag == EExternal.atomCacheRef) {
 			int index = read1() & 0xff;
-			return atom_cache_refs[index];
+			EAtom res = atom_cache_refs[index];
+			if (res == null) {
+				throw new IOException("no cached atom at "+index);
+			}
+			return res;
 		}
 		
 		if (tag == EExternal.smallAtomTag) {
