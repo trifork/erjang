@@ -84,6 +84,7 @@ public class ErlBif {
 	private static EAtom am_reductions = EAtom.intern("reductions");
 	private static EAtom am_garbage_collection = EAtom.intern("garbage_collection");
 	private static EAtom am_runtime = EAtom.intern("runtime");
+	private static final EAtom am_run_queue = EAtom.intern("run_queue");
 	
 	@BIF
 	static EObject apply(EProc proc, EObject fun, EObject args) throws Pausable {
@@ -639,6 +640,9 @@ public class ErlBif {
 			}
 			
 			return ETuple.make(ERT.box(num_gcs), ERT.box(time_gcs), ERT.box(0));
+			
+		} else if (spec == am_run_queue) {
+			return ERT.box(0);
 		}
 		
 		throw new NotImplemented("erlang:statistics("+spec+")");
