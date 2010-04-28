@@ -853,14 +853,14 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 				System.err.println("did read " + n + " bytes");
 			if (n == 0)
 				return 0;
-		} catch (ClosedByInterruptException e) {
-			return tcp_recv_closed();
-		} catch (AsynchronousCloseException e) {
-			return tcp_recv_closed();
 		} catch (ClosedChannelException e) {
 			return tcp_recv_closed();
 		} catch (IOException e) {
-			return tcp_recv_error(IO.exception_to_posix_code(e));
+			int code = IO.exception_to_posix_code(e);
+			if (code == Posix.ENOTCONN || !fd.isOpen())
+				return tcp_recv_closed();
+			else
+				return tcp_recv_error(IO.exception_to_posix_code(e));
 		}
 
 		if (n < 0) {
