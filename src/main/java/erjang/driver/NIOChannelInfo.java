@@ -181,10 +181,12 @@ class NIOChannelInfo {
 			}
 		}
 		
-		key.interestOps(computeOps());
+		if (key.isValid()) {
+			key.interestOps(computeOps());
 		
-		if (interest.isEmpty()) {
-			key.cancel();
+			if (interest.isEmpty()) {
+				key.cancel();
+			}
 		}
 	}
 
