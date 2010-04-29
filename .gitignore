@@ -5,3 +5,4 @@ erjang-*.jar
 .erj
 classes
 target
+*.beam

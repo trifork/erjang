@@ -44,8 +44,8 @@ import erjang.ETuple;
  */
 public class EPattern {
 
-	TuplePattern matcher;
-	private final ETuple spec; 
+	ETermPattern matcher;
+	private final EObject spec; 
 	private int out_length;
 	private final int keyidx;
 	
@@ -57,12 +57,12 @@ public class EPattern {
 	/**
 	 * @param spec
 	 */
-	public EPattern(int keyidx, ETuple spec) {
+	public EPattern(int keyidx, EObject spec) {
 		this.keyidx = keyidx;
 		this.spec = spec;
 		Set<Integer> out = new HashSet<Integer>();
 		
-		matcher = new TuplePattern(spec, out);
+		matcher = spec.compileMatch(out);
 		
 		// find max element index
 		int max = 0;
@@ -85,7 +85,7 @@ public class EPattern {
 		for (EObject elm : in)
 		{
 			EMatchContext res = new EMatchContext(out_length, elm);
-			if (matcher.match(elm, res)) {
+			if (elm.match(matcher, res)) {
 				out = out.cons(elm);
 			}
 		}
@@ -387,16 +387,18 @@ public class EPattern {
 	 * @return
 	 */
 	public EObject getKey(int keypos1) {
-		if (keypos1 < 1 || keypos1 > matcher.elems.length) {
-			throw new IllegalStateException();
+		if (matcher instanceof TuplePattern) {
+			TuplePattern tm = (TuplePattern) matcher;
+			if (keypos1 < 1 || keypos1 > tm.elems.length) {
+				return null;
+			}
+			ETermPattern m = tm.elems[keypos1-1];
+			if (m instanceof ValuePattern) {
+				ValuePattern vm = (ValuePattern) m;
+				return vm.value;
+			}
 		}
-		ETermPattern m = matcher.elems[keypos1-1];
-		if (m instanceof ValuePattern) {
-			ValuePattern vm = (ValuePattern) m;
-			return vm.value;
-		} else {
-			return null;
-		}
+		return null;
 	}
 
 	/**

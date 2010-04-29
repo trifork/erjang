@@ -194,7 +194,7 @@ public class EPeer extends EAbstractNode {
 				if (dst == null)
 					throw new IOException("protocol error");
 				if (dst != null) {
-					dst.sendb(msg);
+					dst.send(null, msg);
 				}
 				return;
 			}
@@ -309,7 +309,8 @@ public class EPeer extends EAbstractNode {
 	private boolean process_distribution_header(EInternalPort port,
 			EInputStream ibuf) throws IOException {
 		EAtom[] atom_cache_refs;
-		if (ERT.DEBUG_DIST) 
+
+		if (ERT.DEBUG_DIST)
 			System.err.println("parsing distribuionHeader....");
 		
 		int datum = ibuf.read1();
@@ -349,11 +350,10 @@ public class EPeer extends EAbstractNode {
 				int segment_index = flags[i] & 7;
 				int index = ibuf.read1();
 
-				/*
+				if (ERT.DEBUG_DIST)
 				System.err.print("cache[" + i + "] -> ref["
 						+ segment_index + "][" + index + "]");
-				 */
-				
+
 				if ((flags[i] & 8) == 8) {
 					// it's new!
 
@@ -374,9 +374,8 @@ public class EPeer extends EAbstractNode {
 
 				atom_cache_refs[i] = atom_cache[segment_index][index];
 
-				/*
-				System.err.println(" => " + atom_cache_refs[i]);
-				*/
+				if (ERT.DEBUG_DIST)
+					System.err.println(" => " + atom_cache_refs[i]);
 			}
 
 			ibuf.setAtomCacheRefs(atom_cache_refs);

@@ -94,7 +94,7 @@ public final class EAtom extends EObject implements CharSequence {
 		StringBuffer sb = new StringBuffer();
 		for (int i = 0; i < seq.length(); i++) {
 			char ch = seq.charAt(i);
-			if ((ch >= 0x20 && ch <= 0xff) && ch != '\'' && ch != 0x7f) {
+			if ((ch >= 0x20 && ch <= 0x7f) && ch != '\'' && ch != 0x7f) {
 				sb.append(ch);
 			} else {
 				switch (ch) {
@@ -118,8 +118,9 @@ public final class EAtom extends EObject implements CharSequence {
 					break;
 				default:
 					sb.append("\\");
-					String.format("%2x", (int) ch);
-					// TODO: figure out if this is right
+					sb.append('x');
+					if (ch < 0x10) sb.append('0');
+					sb.append(Integer.toHexString(ch).toUpperCase());
 				}
 			}
 		}
@@ -142,16 +143,23 @@ public final class EAtom extends EObject implements CharSequence {
 
 	public static EAtom intern(String name) {
 		
+		
+		
 		EAtom res = interns.get(name);
 		if (res == null) {
-			
+
+			boolean changed = false;
 			char[] data = name.toCharArray();
-			byte[] data2 = new byte[data.length];
-			for (int i = 0; i < data.length; i++) {
-				data2[i] = (byte) (0xff & data[i]);
+			for (int i = 0; i < data.length; i++) 
+			{
+				if ((data[i] & 0xff00) != 0) changed = true;
+				data[i] = (char) (data[i] & 0xff);
 			}
 
-			EAtom new_val = new EAtom(new String(data2));
+			if (changed)
+				name = new String(data);
+			
+			EAtom new_val = new EAtom(name);
 			do {
 				res = interns.putIfAbsent(name, new_val);
 			} while (res == null);
@@ -223,11 +231,16 @@ public final class EAtom extends EObject implements CharSequence {
 	}
 
 	/**
-	 * @param strbuf
+	 * @param buf
 	 * @return
 	 */
-	public static EAtom intern(byte[] strbuf) {
-		return intern(new String(strbuf, IO.ISO_LATIN_1));
+	public static EAtom intern(byte[] buf) {
+		char[] data = new char[buf.length];
+		for (int i = 0; i < data.length; i++) {
+			data[i] = (char) (buf[i] & 0xff);
+		}
+		String str = new String(data);
+		return intern(str);
 	}
 
 	public static EAtom read(EInputStream ei) throws IOException {

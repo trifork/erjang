@@ -397,11 +397,11 @@ public class Native extends ENative {
 	}
 
 	@BIF static public EObject match_object(EProc caller, EObject nameOrTid, EObject spec) {
-		ETuple ts = spec.testTuple();
 		ETable table = resolve(caller, nameOrTid, false);
-		if (ts == null || table == null) throw ERT.badarg(nameOrTid, spec);
+		if ((spec.testAtom()==null && spec.testTuple()==null) || table == null) 
+			throw ERT.badarg(nameOrTid, spec);
 		
-		EPattern matcher = new EPattern(table.keypos1, ts);
+		EPattern matcher = new EPattern(table.keypos1, spec);
 		
 		return table.match_object(matcher);
 	}

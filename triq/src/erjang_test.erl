@@ -26,7 +26,7 @@
 
 -include("triq.hrl").
 
--export([prop_binop/0, prop_echo/0, main/0, echo/1]).
+-export([prop_binop/0, prop_echo/0, main/0, echo/1, echo2/1]).
 
 
 %% ===========================================
@@ -62,6 +62,11 @@ other(Fun,Args) when is_list(Args) ->
 echo(Value) ->
     Value.
 
+echo2(Value) ->
+    erlang:display(Value),
+    [N|_] = erlang:atom_to_list(Value),
+    N.
+
 
 %% ===========================================
 %% Run erlang:Fun(Args) here
@@ -79,7 +84,14 @@ here(Fun,Args) ->
 prop_binop() ->
     ?FORALL({A,B,OP}, 
 	    {any(),any(),
-	     elements(['>', '<', '==', '=:=', '/=', '=<', '>=', '++'])},
+	     elements(['>', '<', 
+		       '==', '=:=', '/=', 
+		       '=<', '>=', 
+		       '++',
+		       '+', '-', '/', '*', 'div',
+		       'bsl', 'bsr',
+		       'or'
+		      ])},
 	    begin
 		Here  = here(OP,[A,B]),
 		There = other(OP,[A,B]),

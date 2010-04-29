@@ -99,12 +99,14 @@ public class GetHostDriver extends EDriverInstance {
 			InetAddress[] addr;
 			String[] names;
 			private UnknownHostException err;
+			InetAddress primary;
 			
 			@Override
 			public void async() {
 				
 				// System.err.println(" gethostsbyname["+seq+"][async] "+host);
 				try {
+					primary = InetAddress.getByName(host);
 					addr = InetAddress.getAllByName(host);
 					names = new String[addr.length];
 					for (int i = 0; i < addr.length; i++) {
@@ -126,13 +128,20 @@ public class GetHostDriver extends EDriverInstance {
 					
 					int size = 4 + 1 + 4;
 					
+					int first = -1;
 					int acount = 0;
 					for (int i = 0; i < addr.length; i++) {
+						//System.err.println("gethostbyname["+i+"]="+addr[i]+" / "+names[i]);
 						if ((proto==PROTO_IPV4 && (addr[i] instanceof Inet4Address))
 								|| (proto==PROTO_IPV6 && (addr[i] instanceof Inet6Address))) {
 							bytes[i] = addr[i].getAddress();
 							size += bytes[i].length;		
 							acount += 1;
+							if (first == -1) first = i;
+							if (host.equals(names[i])) {
+								//System.err.println("gethostbyname["+i+"]=>"+primary);
+								first = i;
+							}
 						}
 					}
 					
@@ -146,12 +155,14 @@ public class GetHostDriver extends EDriverInstance {
 					if (proto == PROTO_IPV4) {
 						rep.put(UNIT_IPV4);
 						rep.putInt(acount);
-						for (int i = 0; i < addr.length; i++) {
-							if (bytes[i] != null) {
-								rep.put(bytes[i]);
+						if (acount > 0) {
+							rep.put(bytes[first]);
+							for (int i = 0; i < addr.length; i++) {
+								if (i != first && bytes[i] != null) {
+									rep.put(bytes[i]);
+								}
 							}
-						}
-						
+						}						
 						rep.putInt(1);
 						rep.put(host.getBytes(IO.ISO_LATIN_1));
 						rep.put((byte)0);
