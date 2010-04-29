@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.EOFException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.security.MessageDigest;
 
 import erjang.driver.IO;
 
@@ -72,6 +73,10 @@ public class EInputStream extends ByteArrayInputStream {
 			final int flags) {
 		super(buf, offset, length);
 		this.flags = flags;
+	}
+	
+	public void updateMessageDigest(MessageDigest digest, int offset, int len) {
+		digest.update(this.buf, offset, len);
 	}
 
 	/**
