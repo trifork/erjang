@@ -803,9 +803,9 @@ public class EOutputStream extends ByteArrayOutputStream {
     }
 
     public void write_fun(final EPID pid, final String module,
-	    final long old_index, final int arity, final byte[] md5,
+	    final long old_index, final int arity, final EBinary md5,
 	    final long index, final long uniq, final EObject[] freeVars) {
-	if (arity == -1) {
+    if ((flags & EAbstractNode.dflagNewFunTags) == 0) {
 	    write1(EExternal.funTag);
 	    write4BE(freeVars.length);
 	    pid.encode(this);
@@ -820,7 +820,7 @@ public class EOutputStream extends ByteArrayOutputStream {
 	    final int saveSizePos = getPos();
 	    write4BE(0); // this is where we patch in the size
 	    write1(arity);
-	    writeN(md5);
+	    writeN(md5.getByteArray());
 	    write4BE(index);
 	    write4BE(freeVars.length);
 	    write_atom(module);

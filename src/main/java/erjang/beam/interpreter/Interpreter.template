@@ -158,7 +158,7 @@ public class Interpreter extends AbstractInterpreter {
 									  false, false);
 				if (bif != null && java.lang.reflect.Modifier.isStatic(bif.javaMethod.getModifiers())) {
 					//TODO: make this work for virtual methods as well
-					ext_funs[i] = EFun.make(bif.javaMethod);
+					ext_funs[i] = EFun.make(bif.javaMethod, this.module_name());
 				} else {
 					EModuleManager.add_import(imp, new VectorFunBinder(ext_funs, imp, i));
 				}

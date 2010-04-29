@@ -113,15 +113,15 @@ public abstract class EFun extends EObject implements Opcodes {
 	 * Treating native functions differently in EModule loading might
 	 * be a better solution.
 	 */
-	public static synchronized EFun make(Method method) {
+	public static synchronized EFun make(Method method, String module) {
 		EFun fun = method_fun_map.get(method);
 		if (fun==null) {
-			method_fun_map.put(method, fun = do_make(method));
+			method_fun_map.put(method, fun = do_make(method, module));
 		}
 		return fun;
 	}
 
-	private static EFun do_make(Method method) {
+	private static EFun do_make(Method method, String module) {
 
 		assert (Modifier.isStatic(method.getModifiers()));
 		assert (!Modifier.isPrivate(method.getModifiers()));
@@ -135,8 +135,8 @@ public abstract class EFun extends EObject implements Opcodes {
 
 		Class<?> declaringClass = method.getDeclaringClass();
 		Type type = Type.getType(declaringClass);
-		byte[] data = CompilerVisitor.make_invoker(type, mname, method
-				.getName(), ary, proc, 0, Type.getType(method.getReturnType()), true, true);
+		byte[] data = CompilerVisitor.make_invoker(module, type, mname, method
+				.getName(), ary, proc, null, Type.getType(method.getReturnType()), true, true);
 
 		String clname = type.getClassName() + "$FN_" + mname;
 
