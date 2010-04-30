@@ -245,6 +245,8 @@ public abstract class EFun extends EObject implements Opcodes {
 
 		if (h == null) {
 
+			get_fun_class(arity);
+			
 			String self_type = EFUN_TYPE.getInternalName() + "Handler" + arity;
 
 			ClassWriter cw = new ClassWriter(true);
