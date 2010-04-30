@@ -426,7 +426,7 @@ public class EPeer extends EAbstractNode {
 		disthdr.put((byte) 0);
 		disthdr.flip();
 
-		EOutputStream eos = new EOutputStream();
+		EOutputStream eos = new EOutputStream(1024,flags);
 		hdr.encode(eos);
 		payload.encode(eos);
 
