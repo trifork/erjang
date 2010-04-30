@@ -1066,7 +1066,8 @@ public class EInputStream extends ByteArrayInputStream {
 		final EAtom module = read_atom();
 		final EAtom function = read_atom();
 		final int arity = (int) read_long();
-		return EFun.make(module, function, arity);
+		
+		return EModuleManager.resolve(new FunID(module,function,arity));
 	}
 
 	/**
@@ -1226,6 +1227,9 @@ public class EInputStream extends ByteArrayInputStream {
 		case EExternal.newFunTag:
 		case EExternal.funTag:
 			return EFun.read(this);
+			
+		case EExternal.externalFunTag:
+			return read_external_fun();
 
 		default:
 			throw new IOException("Unknown data type: " + tag + " at position " + getPos());
