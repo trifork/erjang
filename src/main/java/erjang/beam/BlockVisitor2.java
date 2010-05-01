@@ -24,6 +24,7 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
 import erjang.beam.repr.ExtFun;
+import erjang.EBinary;
 import erjang.EBitString;
 
 /**
@@ -86,8 +87,12 @@ public interface BlockVisitor2 extends BlockVisitor {
 	 * @param opcode
 	 * @param efun
 	 * @param freevars
+	 * @param index TODO
+	 * @param old_index TODO
+	 * @param uniq TODO
+	 * @param old_uniq TODO
 	 */
-	void visitInsn(BeamOpcode opcode, ExtFun efun, Arg[] freevars);
+	void visitInsn(BeamOpcode opcode, ExtFun efun, Arg[] freevars, int index, int old_index, EBinary uniq, int old_uniq);
 
 	/**
 	 * @param opcode

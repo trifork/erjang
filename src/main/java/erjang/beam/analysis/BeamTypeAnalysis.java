@@ -658,12 +658,17 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						Insn.F insn = (Insn.F) insn_;
 						ExtFun efun = insn.anon_fun.asExtFun();
 						int numfree = insn.anon_fun.free_vars;
+						int index = insn.anon_fun.index;
+						int old_index = insn.anon_fun.old_index;
+						EBinary uniq = insn.anon_fun.mod_md5;
+						int old_uniq = insn.anon_fun.old_uniq;
+						
 						Arg[] free = new Arg[numfree];
 						for (int i = 0; i < numfree; i++) {
 							free[i] = new Arg(Arg.Kind.X, i, map[insn_idx]
 									.getx(i));
 						}
-						vis.visitInsn(opcode, efun, free);
+						vis.visitInsn(opcode, efun, free, index, old_index, uniq, old_uniq);
 						break;
 					}
 

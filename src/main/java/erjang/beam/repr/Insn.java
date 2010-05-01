@@ -145,7 +145,7 @@ public class Insn implements BeamInstruction {
 			return ETuple.make(opcode.symbol,
 							   anon_fun.toSymbolic(),
 							   new ESmall(anon_fun_no),
-							   new ESmall(anon_fun.uniq),
+							   new ESmall(anon_fun.old_uniq),
 							   new ESmall(anon_fun.free_vars));
 		}
 	}
