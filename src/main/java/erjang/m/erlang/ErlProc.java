@@ -290,7 +290,6 @@ public class ErlProc {
 	}
 	
 	@BIF
-	@ErlFun(export = true)
 	static public EObject link(EProc self, EObject pid) throws Pausable {
 		EHandle h = EHandle.cast(pid);
 		if (h == null) throw ERT.badarg(pid);
@@ -299,7 +298,6 @@ public class ErlProc {
 	}
 
 	@BIF
-	@ErlFun(export = true)
 	static public EObject monitor(EProc self, EObject how, EObject pid) throws Pausable {
 		if (how != am_process)
 			throw ERT.badarg(how, pid);
@@ -360,7 +358,6 @@ public class ErlProc {
 	static EFun flush_monitor_message = null;
 
 	@BIF
-	@ErlFun(export = true)
 	static public EObject demonitor(EProc self, EObject ref) throws Pausable {
 	    return demonitor(self, ref, ERT.NIL);
 	}

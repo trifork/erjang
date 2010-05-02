@@ -169,7 +169,6 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 	static final Type EMATCHSTATE_TYPE = Type.getType(EBinMatchState.class);
 
 	static final Type MODULE_ANN_TYPE = Type.getType(Module.class);
-	static final Type ERLFUN_ANN_TYPE = Type.getType(ErlFun.class);
 	static final Type IMPORT_ANN_TYPE = Type.getType(Import.class);
 	static final Type EXPORT_ANN_TYPE = Type.getType(Export.class);
 	private final ClassRepo classRepo;
@@ -453,8 +452,6 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				non_pausable_methods.add(javaName);
 			}
 			
-			add_erlfun_annotation(mv);
-
 			this.start = new Label();
 			this.end = new Label();
 
@@ -721,16 +718,6 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			this.bit_string_save = local++;
 			this.scratch_reg = local;
 
-		}
-
-		private void add_erlfun_annotation(MethodVisitor mv) {
-			AnnotationVisitor ann = mv.visitAnnotation(ERLFUN_ANN_TYPE
-					.getDescriptor(), true);
-			ann.visit("module", module_name.getName());
-			ann.visit("name", fun_name.getName());
-			ann.visit("arity", new Integer(this.arity));
-			ann.visit("export", new Boolean(isExported(fun_name, arity)));
-			ann.visitEnd();
 		}
 
 		/*

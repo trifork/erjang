@@ -239,7 +239,7 @@ public class ErlBif {
 	}
 	
 	@BIF
-	@ErlFun(export = true)
+	
 	static public EPID self(EProc proc) {
 		if (proc == null) {
 			System.out.println("Houston, we have a problem.");
@@ -268,13 +268,13 @@ public class ErlBif {
 	}
 
 	@BIF
-	@ErlFun(export = true)
+	
 	static public EString integer_to_list(EObject num) {
 		return new EString(num.toString());
 	}
 
 	@BIF
-	@ErlFun(export = true)
+	
 	static public EAtom list_to_atom(EObject obj) {
 		EString es;
 		if ((es = obj.testString()) != null) {
@@ -284,7 +284,7 @@ public class ErlBif {
 	}
 
 	@BIF
-	@ErlFun(export = true)
+	
 	static public EPID list_to_pid(EObject obj) {
 		ECons list;
 		if ((list = obj.testCons()) != null) {
@@ -295,7 +295,7 @@ public class ErlBif {
 	}
 
 	@BIF
-	@ErlFun(export = true)
+	
 	static public EString pid_to_list(EObject obj) {
 		EPID pid;
 		if ((pid = obj.testPID()) != null) {
@@ -305,7 +305,7 @@ public class ErlBif {
 	}
 
 	@BIF
-	@ErlFun(export = true)
+	
 	static public EString port_to_list(EObject obj) {
 		EPort port;
 		if ((port = obj.testPort()) != null) {
@@ -315,7 +315,7 @@ public class ErlBif {
 	}
 
 	@BIF
-	@ErlFun(export = true)
+	
 	static public EString float_to_list(EObject obj) {
 		EDouble value;
 		if ((value = obj.testFloat()) != null) {
@@ -325,13 +325,13 @@ public class ErlBif {
 	}
 
 	@BIF
-	@ErlFun(export = true)
+	
 	static public EObject error(EObject reason) {
 		throw new ErlangError(reason);
 	}
 
 	@BIF
-	@ErlFun(export = true)
+	
 	static public EObject error(EObject reason, EObject args) {
 		ESeq aseq = args.testSeq();
 		if (aseq == null) throw ERT.badarg(reason, args);
@@ -339,13 +339,13 @@ public class ErlBif {
 	}
 
 	@BIF(name="throw")
-	@ErlFun(export = true)
+	
 	static public EObject throw_ex(EObject reason) {
 		throw new ErlangThrow(reason);
 	}
 
 	@BIF
-	@ErlFun(export = true)
+	
 	static public ESeq get_module_info(EObject mod) {
 		// TODO: get all the attributes from the beam code
 		ESeq res = ERT.NIL;
@@ -355,7 +355,7 @@ public class ErlBif {
 	}
 
 	@BIF
-	@ErlFun(export = true)
+	
 	static public EObject get_module_info(EObject mod, EObject key) {
 		EAtom m = mod.testAtom();
 		EAtom k = key.testAtom();
@@ -460,7 +460,7 @@ public class ErlBif {
 
 	/*
 	@BIF
-	@ErlFun(export = true)
+	
 	static public EObject element(ESmall idx, EObject obj) {
 		ETuple tup;
 		if ((tup = obj.testTuple()) != null && tup.arity() >= idx.value) {
@@ -662,13 +662,13 @@ public class ErlBif {
 	// process dict
 
 	@BIF
-	@ErlFun(export = true)
+	
 	static public ECons get(EProc proc) {
 		return proc.get();
 	}
 
 	@BIF
-	@ErlFun(export = true)
+	
 	static public EObject get(EProc proc, EObject key) {
 		return proc.get(key);
 	}
@@ -785,7 +785,6 @@ public class ErlBif {
 	}
 
 	@BIF(name = "-")
-	@ErlFun(name = "-", export = true)
 	static public ENumber minus(EObject v1, EObject v2) {
 		return v1.subtract(v2, false);
 	}
@@ -897,7 +896,6 @@ public class ErlBif {
 	}
 
 	@BIF
-	@ErlFun(export = true)
 	static public EInteger trunc(EObject v1) {
 		EInteger i1;
 		if ((i1 = v1.testInteger()) != null) {
@@ -1001,7 +999,6 @@ public class ErlBif {
 	}
 
 	@BIF(name = "abs")
-	@ErlFun(export = true)
 	static public ENumber abs(EObject v1) {
 		ENumber num;
 		if ((num = v1.testNumber()) != null) {
@@ -1016,7 +1013,7 @@ public class ErlBif {
 	}
 
 	@BIF(name = "now")
-	@ErlFun(export = true)
+	
 	static public ETuple3 now() {
 
 		long now = System.currentTimeMillis();
@@ -1211,17 +1208,12 @@ public class ErlBif {
 		return ERT.box(o.testCons() != null || o.testNil() != null);
 	}
 
-	public static ECons as_list(EObject o) { // TODO: This function should probably be replaced by o.testCons or something similar.
-		return o == null ? ERT.NIL : o.testCons();
-	}
-
 	@BIF
 	public static EAtom is_nil(EObject o) {
 		return ERT.box(o.testNil() != null);
 	}
 
 	@BIF
-	@ErlFun(export = true)
 	public static EString atom_to_list(EObject atom) {
 		EAtom am = atom.testAtom();
 		if (am == null)
@@ -1349,8 +1341,7 @@ public class ErlBif {
 		return ERT.guard(obj.testPort() != null);
 	}
 	
-	@BIF
-	@ErlFun(export = true)
+	@BIF	
 	public static ETuple2 load_module(EProc proc, EObject mod, EObject bin) throws Pausable {
 		EAtom name = mod.testAtom();
 		EBinary binary = bin.testBinary();
@@ -1358,7 +1349,6 @@ public class ErlBif {
 	}
 
 	@BIF
-	@ErlFun(export = true)
 	public static ETuple2 load_module(EProc proc, EAtom mod, EBinary bin) {
 		if (mod == null || bin == null)
 			throw ERT.badarg();
