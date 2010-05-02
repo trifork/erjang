@@ -138,7 +138,7 @@ public abstract class EModule {
 
 				//System.out.println("N export " + f);
 
-				EModuleManager.add_export(this, f, EFun.make(method));
+				EModuleManager.add_export(this, f, EFun.make(method, mod));
 			}
 
 		}

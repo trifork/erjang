@@ -853,14 +853,14 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 				System.err.println("did read " + n + " bytes");
 			if (n == 0)
 				return 0;
-		} catch (ClosedByInterruptException e) {
-			return tcp_recv_closed();
-		} catch (AsynchronousCloseException e) {
-			return tcp_recv_closed();
 		} catch (ClosedChannelException e) {
 			return tcp_recv_closed();
 		} catch (IOException e) {
-			return tcp_recv_error(IO.exception_to_posix_code(e));
+			int code = IO.exception_to_posix_code(e);
+			if (code == Posix.ENOTCONN || !fd.isOpen())
+				return tcp_recv_closed();
+			else
+				return tcp_recv_error(IO.exception_to_posix_code(e));
 		}
 
 		if (n < 0) {
@@ -2174,7 +2174,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 				//System.err.println("deliver.2.1");
 				/* something after? */
 				if (i_ptr_start + len == i_buf.position()) { /* no */
-					code = tcp_reply_binary_data(i_buf.array(), i_buf
+					code = tcp_reply_data(i_buf.array(), i_buf
 							.arrayOffset()
 							+ i_ptr_start, len);
 					tcp_clear_input();
@@ -2183,7 +2183,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 					bin.put(i_buf.array(), i_buf.arrayOffset() + i_ptr_start
 							+ len, i_buf.position() - len - i_ptr_start);
 
-					code = tcp_reply_binary_data(i_buf.array(), i_buf
+					code = tcp_reply_data(i_buf.array(), i_buf
 							.arrayOffset()
 							+ i_ptr_start, len);
 					i_buf = bin;
@@ -2197,21 +2197,15 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 				if (share_ok) {
 					code = tcp_reply_data(i_buf.array(), i_buf.arrayOffset()
 							+ i_ptr_start, len);
+					tcp_clear_input();
 				} else {
 					byte[] data = new byte[len];
 					System.arraycopy(i_buf.array(), i_buf.arrayOffset()
 							+ i_ptr_start, data, 0, len);
 					code = tcp_reply_data(data, 0, len);
-				}
-				/* XXX The buffer gets thrown away on error (code < 0) */
-				/* Windows needs workaround for this in tcp_inet_event... */
-				i_ptr_start += len;
-				if (i_ptr_start == i_buf.position()) {
-					tcp_clear_input();
-				} else {
+					i_ptr_start += len;
 					i_remain = 0;
 				}
-
 			}
 
 			if (code < 0)

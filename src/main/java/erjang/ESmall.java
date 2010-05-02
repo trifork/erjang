@@ -220,18 +220,18 @@ public final class ESmall extends EInteger {
 
 	@BIF(name="*")
 	public ENumber multiply(EObject other) {
-		return other.multiply(value);
+		return other.r_multiply(value);
 	}
 
-	public ENumber multiply(int lhs) {
+	public ENumber r_multiply(int lhs) {
 		return ERT.box((long) lhs * (long) value);
 	}
 
-	public EDouble multiply(double lhs) {
+	public EDouble r_multiply(double lhs) {
 		return ERT.box(lhs * value);
 	}
 
-	public ENumber multiply(BigInteger lhs) {
+	public ENumber r_multiply(BigInteger lhs) {
 		return ERT.box(lhs.multiply(BigInteger.valueOf(value)));
 	}
 

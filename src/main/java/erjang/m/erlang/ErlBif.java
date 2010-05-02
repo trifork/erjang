@@ -84,6 +84,7 @@ public class ErlBif {
 	private static EAtom am_reductions = EAtom.intern("reductions");
 	private static EAtom am_garbage_collection = EAtom.intern("garbage_collection");
 	private static EAtom am_runtime = EAtom.intern("runtime");
+	private static final EAtom am_run_queue = EAtom.intern("run_queue");
 	
 	@BIF
 	static EObject apply(EProc proc, EObject fun, EObject args) throws Pausable {
@@ -639,6 +640,9 @@ public class ErlBif {
 			}
 			
 			return ETuple.make(ERT.box(num_gcs), ERT.box(time_gcs), ERT.box(0));
+			
+		} else if (spec == am_run_queue) {
+			return ERT.box(0);
 		}
 		
 		throw new NotImplemented("erlang:statistics("+spec+")");
@@ -816,16 +820,7 @@ public class ErlBif {
 
 	@BIF(name = "/")
 	static public ENumber divide(EObject v1, EObject v2) {
-		ENumber n1;
-		if ((n1 = v1.testNumber()) != null) {
-			ENumber n2;
-			if ((n2 = v2.testNumber()) != null) {
-				if (n2.doubleValue() == 0.0)
-					throw ERT.badarg(v1, v2);
-				return n1.divide(v2);
-			}
-		}
-		throw ERT.badarg(v1, v2);
+		return v1.divide(v2);
 	}
 
 	@BIF(type=Type.ARITHBIF)
@@ -1469,8 +1464,15 @@ public class ErlBif {
 	}
 
 	@BIF
-	public static EAtom or(EObject o1, EObject e2) {
-		return ERT.box((o1 == ERT.TRUE) || (e2 == ERT.TRUE));
+	public static EAtom or(EObject o1, EObject o2) {
+		if (o1==ERT.TRUE) {
+			if (o2==ERT.TRUE || o2==ERT.FALSE) return ERT.TRUE;
+		} else if (o2==ERT.TRUE) {
+			if (o1==ERT.FALSE) return ERT.TRUE;
+		} else if (o1 == ERT.FALSE && o2 == ERT.FALSE) {
+			return ERT.FALSE;
+		}
+		throw ERT.badarg(o1, o2);
 	}
 
 	@BIF
@@ -1490,7 +1492,14 @@ public class ErlBif {
 
 	@BIF(type = Type.GUARD, name = "or")
 	public static EAtom or$g(EObject o1, EObject o2) {
-		return ERT.guard(o1 == ERT.TRUE || o2 == ERT.TRUE);
+		if (o1==ERT.TRUE) {
+			if (o2==ERT.TRUE || o2==ERT.FALSE) return ERT.TRUE;
+		} else if (o2==ERT.TRUE) {
+			if (o1==ERT.FALSE) return ERT.TRUE;
+		} else if (o1 == ERT.FALSE && o2 == ERT.FALSE) {
+			return ERT.FALSE;
+		}
+		return null;
 	}
 
 	@BIF(type = Type.GUARD, name = "and")

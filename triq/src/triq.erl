@@ -89,10 +89,6 @@ check_forall(N,Dom,Fun,Syntax,#triq{size=GS,context=Context}=QCT) ->
 
 
 
-zip2([X | Xs], [Y | Ys]) ->
-     [{X, Y} | zip2(Xs, Ys)];
-zip2([], []) -> [].
-
 
 check(Module) when is_atom(Module) ->
     Info = Module:module_info(exports),
@@ -119,23 +115,23 @@ check(Property) ->
 
 	    io:format("~nFailed after ~p tests~n", [Count]),
 
+	    %%
+	    %% Context is a [{Syntax,Fun,Input,Domain}...] list
+	    %% one element for each ?FORALL level in the property.
+	    %% the check/5 function constructs in backwards, so...
+	    %%
 	    Context = lists:reverse(Ctx),
-	    %io:format("Context: ~p~n", [Context]),
-	    %lists:foreach(fun({Syn,_,Val,_}) ->
-	    %		     io:format("\t~s = ~w~n", [Syn,Val])
-	    %		  end,
-	    %		 Context),
-
+	    
+	    %% Run the shrinking function
+	    %%
 	    Simp = simplify(Fun,Input,InputDom,1000,tl(Context)),
 
 	    io:format("Simplified:~n"),
 
-	    AA = Context,
-
-	    lists:foreach(fun({{Syn,_,_,_},Val}) ->
-			     io:format("\t~s = ~w~n", [Syn,Val])
+	    lists:foreach(fun({{Syntax,_,_,_},Val}) ->
+			     io:format("\t~s = ~w~n", [Syntax,Val])
 			  end,
-			 zip2(AA,Simp)),
+			  lists:zip(Context,Simp)),
 
 	    false;
 
@@ -159,14 +155,23 @@ simplify_deeper(Input,[]) -> [Input].
 
 
 %% this is the main logic for the simplify function
+
+simplify(_,Input,_,0,Context) ->
+    simplify_deeper(Input,Context);
+
 simplify(Fun,Input,InputDom,GS,Context) ->
 
+    %%
+    %% simplify_value will attempt to shrink the
+    %% value of Input (beloging to the InputDom domain).
+    %% There is randomness involved, so it may just
+    %% return it's Input argument...
+    %%
     case triq_simplify:simplify_value(InputDom,Input) of
 
-	%% value was unchanged
+	%% value was unchanged, try to simplify again
 	Input -> 
-	    %io:format("s1 ~p -> ~p~n", [Input,Input]),
-	    simplify_deeper(Input,Context);
+	    simplify(Fun,Input,InputDom,GS-1,Context);
 
 	%% value was changed!
 	NewInput ->
@@ -177,19 +182,10 @@ simplify(Fun,Input,InputDom,GS,Context) ->
 		{failure, _, _, _, #triq{context=C2}} -> 
 		    simplify(Fun,NewInput,InputDom,GS,C2);
 
-		%% oops, we simplified too much
+		%% oops, we simplified too much; try again
+		%% with the same inputs
 		{success, _} -> 
-		    
-		    %% see if we have more simplify attempts left...
-		    case GS of
-			% no more iterations
-			0 ->
-			    simplify_deeper(Input,Context);
-			
-			% run again
-			_ -> 
-			    simplify(Fun,Input,InputDom,GS-1,Context)
-		    end
+		    simplify(Fun,Input,InputDom,GS-1,Context)
 	    end
     end
 .

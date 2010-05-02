@@ -18,6 +18,7 @@
 package erjang.beam.repr;
 
 import erjang.EAtom;
+import erjang.EBinary;
 import erjang.ETuple;
 import erjang.ESmall;
 
@@ -25,19 +26,23 @@ public class AnonFun {
 	public final EAtom mod, fun;
 	public final int total_arity, free_vars;
 	public final int label;
-	public final int occur_nr;
-	public final int uniq;
+	public final int index;
+	public final int old_uniq;
+	public final int old_index;
+	public final EBinary mod_md5;
 
-	public AnonFun(EAtom mod, EAtom fun, int total_arity,
-				   int free_vars, int label, int occur_nr, int uniq)
+	public AnonFun(EAtom mod, EAtom fun, int arity, int label,
+			int old_uniq, int old_index, EBinary mod_md5, int index, int free_vars)
 	{
 		this.mod=mod;
 		this.fun=fun;
-		this.total_arity=total_arity;
+		this.total_arity=arity;
 		this.free_vars=free_vars;
 		this.label=label;
-		this.occur_nr=occur_nr;
-		this.uniq=uniq;
+		this.index=index;
+		this.old_index = old_index;
+		this.old_uniq=old_uniq;
+		this.mod_md5 = mod_md5;
 	}
 
 	public ExtFun asExtFun() {

@@ -203,6 +203,21 @@ public class ErlConvert {
 		return EString.make(bin);
 	}
 
+	@BIF
+	public static EString binary_to_list(EObject obj, EObject start, EObject stop) {
+		EBinary bin = obj.testBinary();
+		ESmall s = start.testSmall();
+		ESmall e = stop.testSmall();
+		if (bin == null || s==null||e==null)
+			throw ERT.badarg(obj,start,stop);
+
+		int idx0start = s.value-1;
+		int len = e.value-s.value;
+		
+		// TODO: use raw data, here we're copying
+		return EString.make(bin.getByteArray(), idx0start, len);
+	}
+
 	static private class BARR extends ByteArrayOutputStream {
 		EBinary asBinary() {
 			return new EBinary(super.buf, 0, super.count);

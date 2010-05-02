@@ -29,10 +29,13 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
 import erjang.EAtom;
+import erjang.EBinary;
 import erjang.EInputStream;
 import erjang.EObject;
 import erjang.ESeq;
@@ -98,6 +101,7 @@ public class BeamLoader extends CodeTables {
     private FunctionInfo[] exports, localFunctions;
     private ArrayList<Insn> code;
 	private ArrayList<FunctionRepr> functionReprs;
+	private EBinary module_md5;
     //======================================================================
 	public ModuleRepr toModuleRepr() {
 		FunctionRepr[] functions = new FunctionRepr[functionReprs.size()];
@@ -165,12 +169,69 @@ public class BeamLoader extends CodeTables {
 			// Skip to next section header:
 			in.setPos(smd.offset + ((smd.length+3)&~3));
 		}
+		
+		compute_module_md5(section_map);
+		
 		for (int tag : SECTION_READING_ORDER) {
 			SectionMetadata smd = section_map.get(tag);
 			if (smd != null) readSection(smd);
 		}
 		functionReprs = partitionCodeByFunction();
     }
+
+	static final int[] SECTION_MD5_ORDER = {
+		ATOM,
+		CODE,
+		STR_T,
+		IMP_T,
+		EXP_T,
+	};
+
+	private void compute_module_md5(final HashMap<Integer, SectionMetadata> section_map)
+			 {
+		SectionMetadata smd;
+		MessageDigest context;
+		try {
+			context = MessageDigest.getInstance("MD5");
+		} catch (NoSuchAlgorithmException e) {
+			return;
+		}
+		
+		for (int tag : SECTION_MD5_ORDER) {
+			smd = section_map.get(tag);
+			in.updateMessageDigest(context, smd.offset, smd.length);
+		}
+		
+		if ((smd = section_map.get(FUN_T)) != null) {
+			int start = smd.offset;
+			int left = smd.length;
+			
+			if (left >= 4) {
+				byte[] zero = new byte[4];
+				in.updateMessageDigest(context, start, 4);
+				start += 4;
+				left -= 4;
+
+				while (left >= 24) {
+					in.updateMessageDigest(context, start, 20);
+					context.update(zero, 0, 4);
+					start += 24;
+					left -= 24;
+				}
+			}
+
+			if (left > 0) {
+				in.updateMessageDigest(context, start, left);
+			}
+		}
+		
+		if ((smd = section_map.get(LIT_T)) != null) {
+			in.updateMessageDigest(context, smd.offset, smd.length);
+		}
+		
+		byte[] digest = context.digest();
+		this.module_md5 = new EBinary(digest);
+	}
 
 	public ArrayList<FunctionRepr> partitionCodeByFunction() {
 		int funCount = exports.length + localFunctions.length;
@@ -344,18 +405,18 @@ public class BeamLoader extends CodeTables {
 		EAtom mod = moduleName();
 		for (int i=0; i<nFunctions; i++) {
 			int fun_atom_nr = in.read4BE();
-			int total_arity = in.read4BE();
+			int arity     = in.read4BE();
 			int label     = in.read4BE();
-			int occur_nr  = in.read4BE();
+			int index     = in.read4BE();
 			int free_vars = in.read4BE();
-			int uniq      = in.read4BE();
+			int old_uniq  = in.read4BE();
 			EAtom fun = atom(fun_atom_nr);
-			anonymousFuns[i] = new AnonFun(mod, fun, total_arity,
-										   free_vars, label, occur_nr, uniq);
+			anonymousFuns[i] = new AnonFun(mod, fun, arity, label,
+					old_uniq, i, module_md5, index, free_vars);
 
 			if (DEBUG && atoms != null) {
-				System.err.println("- #"+(i+1)+": "+fun+"/"+total_arity+" @ "+label);
-				System.err.println("--> occur:"+occur_nr+" free:"+free_vars+" $ "+uniq);
+				System.err.println("- #"+(i+1)+": "+fun+"/"+arity+" @ "+label);
+				System.err.println("--> occur:"+index+" free:"+free_vars+" $ "+old_uniq);
 			}
 		}
     }
