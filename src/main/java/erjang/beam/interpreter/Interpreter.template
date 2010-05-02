@@ -37,9 +37,11 @@ import erjang.ECons;
 import erjang.ETuple;
 import erjang.EBinary;
 import erjang.EBitString;
+import erjang.EString;
 
 import erjang.EBinMatchState;
 import erjang.ErlangException;
+import erjang.EBitStringBuilder;
 
 import erjang.beam.BeamFileData;
 import erjang.beam.FunctionVisitor;
@@ -69,7 +71,7 @@ public class Interpreter extends AbstractInterpreter {
 									 short[] code, EObject[] consts,
 									 ValueJumpTable[] value_jump_tables,
 									 ArityJumpTable[] arity_jump_tables,
-									 List<FunIDWithEntry> exports, List<FunID> imports)
+									 List<FunIDWithEntry> exports, List<FunIDWithGuardedness> imports)
 		{
 			return new Module(name, code, consts,
 							  value_jump_tables, arity_jump_tables,
@@ -121,14 +123,14 @@ public class Interpreter extends AbstractInterpreter {
 		final private ValueJumpTable[] value_jump_tables;
 		final private ArityJumpTable[] arity_jump_tables;
 		final private List<FunIDWithEntry> exports;
-		final private List<FunID> imports;
+		final private List<FunIDWithGuardedness> imports;
 		final private EFun[] ext_funs;
 
 		Module(String name,
 			   short[] code, EObject[] consts,
 			   ValueJumpTable[] value_jump_tables,
 			   ArityJumpTable[] arity_jump_tables,
-			   List<FunIDWithEntry> exports, List<FunID> imports)
+			   List<FunIDWithEntry> exports, List<FunIDWithGuardedness> imports)
 		{
 			super(name, true);
 			this.code = code;
@@ -147,15 +149,18 @@ public class Interpreter extends AbstractInterpreter {
 		 */
 		public void registerImportsAndExports() throws Exception {
 			for (int i=0; i<imports.size(); i++) {
-				FunID imp = imports.get(i);
-				System.err.println("INT| Import #"+i+": "+imp);
+				FunIDWithGuardedness imp_wg = imports.get(i);
+				FunID imp = imp_wg.fun;
+				boolean is_guard = imp_wg.is_guard;
+				System.err.println("INT| Import #"+i+": "+imp+" / "+is_guard);
 
 				// If this is a BIF, resolve it right away:
 				BuiltInFunction bif =
 					BIFUtil.getMethod(imp.module.getName(),
 									  imp.function.getName(),
 									  imp.arity,
-									  false, false);
+									  is_guard, false);
+
 				if (bif != null && java.lang.reflect.Modifier.isStatic(bif.javaMethod.getModifiers())) {
 					//TODO: make this work for virtual methods as well
 					ext_funs[i] = EFun.make(bif.javaMethod);
@@ -205,6 +210,9 @@ public class Interpreter extends AbstractInterpreter {
 
 				// For tuple construction:
 				ETuple curtuple = null;
+
+				// For bitstring construction:
+				EBitStringBuilder bit_string_builder = null;
 
 				while (true) try {
 						while (true) {

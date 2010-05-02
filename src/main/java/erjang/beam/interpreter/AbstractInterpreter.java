@@ -59,8 +59,8 @@ public class AbstractInterpreter {
 		final HashMap<EObject,Integer>	const_map = new HashMap<EObject,Integer>();
 		final HashMap<Integer,Integer>	label_map = new HashMap<Integer,Integer>();
 		final ArrayList<Backpatch>	    backpatches = new ArrayList<Backpatch>();
-		final HashMap<FunID,Integer>	ext_fun_map = new HashMap<FunID,Integer>();
-		final ArrayList<FunID>	imports = new ArrayList<FunID>();
+		final HashMap<FunIDWithGuardedness,Integer>	ext_fun_map = new HashMap<FunIDWithGuardedness,Integer>();
+		final ArrayList<FunIDWithGuardedness> imports = new ArrayList<FunIDWithGuardedness>();
 		final ArrayList<FunctionInfo>	raw_exports = new ArrayList<FunctionInfo>();
 
 		public void visitModule(EAtom name) {
@@ -106,7 +106,7 @@ public class AbstractInterpreter {
 											  short[] code, EObject[] consts,
 											  ValueJumpTable[] value_jump_tables,
 											  ArityJumpTable[] arity_jump_tables,
-											  List<FunIDWithEntry> exports, List<FunID> imports);
+											  List<FunIDWithEntry> exports, List<FunIDWithGuardedness> imports);
 
 		static short[] toShortArray(List<Short> org) {
 			int len = org.size();
@@ -161,11 +161,20 @@ public class AbstractInterpreter {
 		}
 
 		protected int encodeExtFun(ExtFun extfun) {
-			FunID id = new FunID(extfun.mod, extfun.fun, extfun.arity);
+			FunIDWithGuardedness id = new FunIDWithGuardedness(extfun.mod, extfun.fun, extfun.arity, false);
+			return encodeExtFun_common(id);
+		}
+
+		protected int encodeGuardExtFun(ExtFun extfun) {
+			FunIDWithGuardedness id = new FunIDWithGuardedness(extfun.mod, extfun.fun, extfun.arity,true);
+			return encodeExtFun_common(id);
+		}
+
+		protected int encodeExtFun_common(FunIDWithGuardedness id) {
 			Integer index = ext_fun_map.get(id);
 			if (index == null) {
 				index = imports.size();
-				imports.add(new FunID(extfun.mod, extfun.fun, extfun.arity));
+				imports.add(id);
 				ext_fun_map.put(id, index);
 			}
 			return index;
@@ -291,6 +300,22 @@ public class AbstractInterpreter {
 		public FunIDWithEntry(EAtom mod, EAtom fun, int arity, int start_pc) {
 			super(mod, fun, arity);
 			this.start_pc = start_pc;
+		}
+	}
+
+	static class FunIDWithGuardedness {
+		final FunID fun;
+		final boolean is_guard;
+
+		public FunIDWithGuardedness(EAtom mod, EAtom fun, int arity, boolean is_guard) {
+			this.fun = new FunID(mod, fun, arity);
+			this.is_guard = is_guard;
+		}
+
+		public boolean equals(Object other) {
+			return (other instanceof FunIDWithGuardedness) &&
+				((FunIDWithGuardedness) other).fun.equals(this.is_guard) &&
+				((FunIDWithGuardedness) other).is_guard == this.is_guard;
 		}
 	}
 

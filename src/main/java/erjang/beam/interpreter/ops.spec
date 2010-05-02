@@ -27,7 +27,7 @@ if_end:
 
 %class AAI(a1:A, a2:A, i3:I)
 func_info mod fun arity:
-	{System.err.println("INT| func_info: "+GET(mod)+":"+GET(fun)+"/"+GET(arity)+" called with "+REGS_AS_SEQ(GET(arity))); PRE_CALL(); return ERT.func_info((EAtom)GET(mod), (EAtom)GET(fun), REGS_AS_SEQ(GET(arity)));}
+	{PRE_CALL(); return ERT.func_info((EAtom)GET(mod), (EAtom)GET(fun), REGS_AS_SEQ(GET(arity)));}
 
 %class S(src:S)
 badmatch src:
@@ -161,10 +161,10 @@ is_ne lbl a b:
 ##	(src1 instanceof Literal && src2 instanceof Literal && !src1.equals(src2)) => {}
 
 is_lt lbl a b:
-	if (GET(a).compareTo(GET(b)) < 0) GOTO(lbl);
+	if (GET(a).compareTo(GET(b)) >= 0) GOTO(lbl);
 
 is_ge lbl a b:
-	if (GET(a).compareTo(GET(b)) >= 0) GOTO(lbl);
+	if (GET(a).compareTo(GET(b)) < 0) GOTO(lbl);
 
 %class Select(src:S jumpTable:JV defaultLabel:L)
 select_val src table lbl:
@@ -172,7 +172,7 @@ select_val src table lbl:
 
 %class Select(src:S jumpTable:JA defaultLabel:L)
 select_tuple_arity src table lbl:
-	{ETuple tuple_val = GET(src).testTuple(); if (tuple_val == null) GOTO(lbl); else {int arity=tuple_val.arity(); System.err.println("INT| select_tuple_arity: arity="+arity); TABLEJUMP(table, arity, GET_PC(lbl));}}
+	{ETuple tuple_val = GET(src).testTuple(); if (tuple_val == null) GOTO(lbl); else {int arity=tuple_val.arity(); TABLEJUMP(table, arity, GET_PC(lbl));}}
 
 ##########==========       FUNCTION CALLS   	  ==========##########
 
@@ -220,25 +220,25 @@ make_fun2 total_arity free_vars label:
 
 %class Bif(ext_fun:E dest:D label:L0)
 bif0 bif dest onFail:
-	{System.err.println("INTP| invoking bif0 "+GET(bif)); EObject tmp = GET(bif).invoke(proc, new EObject[]{}); if (tmp==null) GOTO(onFail); SET(dest, tmp);}
+	{EObject tmp = GET(bif).invoke(proc, new EObject[]{}); if (IS_GUARD(bif) && tmp==null) GOTO(onFail); SET(dest, tmp);}
 
 %class Bif(ext_fun:E args[0]:S dest:D label:L0)
 bif1 bif arg1 dest onFail:
-	{System.err.println("INTP| invoking bif1 "+GET(bif)); EObject tmp = GET(bif).invoke(proc, new EObject[]{GET(arg1)}); if (tmp==null) GOTO(onFail); SET(dest, tmp);}
+	{EObject tmp = GET(bif).invoke(proc, new EObject[]{GET(arg1)}); if (IS_GUARD(bif) && tmp==null) GOTO(onFail); SET(dest, tmp);}
 
 %class Bif(ext_fun:E args[0]:S args[1]:S dest:D label:L0)
 bif2 bif arg1 arg2 dest onFail:
-	{System.err.println("INTP| invoking bif2 "+GET(bif)); EObject tmp = GET(bif).invoke(proc, new EObject[]{GET(arg1), GET(arg2)}); if (tmp==null) GOTO(onFail); SET(dest, tmp);}
+	{EObject tmp = GET(bif).invoke(proc, new EObject[]{GET(arg1), GET(arg2)}); if (IS_GUARD(bif) && tmp==null) GOTO(onFail); SET(dest, tmp);}
 
 %class GcBif(ext_fun:E args[0]:S dest:D label:L)
 
 gc_bif1 bif arg1 dest onFail:
-	{System.err.println("INTP| invoking bif "+GET(bif)+" with "+GET(arg1)); EObject tmp = GET(bif).invoke(proc, new EObject[]{GET(arg1)}); if (tmp==null) GOTO(onFail); SET(dest, tmp);}
+	{EObject tmp = GET(bif).invoke(proc, new EObject[]{GET(arg1)}); if (tmp==null) GOTO(onFail); SET(dest, tmp);}
 
 %class GcBif(ext_fun:E args[0]:S args[1]:S dest:D label:L)
 
 gc_bif2 bif arg1 arg2 dest onFail:
-	{System.err.println("INTP| invoking bif "+GET(bif)+" with "+GET(arg1)+","+GET(arg2)); EObject tmp = GET(bif).invoke(proc, new EObject[]{GET(arg1), GET(arg2)}); if (tmp==null) GOTO(onFail); SET(dest, tmp);}
+	{EObject tmp = GET(bif).invoke(proc, new EObject[]{GET(arg1), GET(arg2)}); if (tmp==null) GOTO(onFail); SET(dest, tmp);}
 # TODO: Streamline these calls - e.g. cast to EFun2 instead of creating array
 
 
@@ -290,27 +290,37 @@ bs_test_tail2 failLabel src bits_left:
 
 ##########==========    CONSTRUCTION OF BINARIES  ==========##########
 
-#%class LSIIID()
+%class LSIIID(label:L src2:S i3:I i4:I i5:I dest:D)
+bs_init2 onFail size _unit _keep flags dest:
+	bit_string_builder = ERT.bs_init(((ESmall)GET(size)).intValue(), GET(flags)); SET(dest, bit_string_builder.bitstring());
+# TODO: use unit (is it i3 or i4, btw?)
+
+%class By(bin:c)
+bs_put_string value:
+	bit_string_builder.put_string((EString)GET(value));
+
+%class LSIIS(label:L src2:S i3:I i4:I src5:S)
+bs_put_integer onFail size unit flags value:
+	bit_string_builder.put_integer(GET(value), GET(unit) * ((ESmall)GET(size)).intValue(), GET(flags));
 
 ##########==========      EXCEPTION HANDLING	  ==========##########
 
 %class YL(y:y, label:L)
 K_catch y lbl:
-	System.err.println("INT| push-exh: "+exh+"/"+GET_PC(lbl)); SET(y, exh); exh = MAKE_EXH_LINK(GET_PC(lbl), false);
+	SET(y, exh); exh = MAKE_EXH_LINK(GET_PC(lbl), false);
 
 K_try y lbl:
-	System.err.println("INT| push-exh: "+exh+"/"+GET_PC(lbl)); SET(y, exh); exh = MAKE_EXH_LINK(GET_PC(lbl), true);
+	SET(y, exh); exh = MAKE_EXH_LINK(GET_PC(lbl), true);
 
 %class Y(y:y)
 catch_end y:
-	System.err.println("INT| pop-exh: "+exh); RESTORE_EXH(GET(y));
+	RESTORE_EXH(GET(y));
 
 try_end y:
-	System.err.println("INT| pop-exh: "+exh); RESTORE_EXH(GET(y));
+	RESTORE_EXH(GET(y));
 
-%class Insn()
-try_case:
-	{/* Work done by TryExceptionHandler. */}
+try_case y:
+	 RESTORE_EXH(GET(y)); {/* Exception deconstruction done by TryExceptionHandler. */}
 
 %class SS(src1:S src2:S)
 raise value trace:

@@ -6,7 +6,8 @@ my %TYPES_SUBTYPES =
      'S' => ['c', 'x', 'y'],
      'D' => ['x', 'y'],
      'A' => ['c'],
-     'L0' => ['L', 'nolabel']
+     'L0' => ['L', 'nolabel'], # Label, possibly nofail
+     'EG' => ['G', 'E']        # Ext. fun, possibly a guard
      );
 my %TYPES_OPERAND_CLASS =
     (
@@ -16,7 +17,9 @@ my %TYPES_OPERAND_CLASS =
      'I' => "int",
      'IL' => "int", # Integer-as-label
      'L' => "Operands.Label",
+     'nolabel' => ["Operands.Label", "# == null"],
      'E' => "ExtFun",
+     'G' => ["ExtFun", "# instanceof ExtFun && \$onFail != null"],
      'JV' => "Operands.SelectList",
      'JA' => "Operands.SelectList"
      );
@@ -30,6 +33,7 @@ my %TYPES_DECODE =
      'L' => "(#)",
      'nolabel' => "nofailLabel()",
      'E' => "ext_funs[#]",
+     'G' => "ext_funs[#]",
      'JV' => "value_jump_tables[#]",
      'JA' => "arity_jump_tables[#]"
      );
@@ -42,6 +46,7 @@ my %TYPES_ENCODE =
  'IL' => "encodeLabel(#)",
  'L' => "encodeLabel(#.nr)",
  'E' => "encodeExtFun(#)",
+ 'G' => "encodeGuardExtFun(#)",
  'JV' => "encodeValueJumpTable(#)",
  'JA' => "encodeArityJumpTable(#)"
  );
@@ -61,14 +66,15 @@ my %TYPES_ALLOWED_OPS =
      'IL' => {'GOTO'=>1, 'GET_PC'=>1},
      'L' => {'GOTO'=>1, 'GET_PC'=>1},
      'nolabel' => {'GOTO'=>1},
-     'E' => {'GET'=>1},
+     'E' => {'GET'=>1, 'IS_GUARD'=>0},
+     'G' => {'GET'=>1, 'IS_GUARD'=>1},
      'JV' => {'TABLEJUMP'=>1},
      'JA' => {'TABLEJUMP'=>1}
      );
 
 my %PRIMITIVE_TYPES = ('I' => 1, 'IL'=>1);
 
-my @METAS = ('GET', 'SET', 'GOTO', 'TABLEJUMP', 'GET_PC');
+my @METAS = ('GET', 'SET', 'GOTO', 'TABLEJUMP', 'GET_PC', 'IS_GUARD');
 
 my $enum_code  = "";
 my $interp_code = "";
@@ -158,7 +164,8 @@ sub process_instruction_rec {
   again:
     my $eindent = "\t" x (1 + scalar keys %{$varmap});
     # First process all GETs, then all SETs, etc.:
-    if ($action =~ /\b(GET)\((\w+)\)/ ||
+    if ($action =~ /\b(IS_GUARD)\((\w+)\)/ ||
+	$action =~ /\b(GET)\((\w+)\)/ ||
 	$action =~ /\b(GET_PC)\((\w+)\)/ ||
 	$action =~ /\b(SET)\((\w+),\s+/ ||
 	$action =~ /\b(GOTO)\((\w+)\)/ ||
@@ -168,6 +175,9 @@ sub process_instruction_rec {
 	if (exists $varmap->{$arg}) { # Replacement is already known.
 	    if ($macro eq 'GET' || $macro eq 'GET_PC') {
 		my $replacement = $varmap->{$arg};
+		$action = "$`$replacement$'";
+	    } elsif ($macro eq 'IS_GUARD') {
+		my $replacement = $varmap->{$arg} ? "true" : "false";
 		$action = "$`$replacement$'";
 	    } elsif ($macro eq 'SET') {
 		my $replacement = $varmap->{$arg};
@@ -193,17 +203,29 @@ sub process_instruction_rec {
 
 		my $emitted = 0;
 		my $new_code_acc = $code_acc;
+
+		$encoder_code .= $eindent if ($first_bt);
+		my $opClass = $TYPES_OPERAND_CLASS{$base_type};
+		my $test_exp;
+		if (ref($opClass) eq 'ARRAY') { # Special test
+		    my @test_spec = @{$opClass};
+		    $opClass = $test_spec[0];
+		    $test_exp = $test_spec[1];
+		    $test_exp =~ s/\#/typed_insn.$arg_src_name/g;
+		    $test_exp =~ s/\$([\w\d]+)/typed_insn.$cls_arg_names->[$argmap->{$1}]/g;
+		    $encoder_code .= "/*Special: $base_type*/";
+		} else {
+		    $test_exp = "typed_insn.$arg_src_name instanceof $opClass";
+		}
+		if (exists $PRIMITIVE_TYPES{$base_type}) {
+		    $encoder_code .= "/*Prim: $base_type*/";
+		    $encoder_code .= "\t$opClass typed_$arg = ($opClass)typed_insn.$arg_src_name;\n";
+		} else {
+		    $encoder_code .= "/*Nonprim: $base_type*/";
+		    $encoder_code .= "if ($test_exp) {\n";
+		    $encoder_code .= $eindent."\t$opClass typed_$arg = ($opClass)typed_insn.$arg_src_name;\n";
+		}
 		if ($encoding_needed) {
-		    my $opClass = $TYPES_OPERAND_CLASS{$base_type};
-		    $encoder_code .= $eindent if ($first_bt);
-		    if (exists $PRIMITIVE_TYPES{$base_type}) {
-			$encoder_code .= "/*Prim: $base_type*/";
-			$encoder_code .= "\t$opClass typed_$arg = ($opClass)typed_insn.$arg_src_name;\n";
-		    } else {
-			$encoder_code .= "/*Nonprim: $base_type*/";
-			$encoder_code .= "if (typed_insn.$arg_src_name instanceof $opClass) {\n";
-			$encoder_code .= $eindent."\t$opClass typed_$arg = ($opClass)typed_insn.$arg_src_name;\n";
-		    }
 		    my $encoding_exp_code = subst($TYPES_ENCODE{$base_type},
 						  "typed_$arg");
 		    $encoder_code .= $eindent."\temit($encoding_exp_code);\n";
@@ -213,8 +235,6 @@ sub process_instruction_rec {
 # 		    $decl .= "System.err.println(\"DB| fetch: _$arg = \"+_$arg);\n\t\t";
 
 		    $new_code_acc .= $decl;
-		} else {
-		    $encoder_code .= "if (typed_insn.$arg_src_name == null) {\n";
 		}
 
 		# Setup args for recursive call:
