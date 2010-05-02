@@ -50,13 +50,9 @@ my %TYPES_ENCODE =
  'JV' => "encodeValueJumpTable(#)",
  'JA' => "encodeArityJumpTable(#)"
  );
-# my %TYPES_JAVATYPE =
-#     (
-#      'c' => "EObject",
-#      'x' => "EObject",
-#      'y' => "EObject",
-#      'L' => "int"
-#      );
+my %DECODE_STEP_TEMPVAR = (
+    'S' => 'term'
+    );
 my %TYPES_ALLOWED_OPS =
     (
      'x' => {'GET'=>1, 'SET'=>1},
@@ -157,13 +153,21 @@ sub base_types {
     }
 }
 
+=item process_instruction_rec()
+# Recursive processing of instruction body.
+# This generates both the encoding code and the interpreter action code(s)
+# for the instruction in question.
+# Each instruction spec may give rise to more than one variant, with
+# different encodings and action code, as determined by (primarily)
+# %TYPES_SUBTYPES for the involved parameters.
+=cut
 sub process_instruction_rec {
     my ($insname, $directives,
 	$argmap, $cls_arg_names, $cls_arg_types,
 	$action, $code_acc, $varmap) = @_;
   again:
     my $eindent = "\t" x (1 + scalar keys %{$varmap});
-    # First process all GETs, then all SETs, etc.:
+    # First process all GETs, GET_PCs and IS_GUARDs, then the rest:
     if ($action =~ /\b(IS_GUARD)\((\w+)\)/ ||
 	$action =~ /\b(GET)\((\w+)\)/ ||
 	$action =~ /\b(GET_PC)\((\w+)\)/ ||
@@ -173,22 +177,7 @@ sub process_instruction_rec {
     {
 	my ($macro,$arg) = ($1,$2);
 	if (exists $varmap->{$arg}) { # Replacement is already known.
-	    if ($macro eq 'GET' || $macro eq 'GET_PC') {
-		my $replacement = $varmap->{$arg};
-		$action = "$`$replacement$'";
-	    } elsif ($macro eq 'IS_GUARD') {
-		my $replacement = $varmap->{$arg} ? "true" : "false";
-		$action = "$`$replacement$'";
-	    } elsif ($macro eq 'SET') {
-		my $replacement = $varmap->{$arg};
-		$action = "$`$replacement = ($'";
-	    } elsif ($macro eq 'GOTO') {
-		my $replacement = $varmap->{$arg};
-		$action = "$`pc = $replacement$'";
-	    } elsif ($macro eq 'TABLEJUMP') {
-		my $replacement = $varmap->{$arg};
-		$action = "$`pc = $replacement.lookup($'";
-	    } else {die;}
+	    $action = "$`".access_expr($macro, $varmap->{$arg})."$'";
 	    goto again;
 	} else { # Replacement is not known.
 	    my $argno = $argmap->{$arg};
@@ -217,6 +206,7 @@ sub process_instruction_rec {
 		} else {
 		    $test_exp = "typed_insn.$arg_src_name instanceof $opClass";
 		}
+
 		if (exists $PRIMITIVE_TYPES{$base_type}) {
 		    $encoder_code .= "/*Prim: $base_type*/";
 		    $encoder_code .= "\t$opClass typed_$arg = ($opClass)typed_insn.$arg_src_name;\n";
@@ -225,6 +215,7 @@ sub process_instruction_rec {
 		    $encoder_code .= "if ($test_exp) {\n";
 		    $encoder_code .= $eindent."\t$opClass typed_$arg = ($opClass)typed_insn.$arg_src_name;\n";
 		}
+
 		if ($encoding_needed) {
 		    my $encoding_exp_code = subst($TYPES_ENCODE{$base_type},
 						  "typed_$arg");
@@ -254,7 +245,7 @@ sub process_instruction_rec {
 	    }
 	    $encoder_code .= "throw new Error(\"Unrecognized operand: \"+typed_insn.$arg_src_name);\n";
 	}
-    } else {
+    } else { # No more macros to process.
 #	$enum_code .= "$insname,\n";
 	if ($action =~ /^\s*\{\s*\}\s*$/) {
 	    $encoder_code .= "${eindent}nop(opcode_pos);";
@@ -268,6 +259,21 @@ sub process_instruction_rec {
 	    $encoder_code .= "${eindent}emitAt(opcode_pos, $insname);\n";
 	}
     }
+}
+
+sub access_expr($$) {
+    my ($macro, $var) = @_;
+    if ($macro eq 'GET' || $macro eq 'GET_PC') {
+	return $var;
+    } elsif ($macro eq 'IS_GUARD') {
+	return $var ? "true" : "false";
+    } elsif ($macro eq 'SET') {
+	return "$var = (";
+    } elsif ($macro eq 'GOTO') {
+	return "pc = $var";
+    } elsif ($macro eq 'TABLEJUMP') {
+	return "pc = $var.lookup(";
+    } else {die;}
 }
 
 sub process_instruction {
