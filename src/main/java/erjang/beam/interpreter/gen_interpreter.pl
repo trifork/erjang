@@ -154,12 +154,12 @@ sub base_types {
 }
 
 =item process_instruction_rec()
-# Recursive processing of instruction body.
-# This generates both the encoding code and the interpreter action code(s)
-# for the instruction in question.
-# Each instruction spec may give rise to more than one variant, with
-# different encodings and action code, as determined by (primarily)
-# %TYPES_SUBTYPES for the involved parameters.
+Recursive processing of instruction body.
+This generates both the encoding code and the interpreter action code(s)
+for the instruction in question.
+Each instruction spec may give rise to more than one variant, with
+different encodings and action code, as determined by (primarily)
+%TYPES_SUBTYPES for the involved parameters.
 =cut
 sub process_instruction_rec {
     my ($insname, $directives,
@@ -276,6 +276,13 @@ sub access_expr($$) {
     } else {die;}
 }
 
+=item process_instruction()
+Processes a BEAM instruction, generating Java code for both the
+encoding and interpreting part for the instruction in question.
+Each instruction spec may give rise to more than one variant.
+Generating all variants is done by a recursive process involving
+process_instruction_rec().
+=cut
 sub process_instruction {
     my ($insname, $directives,
 	$argmap, $cls_arg_names, $cls_arg_types,
@@ -300,11 +307,60 @@ sub process_instruction {
 	} else {die "Invalid directive: $directives";}
 	$directives = $'; next; #'
     }
+
+    my @macro_calls = find_and_order_macro_calls($action, $varmap, $argmap,
+						 $cls_arg_types);
+
     return process_instruction_rec($insname, $directives,
 				   $argmap, $cls_arg_names, $cls_arg_types,
 				   $action,
 				   $code_acc, $varmap);
 }
+
+sub find_and_order_macro_calls($$$$) {
+    my ($action, $varmap, $argmap, $cls_arg_types) = @_;
+    my @macro_calls = ();
+    while ($action =~ /\b(IS_GUARD|GET|GET_PC|GOTO|SET|TABLEJUMP)\((\w+)[\),]/g) {
+	push(@macro_calls, [$1,$2]);
+    }
+
+    @macro_calls = sort {macro_order($a, $varmap, $argmap, $cls_arg_types) <=>
+			 macro_order($b, $varmap, $argmap, $cls_arg_types)
+    } @macro_calls;
+
+    my @pretty = map {join(",",@{$_})} @macro_calls;
+#    print STDERR ("DB| Macro order for $insname: @pretty\n");
+    return @macro_calls;
+}
+
+
+=item macro_order()
+Used for prioritizing macro calls.
+=cut
+sub macro_order($$$) {
+    my ($macro_call, $varmap, $argmap, $cls_arg_types) = @_;
+    my ($macro_name,$macro_arg) = @{$macro_call};
+
+    # Actions go last:
+    return 9 if ($macro_name eq 'SET' ||
+		 $macro_name eq 'GOTO' ||
+		 $macro_name eq 'TABLEJUMP');
+
+    # Preexisting variables shouldn't matter:
+    return -1 if (exists $varmap->{$macro_arg});
+
+    # Parameters which may be decoded by a separate decoding step go first:
+    {
+	my $argno = $argmap->{$macro_arg};
+	defined $argno or die "Undefined argument: $macro_arg";
+	my $arg_type = $cls_arg_types->[$argno];
+	return 1 if (exists $DECODE_STEP_TEMPVAR{$arg_type});
+    }
+
+    # The rest go in the middle:
+    return 5;
+}
+
 
 sub parse() {
     my $cur_ins_class;
