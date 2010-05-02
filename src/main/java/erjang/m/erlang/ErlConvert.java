@@ -77,7 +77,7 @@ public class ErlConvert {
 	
 	@BIF
 	public static ESeq fun_to_list(EObject fun) {
-		return EString.fromString("#Fun<" + fun.toString() + ">");
+		return EString.fromString(fun.toString());
 	}
 
 	@BIF

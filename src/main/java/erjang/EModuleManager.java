@@ -20,9 +20,11 @@ package erjang;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.net.URL;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
@@ -183,15 +185,18 @@ public class EModuleManager {
 
 	static class ModuleInfo {
 
+		protected static final EAtom am_badfun = EAtom.intern("badfun");
 		private EModule resident;
+		private EAtom module;
+		private EBinary module_md5 = empty_md5;
+		Map<FunID, FunctionInfo> binding_points = new ConcurrentHashMap<FunID, FunctionInfo>();
 
 		/**
 		 * @param module
 		 */
 		public ModuleInfo(EAtom module) {
+			this.module = module;
 		}
-
-		Map<FunID, FunctionInfo> binding_points = new ConcurrentHashMap<FunID, FunctionInfo>();
 
 		/**
 		 * @param fun
@@ -291,6 +296,67 @@ public class EModuleManager {
 			return rep;
 		}
 
+		Map<Integer,EFunMaker> new_map = new HashMap<Integer, EFunMaker>();
+		Map<Long,EFunMaker> old_map = new HashMap<Long, EFunMaker>();
+		
+		/** resolve a fun we got from a R5+ node 
+		 * @param arity */
+		public EFun resolve(EPID pid, EBinary md5, int index, final int old_uniq, final int old_index, int arity, EObject[] freevars) {
+			if (resident == null) {				
+				throw new NotImplemented("calling FUN before module "+this.module+" is loaded");
+			}
+			
+			EFunMaker maker = new_map.get(index);
+			
+			if (maker == null || !md5.equals(module_md5)) {
+				LocalFunID fid = new LocalFunID(module, ERT.am_undefined, arity, old_index, index, old_uniq, md5);
+				return EFun.get_fun_with_handler(0, new EFunHandler() {					
+					@Override
+					public EObject invoke(EProc proc, EObject[] args) throws Pausable {
+						throw new ErlangError(am_badfun, args);
+					}
+					
+					@Override
+					public String toString() {
+						return "#Fun<" + module + "." +  old_index + "." + old_uniq + ">";
+					}
+				}, this.getClass().getClassLoader());
+			}
+			
+			return maker.make(pid, freevars);
+		}
+
+		static final EBinary empty_md5 = new EBinary(new byte[16]);
+		
+		/** resolve a fun we got from a pre-R5 node */
+		public EFun resolve(final EPID pid, final int old_uniq, final int old_index, final EObject[] freevars) {
+			EFunMaker maker = old_map.get((((long)old_index)<<32)|(long)old_uniq);
+			
+			if (maker==null) {				
+				LocalFunID fid = new LocalFunID(module, ERT.am_undef, 0, old_index, 0, old_uniq, empty_md5);
+				return EFun.get_fun_with_handler(0, new EFunHandler() {					
+					@Override
+					public EObject invoke(EProc proc, EObject[] args) throws Pausable {
+						throw new ErlangError(am_badfun, args);
+					}
+					
+					@Override
+					public String toString() {
+						return "#Fun<" + module + "." +  old_index + "." + old_uniq + ">";
+					}
+				}, this.getClass().getClassLoader());
+			}
+			
+			return maker.make(pid, freevars);
+		}
+		
+		/** used to register a lambda/local function */
+		public void register(LocalFunID fun_id, EFunMaker maker) {
+			module_md5 = fun_id.new_uniq;
+			new_map.put(fun_id.new_index, maker);
+			old_map.put((((long)fun_id.index) << 32) | (long)fun_id.uniq , maker);
+		}
+
 	}
 
 	public static void add_import(FunID fun, FunctionBinder ref) throws Exception {
@@ -328,6 +394,12 @@ public class EModuleManager {
 
 		module_info.warn_about_unresolved();
 	}
+	
+	public static void register_lambda(LocalFunID lambda_id, Class<? extends EFun> fun) {
+		get_module_info(lambda_id.module).register(lambda_id, new EClassEFunMaker(fun));
+	}
+
+
 
 	/**
 	 * @param start
@@ -335,6 +407,14 @@ public class EModuleManager {
 	 */
 	public static EFun resolve(FunID start) {
 		return get_module_info(start.module).resolve(start);
+	}
+	
+	public static EFun resolve(EPID pid, EAtom module, EBinary md5, int index, int old_uniq, int old_index, int arity, EObject[] freevars) {
+		return get_module_info(module).resolve(pid, md5, index, old_uniq, old_index, arity, freevars);
+	}
+
+	public static EFun resolve(EPID pid, EAtom module, int old_uniq, int old_index, EObject[] freevars) {
+		return get_module_info(module).resolve(pid, old_uniq, old_index, freevars);
 	}
 
 	/**

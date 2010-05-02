@@ -805,13 +805,20 @@ public class EOutputStream extends ByteArrayOutputStream {
     public void write_fun(final EPID pid, final String module,
 	    final long old_index, final int arity, final EBinary md5,
 	    final long index, final long uniq, final EObject[] freeVars) {
+
+// DEBUG...    	
+//		ESeq fvx = ERT.NIL;
+//		for (int i = freeVars.length-1; i >= 0; i--) { fvx = fvx.cons(freeVars[i]); }
+//		System.err.println("EOut.write<pid="+pid+",module="+module+",arity="+arity+",md5="+md5
+//				+",index="+index+",old_index="+old_index+",uniq="+uniq+",freevars="+fvx+"> old="+((flags & EAbstractNode.dflagNewFunTags) == 0));
+    	
     if ((flags & EAbstractNode.dflagNewFunTags) == 0) {
 	    write1(EExternal.funTag);
 	    write4BE(freeVars.length);
 	    pid.encode(this);
 	    write_atom(module);
-	    write_long(index);
-	    write_long(uniq);
+	    write_long(index & 0xffffffffL);
+	    write_long(uniq  & 0xffffffffL);
 	    for (final EObject fv : freeVars) {
 		fv.encode(this);
 	    }
@@ -824,8 +831,8 @@ public class EOutputStream extends ByteArrayOutputStream {
 	    write4BE(index);
 	    write4BE(freeVars.length);
 	    write_atom(module);
-	    write_long(old_index);
-	    write_long(uniq);
+	    write_long(old_index & 0xffffffffL);
+	    write_long(uniq      & 0xffffffffL);
 	    pid.encode(this);
 	    for (final EObject fv : freeVars) {
 		fv.encode(this);

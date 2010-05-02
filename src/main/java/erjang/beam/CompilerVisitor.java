@@ -58,6 +58,7 @@ import erjang.EFun;
 import erjang.EInteger;
 import erjang.EInternalPID;
 import erjang.EList;
+import erjang.EModuleManager;
 import erjang.ENil;
 import erjang.ENumber;
 import erjang.EObject;
@@ -77,6 +78,7 @@ import erjang.ErlangException;
 import erjang.Export;
 import erjang.FunID;
 import erjang.Import;
+import erjang.LocalFunID;
 import erjang.Module;
 import erjang.beam.Arg.Kind;
 import erjang.beam.ModuleAnalyzer.FunInfo;
@@ -339,11 +341,67 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 		mv = cv.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
 		mv.visitCode();
 		mv.visitVarInsn(ALOAD, 0);
-		mv.visitMethodInsn(INVOKESPECIAL, ECOMPILEDMODULE_NAME, "<init>", "()V");
+		mv.visitMethodInsn(INVOKESPECIAL, ECOMPILEDMODULE_NAME, "<init>", "()V");		
 		mv.visitInsn(RETURN);
 		mv.visitMaxs(1, 1);
 		mv.visitEnd();
 
+		mv = cv.visitMethod(ACC_PUBLIC, "registerImportsAndExports", "()V", null, null);
+		mv.visitCode();
+		mv.visitVarInsn(ALOAD, 0);
+		mv.visitMethodInsn(INVOKESPECIAL, ECOMPILEDMODULE_NAME,  "registerImportsAndExports", "()V");
+
+		for (Lambda l : lambdas_xx.values() ) {
+			
+			mv.visitTypeInsn(NEW, Type.getInternalName(LocalFunID.class));
+			mv.visitInsn(DUP);
+			
+			module_name.emit_const(mv);
+			l.fun.emit_const(mv);
+			push_int(mv, l.arity);
+			push_int(mv, l.old_index);
+			push_int(mv, l.index);
+			push_int(mv, l.old_uniq);
+			mv.visitFieldInsn(GETSTATIC, self_type.getInternalName(), "module_md5", EBINARY_TYPE.getDescriptor());
+
+			mv.visitMethodInsn(INVOKESPECIAL, Type.getInternalName(LocalFunID.class), "<init>", 
+							"("+EATOM_DESC+EATOM_DESC+"IIII"+EBINARY_TYPE.getDescriptor()+")V"
+							  );
+			
+			mv.visitInsn(DUP);
+			cv.visitField(ACC_STATIC, "fun_id_"+l.index, Type.getDescriptor(LocalFunID.class), null, null).visitEnd();
+			mv.visitFieldInsn(PUTSTATIC, self_type.getInternalName(), "fun_id_"+l.index, Type.getDescriptor(LocalFunID.class));
+			
+			String mname = EUtil.getJavaName(l.fun, l.arity);
+			String outer_name = self_type.getInternalName();
+			String inner_name = "FN_" + mname;
+			String full_inner_name = outer_name + "$" + inner_name;
+
+			mv.visitLdcInsn(full_inner_name.replace('/', '.'));
+			
+			mv.visitMethodInsn(INVOKESTATIC, Type.getInternalName(Class.class), "forName", 
+								"(Ljava/lang/String;)Ljava/lang/Class;");
+			
+			mv.visitMethodInsn(INVOKESTATIC, Type.getInternalName(EModuleManager.class), "register_lambda",
+											 "(" + Type.getDescriptor(LocalFunID.class) 
+											     + Type.getDescriptor(Class.class) + ")V");
+		}
+		
+		mv.visitInsn(RETURN);
+		mv.visitMaxs(1, 1);
+		mv.visitEnd();
+		
+	}
+
+	private void push_int(MethodVisitor mv, int val) {
+		if (val == -1) {
+			mv.visitInsn(ICONST_M1);
+		} else if (val >= 0 && val <= 5) {
+			mv.visitInsn(ICONST_0+val);
+		} else {
+			mv.visitLdcInsn(new Integer(val));
+		}
+		
 	}
 
 	/*
@@ -2270,14 +2328,15 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 					// load proc
 					mv.visitVarInsn(ALOAD, 0);
-					
+					mv.visitMethodInsn(INVOKEVIRTUAL, EPROC_NAME, "self_handle", "()" + Type.getDescriptor(EInternalPID.class));
+
 					// String funtype = EFUN_NAME + efun.no;
 					for (int i = 0; i < freevars.length; i++) {
 						push(freevars[i], EOBJECT_TYPE);
 					}
 
 					StringBuilder sb = new StringBuilder("(");
-					sb.append(EPROC_DESC);
+					sb.append(EPID_TYPE.getDescriptor());
 					for (int i = 0; i < freevars.length; i++) {
 						sb.append(EOBJECT_DESC);
 					}
@@ -2735,13 +2794,17 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 	static class Lambda {
 
+		private final EAtom fun;
+		private final int arity;
 		private final int freevars;
 		private final int index;
 		private final int old_index;
 		private final int old_uniq;
 		private final EBinary uniq;
 
-		public Lambda(int freevars, int index, int old_index, EBinary uniq, int old_uniq) {
+		public Lambda(EAtom fun, int arity, int freevars, int index, int old_index, EBinary uniq, int old_uniq) {
+			this.fun = fun;
+			this.arity = arity;
 			this.freevars = freevars;
 			this.index = index;
 			this.old_index = old_index;
@@ -2762,7 +2825,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 	 */
 	public void register_lambda(EAtom fun, int arity, int freevars, int index, int old_index, EBinary uniq, int old_uniq) {
 		
-		lambdas_xx.put(EUtil.getJavaName(fun, arity), new Lambda(freevars, index, old_index, uniq, old_uniq));
+		lambdas_xx.put(EUtil.getJavaName(fun, arity), new Lambda(fun, arity, freevars, index, old_index, uniq, old_uniq));
 	}
 
 	public Lambda get_lambda_freevars(EAtom fun, int arity) {
@@ -2858,7 +2921,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 		StringBuilder sb = new StringBuilder("(");
 		int freevars = lambda==null?0:lambda.freevars;
 		if (lambda != null) {
-			sb.append(EPROC_DESC);
+			sb.append(EPID_TYPE.getDescriptor());
 			cw.visitField(ACC_PUBLIC|ACC_FINAL, "pid", EPID_TYPE.getDescriptor(), null, null);
 		}
 		// create the free vars
@@ -2879,7 +2942,6 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 		if (lambda != null) {
 			mv.visitVarInsn(ALOAD, 0);
 			mv.visitVarInsn(ALOAD, 1);
-			mv.visitMethodInsn(INVOKEVIRTUAL, EPROC_NAME, "self_handle", "()" + Type.getDescriptor(EInternalPID.class));
 			mv.visitFieldInsn(PUTFIELD, full_inner_name, "pid",
 							EPID_TYPE.getDescriptor());
 
@@ -2896,6 +2958,38 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 		mv.visitInsn(RETURN);
 		mv.visitMaxs(3, 3);
 		mv.visitEnd();
+		
+		if (lambda != null) {
+			mv = cw.visitMethod(ACC_PROTECTED, "get_env", "()"+ESEQ_DESC, null, null);
+			mv.visitCode();
+			mv.visitFieldInsn(GETSTATIC, ERT_NAME, "NIL", ENIL_TYPE.getDescriptor());
+			for (int i = freevars-1; i >= 0; i--) {
+				mv.visitVarInsn(ALOAD, 0);
+				mv.visitFieldInsn(GETFIELD, full_inner_name, "fv"+i, EOBJECT_DESC);
+				mv.visitMethodInsn(INVOKEVIRTUAL, ESEQ_NAME, "cons", "("+EOBJECT_DESC+")"+ESEQ_DESC);
+			}
+			mv.visitInsn(ARETURN);
+			mv.visitMaxs(3, 3);
+			mv.visitEnd();
+
+			mv = cw.visitMethod(ACC_PROTECTED, "get_pid", "()"+EOBJECT_DESC, null, null);
+			mv.visitCode();
+			mv.visitVarInsn(ALOAD, 0);
+			mv.visitFieldInsn(GETFIELD, full_inner_name, "pid", EPID_TYPE.getDescriptor());
+			mv.visitInsn(ARETURN);
+			mv.visitMaxs(3, 3);
+			mv.visitEnd();
+			
+			mv = cw.visitMethod(ACC_PROTECTED, "get_id", "()"+Type.getDescriptor(FunID.class), null, null);
+			mv.visitCode();
+			mv.visitFieldInsn(GETSTATIC, full_inner_name.substring(0, full_inner_name.indexOf('$')), 
+										 "fun_id_"+lambda.index, Type.getDescriptor(LocalFunID.class));
+			mv.visitInsn(ARETURN);
+			mv.visitMaxs(3, 3);
+			mv.visitEnd();
+			
+			
+		}
 	}
 
 	private static void make_invoke_method(ClassWriter cw, String outer_name,

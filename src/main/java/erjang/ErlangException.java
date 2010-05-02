@@ -170,7 +170,7 @@ public abstract class ErlangException extends RuntimeException {
 		return trace;
 	}
 
-	private static final String ERJANG_MODULES_DOT = "erjang.m.";
+	public static final String ERJANG_MODULES_DOT = "erjang.m.";
 
 	/**
 	 * @param st

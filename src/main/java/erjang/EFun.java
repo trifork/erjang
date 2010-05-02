@@ -18,6 +18,7 @@
 
 package erjang;
 
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -104,6 +105,7 @@ public abstract class EFun extends EObject implements Opcodes {
 
 
 	private static final HashMap<Method, EFun> method_fun_map = new HashMap<Method, EFun>();
+	private static final String ERJANG_MODULES_DOT = "erjang.m.";
 
 	/* TODO: Using a central database like this to avoid duplicate
 	 * definitions is a hack, perpetrated for the sake of moving
@@ -278,6 +280,16 @@ public abstract class EFun extends EObject implements Opcodes {
 			mv.visitMaxs(3, 3);
 			mv.visitEnd();
 
+			/** forward toString to handler */
+			mv = cw.visitMethod(ACC_PUBLIC, "toString", "()Ljava/lang/String;", null, null);
+			mv.visitCode();
+			mv.visitVarInsn(ALOAD, 0); // load self
+			mv.visitFieldInsn(GETFIELD, self_type, "handler", EFUNHANDLER_TYPE.getDescriptor());
+			mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Object", "toString", "()Ljava/lang/String;");
+			mv.visitInsn(ARETURN);
+			mv.visitMaxs(3, 3);
+			mv.visitEnd();
+			
 			// make invoke_tail method
 			CompilerVisitor.make_invoketail_method(cw, self_type, arity, 0);
 			make_invoke_method(cw, self_type, arity);
@@ -464,52 +476,12 @@ public abstract class EFun extends EObject implements Opcodes {
 	}
 
 	/**
-	 * Create external function
-	 * 
-	 * @param module
-	 * @param function
-	 * @param arity
-	 * @return
-	 */
-	public static EFun make(EAtom module, EAtom function, int arity) {
-		throw new NotImplemented();
-	}
-
-	/**
-	 * @param pid
-	 * @param module
-	 * @param index
-	 * @param uniq
-	 * @param freeVars
-	 * @return
-	 */
-	public static EFun make(EPID pid, EAtom module, long index, long uniq,
-			EObject[] freeVars) {
-		throw new NotImplemented();
-	}
-
-	/**
-	 * @param pid
-	 * @param module
-	 * @param arity
-	 * @param md5
-	 * @param index
-	 * @param oldIndex
-	 * @param uniq
-	 * @param freeVars
-	 * @return
-	 */
-	public static EFun make(EPID pid, EAtom module, int arity, byte[] md5,
-			int index, long oldIndex, long uniq, EObject[] freeVars) {
-		throw new NotImplemented();
-	}
-
-	/**
 	 * @param eInputStream
 	 * @return
+	 * @throws IOException 
 	 */
-	public static EFun read(EInputStream eInputStream) {
-		throw new NotImplemented();
+	public static EFun read(EInputStream eis) throws IOException {
+		return eis.read_fun();
 	}
 
 	/**
@@ -517,46 +489,86 @@ public abstract class EFun extends EObject implements Opcodes {
 	 * @return
 	 */
 	public EObject info(EAtom spec) {
+		
+		FunID id = get_id();
+		
 		if (spec == ERT.am_arity) {
-			return new ETuple2(spec, new ESmall(arity()));
+			return new ETuple2(spec, ERT.box(id.arity - get_env().length()));
 		} else if (spec == ERT.am_module) {
-			return new ETuple2(spec, this.get_module());
+			return new ETuple2(spec, id.module);
 		} else if (spec == ERT.am_name) {
-			return new ETuple2(spec, this.get_name());
+			return new ETuple2(spec, id.function);
 		} else if (spec == ERT.am_env) {
 			return new ETuple2(spec, this.get_env());
 		} else if (spec == ERT.am_type) {
-			new ETuple2(ERT.am_type, is_local() ? ERT.am_local : ERT.am_external);
+			return new ETuple2(ERT.am_type, (id instanceof LocalFunID) ? ERT.am_local : ERT.am_external);
 		}
 
-		if (is_local()) {
-			
-			if (spec == ERT.am_index || spec == ERT.am_new_index
-					|| spec == ERT.am_new_uniq || spec == ERT.am_uniq 
-					|| spec == ERT.am_pid) {
-				
-				// TODO: handle index, new_index, new_uniq, uniq, and pid.
-				throw new NotImplemented();
+		if (id instanceof LocalFunID) {			
+			LocalFunID lid = (LocalFunID) id;
+			if (spec == ERT.am_index) {
+				return new ETuple2(spec, ERT.box(lid.index));
+			} else if (spec == ERT.am_new_index) {
+				return new ETuple2(spec, ERT.box(lid.new_index));
+			} else if (spec == ERT.am_uniq) {
+				return new ETuple2(spec, ERT.box(lid.uniq));
+			} else if (spec == ERT.am_new_uniq) {
+				return new ETuple2(spec, lid.new_uniq);
+			} else if (spec == ERT.am_pid) {
+				return new ETuple2(spec, this.get_pid());
 			}			
+		} else {
+			if (spec == ERT.am_type) {
+				return new ETuple2(ERT.am_type, ERT.am_external);			
+			}
 		}
 			
 		return ERT.am_undefined;
 	}
 	
-	public EObject get_module() {
-		throw new NotImplemented();
-	}
-
-	public EObject get_name() {
-		throw new NotImplemented();
-	}
-
-	public EObject get_env() {
-		throw new NotImplemented();
-	}
-
 	public boolean is_local() {
-		throw new NotImplemented();
+		return this.get_id() instanceof LocalFunID;
+	}
+	
+	protected EObject get_pid() {
+		return ERT.NIL;
 	}
 
+	protected ESeq get_env() {
+		return ERT.NIL;
+	}
+
+	@Override
+	public String toString() {
+		FunID id = get_id();
+		if (id instanceof LocalFunID) {
+			LocalFunID lid = (LocalFunID) id;
+			return "#Fun<" + id.module + "." + lid.index + "." + lid.uniq + ">";
+		} else {
+			return "#Fun<" + id.module + ":" + id.function + "/" + id.arity + ">";
+		}
+	}
+	
+	protected FunID get_id() {
+		
+		String cname = getClass().getName();
+		EAtom module = null;
+		if (cname.startsWith(ERJANG_MODULES_DOT)) {
+
+			int last = cname.lastIndexOf('.');
+			module = EAtom.intern(cname.substring(ERJANG_MODULES_DOT.length(),
+					last));
+		}
+		
+		EAtom fun = null;
+		int end = cname.lastIndexOf("__");
+		int start = cname.indexOf("$FN_");
+		if (start != 1 && end != -1) {
+			String method_name = cname.substring(start+4, end);
+			fun = EAtom.intern(EUtil.decodeJavaName(method_name));
+		}
+
+		return new FunID(module, fun, arity());		
+	}
+	
 }

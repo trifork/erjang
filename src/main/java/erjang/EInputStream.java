@@ -1033,9 +1033,11 @@ public class EInputStream extends ByteArrayInputStream {
 			for (int i = 0; i < nFreeVars; ++i) {
 				freeVars[i] = read_any();
 			}
-			return EFun.make(pid, module, index, uniq, freeVars);
+			return EModuleManager.resolve(pid, module, (int)uniq, (int)index, freeVars);
+
 		} else if (tag == EExternal.newFunTag) {
-			final int n = read4BE();
+			@SuppressWarnings("unused")
+			final int n = read4BE(); // size
 			final int arity = read1();
 			final byte[] md5 = new byte[16];
 			readN(md5);
@@ -1049,8 +1051,14 @@ public class EInputStream extends ByteArrayInputStream {
 			for (int i = 0; i < nFreeVars; ++i) {
 				freeVars[i] = read_any();
 			}
-			return EFun.make(pid, module, arity, md5, index, oldIndex, uniq,
-					freeVars);
+			return EModuleManager.resolve(pid, module, new EBinary(md5), index, (int)uniq, (int)oldIndex, arity, freeVars);
+			
+		} else if (tag == EExternal.externalFunTag) {
+			final EAtom module = read_atom();
+			final EAtom function = read_atom();
+			final int arity = (int) read_long();
+			
+			return EModuleManager.resolve(new FunID(module,function,arity));
 		} else {
 			throw new IOException("Wrong tag encountered, expected fun, got "
 					+ tag);

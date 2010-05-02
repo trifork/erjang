@@ -276,7 +276,7 @@ public class ERT {
 	public static final EAtom IGNORED = EAtom.intern("ignored");
 	private static final EAtom am_badmatch = EAtom.intern("badmatch");
 	private static final EAtom am_case_clause = EAtom.intern("case_clause");
-	public static final EObject am_undefined = EAtom.intern("undefined");
+	public static final EAtom am_undefined = EAtom.intern("undefined");
 	public static final EObject am_receive_clause = EAtom
 			.intern("receive_clause");
 	public static final EObject AM_NOT_IMPLEMENTED = EAtom

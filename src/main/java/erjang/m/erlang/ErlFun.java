@@ -76,20 +76,23 @@ public class ErlFun {
 		
 		boolean is_local = fun.is_local();
 		
-		if (is_local) {
-			res = res.cons(fun.info(ERT.am_uniq));
-			res = res.cons(fun.info(ERT.am_new_uniq));
-			res = res.cons(fun.info(ERT.am_new_index));
-			res = res.cons(fun.info(ERT.am_index));
-			res = res.cons(fun.info(ERT.am_pid));
-		}
-		
+		res = res.cons(fun.info(ERT.am_type));
 		res = res.cons(fun.info(ERT.am_env));
 		res = res.cons(fun.info(ERT.am_arity));
 		res = res.cons(fun.info(ERT.am_name));
+		
+		if (is_local) {
+			res = res.cons(fun.info(ERT.am_uniq));
+			res = res.cons(fun.info(ERT.am_index));
+			res = res.cons(fun.info(ERT.am_new_uniq));
+			res = res.cons(fun.info(ERT.am_new_index));
+		}
+		
 		res = res.cons(fun.info(ERT.am_module));
 		
-		res = res.cons(fun.info(ERT.am_type));
+		if (is_local) {
+			res = res.cons(fun.info(ERT.am_pid));
+		}
 		
 		return res;
 	}
