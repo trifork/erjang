@@ -312,6 +312,10 @@ public class AbstractInterpreter {
 			this.is_guard = is_guard;
 		}
 
+		@Override
+		public int hashCode() { return fun.hashCode() + (is_guard? 307 : 0); }
+
+		@Override
 		public boolean equals(Object other) {
 			return (other instanceof FunIDWithGuardedness) &&
 				((FunIDWithGuardedness) other).fun.equals(this.is_guard) &&
