@@ -18,11 +18,9 @@
 
 package erjang.m.erlang;
 
-import java.nio.ByteBuffer;
 import java.util.regex.Pattern;
 
 import kilim.Pausable;
-
 import erjang.BIF;
 import erjang.EAbstractNode;
 import erjang.EAtom;
@@ -40,7 +38,6 @@ import erjang.ESeq;
 import erjang.ESmall;
 import erjang.ETuple;
 import erjang.ETuple2;
-import erjang.ErlFun;
 import erjang.ErlangError;
 import erjang.Import;
 import erjang.NotImplemented;

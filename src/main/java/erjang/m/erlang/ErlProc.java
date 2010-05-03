@@ -35,7 +35,6 @@ import erjang.ECons;
 import erjang.EFun;
 import erjang.EHandle;
 import erjang.EModuleManager;
-import erjang.ENode;
 import erjang.EObject;
 import erjang.EPID;
 import erjang.EPeer;
@@ -48,13 +47,10 @@ import erjang.EString;
 import erjang.ETask;
 import erjang.ETuple;
 import erjang.ETuple2;
-import erjang.ErlFun;
 import erjang.ErlangException;
-import erjang.ErlangError;
 import erjang.ErlangExit;
 import erjang.Import;
 import erjang.NotImplemented;
-import erjang.driver.EDriverTask;
 
 /**
  * 

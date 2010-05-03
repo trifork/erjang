@@ -73,7 +73,6 @@ import erjang.ESmall;
 import erjang.EString;
 import erjang.ETuple;
 import erjang.ETuple2;
-import erjang.ErlFun;
 import erjang.ErlangException;
 import erjang.Export;
 import erjang.FunID;

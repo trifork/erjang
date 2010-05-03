@@ -18,6 +18,11 @@
 
 package erjang.m.erlang;
 
+import java.lang.management.GarbageCollectorMXBean;
+import java.lang.management.ManagementFactory;
+import java.lang.management.RuntimeMXBean;
+import java.math.BigDecimal;
+import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -28,13 +33,6 @@ import java.util.TimeZone;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import java.lang.management.GarbageCollectorMXBean;
-import java.lang.management.ManagementFactory;
-import java.lang.management.MemoryMXBean;
-import java.lang.management.RuntimeMXBean;
-import java.math.BigDecimal;
-import java.nio.ByteBuffer;
-
 import kilim.Pausable;
 import kilim.Task;
 import erjang.BIF;
@@ -44,28 +42,23 @@ import erjang.EBitString;
 import erjang.ECons;
 import erjang.EDouble;
 import erjang.EFun;
-import erjang.EHandle;
 import erjang.EInteger;
 import erjang.EModuleManager;
-import erjang.ENode;
 import erjang.ENumber;
 import erjang.EObject;
 import erjang.EPID;
 import erjang.EPort;
 import erjang.EProc;
 import erjang.ERT;
-import erjang.ERef;
 import erjang.ESeq;
 import erjang.ESmall;
 import erjang.EString;
 import erjang.ETuple;
 import erjang.ETuple2;
 import erjang.ETuple3;
-import erjang.ErlFun;
 import erjang.ErlangError;
 import erjang.ErlangException;
 import erjang.ErlangThrow;
-import erjang.ErlangUndefined;
 import erjang.FunID;
 import erjang.Module;
 import erjang.NotImplemented;
