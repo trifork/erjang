@@ -58,7 +58,7 @@ public class ErlPort {
 	static EAtom am_spawn_executable = EAtom.intern("spawn_executable");
 
 	@BIF
-	static EObject port_connect(EProc proc, EObject arg_port, EObject arg_pid)
+	static EObject port_connect(EProc proc, EObject arg_port, EObject arg_pid) throws Pausable
 	{
 		EInternalPort iport;
 		EInternalPID ipid;
@@ -87,7 +87,10 @@ public class ErlPort {
 			}
 		}
 
+		// TODO: what if port or pid args are already dead?
+		
 		iport.set_owner(ipid);
+		ipid.task().link_to(iport);
 		
 		return ERT.TRUE;
 		
