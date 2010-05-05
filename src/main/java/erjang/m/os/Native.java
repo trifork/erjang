@@ -109,7 +109,7 @@ public class Native extends ENative {
 			throw new NotImplemented();
 		}
 		
-		return ERT.box(pid.intValue());
+		return EString.fromString(String.valueOf(pid));
 	}
 
 	/** from http://golesny.de/wiki/code:javahowtogetpid; that site has more suggestions if this fails...*/
