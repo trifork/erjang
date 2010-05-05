@@ -45,17 +45,14 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import kilim.Lock;
 import kilim.Pausable;
 import kilim.Task;
-import erjang.EAbstractNode;
 import erjang.EAtom;
 import erjang.EBinary;
 import erjang.ECons;
 import erjang.EHandle;
 import erjang.EInternalPID;
 import erjang.EInternalPort;
-import erjang.ENode;
 import erjang.EObject;
 import erjang.EPID;
 import erjang.EPeer;
@@ -175,6 +172,7 @@ public class EDriverTask extends ETask<EInternalPort> implements
 	
 	public int status;
 	private EPeer peer;
+	boolean stderr_to_stdout;
 
 	/**
 	 * @param cmd
@@ -192,6 +190,7 @@ public class EDriverTask extends ETask<EInternalPort> implements
 		this.line_length = -1;
 
 		this.send_exit_status = false;
+		this.stderr_to_stdout = false;
 		this.port_in_fd = 1;
 		this.port_out_fd = 2;
 
@@ -284,6 +283,9 @@ public class EDriverTask extends ETask<EInternalPort> implements
 			} else if (val == am_exit_status) {
 				send_exit_status = true;
 
+			} else if (val == EPort.am_stderr_to_stdout) {
+				stderr_to_stdout = true;
+
 			} else if (val == am_eof) {
 				send_eof = true;
 
@@ -354,9 +356,6 @@ public class EDriverTask extends ETask<EInternalPort> implements
 
 			// System.err.println("task "+this+" exited with "+result);
 			do_proc_termination(result);
-
-			EDriverControl i = instance;
-			if (i != null) i.stop(result);
 
 		} catch (ThreadDeath e) {
 			throw e;
@@ -590,6 +589,11 @@ public class EDriverTask extends ETask<EInternalPort> implements
 		}
 		//this.port.done();
 		all_ports.remove(this.id);
+		
+		EDriverControl i = instance;
+		if (i != null) 
+			i.stop(result);
+		
 	}
 	
 	/*
@@ -696,6 +700,10 @@ public class EDriverTask extends ETask<EInternalPort> implements
 	 */
 	public void eof_from_driver() throws Pausable {
 		output_term_from_driver(new ETuple2(port, am_eof));
+	}
+
+	public void exit_status_from_driver(int code) throws Pausable {
+		output_term_from_driver(new ETuple2(port, ERT.box(code)));
 	}
 
 	public static ESeq all_ports() {

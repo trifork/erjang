@@ -22,20 +22,29 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import kilim.Pausable;
+import kilim.Task;
+
 import erjang.EAtom;
+import erjang.EBinList;
+import erjang.EBinary;
 import erjang.EBitString;
 import erjang.ECons;
+import erjang.EHandle;
 import erjang.EObject;
+import erjang.EPort;
 import erjang.EProc;
 import erjang.ERT;
 import erjang.ESeq;
 import erjang.EString;
+import erjang.ETask;
 import erjang.ETuple2;
 import erjang.ErlangError;
 import erjang.NotImplemented;
@@ -52,7 +61,7 @@ public class EExecDriverTask extends EDriverTask {
 	private Process process;
 	
 	private DataOutputStream out;
-	private DataInputStream in;
+	private InputStream in;
 
 	private DataInputStream err;
 
@@ -65,159 +74,67 @@ public class EExecDriverTask extends EDriverTask {
 	 */
 	public EExecDriverTask(EProc owner, ETuple2 name, EObject portSetting) {
 			super(owner.self_handle(), new ExecDriverInstance(name));
-
-			this.name = name;
 			
-		// argument can be any list, ... turn it into a string
-		ESeq es = name.elem2.testString();
-		if (es == null) {		
-			ECons cons;
-			EAtom am;
-			if ((cons = name.elem2.testCons()) != null) {
-				es = EString.make(cons);
-			} else if ((am = name.elem2.testAtom()) != null) {
-				es = EString.fromString(am.getName());
-			} else {
-				throw ERT.badarg(name, portSetting);
-			}
-		}
-		
-		String full_cmd = es.stringValue();
-		
-		String[] cmd;
-		if (name.elem1 == ErlPort.am_spawn) {
-			cmd = full_cmd.split(" +");
-		} else {
-			cmd = new String[] { full_cmd };
-		}
-		
-		parseOptions(cmd, portSetting);
-		
-
-		String[] envp = new String[env.size()];
-		int pos = 0;
-		for (Map.Entry<String, String> e : env.entrySet()) {
-			envp[pos++] = e.getKey() + "=" + e.getValue();
-		}
-
-		
-		File f = new File(cmd[0]);
-		if (f.exists() && f.canExecute()) {
-			// ok !
-		} else if (f.isAbsolute()) {
-			throw new ErlangError(EAtom.intern("enoent"));
-		} else {
-
-			String cmd_path = env.get("PATH");
-			for (String elm : cmd_path.split(File.pathSeparator)) {
-				File dir = new File(elm);
-				f = new File(dir, cmd[0]);
-				if (f.exists()) {
-					cmd[0] = f.getAbsolutePath();
-					break;
+			// argument can be any list, ... turn it into a string
+			ESeq es = name.elem2.testString();
+			if (es == null) {		
+				ECons cons;
+				EAtom am;
+				if ((cons = name.elem2.testCons()) != null) {
+					es = EString.make(cons);
+				} else if ((am = name.elem2.testAtom()) != null) {
+					es = EString.fromString(am.getName());
 				} else {
-					f = null;
+					throw ERT.badarg(name, portSetting);
 				}
 			}
-		}
-
-		System.err.println("lauching "+cmd[0]+" "+(f==null?"(not found)":""));		
-		
-		if (f == null) {
-			throw new ErlangError(EAtom.intern("enoent"));
-		}
-
-		if (!f.canExecute()) {
-			throw new ErlangError(EAtom.intern("eaccess"));
-		}
-
-		try {
-			this.process = Runtime.getRuntime().exec(cmd, envp, new File(cwd));
-		} catch (IOException e1) {
-			throw new ErlangError(e1);
-		}
-		
-		List<String> al = new ArrayList<String>();
-		Collections.addAll(al, cmd);
-		
-		System.err.println("EXEC "+ al);
-
-		this.out = new DataOutputStream(this.process.getOutputStream());
-		this.in = new DataInputStream(this.process.getInputStream());
-		this.err = new DataInputStream(this.process.getErrorStream());
-	}
-
-	public void send(EObject val) {
-		
-		// first, grok argument
-		ByteBuffer buf;
-		
-		ECons cons;
-		EBitString bin;
-		if ((cons=val.testCons()) != null) {
-			ESeq str = EString.make(cons);
-			// buf = str.collectIOList(null);
 			
-		} else if ((bin=val.testBitString()) != null) {
-			if (!bin.isBinary()) throw ERT.badarg(val);
-			// buf = bin.collectIOList(null);
-		} else {
-			throw ERT.badarg(val);
-		}
-		
-		//try {
-			//internal_output(buf);
-		//} catch (IOException e) {
-		//	throw new ErlangExit(e);
-		//}
-		
-	}
-	
-	synchronized void internal_output(ByteBuffer buf) throws IOException {
-
-		byte[] data = buf.array();
-		int data_off = buf.position();
-		int data_len = buf.remaining();
-		
-		switch (mode) {
-		case STREAM:
-			this.out.write(data, data_off, data_len);
-			return;
+			String full_cmd = es.stringValue();
 			
-		case PACKET: 
-			switch (packet) {
-			case 1:
-				for (int off = 0; off < data_len; off += 256) {
-					int rest = Math.min(256, data_len - off);
-					out.writeByte(rest);
-					out.write(data, data_off+off, rest);
-				}
-				return;
-
-			case 2:
-				for (int off = 0; off < data_len; off += (1 << 16)) {
-					int rest = Math.min((1 << 16), data_len - off);
-					out.writeShort(rest);
-					out.write(data, data_off+off, rest);
-				}
-				return;
-
-			case 4:
-				out.writeInt(data_len);
-				out.write(data, data_off, data_len);
-				return;
-
-			default:
-				throw new Error("should not happen");
+			String[] cmd;
+			if (name.elem1 == ErlPort.am_spawn) {
+				cmd = full_cmd.split(" +");
+			} else {
+				cmd = new String[] { full_cmd };
 			}
-		
-		case LINE:
-			throw new NotImplemented();
 			
+			parseOptions(cmd, portSetting);
+
+			File f = new File(cmd[0]);
+			if (f.exists() && f.canExecute()) {
+				// ok !
+			} else if (f.isAbsolute()) {
+				throw new ErlangError(EAtom.intern("enoent"));
+			} else {
+
+				String cmd_path = env.get("PATH");
+				for (String elm : cmd_path.split(File.pathSeparator)) {
+					File dir = new File(elm);
+					f = new File(dir, cmd[0]);
+					if (f.exists()) {
+						cmd[0] = f.getAbsolutePath();
+						break;
+					} else {
+						f = null;
+					}
+				}
+			}
+
+			// System.err.println("lauching "+cmd[0]+" "+(f==null?"(not found)":""));		
 			
-		}
+			if (f == null) {
+				throw new ErlangError(EAtom.intern("enoent"));
+			}
+
+			if (!f.canExecute()) {
+				throw new ErlangError(EAtom.intern("eaccess"));
+			}
+
+
+			super.setupInstance();
+			
 	}
-	
+
 	/* (non-Javadoc)
 	 * @see kilim.Task#toString()
 	 */
