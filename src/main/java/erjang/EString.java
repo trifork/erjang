@@ -252,13 +252,15 @@ public class EString extends ESeq implements CharSequence {
 	}
 
 	static void appendChar(StringBuilder sb, char c) {
-		if (c < 0x20 || c > 0x7e) {
+		if (c < 0x20 || c > 0x7e || c == '"' || c == '\\') {
 			sb.append('\\');
 			switch(c) {
 			case '\t': sb.append('t'); break;
 			case '\r': sb.append('r'); break;
 			case '\n': sb.append('n'); break;
 			case '\b': sb.append('b'); break;
+			case '"': sb.append('"'); break;
+			case '\\': sb.append('\\'); break;
 			default:
 				sb.append('x');
 				if (c < 0x10) sb.append('0');
