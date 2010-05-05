@@ -569,13 +569,13 @@ public class EDriverTask extends ETask<EInternalPort> implements
 
 	/** our owner died, do something! */
 	@Override
-	protected void process_incoming_exit(EHandle from, EObject reason)
+	protected void process_incoming_exit(EHandle from, EObject reason) throws Pausable
 			 {
 		
 		// TODO: do special things for reason=kill ?
 		
-		System.err.println("sending exit msg to self "+this);
-		mbox.putb(ETuple.make(ERT.am_EXIT, from, reason));
+		// System.err.println("sending exit msg to self "+this);
+		mbox.put(ETuple.make(ERT.am_EXIT, from, reason));
 	}
 
 	/* (non-Javadoc)

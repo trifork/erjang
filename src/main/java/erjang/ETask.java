@@ -88,8 +88,9 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 	 * @throws Pausable 
 	 * @throws Pausable 
 	 * @throws Pausable 
+	 * @throws Pausable 
 	 */
-	protected void link_failure(EHandle h)  {
+	protected void link_failure(EHandle h) throws Pausable  {
 		throw new ErlangError(ERT.am_noproc);
 	}
 
@@ -241,7 +242,7 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 	 * @param from
 	 * @param reason
 	 */
-	public final void send_exit(EHandle from, EObject reason) {
+	public final void send_exit(EHandle from, EObject reason) throws Pausable {
 
 		log.fine("exit " + from + " -> " + this + ", reason="+reason);
 		
@@ -283,7 +284,7 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 
 	}
 
-	protected abstract void process_incoming_exit(EHandle from, EObject reason)
+	protected abstract void process_incoming_exit(EHandle from, EObject reason) throws Pausable
 			;
 
 	/**

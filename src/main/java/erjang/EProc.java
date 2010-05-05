@@ -171,7 +171,7 @@ public final class EProc extends ETask<EInternalPID> {
 	/** monitor nodes[option] -> true/false */
 	private Map<Integer,EAtom> monitor_nodes = new HashMap<Integer, EAtom>();
 
-	protected void link_failure(EHandle h) {
+	protected void link_failure(EHandle h) throws Pausable {
 		if (trap_exit == ERT.TRUE || h.testLocalHandle()==null) {
 			send_exit(h, ERT.am_noproc);
 		} else {
@@ -203,7 +203,7 @@ public final class EProc extends ETask<EInternalPID> {
 		all_tasks.remove(this.id);
 	}
 	
-	protected void process_incoming_exit(EHandle from, EObject reason) 
+	protected void process_incoming_exit(EHandle from, EObject reason) throws Pausable
 	{
 		if (from == self_handle()) {
 			return;
@@ -220,7 +220,8 @@ public final class EProc extends ETask<EInternalPID> {
 			// reason} to self
 			ETuple msg = ETuple.make(ERT.am_EXIT, from, reason);
 			// System.err.println("kill message to self: "+msg);
-			mbox.putb(msg);
+			
+			mbox.put(msg);
 			
 		} else if (reason != am_normal) {
 			// System.err.println("kill signal: " +reason + " from "+from);
