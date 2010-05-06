@@ -320,17 +320,20 @@ public class ErlProc {
 			&& (node=tup.elm(2).testAtom()) != null) 
 		{
 			if (node == ErlDist.node()) {
+
+				ERef ref = ERT.getLocalNode().createRef();
+				boolean success = false;
 				
-				h = ERT.whereis(pid).testHandle();
-				if (h != null) 
+				if ((h = ERT.whereis(pid).testHandle()) != null) 
 				{   
-					ERef ref = ERT.getLocalNode().createRef();
-					if (!self.monitor(h, h, ref)) {
-						self.mbox_send(ETuple.make(ERT.am_DOWN, ref, h, ERT.am_noproc));
-					}
-					return ref;
+					success = self.monitor(h, h, ref);
+				}	
+				
+				if (!success) {
+					self.mbox_send(ETuple.make(ERT.am_DOWN, ref, h, ERT.am_noproc));
 				}
 
+				return ref;
 				
 			} else {
 				
