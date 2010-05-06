@@ -65,6 +65,10 @@ public class Compiler implements Opcodes {
 	}
 
 	public static void compile(BeamFileData data, ClassRepo repo) throws IOException {
+		
+		// reset thread-local data 
+		ClassWeaver.reset();
+		
 		// class writer, phase 4
 		ClassWriter cw = new ClassWriter(true);
 
