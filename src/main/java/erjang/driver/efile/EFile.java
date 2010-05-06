@@ -764,6 +764,37 @@ public class EFile extends EDriverInstance {
 		FileAsync d;
 		byte cmd = buf.get();
 		switch (cmd) {
+		
+		case FILE_TRUNCATE: {
+			d = new FileAsync() {
+		
+				{
+					level = 2;
+					fd = EFile.this.fd;
+					command = FILE_TRUNCATE;
+				}
+				
+				@Override
+				public void async() {
+					again = false;
+					try {
+						long pos = fd.position();
+						fd.truncate(pos);					
+						result_ok = true;
+					} catch (IOException e) {
+						result_ok = false;
+						posix_errno = IO.exception_to_posix_code(e);
+					}
+				}
+
+				@Override
+				public void ready() throws Pausable {
+					reply(EFile.this);
+				}
+				
+			};
+		} break;
+		
 		case FILE_MKDIR: {
 			d = new SimpleFileAsync(cmd, IO.strcpy(buf)) {
 				public void run() {
@@ -933,6 +964,8 @@ public class EFile extends EDriverInstance {
 				
 
 			};
+			
+			break;
 		}
 		
 		case FILE_OPEN: {
