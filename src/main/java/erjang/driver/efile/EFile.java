@@ -795,6 +795,35 @@ public class EFile extends EDriverInstance {
 			};
 		} break;
 		
+		case FILE_FSYNC: {
+			d = new FileAsync() {
+		
+				{
+					level = 2;
+					fd = EFile.this.fd;
+					command = FILE_FSYNC;
+				}
+				
+				@Override
+				public void async() {
+					again = false;
+					try {
+						fd.force(true);
+						result_ok = true;
+					} catch (IOException e) {
+						result_ok = false;
+						posix_errno = IO.exception_to_posix_code(e);
+					}
+				}
+
+				@Override
+				public void ready() throws Pausable {
+					reply(EFile.this);
+				}
+				
+			};
+		} break;
+		
 		case FILE_MKDIR: {
 			d = new SimpleFileAsync(cmd, IO.strcpy(buf)) {
 				public void run() {
@@ -954,7 +983,8 @@ public class EFile extends EDriverInstance {
 				public void ready() throws Pausable {
 					if (result_ok) {
 						EFile.this.fd = fd;
-						ByteBuffer response = ByteBuffer.allocate(8);
+						ByteBuffer response = ByteBuffer.allocate(9);
+						response.put(FILE_RESP_NUMBER);
 						response.putLong(out_pos);
 						driver_output2(response, null);
 					} else {
