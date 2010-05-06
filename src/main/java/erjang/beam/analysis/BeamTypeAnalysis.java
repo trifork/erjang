@@ -1997,7 +1997,9 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					ExtFun ext_fun = spec_insn.ext_fun;
 
 					if (ext_fun.mod == ERLANG_ATOM &&
-					    (ext_fun.fun == ERROR_ATOM || ext_fun.fun == THROW_ATOM) &&
+					    (ext_fun.fun == ERROR_ATOM 
+					    || ext_fun.fun == THROW_ATOM
+					    || ext_fun.fun == EXIT_ATOM) &&
 					    ext_fun.arity == 1) return true;
 				}
 				return false;

@@ -26,6 +26,7 @@ public class CodeAtoms {
 	public static final EAtom APPLY_ATOM = EAtom.intern("apply");
 	public static final EAtom ERLANG_ATOM = EAtom.intern("erlang");
 	public static final EAtom ERROR_ATOM = EAtom.intern("error");
+	public static final EAtom EXIT_ATOM = EAtom.intern("exit");
 	public static final EAtom THROW_ATOM = EAtom.intern("throw");
 	public static final EAtom BEAM_FILE_ATOM = EAtom.intern("beam_file");
 	public static final EAtom FUNCTION_ATOM  = EAtom.intern("function");

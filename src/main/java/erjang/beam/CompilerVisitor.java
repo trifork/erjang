@@ -2732,11 +2732,11 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			 */
 			private boolean isExitFunc(ExtFun fun) {
 				if (fun.mod == ERLANG_ATOM) {
-					if (fun.fun.getName().equals("exit") && fun.arity==1)
+					if (fun.fun == CodeAtoms.EXIT_ATOM && fun.arity==1)
 						return true;
-					if (fun.fun.getName().equals("error"))
+					if (fun.fun == CodeAtoms.ERROR_ATOM && fun.arity==1)
 						return true;
-					if (fun.fun.getName().equals("throw"))
+					if (fun.fun == CodeAtoms.THROW_ATOM && fun.arity==1)
 						return true;
 				}
 
