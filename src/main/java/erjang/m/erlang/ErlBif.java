@@ -523,7 +523,7 @@ public class ErlBif {
 	@BIF
 	static public EObject hd(EObject cell) {
 		ECons cons;
-		if ((cons = cell.testCons()) != null) {
+		if ((cons = cell.testNonEmptyList()) != null) {
 			return cons.head();
 		}
 		throw ERT.badarg();
@@ -532,7 +532,7 @@ public class ErlBif {
 	@BIF
 	static public EObject tl(EObject cell) {
 		ECons cons;
-		if ((cons = cell.testCons()) != null) {
+		if ((cons = cell.testNonEmptyList()) != null) {
 			return cons.tail();
 		}
 		throw ERT.badarg();
