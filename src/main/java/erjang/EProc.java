@@ -85,7 +85,7 @@ public final class EProc extends ETask<EInternalPID> {
 	private static final EObject am_noproc = EAtom.intern("noproc");
 
 	public EFun tail;
-	public EObject arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10;
+	public EObject arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11;
 	public ErlangException last_exception;
 
 	private EInternalPID self;
