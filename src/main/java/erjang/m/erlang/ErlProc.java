@@ -294,27 +294,45 @@ public class ErlProc {
 	}
 
 	@BIF
-	static public EObject monitor(EProc self, EObject how, EObject pid) throws Pausable {
+	static public EObject monitor(EProc self, EObject how, EObject object) throws Pausable {
 		if (how != am_process)
-			throw ERT.badarg(how, pid);
-		
-		EHandle h = EHandle.cast(pid);
-		if (h == null) {
-			h = ERT.whereis(pid).testHandle();
-		}
+			throw ERT.badarg(how, object);
+
+		// case 1: object is a PID
+		EHandle h = EHandle.cast(object);
 		if (h != null) 
 		{   
 			ERef ref = ERT.getLocalNode().createRef();
 			if (!self.monitor(h, h, ref)) {
-				self.mbox_send(ETuple.make(ERT.am_DOWN, ref, h, ERT.am_noproc));
+				self.mbox_send(ETuple.make(ERT.am_DOWN, ref, object, ERT.am_noproc));
 			}
 			return ref;
 		}
 
-		ETuple tup;
+		// case 2: object is a name
 		EAtom name;
+		if (h == null && (name=object.testAtom()) != null) {
+			ERef ref = ERT.getLocalNode().createRef();
+			boolean success = false;
+			
+			object = new ETuple2(name, ErlDist.node());
+			
+			if ((h = ERT.whereis(name).testHandle()) != null) 
+			{   
+				success = self.monitor(h, object, ref);
+			}	
+			
+			if (!success) {
+				self.mbox_send(ETuple.make(ERT.am_DOWN, ref, object, ERT.am_noproc));
+			}
+
+			return ref;
+		}
+
+		// case 3: object is {name, node}
+		ETuple tup;
 		EAtom node;
-		if ((tup=pid.testTuple()) != null
+		if ((tup=object.testTuple()) != null
 			&& tup.arity()==2
 			&& (name=tup.elm(1).testAtom()) != null
 			&& (node=tup.elm(2).testAtom()) != null) 
@@ -324,13 +342,13 @@ public class ErlProc {
 				ERef ref = ERT.getLocalNode().createRef();
 				boolean success = false;
 				
-				if ((h = ERT.whereis(pid).testHandle()) != null) 
+				if ((h = ERT.whereis(name).testHandle()) != null) 
 				{   
-					success = self.monitor(h, h, ref);
+					success = self.monitor(h, object, ref);
 				}	
 				
 				if (!success) {
-					self.mbox_send(ETuple.make(ERT.am_DOWN, ref, h, ERT.am_noproc));
+					self.mbox_send(ETuple.make(ERT.am_DOWN, ref, object, ERT.am_noproc));
 				}
 
 				return ref;
@@ -345,11 +363,11 @@ public class ErlProc {
 					return ref;
 				}
 
-				return ErlDist.dmonitor_p2_trap.invoke(self, new EObject[] {how, pid});
+				return ErlDist.dmonitor_p2_trap.invoke(self, new EObject[] {how, object});
 			}
 		}
 		
-		throw ERT.badarg(how, pid);
+		throw ERT.badarg(how, object);
 		
 	}
 
