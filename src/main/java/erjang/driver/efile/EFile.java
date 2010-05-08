@@ -21,7 +21,6 @@ package erjang.driver.efile;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -480,6 +479,96 @@ public class EFile extends EDriverInstance {
 
 		byte command = ev[0].get();
 		switch (command) {
+		case FILE_PREADV: {
+			
+			ByteBuffer evin = flatten(ev);
+			
+			evin.getInt(); // skip first 4-byte			
+			final int n = evin.getInt();
+			
+			final long[] offsets = new long[n];
+			final ByteBuffer[] res_ev = new ByteBuffer[n+1];
+			for (int i = 1; i < n+1; i++) {
+				offsets[i-1] = evin.getLong();
+				int len = (int) (evin.getLong() & 0x7fffffff);
+			
+				res_ev[i] = ByteBuffer.allocate(len);
+			}
+			
+			res_ev[0] = ByteBuffer.allocate(4+4+8*n);
+			res_ev[0].putInt(0);
+			res_ev[0].putInt(n);
+			
+			if (n == 0) {
+				reply_ev(FILE_RESP_LDATA, offsets, res_ev);
+				
+			} else {
+				
+				cq_enq(new FileAsync() {
+					
+					int cnt;
+					
+					{ 
+						this.level = 1; 
+						this.fd = EFile.this.fd; 
+						this.again = true;
+						this.cnt = 0;
+						this.result_ok = true;
+					}
+					
+					@Override
+					public void async() {			
+						
+						// TODO: handle CHOP!
+						
+						for (int i = cnt; i < n; i++) {
+							ByteBuffer res = res_ev[i+1];
+							long pos = offsets[i] + res.position();
+
+							int rem = res.remaining();
+							if (rem > 0) {
+								
+								int bytes_read;
+								try {
+									fd.position(pos);
+									bytes_read = fd.read(res);
+								} catch (IOException e) {
+									result_ok = false;
+									this.posix_errno = IO.exception_to_posix_code(e);
+									this.again = false;
+									return;
+								}
+								
+								if (bytes_read >= 0 && res.hasRemaining()) {
+									this.again = true;
+									return;
+								}
+								
+								res_ev[0].putLong(res.position());
+								cnt += 1;
+							}
+							
+						}
+						
+						this.again = false;
+					}
+					
+					@Override
+					public void ready() throws Pausable {
+						if (!result_ok) {
+							reply_posix_error(posix_errno);
+						} else {
+							reply_ev(FILE_RESP_LDATA, offsets, res_ev);
+						}
+					}
+					
+
+				});
+			}
+			
+		} break;
+		
+		
 		case FILE_CLOSE: {
 			if (ev.length > 1 && ev[0].hasRemaining()) {
 				reply_posix_error(Posix.EINVAL);
@@ -749,6 +838,12 @@ public class EFile extends EDriverInstance {
 
 		cq_execute();
 
+	}
+
+	private void reply_ev(byte response, long[] offsets, ByteBuffer[] res_ev) throws Pausable {
+		ByteBuffer tmp = ByteBuffer.allocate(1);
+		tmp.put(response);
+		driver_outputv(tmp, res_ev);
 	}
 
 	static FilenameFilter READDIR_FILTER = new FilenameFilter() {
