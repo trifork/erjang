@@ -1403,14 +1403,12 @@ public class EFile extends EDriverInstance {
 
 	@Override
 	protected void readyInput(SelectableChannel ch) throws Pausable {
-		// TODO Auto-generated method stub
-
+		throw new InternalError("should not happen");
 	}
 
 	@Override
 	protected void readyOutput(SelectableChannel evt) throws Pausable {
-		// TODO Auto-generated method stub
-
+		throw new InternalError("should not happen");
 	}
 
 	@Override
