@@ -111,6 +111,32 @@ public abstract class EDriverInstance extends EDriverControl {
 		ERT.run_async(job, task);
 	}
 
+	protected void driver_outputv(ByteBuffer hdr, ByteBuffer[] ev) throws Pausable {
+		
+		EObject resp = ERT.NIL;
+		
+		if (task.send_binary_data) {
+		
+		if (ev.length > 0) {
+			ev[ev.length-1].flip();
+			resp = EBinary.make(ev[ev.length-1]);
+		
+			for (int i = ev.length-2; i >= 0; i--) {
+				ev[i].flip();
+				resp = resp.cons( EBinary.make(ev[i]) );
+			}
+		}
+		
+		} else {
+			throw new NotImplemented();
+		}
+		
+		hdr.flip();
+		EBinList res = new EBinList(hdr, resp);
+
+		task.output_from_driver(res);
+	}
+	
 	protected void driver_output2(ByteBuffer header, ByteBuffer buf) throws Pausable {
 
 		int status = task.status;
