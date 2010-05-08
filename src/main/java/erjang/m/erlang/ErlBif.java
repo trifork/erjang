@@ -526,7 +526,7 @@ public class ErlBif {
 		if ((cons = cell.testNonEmptyList()) != null) {
 			return cons.head();
 		}
-		throw ERT.badarg();
+		throw ERT.badarg(cell);
 	}
 
 	@BIF
@@ -535,7 +535,7 @@ public class ErlBif {
 		if ((cons = cell.testNonEmptyList()) != null) {
 			return cons.tail();
 		}
-		throw ERT.badarg();
+		throw ERT.badarg(cell);
 	}
 
 	@BIF(type = Type.GUARD, name = "hd")
