@@ -1047,24 +1047,26 @@ public class EFile extends EDriverInstance {
 					
 						switch (whence) {
 						case EFILE_SEEK_SET:
-							fd.position(out_pos=off);
+							out_pos=off;
 							break;
 							
 						case EFILE_SEEK_CUR:
 							long cur = fd.position();
-							fd.position(out_pos= cur + off);
+							out_pos= cur + off;
 							break;
 							
 						case EFILE_SEEK_END:
 							cur = fd.size();
-							fd.position(out_pos = cur - off);
+							out_pos = cur - off;
 							break;
 							
 						default:
 							this.result_ok = false;
 							this.posix_errno = Posix.EINVAL;
+							return;
 						}
-					
+
+						fd.position(out_pos);
 					} catch (IOException e) {
 						this.result_ok = false;
 						this.posix_errno = IO.exception_to_posix_code(e);
