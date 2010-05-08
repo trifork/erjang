@@ -418,7 +418,7 @@ public class EPeer extends EAbstractNode {
 
 	}
 
-	void dsig_cast(EHandle sender, ETuple hdr, EObject payload) throws Pausable {
+	int dsig_cast(EHandle sender, ETuple hdr, EObject payload) throws Pausable {
 
 		ByteBuffer disthdr = ByteBuffer.allocate(3);
 		disthdr.put((byte) 131);
@@ -440,12 +440,14 @@ public class EPeer extends EAbstractNode {
 			e.printStackTrace();
 			close_and_finish(port);
 		}
+		
+		return eos.size();
 
 	}
 
-	public void dsig_send(EHandle sender, EExternalPID pid, EObject msg) throws Pausable {
+	public int dsig_send(EHandle sender, EExternalPID pid, EObject msg) throws Pausable {
 		ETuple hdr = ETuple.make(ERT.box(SEND), (EAtom) am_, pid);
-		dsig_cast(sender, hdr, msg);
+		return dsig_cast(sender, hdr, msg);
 	}
 
 	public void dsig_send_monitor_exit(EHandle sender, EPID to_pid,

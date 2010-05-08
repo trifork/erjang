@@ -51,19 +51,14 @@ public abstract class EHandle extends EObject {
 	 * @param msg
 	 * @throws Pausable 
 	 */
-	public void send(EHandle sender, EObject msg) throws Pausable {
+	public int send(EHandle sender, EObject msg) throws Pausable {
 		ETask<?> task = task();
 		if (task != null) {
-			
-			task.reds += task.mbox.size();
-			if (task.reds > 1000) {
-				task.reds = 0;
-				Task.yield();
-			}
-			
-			task.mbox_send(msg);
+			task.mbox.put(msg);
+			return task.mbox.size();
 		} else {
 			ERT.log.info("sending message to dead process/port ignored "+this+" ! "+msg);
+			return 0;
 		}
 	}
 

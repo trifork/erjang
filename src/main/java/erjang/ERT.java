@@ -474,7 +474,11 @@ public class ERT {
 
 		EHandle p;
 		if ((p = pid.testHandle()) != null) {
-			p.send(proc.self_handle(), msg);
+			proc.reds += p.send(proc.self_handle(), msg);
+			if (proc.reds > 1000) {
+				proc.reds = 0;
+				Task.yield();
+			}
 			return msg;
 		}
 
@@ -482,7 +486,11 @@ public class ERT {
 		if ((name=pid.testAtom()) != null) {
 			p = register.get(name);
 			if (p != null) {
-				p.send(proc.self_handle(), msg);
+				proc.reds += p.send(proc.self_handle(), msg);
+				if (proc.reds > 1000) {
+					proc.reds = 0;
+					Task.yield();
+				}
 				return msg;
 			}
 		}
@@ -511,7 +519,7 @@ public class ERT {
 		// TODO handle ports also?
 		proc.check_exit();
 
-		log.log(Level.FINER, "ignored options to send: " + options);
+		// log.log(Level.FINER, "ignored options to send: " + options);
 		
 		EHandle p;
 		if ((p = pid.testHandle()) != null) {

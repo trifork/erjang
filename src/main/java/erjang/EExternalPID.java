@@ -100,8 +100,8 @@ public class EExternalPID extends EPID {
 	}
 	
 	@Override
-	public void send(EHandle sender, EObject msg) throws Pausable {
-		peer().dsig_send(sender, this, msg);
+	public int send(EHandle sender, EObject msg) throws Pausable {
+		return peer().dsig_send(sender, this, msg);
 	}
 	
 	@Override

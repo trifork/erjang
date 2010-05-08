@@ -20,6 +20,7 @@
 package erjang;
 
 import erjang.m.erlang.DistEntry;
+import kilim.Mailbox;
 import kilim.Pausable;
 import kilim.Task;
 
@@ -82,25 +83,7 @@ public class EInternalPID extends EPID implements ELocalHandle {
 	EProc task() {
 		return task;
 	}
-	
-	@Override
-	public void send(EHandle sender, EObject msg) throws Pausable {
-		EProc task = this.task;
-		if (task != null) {
-			
-			task.reds += task.mbox.size();
-			if (task.reds > 1000) {
-				task.reds = 0;
-				Task.yield();
-			}
-
-			task.mbox.put(msg);
-		} else {
-			ERT.log.info("sending message to dead process ignore "+this+" ! "+msg);
-		}
-	}
-	
-	
+		
 	/* (non-Javadoc)
 	 * @see erjang.EHandle#link_oneway(erjang.EHandle)
 	 */
