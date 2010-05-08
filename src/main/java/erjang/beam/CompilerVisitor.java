@@ -1102,9 +1102,10 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				case bs_get_integer2: {
 					push(in, EBINMATCHSTATE_TYPE);
 					push(bits, Type.INT_TYPE);
+					push_int(unit);
 					push_int(flags);
 					mv.visitMethodInsn(INVOKEVIRTUAL, EBINMATCHSTATE_TYPE
-							.getInternalName(), test.name(), "(II)"
+							.getInternalName(), test.name(), "(III)"
 							+ EINTEGER_TYPE.getDescriptor());
 
 					mv.visitInsn(DUP);

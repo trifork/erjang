@@ -276,8 +276,8 @@ bs_match_string failLabel src string:
 
 
 %class LDISIID(label:L dest:D i3:I src4:S i5:I i6:I dest7:D)
-bs_get_integer2 failLabel src _keep bits _unit flags dest:
-	EObject tmp = ((EBinMatchState)(GET(src))).bs_get_integer2(((ESmall)GET(bits)).intValue(), GET(flags)); if (tmp == null) GOTO(failLabel); else SET(dest, tmp);
+bs_get_integer2 failLabel src _keep bits unit flags dest:
+	EObject tmp = ((EBinMatchState)(GET(src))).bs_get_integer2(((ESmall)GET(bits)).intValue(), GET(unit), GET(flags)); if (tmp == null) GOTO(failLabel); else SET(dest, tmp);
 
 #bs_get_float2:
 #bs_get_binary2:

@@ -160,8 +160,10 @@ public class EBinMatchState extends EPseudoTerm {
 		}
 	}
 
-	public EInteger bs_get_integer2(int size, int flags) {
+	public EInteger bs_get_integer2(int size, int unit, int flags) {
 
+		size *= unit;
+		
 		boolean signed = ((flags & BSF_SIGNED) == BSF_SIGNED);
 		boolean little_endian = ((flags & BSF_LITTLE) == BSF_LITTLE);
 		boolean native_endian = ((flags & BSF_NATIVE) == BSF_NATIVE);
