@@ -129,8 +129,15 @@ public class ErlBif {
 		ECons cons = val.testCons();
 		if (cons == null) throw ERT.badarg(val);
 		List<ByteBuffer> out = new ArrayList<ByteBuffer>();
-		cons.collectIOList(out);
+		if (!cons.collectIOList(out)) {
+			throw ERT.badarg(val);
+		}
 
+		if (out.size() == 1) {
+			ByteBuffer b = out.get(0);
+			return EBinary.make(b);
+		}
+		
 		int length = 0;
 		for (int i = 0; i < out.size(); i++) {
 			length += out.get(i).remaining();
