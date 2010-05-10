@@ -18,6 +18,7 @@
 
 package erjang.m.ets;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -388,11 +389,37 @@ public class Native extends ENative {
 	}
 	
 
-	@BIF static public EObject last(EObject obj) {
-		throw new NotImplemented(); 
+	@BIF static public EObject slot(EProc caller, EObject nameOrTid, EObject i) {
+		ETable table = resolve(caller, nameOrTid, false);
+		ESmall pos;
+		if ((pos=i.testSmall())==null || table == null) 
+			throw ERT.badarg(nameOrTid, i);
+
+		if (pos.value == 0) {
+			
+			return table.slot();
+			
+		} else {
+			return am_$end_of_table;
+		}
+	}
+	
+	@BIF static public ESeq all() {
+		
+		ESeq res = ERT.NIL;
+		
+		for (ETable table : tid_to_table.values()) {
+			if (table.is_named) {
+				res = res.cons(table.aname);
+			} else {
+				res = res.cons(table.tid);
+			}
+		}
+		
+		return res;
 	}
 
-	@BIF static public EObject all() {
+	@BIF static public EObject last(EObject obj) {
 		throw new NotImplemented(); 
 	}
 
@@ -409,14 +436,21 @@ public class Native extends ENative {
 	@BIF static public EObject next(EProc proc, EObject tab, EObject key) {
 		ETable table = resolve(proc, tab, false);
 		if (table == null) {
-			throw ERT.badarg(tab);
+			throw ERT.badarg(tab,key);
 		}
 
 		return table.next(key);
 	}
 
-	@BIF static public EObject safe_fixtable(EObject obj, EObject obj2) {
-		throw new NotImplemented(); 
+	@BIF static public EObject safe_fixtable(EProc proc, EObject tab, EObject onOff) {
+		ETable table = resolve(proc, tab, false);
+		if (table == null || (onOff != ERT.TRUE && onOff != ERT.FALSE)) {
+			throw ERT.badarg(tab,onOff);
+		}
+
+		// TODO: fix somehow?
+		
+		return ERT.TRUE;
 	}
 
 	@BIF static public EObject select(EObject obj1) {
@@ -435,11 +469,45 @@ public class Native extends ENative {
 		throw new NotImplemented(); 
 	}
 
-	@BIF static public EObject info(EObject obj) {
-		throw new NotImplemented(); 
+	@BIF static public EObject info(EProc proc, EObject nameOrTid) {
+		
+		ETable table = null;
+		EInteger tid;
+		EAtom name;
+		if ((tid=nameOrTid.testInteger()) != null) {
+			table = tid_to_table.get(tid);
+		} else if ((name=nameOrTid.testAtom()) != null) {
+			tid = name_to_tid.get(name);
+			if (tid != null) {
+				table = tid_to_table.get(tid);
+			}
+		} else {
+			throw ERT.badarg(nameOrTid);
+		}
+		
+		if (table == null) {
+			return ERT.am_undefined;
+		}
+		
+		ESeq rep = ERT.NIL;
+		
+		rep = rep.cons(new ETuple2(am_owner, table.owner_pid()));
+		EObject named = ERT.box(table.aname != null);
+		rep = rep.cons(new ETuple2(am_named_table, named));
+		if (named == ERT.TRUE)
+			rep = rep.cons(new ETuple2(am_name, table.aname));
+		if (table.heirPID != null)
+			rep = rep.cons(new ETuple2(am_heir, table.heirPID));
+		rep = rep.cons(new ETuple2(am_size, ERT.box(table.size())));
+		rep = rep.cons(new ETuple2(am_node, ERT.getLocalNode().node()));
+		rep = rep.cons(new ETuple2(am_type, table.type));
+		rep = rep.cons(new ETuple2(am_keypos, ERT.box(table.keypos1)));
+		rep = rep.cons(new ETuple2(am_protection, table.access));
+
+		return rep;
 	}
 
-	@BIF static public EObject info(EObject obj1, EObject obj2) {
+	@BIF static public EObject info(EProc proc, EObject nameOrTid, EObject item) {
 		throw new NotImplemented(); 
 	}
 
