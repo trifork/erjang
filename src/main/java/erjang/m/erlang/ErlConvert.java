@@ -76,6 +76,12 @@ public class ErlConvert {
 	}
 	
 	@BIF
+	public static ESmall external_size(EObject obj) {
+		EBinary bin = term_to_binary(obj);
+		return ERT.box(bin.byteSize());
+	}
+	
+	@BIF
 	public static ESeq fun_to_list(EObject fun) {
 		return EString.fromString(fun.toString());
 	}
