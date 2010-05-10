@@ -1660,19 +1660,11 @@ public class ErlBif {
 	@BIF
 	public static EObject md5(EObject iolist_arg)
 	{
-		ECons iolist = iolist_arg.testCons();
-		if (iolist == null) {
-			
-			EBinary bin;
-			if ((bin = iolist_arg.testBinary()) == null) {			
-				throw ERT.badarg(iolist_arg);
-			}
-			
-			throw new NotImplemented();
-		}
 		
 		List<ByteBuffer> buf = new ArrayList<ByteBuffer>();
-		iolist.collectIOList(buf);
+		if (!iolist_arg.collectIOList(buf)) {
+			throw ERT.badarg(iolist_arg);
+		}
 		
 		MessageDigest md;
 		 try {
