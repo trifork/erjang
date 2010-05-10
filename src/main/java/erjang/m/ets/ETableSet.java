@@ -20,6 +20,7 @@
 package erjang.m.ets;
 
 import java.util.Map;
+import java.util.Map.Entry;
 
 import clojure.lang.IMapEntry;
 import clojure.lang.IPersistentMap;
@@ -27,7 +28,9 @@ import clojure.lang.ISeq;
 import clojure.lang.PersistentHashMap;
 import clojure.lang.PersistentTreeMap;
 import erjang.EAtom;
+import erjang.ECons;
 import erjang.EInteger;
+import erjang.EList;
 import erjang.EObject;
 import erjang.EPID;
 import erjang.EProc;
@@ -94,6 +97,52 @@ public class ETableSet extends ETable {
 		} else {
 			return res;
 		}
+	}
+	
+	@Override
+	public ESeq slot() {
+		IPersistentMap map = deref();
+		if (map.count() == 0) return ERT.NIL;
+		ISeq seq = map.seq();
+		return new ELSeq(seq);
+	}
+	
+	static class ELSeq extends ESeq {
+
+		private ISeq seq;
+
+		ELSeq(ISeq s) {
+			this.seq = s;
+		}
+		
+		@Override
+		public ESeq cons(EObject h) {
+			return new EList(h, this);
+		}
+
+		@Override
+		public ESeq tail() {
+			ISeq next = seq.next();
+			if (next == null) return ERT.NIL;
+			return new ELSeq(next);
+		}
+
+		@Override
+		public EObject head() {
+			IMapEntry ent = (IMapEntry) seq.first();
+			return (EObject) ent.getValue();
+		}
+		
+		@Override
+		public boolean isNil() {
+			return false;
+		}
+		
+		@Override
+		public ECons testNonEmptyList() {
+			return this;
+		}
+		
 	}
 	
 	@Override

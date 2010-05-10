@@ -33,6 +33,7 @@ import clojure.lang.Var;
 import erjang.EAtom;
 import erjang.EInteger;
 import erjang.EInternalPID;
+import erjang.ELazySeq;
 import erjang.EObject;
 import erjang.EPID;
 import erjang.EProc;
@@ -211,6 +212,7 @@ abstract class ETable implements ExitHook {
 		try {
 			return (X) LockingTransaction.runInTransaction(run);
 		} catch (Exception e) {
+			e.printStackTrace();
 			// STM Failure
 			throw new ErlangError(am_stm);
 		}
@@ -284,5 +286,7 @@ abstract class ETable implements ExitHook {
 	}
 
 	protected abstract void delete_object(ETuple obj);
+
+	public abstract ESeq slot();
 	
 }

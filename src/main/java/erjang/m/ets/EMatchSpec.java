@@ -29,6 +29,8 @@ import java.util.TreeSet;
 
 import javax.swing.event.ListSelectionEvent;
 
+import clojure.lang.ISeq;
+
 import erjang.EAtom;
 import erjang.EBitString;
 import erjang.ECons;
@@ -167,6 +169,7 @@ public class EMatchSpec extends EPseudoTerm {
 	}
 
 	private final MatchFunction[] funs;
+	private ESeq spec;
 
 	static abstract class Pattern extends ETermPattern {
 		// that's it.
@@ -855,10 +858,17 @@ public class EMatchSpec extends EPseudoTerm {
 	}
 
 	/**
+	 * @param spec 
 	 * @param array
 	 */
-	private EMatchSpec(MatchFunction[] funs) {
+	private EMatchSpec(MatchFunction[] funs, ESeq spec) {
 		this.funs = funs;
+		this.spec = spec;
+	}
+	
+	@Override
+	public String toString() {
+		return spec.toString();
 	}
 
 	/**
@@ -869,13 +879,14 @@ public class EMatchSpec extends EPseudoTerm {
 	 */
 	public static EMatchSpec compile(ESeq spec) {
 
+		ESeq full_spec = spec;
 		List<MatchFunction> funs = new ArrayList<MatchFunction>();
 
 		for (; !spec.isNil(); spec = spec.tail()) {
 			funs.add(parse_MatchFunction(spec.head()));
 		}
 
-		return new EMatchSpec(funs.toArray(new MatchFunction[funs.size()]));
+		return new EMatchSpec(funs.toArray(new MatchFunction[funs.size()]), full_spec);
 	}
 
 	/**
@@ -951,6 +962,17 @@ public class EMatchSpec extends EPseudoTerm {
 			}
 		}
 
+		return vals;
+	}
+
+	public ESeq matching_values_coll(ESeq vals, ISeq seq) {
+	
+		for (; seq != null && !seq.equals(seq.empty()); seq = seq.next()) {
+			EObject val = (EObject) seq.first();
+			if (match(val)) {
+				vals = vals.cons(val);
+			}
+		}
 		return vals;
 	}
 

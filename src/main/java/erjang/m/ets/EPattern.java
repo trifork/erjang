@@ -326,6 +326,15 @@ public class EPattern {
 			return num.compareTo(value) == 0;
 		}
 
+		public boolean match(ETuple t, EMatchContext r) {
+			return t.compareTo(value) == 0;
+		}
+
+		@Override
+		public boolean match(ECons c, EMatchContext r) {
+			return c.compareTo(value) == 0;
+		}
+
 	}
 
 	/**
@@ -396,6 +405,14 @@ public class EPattern {
 			if (m instanceof ValuePattern) {
 				ValuePattern vm = (ValuePattern) m;
 				return vm.value;
+			}
+		} else if (matcher instanceof ValuePattern) {
+			ValuePattern vp = (ValuePattern) matcher;
+			if (vp.value instanceof ETuple) {
+				ETuple et = (ETuple) vp.value;
+				if (keypos1 < 1 || keypos1 > et.arity()) 
+					return null;
+				return et.elm(keypos1);
 			}
 		}
 		return null;

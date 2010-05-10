@@ -33,7 +33,9 @@ import clojure.lang.Ref;
 import clojure.lang.Seqable;
 import clojure.lang.Var;
 import erjang.EAtom;
+import erjang.ECons;
 import erjang.EInteger;
+import erjang.EList;
 import erjang.EObject;
 import erjang.EPID;
 import erjang.EProc;
@@ -41,6 +43,7 @@ import erjang.ERT;
 import erjang.ESeq;
 import erjang.ETuple;
 import erjang.NotImplemented;
+import erjang.m.ets.ETableSet.ELSeq;
 
 /**
  * 
@@ -291,9 +294,9 @@ public class ETableBag extends ETable {
 				if (key == null) {
 					vals = matcher.matching_values_bag(vals, (Map<EObject, java.util.Collection <ETuple>>) map);
 				} else {
-					ETuple candidate = (ETuple) map.valAt(key);
-					if (candidate != null && matcher.match(candidate)) {
-						vals = vals.cons(key);
+					IPersistentCollection coll = (IPersistentCollection) map.valAt(key);
+					if (coll != null) {
+						vals = matcher.matching_values_coll(vals, coll.seq());
 					}
 				}
 				
@@ -353,6 +356,72 @@ public class ETableBag extends ETable {
 			}
 		});
 	}
+
+	@Override
+	public ESeq slot() {
+		IPersistentMap map = deref();
+		if (map.count() == 0) return ERT.NIL;
+		return new ELSeq(map.seq());
+	}
+	
+	static class ELSeq extends ESeq {
+
+		private final ISeq coll;
+		private final ISeq map_seq;
+
+		ELSeq(ISeq map) {
+			IMapEntry collent = (IMapEntry)map.first();
+			IPersistentCollection c = (IPersistentCollection) collent.getValue();
+			
+			while (c.count() == 0) {
+				map = map.next();
+				collent = (IMapEntry) map.first();
+				c = (IPersistentCollection) collent.getValue();
+			}
+			
+			coll = c.seq();
+			map_seq = map.next();
+		}
+		
+		ELSeq(ISeq coll, ISeq map_seq) {
+			this.coll = coll;
+			this.map_seq = map_seq;
+		}
+		
+		@Override
+		public ESeq cons(EObject h) {
+			return new EList(h, this);
+		}
+
+		@Override
+		public ESeq tail() {
+			ISeq c2 = coll.next();
+			if (c2 == null) {
+				if (map_seq == null || map_seq == map_seq.empty()) return ERT.NIL;
+				
+				return new ELSeq(map_seq);
+			} else {
+				return new ELSeq(c2, map_seq);
+			}
+		}
+
+		@Override
+		public EObject head() {
+			return (EObject) coll.first();
+		}
+		
+		@Override
+		public boolean isNil() {
+			return false;
+		}
+		
+		@Override
+		public ECons testNonEmptyList() {
+			return this;
+		}
+		
+	}
+	
 
 
 }
