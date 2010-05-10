@@ -845,8 +845,8 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				case bs_context_to_binary:
 					push(arg, EOBJECT_TYPE);
 					mv.visitMethodInsn(INVOKESTATIC, EBINMATCHSTATE_TYPE
-							.getInternalName(), "bs_context_to_binary", "(" +EOBJECT_DESC + ")" + EBITSTRING_TYPE.getDescriptor());
-					pop(arg, EBITSTRING_TYPE);
+							.getInternalName(), "bs_context_to_binary", "(" +EOBJECT_DESC + ")" + EOBJECT_DESC);
+					pop(arg, EOBJECT_TYPE);
 					return;
 
 				case bs_utf8_size:

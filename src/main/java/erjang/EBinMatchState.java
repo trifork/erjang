@@ -59,7 +59,7 @@ public class EBinMatchState extends EPseudoTerm {
 		return bin;
 	}
 
-	public static EBitString bs_context_to_binary (EObject obj) {
+	public static EObject bs_context_to_binary (EObject obj) {
 		EBinMatchState bms;
 		if ((bms=obj.testBinMatchState()) != null) {
 		    if (bms.start_offset % 8 == 0) {
@@ -71,8 +71,7 @@ public class EBinMatchState extends EPseudoTerm {
 				throw new NotImplemented();
 			}
 		} else {
-		    // Note that the source operand may already be a binary...? /eriksoe
-			throw new Error("BADARG: be called with EBinMatchState");
+			return obj;
 		}
 	}
 
