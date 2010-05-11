@@ -288,5 +288,7 @@ abstract class ETable implements ExitHook {
 	protected abstract void delete_object(ETuple obj);
 
 	public abstract ESeq slot();
+
+	public abstract EObject select(EMatchSpec spec, int i);
 	
 }

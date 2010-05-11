@@ -18,7 +18,6 @@
 
 package erjang.m.ets;
 
-import java.util.Collection;
 import java.util.Map;
 
 import clojure.lang.IMapEntry;
@@ -39,11 +38,13 @@ import erjang.EList;
 import erjang.EObject;
 import erjang.EPID;
 import erjang.EProc;
+import erjang.EPseudoTerm;
 import erjang.ERT;
 import erjang.ESeq;
 import erjang.ETuple;
+import erjang.ETuple2;
 import erjang.NotImplemented;
-import erjang.m.ets.ETableSet.ELSeq;
+import erjang.m.ets.ETableSet.ESetCont;
 
 /**
  * 
@@ -51,6 +52,7 @@ import erjang.m.ets.ETableSet.ELSeq;
 public class ETableBag extends ETable {
 
 	static {
+		// force loading of the Clojure runtime
 		Var in = RT.IN;
 	}
 	
@@ -278,6 +280,88 @@ public class ETableBag extends ETable {
 
 	
 	}
+	
+
+	@Override
+	public EObject select(final EMatchSpec matcher, int limit) {
+		
+		IPersistentMap map = deref();
+		
+		EObject key = matcher.getTupleKey(keypos1);
+		
+		if (key == null) {
+			EBagCont cont0 = new EBagCont(matcher, map.seq(), null, limit);
+			return cont0.select();
+			
+		} else {
+			IPersistentCollection coll = (IPersistentCollection) map.valAt(key);
+			if (coll == null) {
+				return Native.am_$end_of_table;				
+			} else {
+				EBagCont cont0 = new EBagCont(matcher, null, coll.seq(), limit);
+				return cont0.select();
+			}
+		}
+		
+	}
+	
+	static class EBagCont extends EPseudoTerm implements ISelectContinuation {
+
+		private final EMatchSpec matcher;
+		private final ISeq map_ent;
+		private final ISeq coll_ent;
+		private final int limit;
+
+		public EBagCont(EMatchSpec matcher, ISeq mapent, ISeq conent, int limit) {
+			this.matcher = matcher;
+			this.map_ent = mapent;
+			this.coll_ent = conent;
+			this.limit = limit;
+		}
+	
+		public EObject select() {
+			int count = 0;
+			ESeq vals = ERT.NIL;
+			
+			ISeq map_seq = map_ent;
+			ISeq coll_seq = coll_ent;
+			while ((seq_has_more(map_seq) || seq_has_more(coll_seq)) && (limit < 0 || count < limit)) {
+				
+				if (!seq_has_more(coll_seq)) {
+					IMapEntry ent = (IMapEntry) map_seq.first();
+					IPersistentCollection coll = (IPersistentCollection) ent.getValue();
+					coll_seq = coll.seq();
+					map_seq = map_seq.next();
+				}
+				
+				assert seq_has_more(coll_seq);
+				
+				ETuple candidate = (ETuple) coll_seq.first();
+				coll_seq = coll_seq.next();
+				
+				EObject res;
+				if ((res = matcher.match(candidate)) != null) {
+					count += 1;
+					vals = vals.cons(res);
+				}
+			}
+			
+			
+			if (vals == ERT.NIL) {
+				return Native.am_$end_of_table;
+			} else if (!seq_has_more(map_seq) && !seq_has_more(coll_seq)) {
+				return new ETuple2(vals, Native.am_$end_of_table);
+			} else {
+				return new ETuple2(vals, new EBagCont(matcher, map_seq, coll_seq, limit));
+			}
+		}
+
+		private boolean seq_has_more(ISeq ent) {
+			return ent != null && ent != ent.empty();
+		}
+		
+	}
+	
 	
 	@Override
 	protected EInteger select_delete(final EMatchSpec matcher) {

@@ -34,10 +34,12 @@ import erjang.EList;
 import erjang.EObject;
 import erjang.EPID;
 import erjang.EProc;
+import erjang.EPseudoTerm;
 import erjang.ERT;
 import erjang.ESeq;
 import erjang.ESmall;
 import erjang.ETuple;
+import erjang.ETuple2;
 import erjang.NotImplemented;
 import erjang.m.erlang.ErlBif;
 
@@ -277,6 +279,73 @@ public class ETableSet extends ETable {
 	}
 	
 	@Override
+	public EObject select(final EMatchSpec matcher, int limit) {
+		
+		IPersistentMap map = deref();
+		
+		EObject key = matcher.getTupleKey(keypos1);
+		
+		if (key == null) {
+			ESetCont cont0 = new ESetCont(matcher, map.seq(), limit);
+			return cont0.select();
+			
+		} else {
+			ETuple candidate = (ETuple) map.valAt(key);
+			EObject res;
+			if ((res = matcher.match(candidate)) != null) {
+				return new ETuple2(ERT.NIL.cons(res), Native.am_$end_of_table);
+			}
+		}
+		
+		return Native.am_$end_of_table;
+	}
+	
+	static class ESetCont extends EPseudoTerm implements ISelectContinuation {
+
+		private final ISeq ent;
+		private final EMatchSpec matcher;
+		private final int limit;
+
+		public ESetCont(EMatchSpec matcher, ISeq ent, int limit) {
+			this.matcher = matcher;
+			this.ent = ent;
+			this.limit = limit;
+		}
+	
+		public EObject select() {
+			int count = 0;
+			ESeq vals = ERT.NIL;
+			
+			ISeq map_seq = this.ent;
+			while (seq_has_more(map_seq) && (limit < 0 || count < limit)) {
+				
+				IMapEntry mape = (IMapEntry) map_seq.first();
+				map_seq = map_seq.next();
+				
+				ETuple candidate = (ETuple) mape.getValue();
+				EObject res;
+				if ((res = matcher.match(candidate)) != null) {
+					count += 1;
+					vals = vals.cons(res);
+				}
+			}
+
+			if (vals == ERT.NIL) {
+				return Native.am_$end_of_table;
+			} else if (!seq_has_more(map_seq)) {
+				return new ETuple2(vals, Native.am_$end_of_table);
+			} else {
+				return new ETuple2(vals, new ESetCont(matcher, map_seq, limit));
+			}
+		}
+
+		private boolean seq_has_more(ISeq ent) {
+			return ent != null && ent != ent.empty();
+		}
+		
+	}
+	
+	@Override
 	public EInteger select_delete(final EMatchSpec matcher) {		
 		int delete_count = in_tx(new WithMap<Integer>() {
 
@@ -290,7 +359,7 @@ public class ETableSet extends ETable {
 					vals = matcher.matching_values_set(vals, (Map<EObject, ETuple>) map);
 				} else {
 					ETuple candidate = (ETuple) map.valAt(key);
-					if (candidate != null && matcher.match(candidate)) {
+					if (candidate != null && matcher.matches(candidate)) {
 						vals = vals.cons(key);
 					}
 				}

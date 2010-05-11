@@ -36,6 +36,7 @@ import erjang.ESmall;
 import erjang.ETuple;
 import erjang.ETuple2;
 import erjang.ETuple3;
+import erjang.ErlangError;
 import erjang.NotImplemented;
 
 /**
@@ -70,6 +71,8 @@ public class Native extends ENative {
 	public static final EAtom am_type = EAtom.intern("type");
 	public static final EAtom am_none = EAtom.intern("none");
 	public static final EAtom am_protection = EAtom.intern("protection");
+	public static final EAtom am_fixed = EAtom.intern("fixed");
+	public static final EAtom am_safe_fixed = EAtom.intern("safe_fixed");
 
 	static AtomicLong next_tid = new AtomicLong(1);
 
@@ -454,23 +457,189 @@ public class Native extends ENative {
 	}
 
 	@BIF static public EObject select(EObject obj1) {
-		throw new NotImplemented(); 
+		
+		if (obj1 == Native.am_$end_of_table) {
+			return obj1;
+		}
+		
+		if (obj1 instanceof ISelectContinuation) {
+			ISelectContinuation cont = (ISelectContinuation) obj1;			
+			return cont.select();
+			
+		} else {
+			throw ERT.badarg(obj1);
+		}
+		
 	}
 
-	@BIF static public EObject select(EObject obj1, EObject obj2) {
-		throw new NotImplemented(); 
+	@BIF static public EObject select(EProc caller, EObject nameOrTid, EObject matchSpec) {
+		
+		ETable table = resolve(caller, nameOrTid, false);
+		if (table == null) throw ERT.badarg(nameOrTid, matchSpec);
+		
+		EMatchSpec spec;
+		ESeq seq;
+		if ((matchSpec instanceof EMatchSpec)) {
+			spec = (EMatchSpec) matchSpec;
+		} else if ((seq=matchSpec.testSeq()) != null) {
+			try {
+				spec = EMatchSpec.compile(seq);
+			} catch (ErlangError e) {
+				if (e.reason() == ERT.am_badarg) {
+					throw ERT.badarg(nameOrTid, matchSpec);
+				} else {
+					throw e;
+				}
+			} catch (IllegalArgumentException e) {
+				e.printStackTrace();
+				throw ERT.badarg(nameOrTid, matchSpec);
+			}
+		} else {
+			throw ERT.badarg(nameOrTid, matchSpec);
+		}
+		
+		EObject res = table.select(spec, -1);
+
+		ETuple2 tup;
+		if (res == am_$end_of_table) {
+			return res;
+		} else if ((tup=ETuple2.cast(res)) != null) {
+			return tup.elem1;
+		} else {
+			throw new InternalError();
+		}
+		
 	}
 
-	@BIF static public EObject select(EObject obj1, EObject obj2, EObject obj3) {
-		throw new NotImplemented(); 
+	@BIF static public EObject select(EProc caller, EObject nameOrTid, EObject matchSpec, EObject limit) {
+
+		ETable table = resolve(caller, nameOrTid, false);
+		ESmall lim = limit.testSmall();
+		if (table == null || lim == null || lim.value < 1) throw ERT.badarg(nameOrTid, matchSpec, limit);
+		
+		EMatchSpec spec;
+		ESeq seq;
+		if ((matchSpec instanceof EMatchSpec)) {
+			spec = (EMatchSpec) matchSpec;
+		} else if ((seq=matchSpec.testSeq()) != null) {
+			try {
+				spec = EMatchSpec.compile(seq);
+			} catch (ErlangError e) {
+				if (e.reason() == ERT.am_badarg) {
+					throw ERT.badarg(nameOrTid, matchSpec, limit);
+				} else {
+					throw e;
+				}
+			}
+		} else {
+			throw ERT.badarg(nameOrTid, matchSpec, limit);
+		}
+		
+		return table.select(spec, lim.value);
+		
 	}
 
-	@BIF static public EObject match_spec_run_r(EObject obj1, EObject obj2, EObject obj3) {
-		throw new NotImplemented(); 
+	@BIF static public EObject match_spec_run_r(EObject list, EObject matchSpec, EObject tail_arg) {
+		
+		ESeq res = tail_arg.testSeq();
+		ESeq input = list.testSeq();
+		
+		if (res == null || input == null)
+			throw ERT.badarg(list, matchSpec, tail_arg);
+
+		EMatchSpec spec;
+		ESeq seq;
+		if ((matchSpec instanceof EMatchSpec)) {
+			spec = (EMatchSpec) matchSpec;
+		} else if ((seq=matchSpec.testSeq()) != null) {
+			try {
+				spec = EMatchSpec.compile(seq);
+			} catch (ErlangError e) {
+				if (e.reason() == ERT.am_badarg) {
+					throw ERT.badarg(list, matchSpec, tail_arg);
+				} else {
+					throw e;
+				}
+			}
+		} else {
+			throw ERT.badarg(list, matchSpec, tail_arg);
+		}
+
+		while (!input.isNil()) {
+			
+			EObject candidate = input.head();
+			EObject o = spec.match(candidate);
+			if (o != null) {
+				res = res.cons(o);
+			}
+			
+			input = input.tail();
+		}
+		
+		return res;
 	}
 
 	@BIF static public EObject info(EProc proc, EObject nameOrTid) {
 		
+		ETable table;
+		if ((table = get_table(nameOrTid)) == null) {
+			return ERT.am_undefined;
+		}
+		
+		ESeq rep = ERT.NIL;
+		
+		rep = rep.cons(new ETuple2(am_owner, table.owner_pid()));
+		rep = rep.cons(new ETuple2(am_named_table, ERT.box(table.is_named)));
+		rep = rep.cons(new ETuple2(am_name, table.aname));
+		if (table.heirPID != null)
+			rep = rep.cons(new ETuple2(am_heir, table.heirPID));
+		else
+			rep = rep.cons(new ETuple2(am_heir, am_none));
+		rep = rep.cons(new ETuple2(am_size, ERT.box(table.size())));
+		rep = rep.cons(new ETuple2(am_node, ERT.getLocalNode().node()));
+		rep = rep.cons(new ETuple2(am_type, table.type));
+		rep = rep.cons(new ETuple2(am_keypos, ERT.box(table.keypos1)));
+		rep = rep.cons(new ETuple2(am_protection, table.access));
+
+		return rep;
+	}
+
+	@BIF static public EObject info(EProc proc, EObject nameOrTid, EObject item) {
+
+		ETable table;
+		if ((table = get_table(nameOrTid)) == null) {
+			return ERT.am_undefined;
+		}
+		
+		if (item == am_owner) {
+			return table.owner_pid();
+		} else if (item == am_named_table) {
+			return ERT.box(table.aname != null);
+		} else if (item == am_name) {
+			return table.aname;
+		} else if (item == am_heir) {
+			if (table.heirPID == null) return am_none;
+			else return table.heirPID;
+		} else if (item == am_size) {
+			return ERT.box(table.size());
+		} else if (item == am_node) {
+			return ERT.getLocalNode().node();
+		} else if (item == am_type) {
+			return table.type;
+		} else if (item == am_keypos) {
+			return ERT.box( table.keypos1 );
+		} else if (item == am_protection) {
+			return table.access;
+		} else if (item == am_fixed) {
+			throw new NotImplemented();
+		} else if (item == am_safe_fixed) {
+			throw new NotImplemented();
+		} else {
+			throw ERT.badarg(nameOrTid, item);
+		}
+	}
+
+	private static ETable get_table(EObject nameOrTid) {
 		ETable table = null;
 		EInteger tid;
 		EAtom name;
@@ -484,31 +653,7 @@ public class Native extends ENative {
 		} else {
 			throw ERT.badarg(nameOrTid);
 		}
-		
-		if (table == null) {
-			return ERT.am_undefined;
-		}
-		
-		ESeq rep = ERT.NIL;
-		
-		rep = rep.cons(new ETuple2(am_owner, table.owner_pid()));
-		EObject named = ERT.box(table.aname != null);
-		rep = rep.cons(new ETuple2(am_named_table, named));
-		if (named == ERT.TRUE)
-			rep = rep.cons(new ETuple2(am_name, table.aname));
-		if (table.heirPID != null)
-			rep = rep.cons(new ETuple2(am_heir, table.heirPID));
-		rep = rep.cons(new ETuple2(am_size, ERT.box(table.size())));
-		rep = rep.cons(new ETuple2(am_node, ERT.getLocalNode().node()));
-		rep = rep.cons(new ETuple2(am_type, table.type));
-		rep = rep.cons(new ETuple2(am_keypos, ERT.box(table.keypos1)));
-		rep = rep.cons(new ETuple2(am_protection, table.access));
-
-		return rep;
-	}
-
-	@BIF static public EObject info(EProc proc, EObject nameOrTid, EObject item) {
-		throw new NotImplemented(); 
+		return table;
 	}
 
 	/** this is not documented anywhere, but referenced from the module global */
