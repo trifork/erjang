@@ -47,10 +47,29 @@ public class EBinMatchState extends EPseudoTerm {
 	public static final EAtom ATOM_ALL = EAtom.intern("all");
 
 	public final EBitString bin;
-	long start_offset;
 	long offset;
-	long[] save_offset;
+	long save_offset0;
+	long[] save_offsetN;
 
+	private long start_offset;
+	//long[] save_offset = new long[0];
+	private long save_offset(int n) {
+		if (n==0) return save_offset0;
+		return save_offsetN[n-1];
+	}
+	
+	private void save_offset(int n, long off) {
+		if (n==0) save_offset0=off;
+		else save_offsetN[n+1] = off;
+	}
+	
+	private int slots() {
+		if (save_offsetN==null) 
+			return 1;
+		else
+			return save_offsetN.length+1;
+	}
+	
 	public long bitsLeft() {
 		return bin.bitSize() - offset;
 	}
@@ -62,8 +81,9 @@ public class EBinMatchState extends EPseudoTerm {
 	public static EObject bs_context_to_binary (EObject obj) {
 		EBinMatchState bms;
 		if ((bms=obj.testBinMatchState()) != null) {
-		    if (bms.start_offset % 8 == 0) {
-				int start_byte = (int)(bms.start_offset/8);
+			long off = bms.start_offset;
+		    if (off % 8 == 0) {
+				int start_byte = (int)(off/8);
 				EBitString result = EBitString.makeByteOffsetTail(bms.bin, start_byte);
 				return result;
 			} else {
@@ -78,7 +98,7 @@ public class EBinMatchState extends EPseudoTerm {
 	public static void bs_save2 (EObject obj, int slot) {
 		EBinMatchState bms;
 		if ((bms=obj.testBinMatchState()) != null) {
-		    bms.save_offset[slot] = bms.offset;
+			bms.save_offset(slot, bms.offset);
 		} else {
 			throw new Error("BADARG: be called with EBinMatchState");
 		}
@@ -87,7 +107,7 @@ public class EBinMatchState extends EPseudoTerm {
 	public static void bs_save2_start (EObject obj) {
 		EBinMatchState bms;
 		if ((bms=obj.testBinMatchState()) != null) {
-		    bms.start_offset = bms.offset;
+			bms.save_offset(0, bms.offset);
 		} else {
 			throw new Error("BADARG: be called with EBinMatchState");
 		}
@@ -96,7 +116,7 @@ public class EBinMatchState extends EPseudoTerm {
 	public static void bs_restore2 (EObject obj, int slot) {
 		EBinMatchState bms;
 		if ((bms=obj.testBinMatchState()) != null) {
-			bms.offset = bms.save_offset[slot];
+			bms.offset = bms.save_offset(slot);
 		} else {
 			throw new Error("BADARG: be called with EBinMatchState");
 		}
@@ -105,7 +125,7 @@ public class EBinMatchState extends EPseudoTerm {
 	public static void bs_restore2_start (EObject obj) {
 		EBinMatchState bms;
 		if ((bms=obj.testBinMatchState()) != null) {
-			bms.offset = bms.start_offset;
+			bms.offset = bms.save_offset(0);
 		} else {
 			throw new Error("BADARG: be called with EBinMatchState");
 		}
@@ -115,16 +135,19 @@ public class EBinMatchState extends EPseudoTerm {
 		EBitString bs;
 		if ((bs = obj.testBitString()) != null)
 			return new EBinMatchState(bs, slots);
-		EBinMatchState bms;
-		if ((bms=obj.testBinMatchState()) != null) {
-			int actual_slots = bms.save_offset.length;
+		EBinMatchState ms;
+		if ((ms=obj.testBinMatchState()) != null) {
+			int actual_slots = ms.slots();
+			ms.save_offset(0, ms.offset);
+			ms.start_offset = ms.offset;
 			if (actual_slots < slots) {
-				EBinMatchState res = new EBinMatchState(bms.bin, slots);
-				res.offset = bms.offset;
-				res.save_offset[0] = bms.save_offset[0];
+				EBinMatchState res = new EBinMatchState(ms.bin, slots);
+				res.offset = ms.offset;
+				res.save_offset(0, ms.save_offset(0));
+				res.start_offset = ms.offset;
 				return res;
 			}
-			return bms;
+			return ms;
 		}
 		return null;
 	}
@@ -132,8 +155,9 @@ public class EBinMatchState extends EPseudoTerm {
 	public EBinMatchState(EBitString binary, int slots) {
 		this.bin = binary;
 		this.offset = 0;
-		this.start_offset = 0;
-		this.save_offset = new long[Math.min(1, slots)];
+		if (slots>1) {
+			save_offsetN = new long[slots-1];
+		}
 	}
 
 	public EBitString bs_get_binary2(EObject spec, int flags) {
