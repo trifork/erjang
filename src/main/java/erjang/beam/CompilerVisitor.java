@@ -368,8 +368,8 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 							  );
 			
 			mv.visitInsn(DUP);
-			cv.visitField(ACC_STATIC, "fun_id_"+l.index, Type.getDescriptor(LocalFunID.class), null, null).visitEnd();
-			mv.visitFieldInsn(PUTSTATIC, self_type.getInternalName(), "fun_id_"+l.index, Type.getDescriptor(LocalFunID.class));
+			cv.visitField(ACC_STATIC, anon_fun_name(l), Type.getDescriptor(LocalFunID.class), null, null).visitEnd();
+			mv.visitFieldInsn(PUTSTATIC, self_type.getInternalName(), anon_fun_name(l), Type.getDescriptor(LocalFunID.class));
 			
 			String mname = EUtil.getJavaName(l.fun, l.arity);
 			String outer_name = self_type.getInternalName();
@@ -392,6 +392,10 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 		
 	}
 
+	public static String anon_fun_name(Lambda l) {
+		return "lambda_"+l.index+"_"+l.old_uniq;
+	}
+	
 	private void push_int(MethodVisitor mv, int val) {
 		if (val == -1) {
 			mv.visitInsn(ICONST_M1);
@@ -2983,7 +2987,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			mv = cw.visitMethod(ACC_PROTECTED, "get_id", "()"+Type.getDescriptor(FunID.class), null, null);
 			mv.visitCode();
 			mv.visitFieldInsn(GETSTATIC, full_inner_name.substring(0, full_inner_name.indexOf('$')), 
-										 "fun_id_"+lambda.index, Type.getDescriptor(LocalFunID.class));
+								anon_fun_name(lambda), Type.getDescriptor(LocalFunID.class));
 			mv.visitInsn(ARETURN);
 			mv.visitMaxs(3, 3);
 			mv.visitEnd();
