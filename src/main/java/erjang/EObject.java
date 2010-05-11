@@ -378,7 +378,7 @@ public abstract class EObject implements Comparable<EObject> {
 	public ETermPattern compileMatch(Set<Integer> out) {
 		// this should continue to be "not implemented".  
 		// subclasses should provide an implementation.
-		throw new NotImplemented();
+		throw new NotImplemented("compileMatch: "+this.getClass());
 	}
 
 	public EBinMatchState testBinMatchState() {
