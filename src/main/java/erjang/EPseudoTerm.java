@@ -30,5 +30,9 @@ public abstract class EPseudoTerm extends EObject {
 		return CMP_ORDER_ERJANG_INTERNAL;
 	}
 
+	@Override
+	public EBinary testBinary() {
+		return EBinary.fromString("");
+	}
 
 }
