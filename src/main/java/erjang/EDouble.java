@@ -162,6 +162,10 @@ public class EDouble extends ENumber {
 		return new EDouble(-value);
 	}
 
+	public EDouble subtract(int rhs) {  
+		return ERT.box(value - rhs);
+	}
+
 	public ENumber subtract(EObject other, boolean guard) {
 		return other.r_subtract(value, guard);
 	}

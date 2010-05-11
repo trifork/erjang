@@ -140,6 +140,10 @@ public final class EBig extends EInteger {
 		return ERT.box(lhs.add(value));
 	}
 
+	public EInteger subtract(int rhs) {  
+		return ERT.box(value.subtract(BigInteger.valueOf(rhs)));
+	}
+
 	public ENumber subtract(EObject other, boolean guard) {
 		return other.r_subtract(value, guard);
 	}
