@@ -39,6 +39,7 @@ import kilim.Pausable;
 import erjang.EBinary;
 import erjang.EHandle;
 import erjang.EPort;
+import erjang.ERT;
 import erjang.ERef;
 import erjang.EString;
 import erjang.NotImplemented;
@@ -72,7 +73,8 @@ public class EFile extends EDriverInstance {
 	public int posix_errno;
 	public boolean write_error;
 	private long write_delay;
-	private int read_size;
+	private ByteBuffer read_binp;
+	protected File name;
 
 	/**
 	 * 
@@ -147,7 +149,13 @@ public class EFile extends EDriverInstance {
 					} else {
 						try {
 
-							free_size += IO.writev(fd, iov);
+							long written_bytes = IO.writev(fd, iov);
+							
+							if (ERT.DEBUG_EFILE) {
+								System.err.println(""+EFile.this+" :: wrote "+written_bytes);
+							}
+							
+							free_size += written_bytes;
 							result_ok = true;
 						} catch (IOException e) {
 							posix_errno = IO.exception_to_posix_code(e);
@@ -377,9 +385,9 @@ public class EFile extends EDriverInstance {
 		this.cq = new LinkedList<FileAsync>();
 		this.timer_state = TimerState.IDLE;
 		// this.read_bufsize = 0;
-		// this.read_binp = (ByteBuffer) null;
+		this.read_binp = (ByteBuffer) null;
 		// this.read_offset = 0;
-		this.read_size = 0;
+		//this.read_size = 0;
 		this.write_delay = 0L;
 		this.write_bufsize = 0;
 		// this.write_error = 0;
@@ -395,6 +403,14 @@ public class EFile extends EDriverInstance {
 	public void reply_Uint(int value) throws Pausable {
 		ByteBuffer response = ByteBuffer.allocate(4);
 		response.putInt(value);
+		driver_output2(response, null);
+	}
+
+	public void reply_Uint_error(int value, int posix_error) throws Pausable {
+		ByteBuffer response = ByteBuffer.allocate(256);
+		String err = Posix.errno_id(posix_error);		
+		response.putInt(value);
+		IO.putstr(response, err, false);
 		driver_output2(response, null);
 	}
 
@@ -449,6 +465,7 @@ public class EFile extends EDriverInstance {
 			} catch (SecurityException e) {
 				posix_errno = Posix.EPERM;
 			} catch (Throwable e) {
+				e.printStackTrace();
 				posix_errno = Posix.EUNKNOWN;
 			}
 		}
@@ -493,6 +510,10 @@ public class EFile extends EDriverInstance {
 				int len = (int) (evin.getLong() & 0x7fffffff);
 			
 				res_ev[i] = ByteBuffer.allocate(len);
+				
+				if (ERT.DEBUG_EFILE) {
+					System.err.println(EFile.this+" :: pread "+len+" @ "+offsets[i-1]);
+				}
 			}
 			
 			res_ev[0] = ByteBuffer.allocate(4+4+8*n);
@@ -511,7 +532,6 @@ public class EFile extends EDriverInstance {
 					{ 
 						this.level = 1; 
 						this.fd = EFile.this.fd; 
-						this.again = true;
 						this.cnt = 0;
 						this.result_ok = true;
 					}
@@ -532,6 +552,12 @@ public class EFile extends EDriverInstance {
 								try {
 									fd.position(pos);
 									bytes_read = fd.read(res);
+									
+									if (ERT.DEBUG_EFILE) {
+										System.err.println(EFile.this + 
+															":: did pread "+ bytes_read+ "@"+pos
+															+" into res["+i+"]; missing="+res.remaining());
+									}
 								} catch (IOException e) {
 									result_ok = false;
 									this.posix_errno = IO.exception_to_posix_code(e);
@@ -580,6 +606,9 @@ public class EFile extends EDriverInstance {
 				reply_posix_error(Posix.EINVAL);
 				return;
 			}
+			
+			if (ERT.DEBUG_EFILE) 
+			System.err.println(""+this+" :: close");
 
 			//TODO: Flush & check.
 
@@ -619,6 +648,13 @@ public class EFile extends EDriverInstance {
 		}
 
 		case FILE_READ: {
+			
+			int[] errp = new int[1];
+			if (flush_write_check_error(errp) < 0) {
+				reply_posix_error(errp[0]);
+				return;
+			}
+			
 			if (ev.length > 1 && ev[0].hasRemaining()) {
 				reply_posix_error(Posix.EINVAL);
 				return;
@@ -661,8 +697,15 @@ public class EFile extends EDriverInstance {
 
 					if (binp != null && binp.hasRemaining()) {
 						try {
+							int want = binp.remaining();
+							
 							int bytes = fd.read(binp);
 
+							if (ERT.DEBUG_EFILE) {
+								System.err.println
+								 	(EFile.this + ":: did read "+bytes+" bytes of "+want);
+							}
+							
 							if (bytes == -1) {
 								result_ok = true;
 								again = false;
@@ -802,11 +845,159 @@ public class EFile extends EDriverInstance {
 			break;
 		}
 		
+		case FILE_PWRITEV: {
+			int[] errp = new int[1];
+
+			if (lseek_flush_read(errp) < 0) {
+				reply_posix_error(errp[0]);
+				return;
+			}
+			
+			if (flush_write_check_error(errp) < 0) {
+				reply_posix_error(errp[0]);
+				return;
+			}
+			
+			final int n = ev[0].getInt();
+			
+			if (n == 0) {
+				if (ev.length > 1 || ev[0].hasRemaining()) {
+					reply_posix_error(Posix.EINVAL);
+				} else {
+					reply_Uint(0);
+				}
+				return;
+			}
+
+			
+			if (ev[0].remaining() != (8*2*n)) {
+				reply_posix_error(Posix.EINVAL);
+				return;
+			}
+			
+			final long[] offsets = new long[n];
+			final long[] sizes = new long[n];
+			
+			long total = 0;
+			for (int i = 0; i < n; i++) {
+				offsets[i] = ev[0].getLong();
+				sizes[i] = ev[0].getLong();
+				total += sizes[i];
+			}
+
+			if (total == 0) {
+				reply_Uint(0);
+				return;
+			}
+			
+			q_mtx.lock();
+			try {
+				driver_enqv(ev);				
+			} finally {
+				q_mtx.unlock();
+			}
+			
+			FileAsync d = new FileAsync() {
+				
+				int cnt = 0;
+				
+				{
+					this.level = 1;
+					this.fd = EFile.this.fd;
+				}
+				
+				@Override
+				public void async() {
+
+					q_mtx.lock();
+					ByteBuffer[] iov0 = driver_peekq();
+					if (iov0 != null) {
+
+						// copy the buffer list
+						ByteBuffer[] iov = iov0.clone();
+						q_mtx.unlock();
+						int ip = 0;
+						
+						while (cnt < offsets.length && ip < iov.length) {
+							
+							if (sizes[cnt] == 0)
+							{ cnt += 1; continue; }
+							
+							if(!iov[ip].hasRemaining()) { ip++; continue; }
+							
+							ByteBuffer o = iov[ip];
+							if (o.remaining() > sizes[cnt]) {
+								o = o.slice();
+								o.limit((int) sizes[cnt]);
+							}
+							
+							int bytes;
+							try {
+								fd.position(offsets[cnt]);
+								bytes = fd.write(o);
+								
+								if (ERT.DEBUG_EFILE) {
+									System.err.println(""+EFile.this+" :: wrote "+bytes);
+								}
+
+							} catch (IOException e) {
+								EFile.this.posix_errno = IO.exception_to_posix_code(e);
+								this.result_ok = false;
+								return;
+							}
+							
+							offsets[cnt] += bytes;
+							sizes[cnt] -= bytes;
+							
+							if (o.hasRemaining())
+							{
+								this.again = true;
+								return;
+							}
+							
+							if (sizes[cnt] == 0) {
+								cnt += 1;
+							}
+						}
+						
+						if (cnt != n) {
+							this.result_ok = false;
+							EFile.this.posix_errno = Posix.EINVAL;
+							this.again = false;
+						} else {
+							this.again = false;
+							this.result_ok = true;
+						}
+					}
+					
+				}
+
+				@Override
+				public void ready() throws Pausable {
+					if (!result_ok) {
+						reply_Uint_error(cnt, EFile.this.posix_errno);
+					} else {
+						reply_Uint(n);
+					}
+				}
+				
+			};
+
+			cq_enq(d);
+			break;
+		}
+
+
+		
 		case FILE_WRITE: {
 			int[] errp;
-			int reply_size = ev[0].remaining();
+			int reply_size = 0;
 			
-			FileAsync d = null;
+			for (int i = 0; i < ev.length; i++) {
+				reply_size += ev[i].remaining();
+				if (ERT.DEBUG_EFILE)
+					System.err.println(""+this+" :: write "+ev[i].remaining());
+			}
 			
 			q_mtx.lock();
 			driver_enqv(ev);
@@ -838,6 +1029,128 @@ public class EFile extends EDriverInstance {
 
 		cq_execute();
 
+	}
+	
+	private int flush_write_check_error(int[] errp) {
+	    int r;
+	    if ( (r = flush_write(errp)) != 0) {
+			check_write_error(null);
+			return r;
+	    } else {
+	    	return check_write_error(errp);
+	    }
+	}
+
+	private int check_write_error(int[] errp) {
+	    if (write_error) {
+	    	if (errp != null) {
+	    		errp[0] = this.posix_errno;
+	    	}
+	    	return -1;
+        }
+        return 0;
+	}
+
+	void flush_read() {
+		this.read_binp = null;
+	}
+
+	private int lseek_flush_read(int[] errp) {
+		int r = 0;
+		int read_size = (read_binp == null ? 0 : read_binp.remaining());
+		flush_read();
+		if (read_size != 0) {
+			if ((r = async_lseek(errp, false, -read_size, EFILE_SEEK_CUR)) < 0) {
+			    return r;
+			}
+		}
+		return r;
+	}
+
+	private int async_lseek(int[] errp, final boolean do_reply, final long off, final int whence) {
+		
+		try {
+			FileAsync d = new FileAsync() {
+	
+				{
+					this.reply = do_reply;
+					this.level = 1;
+					this.fd = EFile.this.fd;
+				}
+				
+				long out_pos;
+				
+				@Override
+				public void async() {
+	
+					if ((flags & EFILE_COMPRESSED) != 0) {
+						this.result_ok = false;
+						this.posix_errno = Posix.EINVAL;
+					}
+					
+					try {
+					
+						switch (whence) {
+						case EFILE_SEEK_SET:
+							out_pos=off;
+							break;
+							
+						case EFILE_SEEK_CUR:
+							long cur = fd.position();
+							out_pos= cur + off;
+							break;
+							
+						case EFILE_SEEK_END:
+							cur = fd.size();
+							out_pos = cur - off;
+							break;
+							
+						default:
+							this.result_ok = false;
+							this.posix_errno = Posix.EINVAL;
+							return;
+						}
+	
+						fd.position(out_pos);
+						if (ERT.DEBUG_EFILE) {
+							System.err.println(""+EFile.this+" :: seek "+out_pos);
+						}
+						
+					} catch (IOException e) {
+						this.result_ok = false;
+						this.posix_errno = IO.exception_to_posix_code(e);
+					}
+					
+					this.result_ok = true;
+				}
+	
+				
+				@Override
+				public void ready() throws Pausable {
+					if (reply) {
+						if (result_ok) {
+							EFile.this.fd = fd;
+							ByteBuffer response = ByteBuffer.allocate(9);
+							response.put(FILE_RESP_NUMBER);
+							response.putLong(out_pos);
+							driver_output2(response, null);
+						} else {
+							reply_posix_error(posix_errno);
+						}
+					}
+				}
+				
+	
+			};
+			
+			cq_enq(d);
+		} catch (OutOfMemoryError e) {
+			if (errp != null) {
+				errp[0] = Posix.ENOMEM;
+			}
+			return -1;
+		}
+		return 0;
 	}
 
 	private void reply_ev(byte response, long[] offsets, ByteBuffer[] res_ev) throws Pausable {
@@ -1024,75 +1337,10 @@ public class EFile extends EDriverInstance {
 		case FILE_LSEEK: {
 			final long off = buf.getLong();
 			final int whence = buf.getInt();
-			final FileChannel fch = fd;
 			
-			d = new FileAsync() {
-
-				{
-					this.level = 1;
-					this.fd = fch;
-				}
-				
-				long out_pos;
-				
-				@Override
-				public void async() {
-
-					if ((flags & EFILE_COMPRESSED) != 0) {
-						this.result_ok = false;
-						this.posix_errno = Posix.EINVAL;
-					}
-					
-					try {
-					
-						switch (whence) {
-						case EFILE_SEEK_SET:
-							out_pos=off;
-							break;
-							
-						case EFILE_SEEK_CUR:
-							long cur = fd.position();
-							out_pos= cur + off;
-							break;
-							
-						case EFILE_SEEK_END:
-							cur = fd.size();
-							out_pos = cur - off;
-							break;
-							
-						default:
-							this.result_ok = false;
-							this.posix_errno = Posix.EINVAL;
-							return;
-						}
-
-						fd.position(out_pos);
-					} catch (IOException e) {
-						this.result_ok = false;
-						this.posix_errno = IO.exception_to_posix_code(e);
-					}
-					
-					this.result_ok = true;
-				}
-
-				
-				@Override
-				public void ready() throws Pausable {
-					if (result_ok) {
-						EFile.this.fd = fd;
-						ByteBuffer response = ByteBuffer.allocate(9);
-						response.put(FILE_RESP_NUMBER);
-						response.putLong(out_pos);
-						driver_output2(response, null);
-					} else {
-						reply_posix_error(posix_errno);
-					}
-				}
-				
-
-			};
+			async_lseek(null, true, off, whence);
 			
-			break;
+			return;
 		}
 		
 		case FILE_OPEN: {
@@ -1102,6 +1350,9 @@ public class EFile extends EDriverInstance {
 			d = new SimpleFileAsync(cmd, file_name) {
 				public void run() {
 					boolean compressed = (mode & EFILE_COMPRESSED) > 0;
+					if (compressed && ERT.DEBUG_EFILE) {
+						System.err.println("EFile.open_compressed "+file_name);
+					}
 					boolean append = (mode & EFILE_MODE_APPEND) > 0;
 					if ((mode & ~(EFILE_MODE_APPEND | EFILE_MODE_READ_WRITE)) > 0)
 						throw new NotImplemented();
@@ -1118,7 +1369,7 @@ public class EFile extends EDriverInstance {
 								fd = new RandomAccessFile(file,"r").getChannel();
 								break;
 							case EFILE_MODE_WRITE:
-								fd = new RandomAccessFile(file,"w").getChannel();
+								fd = new RandomAccessFile(file,"rw").getChannel();
 								break;
 							case EFILE_MODE_READ_WRITE:
 								fd = new RandomAccessFile(file,"rw").getChannel();
@@ -1127,6 +1378,8 @@ public class EFile extends EDriverInstance {
 								throw new NotImplemented();
 							}//switch
 
+							EFile.this.name = file;
+							
 							result_ok = true;
 						}
 					} catch (FileNotFoundException fnfe) {
@@ -1320,6 +1573,9 @@ public class EFile extends EDriverInstance {
 			final String from_name = IO.getstr(buf, true);
 			final File to_name   = new File(IO.getstr(buf, true));
 			
+			if (ERT.DEBUG_EFILE) 
+				System.err.println(""+this+"rename "+from_name+" -> "+to_name);
+			
 			d = new SimpleFileAsync(cmd, from_name) {
 				public void run() {
 					this.result_ok = file.renameTo(to_name);
@@ -1470,7 +1726,8 @@ public class EFile extends EDriverInstance {
 			if (errp == null) {
 				throw e;
 			}
-			errp[0] = Posix.ENOMEM;
+			if (errp != null)
+				errp[0] = Posix.ENOMEM;
 			return -1;
 		}
 	}
@@ -1537,4 +1794,16 @@ public class EFile extends EDriverInstance {
 			return Posix.EUNKNOWN;
 	}
 
+	@Override
+	public String toString() {
+		String pos;
+		try {
+			pos = (fd==null?"?":"0x"+Long.toHexString (fd.position()));
+		} catch (IOException e) {
+			pos = "?";
+		}
+		return "EFile[name=\""+name+"\";pos="+pos+"]";
+		
+	}
+	
 }
