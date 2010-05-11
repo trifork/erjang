@@ -288,8 +288,9 @@ public class ERT {
 	public static final boolean DEBUG = false;
 	public static final boolean DEBUG2 = false;
 	public static final boolean DEBUG_WAIT = false;
-	public static final boolean DEBUG_PORT = false;
+	public static final boolean DEBUG_PORT = Boolean.getBoolean("erjang.debug.port");
 	public static final boolean DEBUG_INET = false;
+	public static final boolean DEBUG_EFILE = false;
 	public static final EBinary EMPTY_BINARY = new EBinary(new byte[0]);
 	public static final ByteBuffer[] EMPTY_BYTEBUFFER_ARR = new ByteBuffer[0];
 	public static final ByteBuffer EMPTY_BYTEBUFFER = ByteBuffer.allocate(0);
