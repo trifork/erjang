@@ -18,6 +18,8 @@
 
 package erjang.m.ets;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -44,7 +46,11 @@ import erjang.ERef;
 import erjang.ESeq;
 import erjang.ETuple;
 import erjang.ETuple3;
+import erjang.ErlangError;
+import erjang.ErlangException;
 import erjang.NotImplemented;
+import erjang.beam.BIFUtil;
+import erjang.beam.BuiltInFunction;
 
 /**
  * Base class for a parsed match_spec.
@@ -172,13 +178,16 @@ public class EMatchSpec extends EPseudoTerm {
 	private ESeq spec;
 
 	static abstract class Pattern extends ETermPattern {
+		abstract boolean is_simple();
 		// that's it.
 	}
 
 	/** matches when a value is == */
 	static class EqualsPattern extends Pattern {
 
-		private final EObject value;
+		final EObject value;
+
+		boolean is_simple() { return true; }
 
 		/**
 		 * @param part
@@ -340,14 +349,15 @@ public class EMatchSpec extends EPseudoTerm {
 			} else if (var == am_ENTIRE_MATCH) {
 				idx0 = EXPR_ENTIRE_MATCH;
 			} else {
-				idx0 = Integer.parseInt(var.getName().substring(1));
+				int idx1 = Integer.parseInt(var.getName().substring(1));
+				idx0 = idx1-1;
 				if (idx0 > 100000000 || idx0 < 0) {
-					throw new IllegalArgumentException("given index " + idx0
+					throw new IllegalArgumentException("given index " + idx1
 							+ " is out of range");
 				}
 				if (!ctx.isBound(idx0)) {
 					throw new IllegalArgumentException("unbound variable $"
-							+ idx0);
+							+ idx1);
 				}
 			}
 		}
@@ -400,7 +410,7 @@ public class EMatchSpec extends EPseudoTerm {
 		EObject match(EObject value) {
 			EMatchContext ctx = new EMatchContext(nvars, value);
 			if (!value.match(head, ctx)) {
-				return ERT.FALSE;
+				return null;
 			}
 
 			// exception during condition evaluation
@@ -408,10 +418,10 @@ public class EMatchSpec extends EPseudoTerm {
 			try {
 				for (int i = 0; i < cond.length; i++) {
 					if (!cond[i].test(ctx))
-						return ERT.FALSE;
+						return null;
 				}
 			} catch (Exception e) {
-				return ERT.FALSE;
+				return null;
 			}
 
 			EObject out = value;
@@ -425,12 +435,14 @@ public class EMatchSpec extends EPseudoTerm {
 
 			return out;
 		}
+
 	}
 
 	static class GuardCall extends Expr {
 
 		EAtom guard;
 		Expr[] args;
+		private BuiltInFunction bif;
 
 		/**
 		 * @param t
@@ -448,6 +460,8 @@ public class EMatchSpec extends EPseudoTerm {
 			for (int i = 2; i <= t.arity(); i++) {
 				args[i - 2] = parse_ConditionExpression(t.elm(i), ctx);
 			}
+			
+			this.bif = BIFUtil.getMethod("erlang", guard.getName(), args.length, true, false);
 		}
 
 		/**
@@ -460,12 +474,38 @@ public class EMatchSpec extends EPseudoTerm {
 				vals[i] = args[i].eval(ctx);
 			}
 
-			// for debug output
-			List<EObject> aa = new ArrayList<EObject>();
-			for (int i = 0; i < vals.length; i++) {
-				aa.add(vals[i]);
+			if (bif != null) {
+				try {
+					Method m = bif.javaMethod;
+					if (bif.isVirtual) {
+						Object[] vargs = new Object[vals.length-1];
+						System.arraycopy(vals, 1, vargs, 0, vals.length-1);
+						return m.invoke(vals[0], vargs) == ERT.TRUE;
+					} else {
+						return m.invoke(null, vals) == ERT.TRUE;
+					}
+				} catch (ErlangException e) {
+					throw e;
+				} catch (IllegalArgumentException e) {
+					e.printStackTrace();
+					return false;
+				} catch (IllegalAccessException e) {
+					e.printStackTrace();
+					return false;
+				} catch (InvocationTargetException e) {
+					e.printStackTrace();
+					return false;
+				}
+			} else {				
+				// for debug output
+				List<EObject> aa = new ArrayList<EObject>();
+				for (int i = 0; i < vals.length; i++) {
+					aa.add(vals[i]);
+				}
+				
+				
+				throw new NotImplemented("GuardCall:test " + guard + " " + aa);
 			}
-			throw new NotImplemented("GuardCall:test " + guard + " " + aa);
 		}
 
 		public static final GuardCall[] EMPTY_ARR = new GuardCall[0];
@@ -477,12 +517,37 @@ public class EMatchSpec extends EPseudoTerm {
 				vals[i] = args[i].eval(ctx);
 			}
 
-			// for debug output
-			List<EObject> aa = new ArrayList<EObject>();
-			for (int i = 0; i < vals.length; i++) {
-				aa.add(vals[i]);
+			if (bif != null) {
+				try {
+					Method m = bif.javaMethod;
+					if (bif.isVirtual) {
+						Object[] vargs = new Object[vals.length-1];
+						System.arraycopy(vals, 1, vargs, 0, vals.length-1);
+						return (EObject) m.invoke(vals[0], vargs);
+					} else {
+						return (EObject) m.invoke(null, vals);
+					}
+				} catch (ErlangException e) {
+					throw e;
+				} catch (IllegalArgumentException e) {
+					e.printStackTrace();
+					throw new ErlangError(e);
+				} catch (IllegalAccessException e) {
+					e.printStackTrace();
+					throw new ErlangError(e);
+				} catch (InvocationTargetException e) {
+					e.printStackTrace();
+					throw new ErlangError(e);
+				}
+			} else {				
+				// for debug output
+				List<EObject> aa = new ArrayList<EObject>();
+				for (int i = 0; i < vals.length; i++) {
+					aa.add(vals[i]);
+				}
+				throw new NotImplemented("GuardCall:test " + guard + " " + aa);
 			}
-			throw new NotImplemented("GuardCall:eval " + guard + " " + aa);
+
 		}
 	}
 
@@ -494,12 +559,12 @@ public class EMatchSpec extends EPseudoTerm {
 		private Set<Integer> bound = new TreeSet<Integer>();
 		private ParseMode mode;
 
-		public boolean isBound(int idx) {
-			return bound.contains(idx);
+		public boolean isBound(int idx0) {
+			return bound.contains(idx0);
 		}
 
-		public void bind(MatchVariable matchVariable, int idx) {
-			bound.add(idx);
+		public void bind(MatchVariable matchVariable, int idx0) {
+			bound.add(idx0);
 		}
 
 		/**
@@ -701,8 +766,12 @@ public class EMatchSpec extends EPseudoTerm {
 			return (new ConsPattern(cons, ctx));
 
 		} else if ((tuple = head.testTuple()) != null) {
-			return (new TuplePattern(tuple, ctx));
-
+			TuplePattern tp = new TuplePattern(tuple, ctx);
+			if (tp.is_simple()) {
+				return new EqualsPattern(tuple);
+			} else {
+				return tp;
+			}
 		}
 
 		return null;
@@ -710,6 +779,16 @@ public class EMatchSpec extends EPseudoTerm {
 
 	static class TuplePattern extends Pattern {
 		Pattern[] elems;
+		
+		boolean is_simple() { 
+			for (int i = 0; i < elems.length; i++) {
+				if (!elems[i].is_simple()) {
+					return false;
+				}
+			}
+			return true;
+		}
+
 
 		public TuplePattern(ETuple tuple, ParseContext ctx) {
 			elems = new Pattern[tuple.arity()];
@@ -733,6 +812,8 @@ public class EMatchSpec extends EPseudoTerm {
 	static class NilPattern extends Pattern {
 		static final NilPattern INSTANCE = new NilPattern();
 
+		boolean is_simple() { return true; }
+
 		@Override
 		public boolean match(ECons c, EMatchContext r) {
 			return c.isNil();
@@ -741,6 +822,8 @@ public class EMatchSpec extends EPseudoTerm {
 
 	static class ConsPattern extends Pattern {
 		Pattern head_p, tail_p;
+
+		boolean is_simple() { return head_p.is_simple() && tail_p.is_simple(); }
 
 		public ConsPattern(ECons cons, ParseContext ctx) {
 			head_p = parse_MatchHeadPart(cons.head(), ctx);
@@ -773,6 +856,8 @@ public class EMatchSpec extends EPseudoTerm {
 
 	static class AnyPattern extends Pattern {
 		static AnyPattern INSTANCE = new AnyPattern();
+
+		boolean is_simple() { return false; }
 
 		public boolean match(ETuple t, EMatchContext r) {
 			return true;
@@ -808,14 +893,17 @@ public class EMatchSpec extends EPseudoTerm {
 
 		final int idx0;
 
+		boolean is_simple() { return false; }
+
 		/**
 		 * @param am
 		 * @param ctx
 		 */
 		public MatchVariable(EAtom var, ParseContext ctx) {
-			idx0 = Integer.parseInt(var.getName().substring(1));
+			int idx1 = Integer.parseInt(var.getName().substring(1));
+			idx0 = idx1-1;
 			if (idx0 > 100000000 || idx0 < 0) {
-				throw new IllegalArgumentException("given index " + idx0
+				throw new IllegalArgumentException("given index " + idx1
 						+ " is out of range");
 			}
 			ctx.bind(this, idx0);
@@ -905,6 +993,12 @@ public class EMatchSpec extends EPseudoTerm {
 					EqualsPattern ep = (EqualsPattern) tp.elems[keypos1 - 1];
 					return ep.value;
 				}
+			} else if (funs[0].head instanceof EqualsPattern) {
+				EqualsPattern ep = (EqualsPattern) funs[0].head;
+				ETuple tup;
+				if ((tup=ep.value.testTuple()) != null && tup.arity() >= keypos1) {
+					return tup.elm(keypos1);
+				}
 			}
 		}
 
@@ -921,7 +1015,7 @@ public class EMatchSpec extends EPseudoTerm {
 		for (Map.Entry<EObject, ETuple> ent : map.entrySet()) {
 
 			ETuple val = ent.getValue();
-			if (match(val)) {
+			if (matches(val)) {
 				values = values.cons(val);
 			}
 		}
@@ -933,15 +1027,19 @@ public class EMatchSpec extends EPseudoTerm {
 	 * @param candidate
 	 * @return
 	 */
-	public boolean match(EObject candidate) {
+	public boolean matches(EObject candidate) {
+		return match(candidate) == ERT.TRUE;
+	}
+
+	public EObject match(EObject candidate) {
 		for (int i = 0; i < funs.length; i++) {
 			EObject val = funs[i].match(candidate);
-			if (val == ERT.TRUE) {
-				return true;
+			if (val != null) {
+				return val;
 			}
 		}
 
-		return false;
+		return null;
 	}
 
 	/**
@@ -956,7 +1054,7 @@ public class EMatchSpec extends EPseudoTerm {
 
 			Collection<ETuple> values = ent.getValue();
 			for (ETuple val : values) {
-				if (match(val)) {
+				if (matches(val)) {
 					vals = vals.cons(val);
 				}
 			}
@@ -969,7 +1067,7 @@ public class EMatchSpec extends EPseudoTerm {
 	
 		for (; seq != null && !seq.equals(seq.empty()); seq = seq.next()) {
 			EObject val = (EObject) seq.first();
-			if (match(val)) {
+			if (matches(val)) {
 				vals = vals.cons(val);
 			}
 		}
