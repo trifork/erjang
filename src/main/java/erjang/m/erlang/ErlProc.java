@@ -304,7 +304,7 @@ public class ErlProc {
 		{   
 			ERef ref = ERT.getLocalNode().createRef();
 			if (!self.monitor(h, h, ref)) {
-				self.mbox_send(ETuple.make(ERT.am_DOWN, ref, object, ERT.am_noproc));
+				self.mbox_send(ETuple.make(ERT.am_DOWN, ref, am_process, object, ERT.am_noproc));
 			}
 			return ref;
 		}
@@ -323,7 +323,7 @@ public class ErlProc {
 			}	
 			
 			if (!success) {
-				self.mbox_send(ETuple.make(ERT.am_DOWN, ref, object, ERT.am_noproc));
+				self.mbox_send(ETuple.make(ERT.am_DOWN, ref, am_process, object, ERT.am_noproc));
 			}
 
 			return ref;
@@ -348,7 +348,7 @@ public class ErlProc {
 				}	
 				
 				if (!success) {
-					self.mbox_send(ETuple.make(ERT.am_DOWN, ref, object, ERT.am_noproc));
+					self.mbox_send(ETuple.make(ERT.am_DOWN, ref, am_process, object, ERT.am_noproc));
 				}
 
 				return ref;

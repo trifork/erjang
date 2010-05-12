@@ -95,7 +95,7 @@ public class EInternalPID extends EPID implements ELocalHandle {
 		return false;
 	}
 	
-	public boolean add_monitor(EHandle observer, ERef ref) throws Pausable {
+	public synchronized boolean add_monitor(EHandle observer, ERef ref) throws Pausable {
 		EProc task = this.task;
 		if (task != null) 
 			return task.add_monitor(observer, ref);

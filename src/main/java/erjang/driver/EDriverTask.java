@@ -397,6 +397,7 @@ public class EDriverTask extends ETask<EInternalPort> implements
 			EPortControl ctrl;
 			ETuple3 t3;
 			ETuple4 t4;
+			ETuple tup;
 			if ((t2 = ETuple2.cast(msg)) != null) {
 
 				EObject sender = t2.elem1;
@@ -456,10 +457,10 @@ public class EDriverTask extends ETask<EInternalPort> implements
 					// close is handled by exception handling code
 					return;
 				}
-			} else if ((t4 = ETuple4.cast(msg)) != null) {
-				// {'DOWN', ref, pid, reason}
-				if (t3.elem1 == ERT.am_DOWN) {
-					ERef ref = t4.elem2.testReference();
+			} else if ((tup = msg.testTuple()) != null && tup.arity() == 5) {
+				// {'DOWN', ref, process, pid, reason}
+				if (tup.elm(1) == ERT.am_DOWN) {
+					ERef ref = tup.elm(2).testReference();
 					instance.processExit(ref);
 				}
 

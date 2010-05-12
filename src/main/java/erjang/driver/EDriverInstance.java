@@ -288,7 +288,7 @@ public abstract class EDriverInstance extends EDriverControl {
 		ERef ref = ERT.getLocalNode().createRef();
 		
 		if (!task.monitor(pid, pid, ref)) {
-			port().send(port(), ETuple.make(ERT.am_DOWN, ref, pid, ERT.am_noproc));
+			port().send(port(), ETuple.make(ERT.am_DOWN, ref, ErlProc.am_process, pid, ERT.am_noproc));
 		}
 		
 		return ref;

@@ -130,7 +130,7 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 	 */
 	public boolean monitor(EHandle observed, EObject object, ERef ref) throws Pausable {
 		if (!observed.add_monitor(self_handle(), ref)) {
-			System.err.println("unable to add monitor to self="+self_handle()+" pid="+observed+" ref="+ref);
+		//	System.err.println("unable to add monitor to self="+self_handle()+" pid="+observed+" ref="+ref);
 			return false;
 		}
 		this.is_monitoring.put(ref, new ETuple2(observed, object));
