@@ -157,10 +157,11 @@ public class ETableBag extends ETable {
 		for(ISeq s = set.seq(); s != null; s = s.next())
 		{
 			res = res.cons((EObject) s.first());
-		}
-		return res;
+		}		
+		return res.reverse();
 	}
 
+	
 	@Override
 	protected EObject first() {
 		// no need to run in_tx if we're only reading
