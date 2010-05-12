@@ -270,8 +270,9 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 
 				// the process is not running yet, this should not happen
 			case INIT:
-				throw new Error(
-						"cannot receive exit signal before we're running");
+				this.exit_reason = reason;
+				this.pstate = State.EXIT_SIG;
+				return;
 
 			default:
 				throw new Error("unknown state? "+pstate);

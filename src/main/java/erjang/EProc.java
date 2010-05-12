@@ -440,7 +440,10 @@ public final class EProc extends ETask<EInternalPID> {
 
 			EObject result = null;
 			try {
-				this.pstate = State.RUNNING;
+				synchronized(this) {
+					this.check_exit();
+					this.pstate = State.RUNNING;
+				}
 
 				while(this.tail.go(this) == TAIL_MARKER) {
 					/* skip */
