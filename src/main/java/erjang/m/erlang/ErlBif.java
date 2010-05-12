@@ -1609,9 +1609,17 @@ public class ErlBif {
 	}
 
 	@BIF
+	public static EObject yield() throws Pausable {
+		Task.yield();
+		Task.getCurrentTask().checkKill();
+		return ERT.TRUE;
+	}
+	
+	@BIF
 	public static EObject bump_reductions(EProc self, EObject howmuch) throws Pausable {
 		// yield?
 		Task.yield();
+		Task.getCurrentTask().checkKill();
 		return ERT.box(1);
 	}
 	
