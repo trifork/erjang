@@ -1149,7 +1149,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					Arg ex) {
 				if (opcode == BeamOpcode.raise) {
 
-					push(ex, EATOM_TYPE);
+					mv.visitFieldInsn(GETSTATIC, ERT_NAME, "am_error", EATOM_DESC);
 					push(in[1], EATOM_TYPE);
 					push(in[0], EOBJECT_TYPE);
 

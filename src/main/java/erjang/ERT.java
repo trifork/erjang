@@ -53,10 +53,17 @@ public class ERT {
 		EAtom clazz = kind.testAtom();
 		ESeq traz = trace.testSeq();
 
-		if (traz == null || !(clazz==am_exit || clazz==am_error || clazz==am_throw))
+		if (traz == null) {
+			System.err.println("bad argument to raise1: ("+kind+", "+value+", "+trace+")");
 			return am_badarg;
+		}
 
-		throw new ErlangRaise(clazz, value, traz);
+		if (clazz==am_exit || clazz==am_error || clazz==am_throw)
+			throw new ErlangRaise(clazz, value, traz);
+		
+		new Throwable("bad argument to raise2: ("+kind+", "+value+", "+trace+")").printStackTrace(System.err);
+		return am_badarg;
+		
 	}
 
 	public static final EAtom am_badarg = EAtom.intern("badarg");

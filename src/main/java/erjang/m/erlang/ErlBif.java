@@ -58,6 +58,7 @@ import erjang.ETuple2;
 import erjang.ETuple3;
 import erjang.ErlangError;
 import erjang.ErlangException;
+import erjang.ErlangRaise;
 import erjang.ErlangThrow;
 import erjang.FunID;
 import erjang.Module;
@@ -1702,7 +1703,20 @@ public class ErlBif {
 	@BIF
 	public static EObject raise(EObject kind, EObject value, EObject trace)
 			throws ErlangException {
-		return ERT.raise(kind, value, trace);
+
+		EAtom clazz = kind.testAtom();
+		ESeq traz = trace.testSeq();
+
+		if (traz == null) {
+//			System.err.println("bad argument to raise3: ("+kind+", "+value+", "+trace+")");
+			return ERT.am_badarg;
+		}
+
+		if (clazz==ERT.am_exit || clazz==ERT.am_error || clazz==ERT.am_throw)
+			throw new ErlangRaise(clazz, value, traz);
+		
+//		System.err.println("bad argument to raise4: ("+kind+", "+value+", "+trace+")");
+		return ERT.am_badarg;
 	}
 	
 	@BIF

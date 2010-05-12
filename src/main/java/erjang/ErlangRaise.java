@@ -65,5 +65,13 @@ public class ErlangRaise extends ErlangException {
     	else
     		return ETuple.make(ERT.am_EXIT, reason());
 	}
+    
+	public ETuple3 getTryValue() {
+		ETuple3 result = new ETuple3();
+		result.elem1 = getExClass();
+		result.elem2 = super.reason();
+		result.elem3 = trace;
+		return result;
+	}
 
 }
