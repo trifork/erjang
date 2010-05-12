@@ -261,7 +261,7 @@ public class Native extends ENative {
 		// test arguments
 		ETable table = resolve(proc, tab, false);
 		if (table == null || p == null) {
-			throw ERT.badarg(tab, key);
+			throw ERT.badarg(tab, key, pos);
 		}
 
 		ESeq ent = table.lookup(key);
