@@ -320,6 +320,9 @@ public class ERT {
 	private static final EObject am_noconnect = EAtom.intern("noconnect");
 	public static final boolean DEVEL = true;
 	public static final boolean DEBUG_DIST = false;
+	public static final EAtom am_latin1 = EAtom.intern("latin1");
+	public static final EAtom am_utf8 = EAtom.intern("utf8");
+	public static final EAtom am_unicode = EAtom.intern("unicode");
 
 	public static EBitStringBuilder bs_init(int size, int flags) {
 		return new EBitStringBuilder(size, flags);

@@ -41,6 +41,7 @@ import erjang.ERef;
 import erjang.ETuple2;
 import erjang.ErlangError;
 import erjang.NotImplemented;
+import erjang.driver.IO;
 
 /**
  * 
@@ -327,6 +328,27 @@ public class ErlConvert {
 		if (ref == null)
 			throw ERT.badarg(obj);
 		return new EString(ref.toString());
+	}
+	
+	@BIF
+	public static EBinary atom_to_binary(EObject obj, EObject enc) {
+		EAtom am = obj.testAtom();
+		EAtom en = enc.testAtom();
+		if (am == null || en == null) {
+			throw ERT.badarg(obj, enc);
+		}
+
+		byte[] data;
+		String str = am.getName();
+		if (en == ERT.am_latin1) {
+			data = str.getBytes(IO.ISO_LATIN_1); 
+		} else if (en == ERT.am_utf8 || en == ERT.am_unicode) {
+			data = str.getBytes(IO.UTF8); 			
+		} else {
+			throw ERT.badarg(obj, enc);			
+		}
+		
+		return new EBinary(data);
 	}
 
 }

@@ -41,6 +41,7 @@ public class IO {
 	 * 
 	 */
 	public static final Charset ISO_LATIN_1 = Charset.forName("ISO-8859-1");
+	public static final Charset UTF8 = Charset.forName("UTF8");
 
 	static private class BARR extends ByteArrayOutputStream {
 		ByteBuffer wrap() {
