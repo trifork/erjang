@@ -21,7 +21,7 @@
 -export([timetrap/1, timetrap_cancel/1, 
 	 minutes/1, seconds/1,
 	 timecall/3,
-	 do_times/4,
+	 do_times/4, 
 	 lookup_config/2,
 	 format/2, format/1,
 	 fail/0, fail/1, fail/2
@@ -56,10 +56,43 @@ timecall(Mod,Fun,Args) ->
     {Micros,Result} = timer:tc(Mod,Fun,Args),
     {Micros / 1000000.0, Result }.
 
-do_times(0,_Mod,_Fun,_Args) -> ok;
-do_times(Count,Mod,Fun,Args) when Count > 0 ->
-    erlang:apply(Mod,Fun,Args),
-    do_times(Count-1,Mod,Fun,Args).
+do_times_N(0,_Mod,_Fun,_Args) -> ok;
+do_times_N(Count,Mod,Fun,Args) when Count > 0 ->
+    apply(Mod,Fun,Args),
+    do_times_N(Count-1,Mod,Fun,Args).
+
+do_times_0(0,_Fun) -> ok;
+do_times_0(Count,Fun) ->
+    Fun(),
+    do_times_0(Count-1,Fun).
+
+do_times_1(0,_Fun,_A1) -> ok;
+do_times_1(Count,Fun,A1) ->
+    Fun(A1),
+    do_times_1(Count-1,Fun,A1).
+
+do_times_2(0,_Fun,_,_) -> ok;
+do_times_2(Count,Fun,A1,A2) ->
+    Fun(A1,A2),
+    do_times_2(Count-1,Fun,A1,A2).
+
+do_times_3(0,_Fun,_,_,_) -> ok;
+do_times_3(Count,Fun,A1,A2,A3) ->
+    Fun(A1,A2,A3),
+    do_times_3(Count-1,Fun,A1,A2,A3).
+
+
+do_times(N,M,F,A) ->
+    Fun = erlang:make_fun(M,F,length(A)),
+    case A of
+	[] -> do_times_0(N, Fun);
+	[A1] -> do_times_1(N, Fun, A1);
+	[A1,A2] -> do_times_2(N, Fun, A1, A2);
+	[A1,A2,A3] -> do_times_3(N, Fun, A1, A2, A3);
+	_ -> do_times_N(N,M,F,A)
+    end.
+
+
 
 lookup_config(Key,Config) when is_atom(Key) ->
     {Key,Value} = lists:keyfind(Key,1,Config),

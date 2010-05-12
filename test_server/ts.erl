@@ -27,14 +27,28 @@ list(Mod) when is_atom(Mod) ->
     lists:map(fun(Test) -> get_list(ModSuite,Test) end,
 	      ModSuite:all(suite)).
 
+get_list(Mod,Test) ->
+    case catch Mod:Test(suite) of
+	[_|_]=L ->
+	    {Test, lists:map(fun(Test2) -> get_list(Mod,Test2) end, L)};
+
+        _ -> Test
+    end.
+
 %% @doc Run all tests in module Mod (i.e. `Mod ++ "_SUITE"' ).
 run(Mod) when is_atom(Mod) ->
     run(Mod,all).
 
 %% @doc Run test `What' in module Mod (i.e. `Mod ++ "_SUITE"' ).
-run(Mod, What) when is_atom(Mod) ->
+run(Mod, What) when is_atom(Mod), is_atom(What) ->
     {module, ModSuite} = compile_and_load(Mod),
-    run (ModSuite, [], [What], []).
+    run (ModSuite, [], [What], []);
+
+run(Mod,{Group,List}) when is_atom(Group) ->
+    run(Mod,List);
+
+run(Mod,What) when is_list(What) ->
+    [ run(Mod,E) || E <- What ].
 
 
 run(_ModSuite,_Sub,[], _Config) ->
@@ -42,19 +56,16 @@ run(_ModSuite,_Sub,[], _Config) ->
 
 run(ModSuite,Sub,[Test|Rest], Config) ->
     case catch ModSuite:Test(suite) of
-	{'EXIT', _} ->
-	    run_single_test(ModSuite,Test,Config),
-	    run(ModSuite,Sub,Rest, Config);
-	    
-	[] ->
-	    run_single_test(ModSuite,Test,Config),
-	    run(ModSuite,Sub,Rest, Config);
-	
-	L when is_list(L) ->
-	    io:format("Running test category ~p~n", 
-		      [lists:reverse([Test|Sub])]),
+
+	[_|_]=L ->
+	    io:format("Running test category ~p~n", [lists:reverse([Test|Sub])]),
 	    run(ModSuite,[Test|Sub],L,Config),
-	    run(ModSuite,Sub,Rest,Config)
+	    run(ModSuite,Sub,Rest,Config);
+	    
+	_ ->
+	    run_single_test(ModSuite,Test,Config),
+	    run(ModSuite,Sub,Rest, Config)
+	
     end.
     
     
@@ -68,11 +79,12 @@ run_single_test(ModSuite,Test,Config) ->
     Owner = self(),
     {PID,Ref} = spawn_monitor
 		  (fun() ->
-			   erlang:group_leader(Owner, self()),
+			   %erlang:group_leader(Owner, self()),
 			   put('$ts$owner', Owner),
 			   case Test of
+			       t_repair_continuation -> erlang:throw(skipped);
 			       evil_rename -> erlang:throw(skipped);
-			       Else ->
+			       _ ->
 				   Result = do_run_single_test(ModSuite,Test,Config1),
 				   Owner ! {ok, Result}
 			   end
@@ -82,7 +94,7 @@ run_single_test(ModSuite,Test,Config) ->
     case test_control_loop(PID, Ref) of
 	{fail, Info} -> 
 %	    erlang:display(Info),
-	    io:format("~n*** ~p: Failed with:~p ~n", [TestName,Info]),
+	    io:format("~n*** ~p: ~nFailed with:~p ~n", [TestName,Info]),
 	    ok;
 
 	ok -> 
@@ -121,13 +133,23 @@ test_control_loop(PID, Ref) ->
 do_run_single_test(ModSuite,Test,Config1) ->
 
     %% initialize test
-    Config2 = ModSuite:init_per_testcase([ModSuite,Test], Config1),
+    {Found, Config2} = safe_apply(ModSuite,init_per_testcase,[Test, Config1], Config1),
     
     %% run test
     try
 	ModSuite:Test(Config2)
     after
-	Fin = ModSuite:fin_per_testcase ([ModSuite,Test], Config2)
+	if Found -> safe_apply(ModSuite,fin_per_testcase,[Test, Config2], ok), ok;
+	   true -> ok
+	end
+    end.
+
+safe_apply(Mod,Fun,Args,Else) ->
+    case lists:member({Fun,length(Args)}, Mod:module_info(exports)) of
+	true ->
+	    {true, apply(Mod,Fun,Args)};
+	false ->
+	    {false, Else}
     end.
 
 term_to_list(Term) ->
@@ -156,17 +178,6 @@ compile_and_load(Mod) ->
 %    catch erlang:purge_module(ModSuite),
 %    erlang:load_module(ModSuite, BeamData).
 
-
-get_list(Mod,Test) ->
-    io:format("getting ~s:~s~n",[Mod,Test]),
-    case catch Mod:Test(suite) of
-	{'EXIT', _} -> Test;
-
-	[] -> Test;
-	      
-	L when is_list(L) ->
-	    lists:map(fun(Test2) -> get_list(Mod,Test2) end, L)
-    end.
 
 
 
