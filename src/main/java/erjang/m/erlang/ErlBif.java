@@ -189,7 +189,7 @@ public class ErlBif {
 	}
 
 	@BIF
-	static EObject apply(EProc proc, EObject one, EObject two, EObject three) throws Pausable {
+	public static EObject apply(EProc proc, EObject one, EObject two, EObject three) throws Pausable {
 		EAtom mod = one.testAtom();
 		EAtom fun = two.testAtom();
 		ESeq  args = three.testSeq();
