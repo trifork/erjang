@@ -480,9 +480,9 @@ public class EMatchSpec extends EPseudoTerm {
 					if (bif.isVirtual) {
 						Object[] vargs = new Object[vals.length-1];
 						System.arraycopy(vals, 1, vargs, 0, vals.length-1);
-						return m.invoke(vals[0], vargs) == ERT.TRUE;
+						return m.invoke(vals[0], (Object[])vargs) == ERT.TRUE;
 					} else {
-						return m.invoke(null, vals) == ERT.TRUE;
+						return m.invoke(null, (Object[])vals) == ERT.TRUE;
 					}
 				} catch (ErlangException e) {
 					throw e;
@@ -523,9 +523,9 @@ public class EMatchSpec extends EPseudoTerm {
 					if (bif.isVirtual) {
 						Object[] vargs = new Object[vals.length-1];
 						System.arraycopy(vals, 1, vargs, 0, vals.length-1);
-						return (EObject) m.invoke(vals[0], vargs);
+						return (EObject) m.invoke(vals[0], (Object[])vargs);
 					} else {
-						return (EObject) m.invoke(null, vals);
+						return (EObject) m.invoke(null, (Object[])vals);
 					}
 				} catch (ErlangException e) {
 					throw e;

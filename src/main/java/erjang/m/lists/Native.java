@@ -155,7 +155,8 @@ public class Native extends ENative {
 		ESeq rev = ERT.NIL;
 		for (; !seq.isNil(); seq = seq.tail()) {
 			arg[0] = seq.head();
-			rev = rev.cons( fun.invoke(proc, arg) );
+			EObject val = fun.invoke(proc, arg);
+			rev = rev.cons( val );
 		}
 
 		return reverse(rev, ERT.NIL);
