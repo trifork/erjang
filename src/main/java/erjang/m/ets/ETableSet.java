@@ -416,7 +416,8 @@ public class ETableSet extends ETable {
 					
 					if (one.arity() == 2) {
 						ESmall eidx = one.elm(1).testSmall();
-						if (eidx == null || eidx.value > rec.arity()) return null;
+						incr = one.elm(2).testInteger();
+						if (eidx == null || eidx.value > rec.arity() || incr == null) return null;
 						int idx = eidx.value;
 						
 						rec = update(rec, idx, incr);
