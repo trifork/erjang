@@ -137,6 +137,49 @@ public class ErlPort {
 		return ERT.TRUE;
 	}
 
+	/* TODO: worry about the options argument */
+	@BIF
+	static EObject port_command(EProc proc, EObject port, EObject data, EObject options)
+			throws Pausable {
+		EInternalPort p = port.testInternalPort();
+
+		if (ERT.DEBUG_PORT)
+		System.err.print("port_command "+port+", "+data);
+		
+
+		
+		if (p == null) {
+			port = ERT.whereis(port);
+			if (port == ERT.am_undefined)
+				port = null;
+			else
+				p = port.testInternalPort();
+		}
+
+		List<ByteBuffer> ovec = new ArrayList<ByteBuffer>();
+		if (p == null || !data.collectIOList(ovec)) {
+			if (ERT.DEBUG_PORT) {
+				System.err.println("collect failed! or p==null: "+p);
+			}
+			throw ERT.badarg(port, data);
+		}
+
+		ByteBuffer[] out = new ByteBuffer[ovec.size()];
+		ovec.toArray(out);
+
+		if (ERT.DEBUG_PORT) {
+			System.err.print("EVEC: ");
+			TCPINet.dump_write(out);
+		}
+		
+		// System.err.println("packing "+data+"::"+data.getClass().getName()+" -> "+ovec);
+
+		p.command(proc.self_handle(), out);
+
+		return ERT.TRUE;
+	}
+
+
 	@BIF
 	static EObject port_control(EProc proc, EObject port, EObject operation,
 			EObject data) throws Pausable {
