@@ -27,6 +27,8 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import sun.applet.Main;
+
 import kilim.Pausable;
 import erjang.BIF;
 import erjang.EAbstractNode;
@@ -61,7 +63,7 @@ public class ErlProc {
 
 	private static final EAtom am_smp_support = EAtom.intern("smp_support");
 	private static final EAtom am_threads = EAtom.intern("threads");
-	private static final EAtom am_process = EAtom.intern("process");
+	public static final EAtom am_process = EAtom.intern("process");
 	private static final EAtom am_wordsize = EAtom.intern("wordsize");
 	private static final EAtom am_thread_pool_size = EAtom
 			.intern("thread_pool_size");
@@ -80,8 +82,10 @@ public class ErlProc {
 	private static final EAtom am_link = EAtom.intern("link");
 	private static final EAtom am_monitor = EAtom.intern("monitor");
 	private static final EAtom am_priority = EAtom.intern("priority");
+	private static final EAtom am_system_version = EAtom.intern("system_version");
 	public static final EAtom am_flush = EAtom.intern("flush");
 
+	private static final EAtom am_ets_alloc = EAtom.intern("ets_alloc");
 
 	@BIF
 	public static EObject process_info(EObject pid, EObject what) {
@@ -479,6 +483,7 @@ public class ErlProc {
 			return EString.fromString("BEAM");
 		}
 		
+		ETuple2 tup;
 		if (type == am_allocated_areas) {
 
 			ECons res = ERT.NIL;
@@ -554,11 +559,24 @@ public class ErlProc {
 			return new EString("R13B");
 			
 		} else if (type == am_wordsize) {
-			return new ESmall(32);
+			return new ESmall(4);
 			
 		} else if (type == am_hipe_architecture) {
 			return am_undefined;
 			
+		} else if (type == am_system_version) {
+			return new EString("Erjang ["+ erjang.Main.erts_version()+"]");
+			
+		} else if ((tup=ETuple2.cast(type)) != null) {
+			
+			if (tup.elem1 == am_allocator) {
+				if (tup.elem2 == am_ets_alloc) {
+					return ERT.FALSE;
+				}
+			}
+
+			return am_undefined;
+
 		} else {
 			return am_undefined;
 		}

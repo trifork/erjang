@@ -28,6 +28,10 @@ public class Main {
 	static String erl_rootdir;
 	static String erl_bootstrap_ebindir;
 	
+	public static String erts_version() {
+		return erts_version;
+	}
+	
 	static String setup(String cmd_line_root) {
 		
 		erl_rootdir = cmd_line_root;

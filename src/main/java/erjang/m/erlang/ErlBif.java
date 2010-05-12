@@ -592,6 +592,7 @@ public class ErlBif {
 	}
 
 	static final long wall_clock0 = System.currentTimeMillis();
+	private static final EAtom am_total = EAtom.intern("total");
 	
 	// TODO: figure out if this needs to be stored in the current process
 	static long last_wall_clock = wall_clock0;
@@ -1662,6 +1663,16 @@ public class ErlBif {
 	static public EObject system_flag(EObject flag_arg, EObject value)
 	{
 		throw new NotImplemented();
+	}
+	
+	@BIF
+	static public EObject memory(EObject type) {
+		Runtime runtime = Runtime.getRuntime();
+		if (type == am_total) {
+			return ERT.box(runtime.totalMemory()-runtime.freeMemory());
+		} else {
+			throw ERT.notsup();
+		}
 	}
 	
 	@BIF
