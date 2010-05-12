@@ -800,13 +800,30 @@ public class ERT {
 				if (ERT.DEBUG_WAIT) System.err.println("WAIT| "+proc+" wakes up on message");
 				return true;
 			} else {
+				long now = System.currentTimeMillis();
+				if (proc.timeout_start == 0) {
+					proc.timeout_start = now;
+				}
+				
 				EInteger ei;
 				if ((ei = howlong.testInteger()) == null)
 					throw new ErlangError(EAtom.intern("timeout_value"));
 
+				long end = proc.timeout_start + ei.longValue();
+				long left = end - now;
+				
+				if (left < 0) { 
+					proc.timeout_start = 0;
+					return false;
+				}
+				
 				boolean res = proc.mbox
 					.untilHasMessages(proc.midx + 1, ei.longValue());
 				if (ERT.DEBUG_WAIT) System.err.println("WAIT| "+proc+" wakes up "+(res?"on message" : "after timeout"));
+
+				if (!res) 					
+					proc.timeout_start = 0;
+				
 				return res;
 			}
 	}
@@ -823,6 +840,7 @@ public class ERT {
 	public static void timeout(EProc proc) {
 		if (DEBUG_WAIT) System.err.println("WAIT| "+proc+" timed out");
 		proc.midx = 0;
+		proc.timeout_start = 0L;
 	}
 
 	public static int unboxToInt(EInteger i) {

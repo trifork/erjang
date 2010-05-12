@@ -621,6 +621,8 @@ public final class EProc extends ETask<EInternalPID> {
 	}
 
 	List<ExitHook> exit_hooks = new ArrayList<ExitHook>();
+
+	public long timeout_start;
 	
 	/**
 	 * @param hook
