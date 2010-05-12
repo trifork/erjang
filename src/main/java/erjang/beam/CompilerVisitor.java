@@ -1035,8 +1035,10 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 					mv.visitJumpInsn(IFLT, getLabel(failLabel));
 					mv.visitVarInsn(ILOAD, scratch_reg);
+					
+					emit_box(Type.INT_TYPE, ESMALL_TYPE);
 
-					pop(dst, Type.INT_TYPE);
+					pop(dst, ESMALL_TYPE);
 					return;
 				}
 				default:

@@ -2162,7 +2162,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					if (!EMATCHSTATE_TYPE.equals(getType(current, insn.dest))) {
 						throw new Error("matching without a state");
 					}
-					return setType(current, insn.dest5, Type.INT_TYPE);
+					return setType(current, insn.dest5, ESMALL_TYPE);
 				}
 
 				default: { // All type tests:
