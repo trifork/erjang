@@ -70,15 +70,19 @@ run_single_test(ModSuite,Test,Config) ->
 		  (fun() ->
 			   erlang:group_leader(Owner, self()),
 			   put('$ts$owner', Owner),
-			   Result = do_run_single_test(ModSuite,Test,Config1),
-			   Owner ! {ok, Result}
+			   case Test of
+			       evil_rename -> erlang:throw(skipped);
+			       Else ->
+				   Result = do_run_single_test(ModSuite,Test,Config1),
+				   Owner ! {ok, Result}
+			   end
 		   end),
 
 
     case test_control_loop(PID, Ref) of
 	{fail, Info} -> 
-	    erlang:display(Info),
-	    io:format("~n*** ~p: Failed with: ~n", [TestName]),
+%	    erlang:display(Info),
+	    io:format("~n*** ~p: Failed with:~p ~n", [TestName,Info]),
 	    ok;
 
 	ok -> 
@@ -104,6 +108,7 @@ test_control_loop(PID, Ref) ->
 	    {fail, Info};
 	
 	{ok, Result} ->
+	    erlang:display(Result),
 	    erlang:demonitor(Ref, [flush]),
 	    ok
     end.
@@ -122,8 +127,13 @@ do_run_single_test(ModSuite,Test,Config1) ->
     try
 	ModSuite:Test(Config2)
     after
-	catch ModSuite:fin_per_testcase ([ModSuite,Test], Config2)
+	Fin = ModSuite:fin_per_testcase ([ModSuite,Test], Config2)
     end.
+
+term_to_list(Term) ->
+    IOList = io_lib:format("~w", [Term]),
+    Bin = erlang:iolist_to_binary(IOList),
+    erlang:binary_to_list(Bin).
 
 
 compile_and_load(Mod) ->
@@ -160,3 +170,4 @@ get_list(Mod,Test) ->
 
 
 
+    
