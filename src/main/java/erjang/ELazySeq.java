@@ -63,7 +63,7 @@ public abstract class ELazySeq extends ESeq {
 	
 	@Override
 	public ESeq testSeq() {
-		return value();
+		return value().testSeq();
 	}
 
 }
