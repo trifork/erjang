@@ -18,7 +18,7 @@
 
 package erjang;
 
-public class NotImplemented extends RuntimeException {
+public class NotImplemented extends ErlangError {
 
 	static EAtom am_not_implemented = EAtom.intern("not_implemented");
 	EObject reason;
@@ -27,13 +27,12 @@ public class NotImplemented extends RuntimeException {
 	 * 
 	 */
 	public NotImplemented() {
-	 reason = (ETuple.make(am_not_implemented, ERT.NIL,
+	 super(ETuple.make(am_not_implemented, ERT.NIL,
 			      ErlangException.decodeTrace(new Throwable().getStackTrace()) ));
 	}
 	
 	public NotImplemented(String message) {
-		super(message);
-	 reason = (ETuple.make(am_not_implemented, EString.fromString(message),
+		super(ETuple.make(am_not_implemented, EString.fromString(message),
 			      ErlangException.decodeTrace(new Throwable().getStackTrace()) ));
 	}
 	
