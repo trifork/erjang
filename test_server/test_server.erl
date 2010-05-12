@@ -57,9 +57,9 @@ timecall(Mod,Fun,Args) ->
     {Micros / 1000000.0, Result }.
 
 do_times(0,_Mod,_Fun,_Args) -> ok;
-do_times(Count,Mod,Fun,Args) when Count > 0 ->
+do_times(Count,Mod,Fun,[Args]=A) when Count > 0 ->
     Mod:Fun(Args),
-    do_times(Count-1,Mod,Fun,Args).
+    do_times(Count-1,Mod,Fun,A).
 
 lookup_config(Key,Config) when is_atom(Key) ->
     {Key,Value} = lists:keyfind(Key,1,Config),
