@@ -1691,7 +1691,7 @@ public class ErlBif {
 	@BIF
 	public static EObject raise(EObject kind, EObject value, EObject trace)
 			throws ErlangException {
-		throw ERT.raise(kind, value, trace);
+		return ERT.raise(kind, value, trace);
 	}
 	
 	@BIF

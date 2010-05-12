@@ -45,7 +45,7 @@ public class ERT {
 	static Logger log = Logger.getLogger("erjang");
 	public static EAtom am_badsig = EAtom.intern("badsig");
 
-	public static ErlangException raise(EObject kind, EObject value,
+	public static EObject raise(EObject kind, EObject value,
 			EObject trace) throws ErlangException {
 
 		// System.err.println("raise "+trace);
@@ -53,13 +53,14 @@ public class ERT {
 		EAtom clazz = kind.testAtom();
 		ESeq traz = trace.testSeq();
 
-		if (clazz == null || traz == null)
-			throw badarg(kind, value, trace);
+		if (traz == null || !(clazz==am_exit || clazz==am_error || clazz==am_throw))
+			return am_badarg;
 
 		throw new ErlangRaise(clazz, value, traz);
 	}
 
 	public static final EAtom am_badarg = EAtom.intern("badarg");
+	public static final EAtom am_notsup = EAtom.intern("notsup");
 	public static final EAtom AM_BADMATCH = EAtom.intern("badmatch");
 	public static final EAtom AM_BADARITH = EAtom.intern("badarith");
 	public static final EAtom am_module = EAtom.intern("module");
@@ -70,6 +71,10 @@ public class ERT {
 
 	public static ErlangError badarg() {
 		throw new ErlangError(am_badarg);
+	}
+
+	public static ErlangError notsup() {
+		throw new ErlangError(am_notsup);
 	}
 
 	public static ErlangError badarg(EObject... args) {
@@ -297,6 +302,8 @@ public class ERT {
 	public static final EAtom am_infinity = EAtom.intern("infinity");
 	public static final EAtom am_noproc = EAtom.intern("noproc");
 	public static final EAtom am_error = EAtom.intern("error");
+	public static final EAtom am_exit = EAtom.intern("exit");
+	public static final EAtom am_throw = EAtom.intern("throw");
 	public static final EAtom am_badfile = EAtom.intern("badfile");
 	public static final EAtom am_value = EAtom.intern("value");
 	public static final EAtom am_timeout = EAtom.intern("timeout");

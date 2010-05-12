@@ -1156,8 +1156,8 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					// raise will actually throw
 					mv.visitMethodInsn(INVOKESTATIC, ERT_NAME, "raise", "("
 							+ EOBJECT_DESC + EOBJECT_DESC + EOBJECT_DESC + ")"
-							+ EEXCEPTION_DESC);
-					mv.visitInsn(ATHROW);
+							+ EOBJECT_DESC);
+					mv.visitInsn(ARETURN);
 
 					return;
 				}
@@ -2642,7 +2642,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 						}
 
 						mv.visitMethodInsn(INVOKEVIRTUAL, funTypeName,
-								is_tail ? "invoke_tail" : "invoke", EUtil
+								(is_tail && !isExitFunc(fun)) ? "invoke_tail" : "invoke", EUtil
 										.getSignature(args.length, true));
 
 					} else if (bif.isVirtual()) {
@@ -2664,7 +2664,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 						mv.visitMethodInsn(INVOKEVIRTUAL, bif.owner
 								.getInternalName(), bif.getName(), bif
 								.getDescriptor());
-
+						
 					} else {
 
 						// System.err.println("DIRECT "+bif);
@@ -2683,7 +2683,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 						mv.visitMethodInsn(INVOKESTATIC, bif.owner
 								.getInternalName(), bif.getName(), bif
 								.getDescriptor());
-
+						
 					}
 
 					if (is_tail || isExitFunc(fun)) {

@@ -314,6 +314,6 @@ try_case:
 
 %class SS(src1:S src2:S)
 raise value trace:
-	throw ERT.raise(reg[0], GET(value), GET(trace));
+	reg[0] = ERT.raise(reg[0], GET(value), GET(trace));
 
 ##########==========       FLOATING-POINT    	  ==========##########

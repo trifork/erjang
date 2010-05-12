@@ -60,7 +60,10 @@ public class ErlangRaise extends ErlangException {
 
     @Override
 	public EObject getCatchValue() {
-		return reason();
+    	if (exClass == am_throw) 
+    		return reason();	
+    	else
+    		return ETuple.make(ERT.am_EXIT, reason());
 	}
 
 }

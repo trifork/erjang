@@ -63,18 +63,6 @@ public class ErlangError extends ErlangException {
 		return val;
 	}
 
-	/**
-	 * @return
-	 */
-	public ETuple3 getTryValueX() {
-		ETuple3 result = new ETuple3();
-		result.elem1 = getExClass();
-		result.elem2 = super.reason();
-		result.elem3 = getTrace();
-		return result;
-	}
-
-
 	public ESeq getTrace() {
 		ESeq trace = super.getTrace();
 		
