@@ -24,7 +24,8 @@
 	io:format(lists:concat([?MODULE,",",integer_to_list(?LINE),": ~p"]),
 		  [erlang:now()]),).
 -else.
--define(line,put(test_server_loc,{?MODULE,?LINE}),).
+%-define(line,put(test_server_loc,{?MODULE,?LINE}),).
+-define(line,).
 -endif.
 -define(t,test_server).
 -define(config,test_server:lookup_config).
