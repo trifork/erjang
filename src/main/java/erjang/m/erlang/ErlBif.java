@@ -85,32 +85,40 @@ public class ErlBif {
 		ESeq a = args.testSeq();
 		if (a==null) throw ERT.badarg(fun,args);
 		
+		EObject res;
 		EFun f = fun.testFunction();
 		if (f != null) {
-			return apply(proc, f, a);
-		}
+			res = apply_last(proc, f, a);
+		} else {
 
-		ETuple t = fun.testTuple();
-		if (t == null) {
-			throw ERT.badarg(fun,args);
+			ETuple t = fun.testTuple();
+			if (t == null) {
+				throw ERT.badarg(fun,args);
+			}
+	
+			ETuple2 t2 = ETuple2.cast(t);
+			if (t2 == null) {
+				throw ERT.badarg(fun,args);
+			}
+			
+			EAtom mn = t2.elem1.testAtom();
+			EAtom fn = t2.elem2.testAtom();
+			
+			FunID funspec;
+			f = EModuleManager.resolve(funspec=new FunID(mn,fn,a.length()));
+			
+			if (f == null) {
+				throw ERT.undef(funspec, a.toArray());
+			}
+			
+			res = apply_last(proc, f, a);
 		}
-
-		ETuple2 t2 = ETuple2.cast(t);
-		if (t2 == null) {
-			throw ERT.badarg(fun,args);
+		
+		while (res == EProc.TAIL_MARKER) {
+			res = proc.tail.go(proc);
 		}
 		
-		EAtom mn = t2.elem1.testAtom();
-		EAtom fn = t2.elem2.testAtom();
-		
-		FunID funspec;
-		f = EModuleManager.resolve(funspec=new FunID(mn,fn,a.length()));
-		
-		if (f == null) {
-			throw ERT.undef(funspec, a.toArray());
-		}
-		
-		return apply(proc, f, a);
+		return res;
 	}
 	
 	@BIF
@@ -198,10 +206,16 @@ public class ErlBif {
 		
 		EFun f = EModuleManager.resolve(new FunID(mod, fun, args.length()));
 		
-		return apply(proc, f, args);
+		EObject res = apply_last(proc, f, args);
+		
+		while (res == EProc.TAIL_MARKER) {
+			res = proc.tail.go(proc);
+		}
+
+		return res;
 	}
 
-	private static EObject apply(EProc proc, EFun fun, ESeq args)
+	private static EObject apply_last(EProc proc, EFun fun, ESeq args)
 			throws Pausable {
 		ESeq rargs = args.reverse();
 		int len = args.length();
