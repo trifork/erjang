@@ -368,8 +368,8 @@ public class EMatchSpec extends EPseudoTerm {
 				return ctx.value;
 			} else if (idx0 == EXPR_ALL_VARS) {
 				ESeq res = ERT.NIL;
-				for (int i = 0; i < ctx.vars.length; i++) {
-					res = res.cons(ctx.vars[idx0]);
+				for (int i = ctx.vars.length-1; i >= 0; i--) {
+					res = res.cons(ctx.vars[i]);
 				}
 				return res;
 			} else {
@@ -430,6 +430,7 @@ public class EMatchSpec extends EPseudoTerm {
 					out = body[i].eval(ctx);
 				}
 			} catch (Exception e) {
+				e.printStackTrace();
 				out = ERT.am_EXIT;
 			}
 
@@ -891,6 +892,7 @@ public class EMatchSpec extends EPseudoTerm {
 
 	static class MatchVariable extends Pattern {
 
+		final boolean free;
 		final int idx0;
 
 		boolean is_simple() { return false; }
@@ -906,42 +908,74 @@ public class EMatchSpec extends EPseudoTerm {
 				throw new IllegalArgumentException("given index " + idx1
 						+ " is out of range");
 			}
-			ctx.bind(this, idx0);
+			free = !ctx.isBound(idx0);
+
+			if (free)
+				ctx.bind(this, idx0);
 		}
 
 		public boolean match(ETuple t, EMatchContext r) {
-			r.vars[idx0] = t;
-			return true;
+			if (free) {
+				r.vars[idx0] = t;
+				return true;
+			} else {
+				return t.compareTo(r.vars[idx0]) == 0;
+			}
 		}
 
 		public boolean match(ENumber n, EMatchContext r) {
-			r.vars[idx0] = n;
-			return true;
+			if (free) {
+				r.vars[idx0] = n;
+				return true;
+			} else {
+				return n.compareTo(r.vars[idx0]) == 0;
+			}
 		}
 
 		public boolean match(EAtom a, EMatchContext r) {
-			r.vars[idx0] = a;
-			return true;
+			if (free) {
+				r.vars[idx0] = a;
+				return true;
+			} else {
+				return a.compareTo(r.vars[idx0]) == 0;
+			}
 		}
 
 		public boolean match(ECons c, EMatchContext r) {
-			r.vars[idx0] = c;
-			return true;
+			if (free) {
+				r.vars[idx0] = c;
+				return true;
+			} else {
+				return c.compareTo(r.vars[idx0]) == 0;
+			}
+
 		}
 
 		public boolean match(EPID p, EMatchContext r) {
-			r.vars[idx0] = p;
-			return true;
+			if (free) {
+				r.vars[idx0] = p;
+				return true;
+			} else {
+				return p.compareTo(r.vars[idx0]) == 0;
+			}
 		}
 
 		public boolean match(EPort p, EMatchContext r) {
-			r.vars[idx0] = p;
-			return true;
+			if (free) {
+				r.vars[idx0] = p;
+				return true;
+			} else {
+				return p.compareTo(r.vars[idx0]) == 0;
+			}
 		}
 
 		public boolean match(EBitString bs, EMatchContext r) {
-			r.vars[idx0] = bs;
-			return true;
+			if (free) {
+				r.vars[idx0] = bs;
+				return true;
+			} else {
+				return bs.compareTo(r.vars[idx0]) == 0;
+			}
 		}
 	}
 
