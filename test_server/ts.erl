@@ -17,7 +17,7 @@
 %%
 -module(ts).
 
--export([run/1, run/2, list/1]).
+-export([run/1, run/2, list/1, count/1]).
 
 %% @doc List tests in module Mod
 %% @spec list( atom() ) -> [ atom() ]
@@ -37,34 +37,39 @@ get_list(Mod,Test) ->
 
 %% @doc Run all tests in module Mod (i.e. `Mod ++ "_SUITE"' ).
 run(Mod) when is_atom(Mod) ->
-    run(Mod,all).
+    run(Mod,list(Mod)).
 
 %% @doc Run test `What' in module Mod (i.e. `Mod ++ "_SUITE"' ).
-run(Mod, What) when is_atom(Mod), is_atom(What) ->
+run(Mod,What) ->
     {module, ModSuite} = compile_and_load(Mod),
-    run (ModSuite, [], [What], []);
+    run(ModSuite,What,[]).
 
-run(Mod,{Group,List}) when is_atom(Group) ->
-    run(Mod,List);
+run(ModSuite, What, Acc) when is_atom(ModSuite), is_atom(What) ->
+    test_loop (ModSuite, [], [What], [], Acc);
 
-run(Mod,What) when is_list(What) ->
-    [ run(Mod,E) || E <- What ].
+run(ModSuite,{Group,List},Acc) when is_atom(Group) ->
+    run(ModSuite,List,Acc);
 
+run(_,[],Acc) -> Acc;
 
-run(_ModSuite,_Sub,[], _Config) ->
-    done;
+run(ModSuite,[First|Next],Acc) ->
+    Acc1 = run(ModSuite,First,Acc),
+    run(ModSuite,Next,Acc1).
 
-run(ModSuite,Sub,[Test|Rest], Config) ->
+test_loop(_ModSuite,_Sub,[], _Config, Acc) ->
+    Acc;
+
+test_loop(ModSuite,Sub,[Test|Rest], Config, Acc) ->
     case catch ModSuite:Test(suite) of
 
 	[_|_]=L ->
 	    io:format("Running test category ~p~n", [lists:reverse([Test|Sub])]),
-	    run(ModSuite,[Test|Sub],L,Config),
-	    run(ModSuite,Sub,Rest,Config);
+	    Acc1 = test_loop(ModSuite,[Test|Sub],L,Config, Acc),
+	    test_loop(ModSuite,Sub,Rest,Config, Acc1);
 	    
 	_ ->
-	    run_single_test(ModSuite,Test,Config),
-	    run(ModSuite,Sub,Rest, Config)
+	    TestResult = run_single_test(ModSuite,Test,Config),
+	    test_loop(ModSuite,Sub,Rest, Config, [TestResult|Acc])
 	
     end.
     
@@ -82,6 +87,7 @@ run_single_test(ModSuite,Test,Config) ->
 			   %erlang:group_leader(Owner, self()),
 			   put('$ts$owner', Owner),
 			   case Test of
+			       smp_unfix_fix -> erlang:throw(skipped);
 			       t_repair_continuation -> erlang:throw(skipped);
 			       evil_rename -> erlang:throw(skipped);
 			       _ ->
@@ -95,13 +101,24 @@ run_single_test(ModSuite,Test,Config) ->
 	{fail, Info} -> 
 %	    erlang:display(Info),
 	    io:format("~n*** ~p: ~nFailed with:~p ~n", [TestName,Info]),
-	    ok;
+	    {failure, {ModSuite,Test}, Info};
 
 	ok -> 
 	    io:format("~n*** ~p: Succeeded~n", [TestName]),
-	    ok
+	    {success, {ModSuite,Test}}
 	
     end.
+
+count(Result) ->
+    {Succes,Failure} = 
+	lists:foldl(fun({success, _},{S,F}) -> 
+			    {S+1,F}; 
+		       ({failure, _, _},{S,F}) -> 
+			    {S,F+1} end, 
+		    {0,0}, 
+		    Result),
+    io:format("Run completed with ~p successes, and ~p failures; total = ~p%~n", 
+	      [Succes, Failure, ((100*Succes) div (Succes+Failure))]).
 
 
 test_control_loop(PID, Ref) ->
