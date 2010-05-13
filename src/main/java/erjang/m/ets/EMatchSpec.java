@@ -1044,13 +1044,13 @@ public class EMatchSpec extends EPseudoTerm {
 	 * @param map
 	 * @return
 	 */
-	public ESeq matching_values_set(ESeq values, Map<EObject, ETuple> map) {
+	public ESeq matching_keys(ESeq values, Map<EObject, ETuple> map) {
 
 		for (Map.Entry<EObject, ETuple> ent : map.entrySet()) {
 
 			ETuple val = ent.getValue();
 			if (matches(val)) {
-				values = values.cons(val);
+				values = values.cons(ent.getKey());
 			}
 		}
 

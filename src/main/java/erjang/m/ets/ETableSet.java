@@ -166,38 +166,47 @@ public class ETableSet extends ETable {
 
 
 	@Override
-	protected void insert_new_many(final ESeq values) {	
-		in_tx(new WithMap<Object>() {
+	protected boolean insert_new_many(final ESeq values) {	
+		return in_tx(new WithMap<Boolean>() {
 			@Override
-			protected Object run(IPersistentMap map) {
+			protected Boolean run(IPersistentMap map) {
 				for (ESeq seq = values; !seq.isNil(); seq = seq.tail()) {
 					ETuple value = values.head().testTuple();
 					if (value == null) throw ERT.badarg(values);
 					EObject key = get_key(value);
-					if (!map.containsKey(key)) {
-						map = map.assoc(key, value);
+					if (map.containsKey(key)) {
+						return false;
 					}
 				}
 	
+				for (ESeq seq = values; !seq.isNil(); seq = seq.tail()) {
+					ETuple value = values.head().testTuple();
+					EObject key = get_key(value);
+					map = map.assoc(key, value);
+				}
+	
 				set(map);
-				return null;
+				return true;
 			}
 	});
 }
 
 	@Override
-	protected void insert_new_one(final ETuple value) {
+	protected boolean insert_new_one(final ETuple value) {
 		final EObject key = get_key(value);
 		if (!deref().containsKey(key)) {
-			in_tx(new WithMap<Object>() {
+			return in_tx(new WithMap<Boolean>() {
 				@Override
-				protected Object run(IPersistentMap map) {
+				protected Boolean run(IPersistentMap map) {
 					if (!map.containsKey(key)) {
 						set(map.assoc(key, value));
+						return true;
 					}
-					return null;
+					return false;
 				}
 			});
+		} else {
+			return false;
 		}
 	}
 	
@@ -352,24 +361,23 @@ public class ETableSet extends ETable {
 
 			@Override
 			protected Integer run(IPersistentMap map) {
-				ESeq vals = ERT.NIL;
+				ESeq keys_to_delete = ERT.NIL;
 				
 				EObject key = matcher.getTupleKey(keypos1);
 				
 				if (key == null) {
-					vals = matcher.matching_values_set(vals, (Map<EObject, ETuple>) map);
+					keys_to_delete = matcher.matching_keys(keys_to_delete, (Map<EObject, ETuple>) map);
 				} else {
 					ETuple candidate = (ETuple) map.valAt(key);
 					if (candidate != null && matcher.matches(candidate)) {
-						vals = vals.cons(key);
+						keys_to_delete = keys_to_delete.cons(key);
 					}
 				}
 				
 				int count = 0;
-				for (; !vals.isNil(); vals = vals.tail()) {
+				for (; !keys_to_delete.isNil(); keys_to_delete = keys_to_delete.tail()) {
 					try {
-						ETuple val = (ETuple) vals.head();
-						key = val.elm(keypos1);
+						key = keys_to_delete.head();
 						map = map.without(key);
 					} catch (Exception e) {
 						// should not happen!

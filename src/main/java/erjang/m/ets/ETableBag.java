@@ -122,12 +122,12 @@ public class ETableBag extends ETable {
 	}
 
 	@Override
-	protected void insert_new_many(ESeq values) {
+	protected boolean insert_new_many(ESeq values) {
 		throw new NotImplemented();
 	}
 
 	@Override
-	protected void insert_new_one(ETuple value) {
+	protected boolean insert_new_one(ETuple value) {
 		throw new NotImplemented();
 	}
 

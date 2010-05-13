@@ -319,13 +319,14 @@ public class Native extends ENative {
 			throw ERT.badarg(tab, oneOrMore);
 		}
 
+		boolean result;
 		if (one != null) {
-			table.insert_new_one(one);
+			result = table.insert_new_one(one);
 		} else {
-			table.insert_new_many(more);
+			result = table.insert_new_many(more);
 		}
 		
-		return ERT.TRUE;
+		return ERT.box(result);
 	}
 
 	@BIF

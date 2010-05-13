@@ -246,9 +246,9 @@ abstract class ETable implements ExitHook {
 
 	protected abstract void insert_many(ESeq values);
 
-	protected abstract void insert_new_one(ETuple value);
+	protected abstract boolean insert_new_one(ETuple value);
 
-	protected abstract void insert_new_many(ESeq values);
+	protected abstract boolean insert_new_many(ESeq values);
 
 	protected abstract ESeq lookup(EObject key);
 
