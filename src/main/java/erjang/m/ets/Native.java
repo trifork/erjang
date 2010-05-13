@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import erjang.BIF;
 import erjang.EAtom;
 import erjang.EInteger;
+import erjang.EInternalPID;
 import erjang.ENative;
 import erjang.EObject;
 import erjang.EPID;
@@ -119,7 +120,7 @@ public class Native extends ENative {
 		EAtom access = am_protected;
 		int keypos = 1;
 		boolean write_concurrency = false;
-		EPID heir_pid = null;
+		EInternalPID heir_pid = null;
 		EObject heir_data = null;
 		boolean is_named = false;
 
@@ -158,7 +159,7 @@ public class Native extends ENative {
 				}
 			} else if ((t3 = ETuple3.cast(option)) != null) {
 				if (t3.elem1 == am_heir
-						&& ((heir_pid = t3.elem2.testPID()) != null)) {
+						&& ((heir_pid = t3.elem2.testInternalPID()) != null)) {
 					heir_data = t3.elem3;
 					continue;
 				}

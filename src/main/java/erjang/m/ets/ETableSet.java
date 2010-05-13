@@ -30,6 +30,7 @@ import clojure.lang.PersistentTreeMap;
 import erjang.EAtom;
 import erjang.ECons;
 import erjang.EInteger;
+import erjang.EInternalPID;
 import erjang.EList;
 import erjang.EObject;
 import erjang.EPID;
@@ -49,7 +50,7 @@ import erjang.m.erlang.ErlBif;
 public class ETableSet extends ETable {
 
 	ETableSet(EProc owner, EAtom type, EInteger tid, EAtom aname, EAtom access, int keypos,
-			boolean write_concurrency, boolean is_named, EPID heirPID, EObject heirData) {
+			boolean write_concurrency, boolean is_named, EInternalPID heirPID, EObject heirData) {
 		super(owner, type, tid, aname, access, keypos, 
 				is_named, heirPID, heirData, 
 				type == Native.am_set 

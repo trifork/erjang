@@ -21,6 +21,8 @@ package erjang.m.ets;
 import java.lang.ref.WeakReference;
 import java.util.concurrent.Callable;
 
+import kilim.Pausable;
+
 import clojure.lang.APersistentMap;
 import clojure.lang.IMapEntry;
 import clojure.lang.IPersistentMap;
@@ -64,10 +66,10 @@ abstract class ETable implements ExitHook {
 
 	public static final EAtom am_stm = EAtom.intern("stm");
 	
-	protected final WeakReference<EProc> owner;
+	protected WeakReference<EProc> owner;
 	protected final EAtom access;
 	protected final int keypos1;
-	protected final EPID heirPID;
+	protected final EInternalPID heirPID;
 	protected final EObject heirData;
 	protected final EInteger tid;
 	protected final EAtom aname;
@@ -77,7 +79,7 @@ abstract class ETable implements ExitHook {
 	private Ref mapRef;
 
 	ETable(EProc owner, EAtom type, EInteger tid, EAtom aname, EAtom access, int keypos,
-			boolean is_named, EPID heir_pid, EObject heir_data, APersistentMap map) {
+			boolean is_named, EInternalPID heir_pid, EObject heir_data, APersistentMap map) {
 		this.type = type;
 		this.is_named = is_named;
 		this.owner = new WeakReference<EProc>(owner);
@@ -101,7 +103,7 @@ abstract class ETable implements ExitHook {
 	 */
 	public static ETable allocate(EProc proc, EInteger tid, EAtom aname,
 			EAtom type, EAtom access, int keypos, boolean write_concurrency,
-			boolean is_named, EPID heir_pid, EObject heir_data) {
+			boolean is_named, EInternalPID heir_pid, EObject heir_data) {
 
 		if (type == Native.am_set || type == Native.am_ordered_set) {
 			return new ETableSet(proc, type, tid, aname, access, keypos,
@@ -150,7 +152,8 @@ abstract class ETable implements ExitHook {
 		ESeq res = ERT.NIL;
 
 		res = res.cons(new ETuple2(Native.am_owner, owner_pid()));
-		res = res.cons(new ETuple2(Native.am_heir, heirPID));
+		if (heirPID != null)
+			res = res.cons(new ETuple2(Native.am_heir, heirPID));
 		res = res.cons(new ETuple2(Native.am_name, aname));
 		res = res.cons(new ETuple2(Native.am_size, ERT.box(size())));
 		res = res.cons(new ETuple2(Native.am_node, ERT.getLocalNode().node()));
@@ -164,9 +167,27 @@ abstract class ETable implements ExitHook {
 
 	
 	@Override
-	public void on_exit(EInternalPID pid) {
+	public void on_exit(EInternalPID pid)  throws Pausable {
 		if (pid == owner_pid()) {
-			delete();
+			
+			EInternalPID heir = heirPID;
+			EProc new_owner;
+			if (heir != null && (new_owner = heir.task()) != null) {
+				ETuple msg = ETuple.make(EAtom.intern("ETS-TRANSFER"),
+										 this.tid,
+										 pid,
+										 this.heirData == null 
+										 	? ERT.NIL 
+										 	: this.heirData);
+				
+				heir.send(pid, msg);
+				
+				this.owner = new WeakReference<EProc>(new_owner);
+				new_owner.add_exit_hook(this);
+			} else {				
+				delete();
+			}
+			
 		}
 	}
 

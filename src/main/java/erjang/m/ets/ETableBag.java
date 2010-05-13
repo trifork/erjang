@@ -34,6 +34,7 @@ import clojure.lang.Var;
 import erjang.EAtom;
 import erjang.ECons;
 import erjang.EInteger;
+import erjang.EInternalPID;
 import erjang.EList;
 import erjang.EObject;
 import erjang.EPID;
@@ -67,7 +68,7 @@ public class ETableBag extends ETable {
 			  int keypos, 
 			  boolean writeConcurrency,
 			  boolean isNamed, 
-			  EPID heirPid, 
+			  EInternalPID heirPid, 
 			  EObject heirData)
 	{
 		super(owner, type, tid, aname, access, keypos, isNamed, heirPid,

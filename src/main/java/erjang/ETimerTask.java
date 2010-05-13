@@ -23,6 +23,8 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.WeakHashMap;
 
+import kilim.Pausable;
+
 /**
  * 
  */
@@ -95,7 +97,7 @@ public abstract class ETimerTask extends TimerTask implements ExitHook {
 		return -1;
 	}
 	
-	public synchronized final void on_exit(EInternalPID pid) {
+	public synchronized final void on_exit(EInternalPID pid) throws Pausable {
 		assert (pid == this.pid) : "received on_exit callback from inknown pid";
 		timer_refs.remove(ref);
 		this.cancel();

@@ -19,9 +19,11 @@
 
 package erjang;
 
+import kilim.Pausable;
+
 /**
  * 
  */
 public interface ExitHook {
-	void on_exit (EInternalPID pid);
+	void on_exit (EInternalPID pid) throws Pausable;
 }
