@@ -62,6 +62,7 @@ public class ErlProc {
 	private static Logger log = Logger.getLogger(ErlProc.class.getName());
 
 	private static final EAtom am_smp_support = EAtom.intern("smp_support");
+	private static final EAtom am_schedulers = EAtom.intern("schedulers");
 	private static final EAtom am_threads = EAtom.intern("threads");
 	public static final EAtom am_process = EAtom.intern("process");
 	private static final EAtom am_wordsize = EAtom.intern("wordsize");
@@ -481,6 +482,10 @@ public class ErlProc {
 		if (type == am_machine) {
 			// we report BEAM so that the compiler emits BEAM files
 			return EString.fromString("BEAM");
+		} else if (type == am_smp_support) {
+			return ERT.TRUE;
+		} else if (type == am_schedulers) {
+			return ERT.box(ERT.threadPoolSize());
 		}
 		
 		ETuple2 tup;
