@@ -185,7 +185,6 @@ public final class EProc extends ETask<EInternalPID> {
 	
 	@Override
 	protected void do_proc_termination(EObject result) throws Pausable {
-		super.do_proc_termination(result);
 		
 		ExitHook[] hooks = NO_HOOKS;
 		synchronized (exit_hooks) {
@@ -200,6 +199,8 @@ public final class EProc extends ETask<EInternalPID> {
 			hooks[i].on_exit(self);
 		}
 		
+		super.do_proc_termination(result);
+
 		self.done();
 		
 		all_tasks.remove(this.id);
