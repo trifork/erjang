@@ -184,8 +184,33 @@ public class ETableBag extends ETable {
 
 	@Override
 	public ESeq match(EPattern matcher) {		
-		throw new NotImplemented();
+		
+		EObject key = matcher.getKey(keypos1);
+		if (key == null) {
+			
+			// oops, .. tablescan
+			ESeq res = ERT.NIL;
+			
+			IPersistentMap map = deref();
+			for (ISeq entseq = map.seq(); entseq != null; entseq = entseq.next()) {
+				IMapEntry ent = (IMapEntry) entseq.first();
+
+				if (ent == null) continue;
+				
+				Seqable coll = (Seqable)ent.getValue();
+				res = matcher.match_vars(res, coll.seq());
+			}
+			
+			return res.reverse();
+		}
+		
+		IPersistentMap map = deref();
+		IPersistentCollection coll = (IPersistentCollection) map.valAt(key);
+		if (coll == null) return ERT.NIL;
+		
+		return matcher.match_vars(ERT.NIL, coll.seq()).reverse();
 	}
+	
 
 	@Override
 	public ESeq match_object(final EPattern matcher) {		
@@ -203,17 +228,17 @@ public class ETableBag extends ETable {
 				if (ent == null) break;
 				
 				Seqable coll = (Seqable)ent.getValue();
-				res = matcher.match_members(ERT.NIL, coll.seq());
+				res = matcher.match_members(res, coll.seq());
 			}
 			
-			return res;
+			return res.reverse();
 		}
 		
 		IPersistentMap map = deref();
 		IPersistentCollection coll = (IPersistentCollection) map.valAt(key);
 		if (coll == null) return ERT.NIL;
 		
-		return matcher.match_members(ERT.NIL, coll.seq());
+		return matcher.match_members(ERT.NIL, coll.seq()).reverse();
 	}
 
 	@Override

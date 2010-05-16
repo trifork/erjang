@@ -361,29 +361,31 @@ public class ETableSet extends ETable {
 
 			@Override
 			protected Integer run(IPersistentMap map) {
-				ESeq keys_to_delete = ERT.NIL;
-				
 				EObject key = matcher.getTupleKey(keypos1);
+				int count = 0;
 				
 				if (key == null) {
-					keys_to_delete = matcher.matching_keys(keys_to_delete, (Map<EObject, ETuple>) map);
+					for (Map.Entry<EObject, ETuple> ent : ((Map<EObject, ETuple>) map).entrySet()) {		
+						ETuple val = ent.getValue();
+						if (matcher.matches(val)) {
+							try {
+								map = map.without(ent.getKey());
+							} catch (Exception e) {
+								throw new RuntimeException(e);
+							}
+							count += 1;
+						}
+					}
 				} else {
 					ETuple candidate = (ETuple) map.valAt(key);
 					if (candidate != null && matcher.matches(candidate)) {
-						keys_to_delete = keys_to_delete.cons(key);
+						try {
+							map = map.without(key);
+						} catch (Exception e) {
+							throw new RuntimeException(e);
+						}
+						count += 1;
 					}
-				}
-				
-				int count = 0;
-				for (; !keys_to_delete.isNil(); keys_to_delete = keys_to_delete.tail()) {
-					try {
-						key = keys_to_delete.head();
-						map = map.without(key);
-					} catch (Exception e) {
-						// should not happen!
-						throw new Error(e);
-					}
-					count += 1;
 				}
 				
 				set(map);

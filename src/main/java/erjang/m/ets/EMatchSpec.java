@@ -335,7 +335,7 @@ public class EMatchSpec extends EPseudoTerm {
 	/** $<x> appearing in conditions or body */
 	static class MatchVarExpr extends Expr {
 
-		final int idx0;
+		final int var_name;
 
 		// special index for '$$'
 		static final int EXPR_ALL_VARS = -1;
@@ -345,38 +345,34 @@ public class EMatchSpec extends EPseudoTerm {
 
 		MatchVarExpr(EAtom var, ParseContext ctx) {
 			if (var == am_ALL_VARS) {
-				idx0 = EXPR_ALL_VARS;
+				var_name = EXPR_ALL_VARS;
 			} else if (var == am_ENTIRE_MATCH) {
-				idx0 = EXPR_ENTIRE_MATCH;
+				var_name = EXPR_ENTIRE_MATCH;
 			} else {
-				int idx1 = Integer.parseInt(var.getName().substring(1));
-				idx0 = idx1-1;
-				if (idx0 > 100000000 || idx0 < 0) {
-					throw new IllegalArgumentException("given index " + idx1
+				int idx = Integer.parseInt(var.getName().substring(1));
+				var_name = idx;
+				if (var_name > 100000000 || var_name < 0) {
+					throw new IllegalArgumentException("given index " + idx
 							+ " is out of range");
 				}
-				if (!ctx.isBound(idx0)) {
+				if (!ctx.isBound(var_name)) {
 					throw new IllegalArgumentException("unbound variable $"
-							+ idx1);
+							+ idx);
 				}
 			}
 		}
 
 		@Override
 		public EObject eval(EMatchContext ctx) {
-			if (idx0 == EXPR_ENTIRE_MATCH) {
+			if (var_name == EXPR_ENTIRE_MATCH) {
 				return ctx.value;
-			} else if (idx0 == EXPR_ALL_VARS) {
-				ESeq res = ERT.NIL;
-				for (int i = ctx.vars.length-1; i >= 0; i--) {
-					res = res.cons(ctx.vars[i]);
-				}
-				return res;
+			} else if (var_name == EXPR_ALL_VARS) {
+				return ctx.makeList();
 			} else {
-				assert idx0 < ctx.vars.length;
-				assert idx0 >= 0;
-
-				return ctx.vars[idx0];
+				EObject value = ctx.vars.get(var_name);
+				if (value == null)
+					throw new InternalError("Unbound $"+var_name);
+				return value;				
 			}
 		}
 	}
@@ -389,10 +385,10 @@ public class EMatchSpec extends EPseudoTerm {
 		private final Pattern head;
 		private final GuardCall[] cond;
 		private final Expr[] body;
-		private final int nvars;
+		private final Integer[] nvars;
 
 		public MatchFunction(Pattern head, GuardCall[] cond, Expr[] body,
-				int nvars) {
+				Integer[] nvars) {
 			this.head = head;
 			this.cond = cond;
 			this.body = body;
@@ -578,20 +574,8 @@ public class EMatchSpec extends EPseudoTerm {
 		/**
 		 * @return
 		 */
-		public int getNumberVars() {
-			int max = -1;
-			for (int i : bound) {
-				max = Math.max(max, i);
-			}
-
-			for (int i = 0; i < max + 1; i++) {
-				if (!bound.contains(i)) {
-					throw new IllegalStateException("variable " + i
-							+ " not bound in match head");
-				}
-			}
-
-			return max + 1;
+		public Integer[] getNumberVars() {
+			return bound.toArray(new Integer[bound.size()]);
 		}
 
 	}
@@ -893,7 +877,7 @@ public class EMatchSpec extends EPseudoTerm {
 	static class MatchVariable extends Pattern {
 
 		final boolean free;
-		final int idx0;
+		final Integer var_name;
 
 		boolean is_simple() { return false; }
 
@@ -902,79 +886,78 @@ public class EMatchSpec extends EPseudoTerm {
 		 * @param ctx
 		 */
 		public MatchVariable(EAtom var, ParseContext ctx) {
-			int idx1 = Integer.parseInt(var.getName().substring(1));
-			idx0 = idx1-1;
-			if (idx0 > 100000000 || idx0 < 0) {
-				throw new IllegalArgumentException("given index " + idx1
+			int name = Integer.parseInt(var.getName().substring(1));
+			this.var_name = name;
+			if (name > 100000000 || name < 0) {
+				throw new IllegalArgumentException("given index " + name
 						+ " is out of range");
 			}
-			free = !ctx.isBound(idx0);
+			free = !ctx.isBound(name);
 
 			if (free)
-				ctx.bind(this, idx0);
+				ctx.bind(this, name);
 		}
 
 		public boolean match(ETuple t, EMatchContext r) {
 			if (free) {
-				r.vars[idx0] = t;
+				r.vars.put(var_name, t);
 				return true;
 			} else {
-				return t.compareTo(r.vars[idx0]) == 0;
+				return t.equalsExactly(r.vars.get(var_name));
 			}
 		}
 
-		public boolean match(ENumber n, EMatchContext r) {
+		public boolean match(ENumber t, EMatchContext r) {
 			if (free) {
-				r.vars[idx0] = n;
+				r.vars.put(var_name, t);
 				return true;
 			} else {
-				return n.compareTo(r.vars[idx0]) == 0;
+				return t.equalsExactly(r.vars.get(var_name));
 			}
 		}
 
-		public boolean match(EAtom a, EMatchContext r) {
+		public boolean match(EAtom t, EMatchContext r) {
 			if (free) {
-				r.vars[idx0] = a;
+				r.vars.put(var_name, t);
 				return true;
 			} else {
-				return a.compareTo(r.vars[idx0]) == 0;
+				return t.equalsExactly(r.vars.get(var_name));
 			}
 		}
 
-		public boolean match(ECons c, EMatchContext r) {
+		public boolean match(ECons t, EMatchContext r) {
 			if (free) {
-				r.vars[idx0] = c;
+				r.vars.put(var_name, t);
 				return true;
 			} else {
-				return c.compareTo(r.vars[idx0]) == 0;
-			}
-
-		}
-
-		public boolean match(EPID p, EMatchContext r) {
-			if (free) {
-				r.vars[idx0] = p;
-				return true;
-			} else {
-				return p.compareTo(r.vars[idx0]) == 0;
+				return t.equalsExactly(r.vars.get(var_name));
 			}
 		}
 
-		public boolean match(EPort p, EMatchContext r) {
+		public boolean match(EPID t, EMatchContext r) {
 			if (free) {
-				r.vars[idx0] = p;
+				r.vars.put(var_name, t);
 				return true;
 			} else {
-				return p.compareTo(r.vars[idx0]) == 0;
+				return t.equalsExactly(r.vars.get(var_name));
 			}
 		}
 
-		public boolean match(EBitString bs, EMatchContext r) {
+		public boolean match(EPort t, EMatchContext r) {
 			if (free) {
-				r.vars[idx0] = bs;
+				r.vars.put(var_name, t);
 				return true;
 			} else {
-				return bs.compareTo(r.vars[idx0]) == 0;
+				return t.equalsExactly(r.vars.get(var_name));
+			}
+		}
+
+		public boolean match(EBitString t, EMatchContext r) {
+			if (free) {
+				r.vars.put(var_name, t);
+				return true;
+			} else {
+				return t.equalsExactly(r.vars.get(var_name));
 			}
 		}
 	}

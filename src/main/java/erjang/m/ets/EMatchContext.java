@@ -19,14 +19,37 @@
 
 package erjang.m.ets;
 
+import java.util.HashMap;
+
 import erjang.EObject;
+import erjang.ERT;
+import erjang.ESeq;
+import erjang.ETuple;
 
 public class EMatchContext {
-	final EObject[] vars;
+	final HashMap<Integer, EObject> vars;
 	final EObject value;
+	private final Integer[] varnames;
 	
-	EMatchContext (int nvars, EObject value) {
-		this.vars = new EObject[nvars];
+	EMatchContext (Integer[] varnames, EObject value) {
+		this.varnames = varnames;
+		this.vars = new HashMap<Integer,EObject>();
 		this.value = value;
+	}
+
+	public ESeq makeList() {
+		ESeq res = ERT.NIL;
+		for (int i = varnames.length-1; i >= 0; i--) {
+			res = res.cons(vars.get(varnames[i]));
+		}
+		return res;
+	}
+
+	public EObject makeTuple() {
+		ETuple res = ETuple.make(varnames.length);
+		for (int i = 0; i < varnames.length; i++) {
+			res.set(i+1, vars.get(varnames[i]));
+		}
+		return res;
 	}
 }

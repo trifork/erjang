@@ -22,6 +22,8 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.regex.Pattern;
 
 import clojure.lang.ISeq;
@@ -45,107 +47,108 @@ import erjang.ETuple;
 public class EPattern {
 
 	ETermPattern matcher;
-	private final EObject spec; 
-	private int out_length;
+	private final EObject spec;
+	private Integer[] out_vars;
 	private final int keyidx;
-	
+
 	@Override
 	public String toString() {
 		return "#Pattern<keyidx=" + keyidx + ";" + spec.toString() + ">";
 	}
-	
+
 	/**
 	 * @param spec
 	 */
 	public EPattern(int keyidx, EObject spec) {
 		this.keyidx = keyidx;
 		this.spec = spec;
-		Set<Integer> out = new HashSet<Integer>();
-		
+		SortedSet<Integer> out = new TreeSet<Integer>();
+
 		matcher = spec.compileMatch(out);
-		
-		// find max element index
-		int max = 0;
-		for (int i : out) {
-			max = Math.max(i, max);
-		}
-		
-		// make sure we match out all values in $1, $2, ..., $<max>
-		for (int i = 1; i <= max; i++) {
-			if (!out.contains(i)) 
-				throw ERT.badarg(spec);
-		}
-		
-		this.out_length = max;
+
+		this.out_vars = out.toArray(new Integer[out.size()]);
 	}
 
-	
 	ESeq match_members(ESeq out, Collection<ETuple> in) {
-				
-		for (EObject elm : in)
-		{
-			EMatchContext res = new EMatchContext(out_length, elm);
+
+		for (EObject elm : in) {
+			EMatchContext res = new EMatchContext(out_vars, elm);
 			if (elm.match(matcher, res)) {
 				out = out.cons(elm);
 			}
 		}
-		
+
 		return out;
 	}
-	
-	
-	
+
 	ESeq match(ESeq out, Map<EObject, ETuple> in) {
-				
-		for (ETuple elm : in.values())
-		{
+
+		for (ETuple elm : in.values()) {
 			ETuple val = elm.testTuple();
-			EMatchContext res = new EMatchContext(out_length, val);
+			EMatchContext res = new EMatchContext(out_vars, val);
 			if (matcher.match(val, res)) {
-				out = out.cons(EList.make((Object[])res.vars));
+				out = out.cons(res.makeList());
 			}
 		}
-		
+
 		return out;
 	}
-	
+
 	/** return list of matching members */
 	ESeq match_members(ESeq out, Map<EObject, ETuple> in) {
-				
-		for (ETuple elm : in.values())
-		{
-			EMatchContext res = new EMatchContext(out_length, elm);
+
+		for (ETuple elm : in.values()) {
+			EMatchContext res = new EMatchContext(out_vars, elm);
 			if (matcher.match(elm, res)) {
 				out = out.cons(elm);
 			}
 		}
-		
+
 		return out;
 	}
-	
+
 	/** return list of matching members */
 	ESeq match_members(ESeq out, ISeq in) {
-				
+
 		while (in != null) {
 			ETuple elm = (ETuple) in.first();
-			if (elm == null) break;
-			
-			EMatchContext res = new EMatchContext(out_length, elm);
+			if (elm == null)
+				break;
+
+			EMatchContext res = new EMatchContext(out_vars, elm);
 			if (matcher.match(elm, res)) {
 				out = out.cons(elm);
 			}
-			
+
 			in = in.next();
 		}
-		
+
 		return out;
 	}
-	
-	public static EPattern compile(int keyidx, ETuple spec)
-	{
+
+	/** return list of matching members' vars */
+	ESeq match_vars(ESeq out, ISeq in) {
+
+		while (in != null) {
+			ETuple elm = (ETuple) in.first();
+			if (elm == null)
+				break;
+
+			EMatchContext res = new EMatchContext(out_vars, elm);
+			if (matcher.match(elm, res)) {
+				out = out.cons(res.makeList());
+			}
+
+			in = in.next();
+		}
+
+		return out;
+	}
+
+	public static EPattern compile(int keyidx, ETuple spec) {
 		return new EPattern(keyidx, spec);
 	}
-	
+
 	/** matcher for '_' */
 	static class AnyPattern extends ETermPattern {
 		public boolean match(ETuple t, EMatchContext r) {
@@ -177,57 +180,84 @@ public class EPattern {
 		}
 
 	}
-	
+
 	/** matcher for '$N' */
 	static class VarPattern extends ETermPattern {
-		int idx0;
+		private Integer name;
+		private boolean free;
 
 		/**
 		 * @param idx2
 		 * @param out
 		 */
 		public VarPattern(int idx1, Set<Integer> out) {
-			this.idx0 = idx1-1;
-			if (out.contains(idx1)) {
-				// the match expression contains "$<idx>" twice!
-				throw ERT.badarg();
+			this.name = idx1;
+			if (this.free = !out.contains(this.name)) {
+				out.add(this.name);
 			}
-			out.add(idx1);
 		}
 
 		public boolean match(ETuple t, EMatchContext r) {
-			r.vars[idx0] = t;
-			return true;
+			if (free) {
+				r.vars.put(name, t);
+				return true;
+			} else {
+				return t.equalsExactly(r.vars.get(name));
+			}
 		}
 
-		public boolean match(ENumber n, EMatchContext r) {
-			r.vars[idx0] = n;
-			return true;
+		public boolean match(ENumber t, EMatchContext r) {
+			if (free) {
+				r.vars.put(name, t);
+				return true;
+			} else {
+				return t.equalsExactly(r.vars.get(name));
+			}
 		}
 
-		public boolean match(EAtom a, EMatchContext r) {
-			r.vars[idx0] = a;
-			return true;
+		public boolean match(EAtom t, EMatchContext r) {
+			if (free) {
+				r.vars.put(name, t);
+				return true;
+			} else {
+				return t.equalsExactly(r.vars.get(name));
+			}
 		}
 
-		public boolean match(ECons c, EMatchContext r) {
-			r.vars[idx0] = c;
-			return true;
+		public boolean match(ECons t, EMatchContext r) {
+			if (free) {
+				r.vars.put(name, t);
+				return true;
+			} else {
+				return t.equalsExactly(r.vars.get(name));
+			}
 		}
 
-		public boolean match(EPID p, EMatchContext r) {
-			r.vars[idx0] = p;
-			return true;
+		public boolean match(EPID t, EMatchContext r) {
+			if (free) {
+				r.vars.put(name, t);
+				return true;
+			} else {
+				return t.equalsExactly(r.vars.get(name));
+			}
 		}
 
-		public boolean match(EPort p, EMatchContext r) {
-			r.vars[idx0] = p;
-			return true;
+		public boolean match(EPort t, EMatchContext r) {
+			if (free) {
+				r.vars.put(name, t);
+				return true;
+			} else {
+				return t.equalsExactly(r.vars.get(name));
+			}
 		}
 
-		public boolean match(EBitString bs, EMatchContext r) {
-			r.vars[idx0] = bs;
-			return true;
+		public boolean match(EBitString t, EMatchContext r) {
+			if (free) {
+				r.vars.put(name, t);
+				return true;
+			} else {
+				return t.equalsExactly(r.vars.get(name));
+			}
 		}
 	}
 
@@ -243,13 +273,13 @@ public class EPattern {
 			arity = tup.arity();
 			elems = new ETermPattern[arity];
 			for (int idx1 = 1; idx1 <= arity; idx1++) {
-				elems[idx1-1] = tup.elm(idx1).compileMatch(out);
+				elems[idx1 - 1] = tup.elm(idx1).compileMatch(out);
 			}
 		}
 
 		public boolean match(EObject elm, EMatchContext res) {
 			ETuple tup;
-			if ((tup=elm.testTuple()) == null)
+			if ((tup = elm.testTuple()) == null)
 				return false;
 			return match(tup, res);
 		}
@@ -258,7 +288,7 @@ public class EPattern {
 			if (t.arity() != arity)
 				return false;
 			for (int idx1 = 1; idx1 < elems.length + 1; idx1++) {
-				if (!t.elm(idx1).match(elems[idx1-1], r))
+				if (!t.elm(idx1).match(elems[idx1 - 1], r))
 					return false;
 			}
 			return true;
@@ -271,9 +301,9 @@ public class EPattern {
 			return c.isNil();
 		}
 	}
-	
+
 	static class ConsPattern extends ETermPattern {
-		
+
 		ETermPattern head, tail;
 
 		/**
@@ -286,8 +316,7 @@ public class EPattern {
 		}
 
 		public boolean match(ECons c, EMatchContext r) {
-			return c.head().match(head, r) 
-				&& c.tail().match(tail, r);
+			return c.head().match(head, r) && c.tail().match(tail, r);
 		}
 	}
 
@@ -305,7 +334,7 @@ public class EPattern {
 		public boolean match(EPID pid, EMatchContext r) {
 			return pid.compareTo(value) == 0;
 		}
-		
+
 		public boolean match(ERef ref, EMatchContext r) {
 			return ref.compareTo(value) == 0;
 		}
@@ -370,9 +399,9 @@ public class EPattern {
 		}
 	}
 
-	static Pattern VAR = Pattern.compile("^\\$[1-9][0-9]*$");
-	static EAtom am_ANY =  EAtom.intern("_");
-	
+	static Pattern VAR = Pattern.compile("^\\$[0-9]+$");
+	static EAtom am_ANY = EAtom.intern("_");
+
 	/**
 	 * @param eAtom
 	 * @param out
@@ -380,7 +409,7 @@ public class EPattern {
 	 */
 	public static ETermPattern compilePattern(EAtom am, Set<Integer> out) {
 		String name = am.getName();
-		
+
 		if (VAR.matcher(name).matches()) {
 			int idx1 = Integer.parseInt(name.substring(1));
 			return new VarPattern(idx1, out);
@@ -401,7 +430,7 @@ public class EPattern {
 			if (keypos1 < 1 || keypos1 > tm.elems.length) {
 				return null;
 			}
-			ETermPattern m = tm.elems[keypos1-1];
+			ETermPattern m = tm.elems[keypos1 - 1];
 			if (m instanceof ValuePattern) {
 				ValuePattern vm = (ValuePattern) m;
 				return vm.value;
@@ -410,7 +439,7 @@ public class EPattern {
 			ValuePattern vp = (ValuePattern) matcher;
 			if (vp.value instanceof ETuple) {
 				ETuple et = (ETuple) vp.value;
-				if (keypos1 < 1 || keypos1 > et.arity()) 
+				if (keypos1 < 1 || keypos1 > et.arity())
 					return null;
 				return et.elm(keypos1);
 			}
@@ -424,29 +453,28 @@ public class EPattern {
 	 * @return
 	 */
 	ESeq match(ESeq out, ETuple val) {
-		EMatchContext res = new EMatchContext(out_length, val);
-		
+		EMatchContext res = new EMatchContext(out_vars, val);
+
 		if (matcher.match(val, res)) {
-			out = out.cons(ETuple.make(res.vars));
+			out = out.cons(res.makeList());
 		}
-		
-		return out;	
+
+		return out;
 	}
 
 	ESeq match_members(ESeq out, ETuple val) {
-		EMatchContext res = new EMatchContext(out_length, val);
-		
+		EMatchContext res = new EMatchContext(out_vars, val);
+
 		if (matcher.match(val, res)) {
 			out = out.cons(val);
 		}
-		
-		return out;	
+
+		return out;
 	}
 
 	boolean match(ETuple val) {
-		EMatchContext res = new EMatchContext(out_length, val);
+		EMatchContext res = new EMatchContext(out_vars, val);
 		return matcher.match(val, res);
 	}
 
-	
 }

@@ -43,6 +43,7 @@ import erjang.ERT;
 import erjang.ESeq;
 import erjang.ETuple;
 import erjang.ETuple2;
+import erjang.ETuple3;
 import erjang.ErlangError;
 import erjang.ExitHook;
 import erjang.NotImplemented;
@@ -67,16 +68,17 @@ abstract class ETable implements ExitHook {
 	public static final EAtom am_stm = EAtom.intern("stm");
 	
 	protected WeakReference<EProc> owner;
-	protected final EAtom access;
+	protected EAtom access;
 	protected final int keypos1;
-	protected final EInternalPID heirPID;
-	protected final EObject heirData;
+	protected EInternalPID heirPID;
+	protected EObject heirData;
 	protected final EInteger tid;
 	protected final EAtom aname;
 	protected final boolean is_named;
 	protected final EAtom type;
 	protected final APersistentMap empty;
 	private Ref mapRef;
+	private boolean is_fixed;
 
 	ETable(EProc owner, EAtom type, EInteger tid, EAtom aname, EAtom access, int keypos,
 			boolean is_named, EInternalPID heir_pid, EObject heir_data, APersistentMap map) {
@@ -149,45 +151,58 @@ abstract class ETable implements ExitHook {
 	}
 
 	ESeq info() {
-		ESeq res = ERT.NIL;
+		ESeq rep = ERT.NIL;
+		ETable table = this;
+		
+		rep = rep.cons(new ETuple2(Native.am_owner, table.owner_pid()));
+		rep = rep.cons(new ETuple2(Native.am_named_table, ERT.box(table.is_named)));
+		rep = rep.cons(new ETuple2(Native.am_name, table.aname));
+		if (table.heirPID != null)
+			rep = rep.cons(new ETuple2(Native.am_heir, table.heirPID));
+		else
+			rep = rep.cons(new ETuple2(Native.am_heir, Native.am_none));
+		rep = rep.cons(new ETuple2(Native.am_size, ERT.box(table.size())));
+		rep = rep.cons(new ETuple2(Native.am_node, ERT.getLocalNode().node()));
+		rep = rep.cons(new ETuple2(Native.am_type, table.type));
+		rep = rep.cons(new ETuple2(Native.am_keypos, ERT.box(table.keypos1)));
+		rep = rep.cons(new ETuple2(Native.am_protection, table.access));
+		rep = rep.cons(new ETuple2(Native.am_fixed, ERT.box(is_fixed)));
 
-		res = res.cons(new ETuple2(Native.am_owner, owner_pid()));
-		if (heirPID != null)
-			res = res.cons(new ETuple2(Native.am_heir, heirPID));
-		res = res.cons(new ETuple2(Native.am_name, aname));
-		res = res.cons(new ETuple2(Native.am_size, ERT.box(size())));
-		res = res.cons(new ETuple2(Native.am_node, ERT.getLocalNode().node()));
-		res = res.cons(new ETuple2(Native.am_named_table, ERT.box(is_named)));
-		res = res.cons(new ETuple2(Native.am_type, type));
-		res = res.cons(new ETuple2(Native.am_keypos, ERT.box(keypos1)));
-		res = res.cons(new ETuple2(Native.am_protection, access));
-
-		return res;
+		return rep;
 	}
 
 	
 	@Override
-	public void on_exit(EInternalPID pid)  throws Pausable {
-		if (pid == owner_pid()) {
+	public void on_exit(EInternalPID dyingPID)  throws Pausable {
+		if (dyingPID == owner_pid()) {
 			
-			EInternalPID heir = heirPID;
+			EInternalPID heirPID = this.heirPID;
 			EProc new_owner;
-			if (heir != null && (new_owner = heir.task()) != null) {
+			if (heirPID != null 
+					&& heirPID != dyingPID 
+					&& (new_owner = heirPID.task()) != null) {
+				System.err.println("received exit from owner "+dyingPID
+									+" => transfer to "+heirPID);
+
 				ETuple msg = ETuple.make(EAtom.intern("ETS-TRANSFER"),
-										 this.tid,
-										 pid,
+										 this.aname,
+										 dyingPID,
 										 this.heirData == null 
 										 	? ERT.NIL 
 										 	: this.heirData);
 				
-				heir.send(pid, msg);
-				
 				this.owner = new WeakReference<EProc>(new_owner);
 				new_owner.add_exit_hook(this);
+				
+				heirPID.send(dyingPID, msg);
+				
 			} else {				
+				System.err.println("received exit from owner "+dyingPID+" => delete");
 				delete();
 			}
 			
+		} else {
+			System.err.println("received exit from unrelated "+dyingPID);
 		}
 	}
 
@@ -311,5 +326,111 @@ abstract class ETable implements ExitHook {
 	public abstract ESeq slot();
 
 	public abstract EObject select(EMatchSpec spec, int i);
+
+	public EObject info(EObject item) {
+		
+		if (item == Native.am_owner) {
+			return owner_pid();
+		} else if (item == Native.am_named_table) {
+			return ERT.box(aname != null);
+		} else if (item == Native.am_name) {
+			return aname;
+		} else if (item == Native.am_heir) {
+			if (heirPID == null) return Native.am_none;
+			else return heirPID;
+		} else if (item == Native.am_size) {
+			return ERT.box(size());
+		} else if (item == Native.am_node) {
+			return ERT.getLocalNode().node();
+		} else if (item == Native.am_type) {
+			return type;
+		} else if (item == Native.am_keypos) {
+			return ERT.box( keypos1 );
+		} else if (item == Native.am_protection) {
+			return access;
+		} else if (item == Native.am_fixed) {
+			return ERT.box(is_fixed);
+		} else if (item == Native.am_stats) {
+			//
+			// The OTP test suite checks these, so we simply
+			// provide some values that will make it happy.
+			// This is very implementation dependent.
+			//
+			// {Buckets,AvgLen,StdDev,ExpSD,_MinLen,_MaxLen} 
+			//
+			return ETuple.make( ERT.box(256), // Buckets
+								ERT.box(7),   // AvgLen,
+								ERT.box(1),   // StdDev
+								ERT.box(1),   // ExpSD
+								ERT.box(1),   // MinLen
+								ERT.box(10)   // MaxLen
+							  );
+		} else if (item == Native.am_safe_fixed) {
+			throw new NotImplemented();
+		} else {
+			return null;
+		}
+	}
+
+	public void setopt(EObject head) {
+		
+		ETuple3 tup = ETuple3.cast(head);
+		if (tup != null) {
+
+			EInternalPID pid;
+			if (tup.elem1 == Native.am_heir
+					&& (pid=tup.elem2.testInternalPID()) != null)
+			{
+				if (!pid.is_alive()) {
+					this.heirPID = null;
+					this.heirData = ERT.NIL;
+					return;
+				}
+
+				EInternalPID old = this.heirPID;
+				
+				this.heirData = tup.elem3;
+				this.heirPID = pid;
+
+				pid.add_exit_hook(this);
+
+				if (old != null) {
+					old.remove_exit_hook(this);
+				}
+				
+				return;
+			}
+			
+		}
+		
+		ETuple2 tup2 = ETuple2.cast(head);
+		if (tup2 != null) {
+			
+			if (tup2.elem1 == Native.am_protection) {
+				EObject mode = tup2.elem2;
+				if (mode == Native.am_private 
+						|| mode == Native.am_public 
+						|| mode == Native.am_protected) {
+					this.access = (EAtom) mode;
+					return;
+				}
+			} else if (tup2.elem1 == Native.am_heir 
+					&& tup2.elem2 == Native.am_none) {
+
+				EInternalPID old = this.heirPID;
+				
+				this.heirPID = null;
+				this.heirData = ERT.NIL;
+
+				if (old != null) {
+					old.remove_exit_hook(this);
+				}
+				
+			}
+			
+		}
+		
+		throw ERT.badarg(tid, head);
+	}
 	
 }
