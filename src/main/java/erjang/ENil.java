@@ -99,4 +99,23 @@ public class ENil extends ESeq {
 	public ESeq prepend(ESeq list) {
 		return list;
 	}
+	
+	@Override
+	public boolean equalsExactly(EObject rhs) {
+		return rhs.isNil();
+	}
+	
+	@Override
+	public boolean equals(EObject other) {
+		return other.isNil();
+	}
+	
+	@Override
+	public boolean equals(Object other) {
+		if (other instanceof EObject) {
+			return ((EObject)other).isNil();
+		} else {
+			return false;
+		}
+	}
 }
