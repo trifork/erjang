@@ -88,6 +88,7 @@ public class EDriverTask extends ETask<EInternalPort> implements
 
 	private static final EAtom am_data = EAtom.intern("data");
 	private static final EAtom am_connected = EAtom.intern("connected");
+	private static final EAtom am_closed = EAtom.intern("closed");
 	private final EInternalPort port;
 	protected EPID owner;
 	private final EDriverControl instance;
@@ -583,6 +584,8 @@ public class EDriverTask extends ETask<EInternalPort> implements
 	 */
 	@Override
 	protected void do_proc_termination(EObject result) throws Pausable {
+		
+		owner.send(self_handle(), ETuple.make(self_handle(), am_closed));
 		
 		super.do_proc_termination(result);
 		if (result != am_normal) {
