@@ -1081,7 +1081,13 @@ public class ErlBif {
 	public static final EInteger size(EObject o) {
 		ETuple t;
 		if ((t = o.testTuple()) == null)
-			throw ERT.badarg(o);
+		{
+			EBinary b;
+			if ((b = o.testBinary()) == null)
+				throw ERT.badarg();
+			
+			return ERT.box(b.byteSize());
+		}
 		return ERT.box(t.arity());
 	}
 
