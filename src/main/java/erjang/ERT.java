@@ -811,7 +811,7 @@ public class ERT {
 				return true;
 			} else {
 				long now = System.currentTimeMillis();
-				if (proc.timeout_start == 0) {
+				if (proc.midx == 0) {
 					proc.timeout_start = now;
 				}
 				
@@ -823,17 +823,14 @@ public class ERT {
 				long left = end - now;
 				
 				if (left < 0) { 
-					proc.timeout_start = 0;
 					return false;
 				}
 				
+				if (ERT.DEBUG_WAIT) System.err.println("WAIT| "+proc+" waiting for "+left+"ms for msg #"+(proc.midx+1));
 				boolean res = proc.mbox
-					.untilHasMessages(proc.midx + 1, ei.longValue());
+					.untilHasMessages(proc.midx + 1, left);
 				if (ERT.DEBUG_WAIT) System.err.println("WAIT| "+proc+" wakes up "+(res?"on message" : "after timeout"));
 
-				if (!res) 					
-					proc.timeout_start = 0;
-				
 				return res;
 			}
 	}
