@@ -156,6 +156,9 @@ public abstract class ESeq extends ECons {
 	 */
 	public ESeq reverse() {
 		ESeq result = ERT.NIL;
+		if (this.isNil())
+			return result;
+		
 		EObject[] val = this.toArray();
 		for (int i = 0; i < val.length; i++) {
 			result = result.cons(val[i]);
