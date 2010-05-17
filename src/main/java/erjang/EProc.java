@@ -81,6 +81,9 @@ public final class EProc extends ETask<EInternalPID> {
 	private static final EObject am_running = EAtom.intern("running");
 	private static final EObject am_runnable = EAtom.intern("runnable");
 
+	private static final EAtom am_error_logger = EAtom.intern("error_logger");
+	private static final EAtom am_info_report = EAtom.intern("info_report");
+
 	private static final EObject am_DOWN = EAtom.intern("DOWN");
 	private static final EObject am_noproc = EAtom.intern("noproc");
 
@@ -439,6 +442,7 @@ public final class EProc extends ETask<EInternalPID> {
 	public void execute() throws Pausable {
 		try {
 
+			Throwable death = null;
 			EObject result = null;
 			try {
 				this.check_exit();
@@ -458,16 +462,19 @@ public final class EProc extends ETask<EInternalPID> {
 				System.err.print("exiting "+self_handle()+" with: ");
 				log.log(Level.SEVERE, "[fail] exiting "+self_handle(), e);
 				result = e.reason();
-
+				death = e;
+				
 			} catch (ErlangException e) {
 				log.log(Level.FINE, "[erl] exiting "+self_handle(), e);
 				last_exception = e;
 				result = e.reason();
+				death = e;
 
 			} catch (ErlangExitSignal e) {
 				log.log(Level.FINE, "[signal] exiting "+self_handle(), e);
 				result = e.reason();
-
+				death = e;
+				
 			} catch (Throwable e) {
 
 				System.err.print("[java] exiting "+self_handle()+" with: ");
@@ -478,10 +485,32 @@ public final class EProc extends ETask<EInternalPID> {
 						.fromString(ERT.describe_exception(e)));
 
 				result = ETuple.make(java_ex, erl_trace);
+				death = e;
 
 			} finally {
 				// this.runner = null;
 				this.pstate = State.DONE;
+			}
+			
+			if (monitors.isEmpty() && links.isEmpty()) {
+				if (result != am_normal && result != am_killed) {
+					
+					EFun fun = EModuleManager.resolve(new FunID(am_error_logger, am_info_report, 1));
+					
+					String msg = "Process " +self_handle()+ " exited abnormally without links/monitors\n"
+						+ "exit reason was: " + result + "\n"
+						+ (death == null ? "" : ERT.describe_exception(death));
+					
+					try {
+						fun.invoke(this, new EObject[] { EString.fromString(msg) });
+					} catch (ThreadDeath e) {
+						throw e;
+					} catch (Throwable e) {
+						e.printStackTrace();
+						// ignore //
+					}
+				}
+
 			}
 
 			//System.err.println("task "+this+" exited with "+result);
