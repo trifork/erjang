@@ -174,6 +174,7 @@ public class EDriverTask extends ETask<EInternalPort> implements
 	public int status;
 	private EPeer peer;
 	boolean stderr_to_stdout;
+	private EPID reply_closed_to;
 
 	/**
 	 * @param cmd
@@ -441,6 +442,7 @@ public class EDriverTask extends ETask<EInternalPort> implements
 					}
 
 				} else if (t2.elem2 == am_close) {
+					this.reply_closed_to = t2.elem1.testPID();
 					// will call instance.stop()
 					return;
 				}
@@ -567,6 +569,17 @@ public class EDriverTask extends ETask<EInternalPort> implements
 			}
 		});
 	}
+	
+	public void close() throws Pausable {
+		mbox.put(new EPortControl() {
+			
+			@Override
+			public void execute() throws Exception, Pausable {
+				throw new ErlangExitSignal(am_normal);
+			}
+			
+		});
+	}
 
 	/** our owner died, do something! */
 	@Override
@@ -585,7 +598,9 @@ public class EDriverTask extends ETask<EInternalPort> implements
 	@Override
 	protected void do_proc_termination(EObject result) throws Pausable {
 		
-		owner.send(self_handle(), ETuple.make(self_handle(), am_closed));
+		if (this.reply_closed_to != null) {
+			this.reply_closed_to.send(self_handle(), ETuple.make(self_handle(), am_closed));
+		}
 		
 		super.do_proc_termination(result);
 		if (result != am_normal) {

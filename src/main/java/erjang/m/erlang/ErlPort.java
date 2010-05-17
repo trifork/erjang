@@ -344,7 +344,7 @@ public class ErlPort {
 
 		proc.unlink(p);
 
-		p.send(proc.self_handle(), new ETuple2(proc.self_handle(), EPort.am_close));
+		p.close();
 
 		return ERT.TRUE;
 	}

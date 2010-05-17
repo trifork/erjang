@@ -174,4 +174,10 @@ public class EInternalPort extends EPort implements ELocalHandle {
 			dt.owner(ipid);		
 	}
 
+	@Override
+	public void close() throws Pausable {
+		EDriverTask dt = task;
+		if (dt != null)
+			dt.close();		
+	}
 }

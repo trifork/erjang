@@ -18,6 +18,8 @@
 
 package erjang;
 
+import kilim.Pausable;
+
 
 public abstract class EPort extends EHandle {
 
@@ -106,4 +108,6 @@ public abstract class EPort extends EHandle {
 
 	public abstract void set_data(EObject data);
 	public abstract EObject get_data();
+
+	public abstract void close() throws Pausable;
 }
