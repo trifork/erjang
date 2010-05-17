@@ -416,8 +416,10 @@ public class Native extends ENative {
 			
 			return table.slot();
 			
-		} else {
+		} else if (pos.value == 1) {
 			return am_$end_of_table;
+		} else {
+			throw ERT.badarg(nameOrTid, i);
 		}
 	}
 	
