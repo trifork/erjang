@@ -73,8 +73,8 @@ public final class EProc extends ETask<EInternalPID> {
 	public static final EAtom am_low = EAtom.intern("low");
 	public static final EAtom am_high = EAtom.intern("high");
 
-	private static final EObject am_kill = EAtom.intern("kill");
-	private static final EObject am_killed = EAtom.intern("killed");
+	static final EObject am_kill = EAtom.intern("kill");
+	static final EObject am_killed = EAtom.intern("killed");
 
 	private static final EObject am_status = EAtom.intern("status");
 	private static final EObject am_waiting = EAtom.intern("waiting");
@@ -212,7 +212,12 @@ public final class EProc extends ETask<EInternalPID> {
 	protected void process_incoming_exit(EHandle from, EObject reason, boolean is_erlang_exit2) throws Pausable
 	{
 		if (is_erlang_exit2) {
-			this.exit_reason = reason;
+			if (reason == am_kill) {
+				exit_reason = am_killed;
+			} else {
+				this.exit_reason = reason;
+			}
+			
 			this.pstate = State.EXIT_SIG;
 			this.resume();
 			return;
@@ -696,6 +701,7 @@ public final class EProc extends ETask<EInternalPID> {
 
 	
 	static {
+		if (Boolean.getBoolean("erj.dump_on_exit"))
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 			@Override
 			public void run() {

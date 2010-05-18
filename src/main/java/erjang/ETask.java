@@ -272,7 +272,11 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 
 				// the process is not running yet, this should not happen
 			case INIT:
-				this.exit_reason = reason;
+				if (reason == EProc.am_kill) {
+					this.exit_reason = EProc.am_killed;
+				} else {
+					this.exit_reason = reason;
+				}
 				this.pstate = State.EXIT_SIG;
 				return;
 
