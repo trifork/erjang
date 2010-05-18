@@ -181,8 +181,8 @@ abstract class ETable implements ExitHook {
 			if (heirPID != null 
 					&& heirPID != dyingPID 
 					&& (new_owner = heirPID.task()) != null) {
-				System.err.println("received exit from owner "+dyingPID
-									+" => transfer to "+heirPID);
+				//System.err.println("received exit from owner "+dyingPID
+				//					+" => transfer to "+heirPID);
 
 				ETuple msg = ETuple.make(EAtom.intern("ETS-TRANSFER"),
 										 this.aname,
@@ -197,12 +197,12 @@ abstract class ETable implements ExitHook {
 				heirPID.send(dyingPID, msg);
 				
 			} else {				
-				System.err.println("received exit from owner "+dyingPID+" => delete");
+				//System.err.println("received exit from owner "+dyingPID+" => delete");
 				delete();
 			}
 			
 		} else {
-			System.err.println("received exit from unrelated "+dyingPID);
+			System.err.println("table "+aname+" ("+tid+") received exit from unrelated "+dyingPID);
 		}
 	}
 
