@@ -403,7 +403,7 @@ public class ETableBag extends ETable {
 				EObject key = matcher.getTupleKey(keypos1);
 				
 				if (key == null) {
-					vals = matcher.matching_values_bag(vals, (Map<EObject, java.util.Collection <ETuple>>) map);
+					vals = matcher.matching_values_bag(vals, (Map<EObject, IPersistentCollection>) map);
 				} else {
 					IPersistentCollection coll = (IPersistentCollection) map.valAt(key);
 					if (coll != null) {

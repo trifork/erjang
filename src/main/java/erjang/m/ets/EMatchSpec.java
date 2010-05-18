@@ -31,6 +31,7 @@ import java.util.TreeSet;
 
 import javax.swing.event.ListSelectionEvent;
 
+import clojure.lang.IPersistentCollection;
 import clojure.lang.ISeq;
 
 import erjang.EAtom;
@@ -1065,12 +1066,13 @@ public class EMatchSpec extends EPseudoTerm {
 	 * @return
 	 */
 	public ESeq matching_values_bag(ESeq vals,
-			Map<EObject, Collection<ETuple>> map) {
+			Map<EObject, IPersistentCollection> map) {
 		
-		for (Map.Entry<EObject, Collection<ETuple>> ent : map.entrySet()) {
+		for (Map.Entry<EObject, IPersistentCollection> ent : map.entrySet()) {
 
-			Collection<ETuple> values = ent.getValue();
-			for (ETuple val : values) {
+			IPersistentCollection values = ent.getValue();
+			for (ISeq seq = values.seq(); seq != null; seq = seq.next()) {
+				ETuple val = (ETuple) seq.first();
 				if (matches(val)) {
 					vals = vals.cons(val);
 				}
