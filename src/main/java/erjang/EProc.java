@@ -209,8 +209,15 @@ public final class EProc extends ETask<EInternalPID> {
 		all_tasks.remove(this.id);
 	}
 	
-	protected void process_incoming_exit(EHandle from, EObject reason) throws Pausable
+	protected void process_incoming_exit(EHandle from, EObject reason, boolean is_erlang_exit2) throws Pausable
 	{
+		if (is_erlang_exit2) {
+			this.exit_reason = reason;
+			this.pstate = State.EXIT_SIG;
+			this.resume();
+			return;
+		}
+		
 		if (from == self_handle()) {
 			return;
 			

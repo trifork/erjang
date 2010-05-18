@@ -74,16 +74,16 @@ public abstract class EHandle extends EObject {
 	}
 
 	/**
-	 * @param exitToSender TODO
+	 * @param is_erlang_exit2 TODO
 	 * @param self
 	 * @param result
 	 * @throws Pausable 
 	 * @throws Pausable 
 	 */
-	public void exit_signal(EHandle from, EObject reason, boolean exitToSender) throws Pausable {
+	public void exit_signal(EHandle from, EObject reason, boolean is_erlang_exit2) throws Pausable {
 		ETask<?> task = task();
 		if (task != null) {
-			task.send_exit(from, reason, exitToSender);
+			task.send_exit(from, reason, is_erlang_exit2);
 		}
 	}
 

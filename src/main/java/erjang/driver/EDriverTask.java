@@ -583,7 +583,7 @@ public class EDriverTask extends ETask<EInternalPort> implements
 
 	/** our owner died, do something! */
 	@Override
-	protected void process_incoming_exit(EHandle from, EObject reason) throws Pausable
+	protected void process_incoming_exit(EHandle from, EObject reason, boolean exitToSender) throws Pausable
 			 {
 		
 		// TODO: do special things for reason=kill ?

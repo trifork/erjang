@@ -241,9 +241,9 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 	/**
 	 * @param from
 	 * @param reason
-	 * @param exitToSender TODO
+	 * @param is_erlang_exit2 TODO
 	 */
-	public final void send_exit(EHandle from, EObject reason, boolean exitToSender) throws Pausable {
+	public final void send_exit(EHandle from, EObject reason, boolean is_erlang_exit2) throws Pausable {
 
 		log.fine("exit " + from + " -> " + this + ", reason="+reason);
 		
@@ -253,7 +253,7 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 		}
 		
 		// make sure we don't also send him an exit signal
-		if (!exitToSender)
+		if (!is_erlang_exit2)
 			links.remove(from);
 
 		synchronized (this) {
@@ -283,11 +283,11 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 			}
 		}
 
-		process_incoming_exit(from, reason);
+		process_incoming_exit(from, reason, is_erlang_exit2);
 
 	}
 
-	protected abstract void process_incoming_exit(EHandle from, EObject reason) throws Pausable
+	protected abstract void process_incoming_exit(EHandle from, EObject reason, boolean is_erlang_exit2) throws Pausable
 			;
 
 	/**

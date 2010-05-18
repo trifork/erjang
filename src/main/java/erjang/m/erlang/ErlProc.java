@@ -437,8 +437,16 @@ public class ErlProc {
 	@BIF
 	public static EAtom exit(EProc proc, EObject p, EObject reason) throws Pausable {
 		EPID pid = p.testPID();
-		if (pid == null) throw ERT.badarg(p, reason);
+		
+		if (pid == null) 
+			throw ERT.badarg(p, reason);
+	
+		if (pid == proc.self_handle()) {
+			throw new ErlangExit(reason);
+		}
+		
 		pid.exit_signal(proc.self_handle(), reason, true);
+		
 		return ERT.TRUE;
 	}
 
