@@ -438,7 +438,7 @@ public class ErlProc {
 	public static EAtom exit(EProc proc, EObject p, EObject reason) throws Pausable {
 		EPID pid = p.testPID();
 		if (pid == null) throw ERT.badarg(p, reason);
-		pid.exit_signal(proc.self_handle(), reason);
+		pid.exit_signal(proc.self_handle(), reason, true);
 		return ERT.TRUE;
 	}
 

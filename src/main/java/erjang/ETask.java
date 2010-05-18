@@ -98,7 +98,7 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 		this.exit_reason = exit_reason;
 		H me = self_handle();
 		for (EHandle handle : links) {
-			handle.exit_signal(me, exit_reason);
+			handle.exit_signal(me, exit_reason, false);
 		}
 		for (Map.Entry<ERef, EHandle> ent : monitors.entrySet()) {
 			EHandle pid = ent.getValue();
@@ -241,8 +241,9 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 	/**
 	 * @param from
 	 * @param reason
+	 * @param exitToSender TODO
 	 */
-	public final void send_exit(EHandle from, EObject reason) throws Pausable {
+	public final void send_exit(EHandle from, EObject reason, boolean exitToSender) throws Pausable {
 
 		log.fine("exit " + from + " -> " + this + ", reason="+reason);
 		
@@ -252,7 +253,8 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 		}
 		
 		// make sure we don't also send him an exit signal
-		links.remove(from);
+		if (!exitToSender)
+			links.remove(from);
 
 		synchronized (this) {
 			switch (pstate) {

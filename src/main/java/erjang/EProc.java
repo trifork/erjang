@@ -178,7 +178,7 @@ public final class EProc extends ETask<EInternalPID> {
 
 	protected void link_failure(EHandle h) throws Pausable {
 		if (trap_exit == ERT.TRUE || h.testLocalHandle()==null) {
-			send_exit(h, ERT.am_noproc);
+			send_exit(h, ERT.am_noproc, false);
 		} else {
 			throw new ErlangError(ERT.am_noproc);
 		}
@@ -686,6 +686,22 @@ public final class EProc extends ETask<EInternalPID> {
 		return null;
 	}
 
+
+	
+	static {
+		Runtime.getRuntime().addShutdownHook(new Thread() {
+			@Override
+			public void run() {
+				System.err.println("===== LIVE TASKS UPON EXIT");
+				for (EProc task : all_tasks.values()) {
+					
+					System.err.println("==" + task);
+					System.err.println (task.fiber);
+				}
+				System.err.println("=====");				
+			}
+		});
+	}
 
 
 

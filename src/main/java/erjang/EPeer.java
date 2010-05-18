@@ -223,7 +223,7 @@ public class EPeer extends EAbstractNode {
 				EPID to_proc = head.elm(3).testPID();
 				reason = head.elm(4);
 
-				to_proc.exit_signal(from_pid, reason);
+				to_proc.exit_signal(from_pid, reason, false);
 				return;
 				
 			}
