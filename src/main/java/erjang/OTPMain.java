@@ -48,8 +48,8 @@ public class OTPMain {
 		
 	    Handler fh = new FileHandler("erjang.log");
 	    Logger.getLogger("").addHandler(fh);
-	    Logger.getLogger("erjang").setLevel(Level.FINE);
-	    //Logger.getLogger("kilim.Task").setLevel(Level.FINEST);
+	   // Logger.getLogger("erjang").setLevel(Level.FINE);
+	   // Logger.getLogger("kilim.Task").setLevel(Level.FINEST);
 
 		for (String m : MODULES) {
 			ERT.load_module(EAtom.intern(m));
