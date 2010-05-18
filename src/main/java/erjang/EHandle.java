@@ -19,6 +19,8 @@
 
 package erjang;
 
+import java.util.logging.Level;
+
 import kilim.Pausable;
 import kilim.Task;
 
@@ -57,7 +59,9 @@ public abstract class EHandle extends EObject {
 			task.mbox.put(msg);
 			return task.mbox.size();
 		} else {
-			ERT.log.info("sending message to dead process/port ignored "+this+" ! "+msg);
+			if (ERT.log.isLoggable(Level.FINE)) {
+				ERT.log.fine("sending message to dead process/port ignored "+this+" ! "+msg);
+			}
 			return 0;
 		}
 	}
