@@ -27,8 +27,6 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import sun.applet.Main;
-
 import kilim.Pausable;
 import erjang.BIF;
 import erjang.EAbstractNode;
@@ -85,6 +83,7 @@ public class ErlProc {
 	private static final EAtom am_priority = EAtom.intern("priority");
 	private static final EAtom am_system_version = EAtom.intern("system_version");
 	public static final EAtom am_flush = EAtom.intern("flush");
+	public static final EAtom am_shutdown = EAtom.intern("shutdown");
 
 	private static final EAtom am_ets_alloc = EAtom.intern("ets_alloc");
 
