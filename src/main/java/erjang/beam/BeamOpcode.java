@@ -143,6 +143,7 @@ public enum BeamOpcode {
 	bs_utf16_size		(0x92),
 	bs_put_utf16		(0x93),
 	bs_put_utf32		(0x94),
+	on_load				(0x95),
 	
 	// Opcode groups
 	

@@ -792,6 +792,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						break;
 					}
 
+					case on_load: // ignore
 					case trim:
 						break;
 
@@ -1718,6 +1719,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					}
 
 						// this is really a no-op in jave
+					case on_load:
 					case test_heap: {
 						continue next_insn;
 					}
