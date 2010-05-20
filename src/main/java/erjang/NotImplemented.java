@@ -22,6 +22,7 @@ public class NotImplemented extends ErlangError {
 
 	static EAtom am_not_implemented = EAtom.intern("not_implemented");
 	EObject reason;
+	private String message;
 	
 	/**
 	 * 
@@ -29,16 +30,23 @@ public class NotImplemented extends ErlangError {
 	public NotImplemented() {
 	 super(ETuple.make(am_not_implemented, ERT.NIL,
 			      ErlangException.decodeTrace(new Throwable().getStackTrace()) ));
+	 this.message = "";
 	}
 	
 	public NotImplemented(String message) {
 		super(ETuple.make(am_not_implemented, EString.fromString(message),
 			      ErlangException.decodeTrace(new Throwable().getStackTrace()) ));
+		this.message = message;
 	}
 	
 	
 	public EObject reason() {
 		return reason;
+	}
+	
+	@Override
+	public String getMessage() {
+		return message;
 	}
 	
 }
