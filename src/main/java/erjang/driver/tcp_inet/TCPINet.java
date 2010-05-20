@@ -45,6 +45,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.PriorityQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import kilim.Pausable;
@@ -78,24 +79,53 @@ import erjang.net.ProtocolType;
 
 public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 
-	static class MultiTimerData {
+	public class AsyncMultiOp {
+
+		public AsyncOp op;
+		public MultiTimerData timeout;
+		public AsyncMultiOp next;
+
+	}
+
+	static class MultiTimerData implements Comparable<MultiTimerData>{
+
+		public long when;
+		public EPID caller;
+
+		@Override
+		public int compareTo(MultiTimerData o) {
+			if ( this.when < o.when )
+				return -1;
+			if ( this.when > o.when )
+				return 1;
+			return 0;
+		}
 
 	}
 
 	static class AsyncOp {
 
+		public AsyncOp(short id, EPID caller, int req, int timeout,
+				ERef monitor) {
+			this.id = id;
+			this.caller = caller;
+			this.req = req;
+			this.monitor = monitor;
+			this.timeout = timeout;
+		}
+
 		/** id used to identify reply */
-		short id;
+		final short id;
 
 		/** recipient of async reply */
-		EPID caller;
+		final EPID caller;
 
 		/* Request id (CONNECT/ACCEPT/RECV) */
-		int req;
+		final int req;
 
-		ERef monitor;
+		final ERef monitor;
 
-		public int timeout;
+		final public int timeout;
 	}
 
 	static enum SockType {
@@ -393,6 +423,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 	private static final EAtom am_tcp_closed = EAtom.intern("tcp_closed");
 	private static final EAtom am_timeout = EAtom.intern("timeout");
 	private static final EAtom am_tcp_error = EAtom.intern("tcp_error");
+	private static final byte[] NOPROC = new byte[] { 'n', 'o', 'p', 'r', 'o', 'c'} ;
 
 	private int state = INET_STATE_CLOSED;
 	private InetSocket fd;
@@ -405,8 +436,10 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 	private EHandle busy_caller;
 	private int i_remain;
 	private boolean send_timeout_close;
-	private Object multi_first;
-	private MultiTimerData mtd;
+
+	private AsyncMultiOp multi_last;
+	private AsyncMultiOp multi_first;
+	private PriorityQueue<MultiTimerData> mtd_queue;
 	private boolean prebound;
 	private int event_mask;
 	private PacketParseType htype = PacketParseType.TCP_PB_RAW;
@@ -716,12 +749,12 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 		int state = this.state;
 
 		if ((state & TCP_STATE_MULTI_ACCEPTING) == TCP_STATE_MULTI_ACCEPTING) {
-			MultiTimerData[] timeout = new MultiTimerData[1];
-			if (!remove_multi_op(who, timeout)) {
+			AsyncMultiOp op;
+			if ((op = remove_multi_op(who))  == null){
 				return;
 			}
-			if (timeout[0] != null) {
-				remove_multi_timer(this.mtd, timeout[0]);
+			if (op.timeout != null) {
+				remove_multi_timer(op.timeout);
 			}
 			if (this.multi_first == null) {
 				sock_select(ERL_DRV_ACCEPT, SelectMode.CLEAR);
@@ -730,7 +763,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 
 		} else if ((state & TCP_STATE_ACCEPTING) == TCP_STATE_ACCEPTING) {
 			deq_async();
-			driver_cancel_timer(port());
+			driver_cancel_timer();
 			sock_select(ERL_DRV_ACCEPT, SelectMode.CLEAR);
 			this.state = TCP_STATE_LISTEN;
 		}
@@ -756,15 +789,29 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 		super.select(this.fd.channel(), ops, onOff);
 	}
 
-	private void remove_multi_timer(MultiTimerData mtd2,
-			MultiTimerData multiTimerData) {
-		throw new erjang.NotImplemented();
-
+	private void remove_multi_timer(MultiTimerData p) {
+		boolean is_first = mtd_queue.peek() == p;
+		
+		mtd_queue.remove(p);
+		
+		if (is_first) {
+			driver_cancel_timer();
+			
+			MultiTimerData first = mtd_queue.peek();
+			if (first != null) {
+				long timeout = relative_timeout( first.when );
+				driver_set_timer(timeout);
+			}			
+		}
+		
 	}
 
-	private boolean remove_multi_op(EHandle who, MultiTimerData[] timeout) {
-		throw new erjang.NotImplemented();
-
+	private long relative_timeout(long abs_time) {
+		long now = System.currentTimeMillis();
+		if (abs_time < now)
+			return 0;
+		else
+			return abs_time-now;
 	}
 
 	@Override
@@ -898,7 +945,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 			caller = busy_caller;
 			tcp_clear_output();
 			if (busy_on_send) {
-				driver_cancel_timer(port());
+				driver_cancel_timer();
 				busy_on_send = false;
 			}
 			state &= ~INET_F_BUSY;
@@ -907,7 +954,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 		}
 
 		if (active == ActiveType.PASSIVE) {
-			driver_cancel_timer(port());
+			driver_cancel_timer();
 			tcp_clear_input();
 			if (exitf) {
 				tcp_clear_output();
@@ -956,7 +1003,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 			caller = busy_caller;
 			tcp_clear_output();
 			if (busy_on_send) {
-				driver_cancel_timer(port());
+				driver_cancel_timer();
 				busy_on_send = false;
 			}
 			state &= ~INET_F_BUSY;
@@ -965,7 +1012,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 		}
 		if (active == ActiveType.PASSIVE) {
 			/* We must cancel any timer here ! */
-			driver_cancel_timer(port());
+			driver_cancel_timer();
 			tcp_clear_input();
 			if (exitf) {
 				desc_close();
@@ -1027,7 +1074,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 					state &= ~INET_F_BUSY;
 					set_busy_port(port(), 0);
 					if (busy_on_send) {
-						driver_cancel_timer(port());
+						driver_cancel_timer();
 						busy_on_send = false;
 					}
 					inet_reply_ok();
@@ -1060,7 +1107,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 			caller = busy_caller;
 			tcp_clear_output();
 			if (busy_on_send) {
-				driver_cancel_timer(port());
+				driver_cancel_timer();
 				busy_on_send = false;
 			}
 			state &= ~INET_F_BUSY;
@@ -1164,7 +1211,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 				driver_demonitor_process(peek.monitor);
 			}
 
-			driver_cancel_timer(port());
+			driver_cancel_timer();
 
 			if (sock == null) {
 				// return //
@@ -1189,6 +1236,58 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 
 				async_ok_port(peek.caller, accept_desc.port());
 			}
+		} else if (state == TCP_STATE_MULTI_ACCEPTING) {
+			
+			while (state == TCP_STATE_MULTI_ACCEPTING) {
+				int err = 0;
+				InetSocket sock;
+				try {
+					sock = fd.accept();
+					if (sock == null) {
+						return;
+					}
+				} catch (IOException e) {
+					sock = null;
+					err = IO.exception_to_posix_code(e);
+				}
+	
+				AsyncMultiOp multi = deq_multi_op();
+				if (multi == null) {
+					return; /* -1 */
+				}
+
+				if (this.multi_first == null) {
+					// we got a connection, and there are no more multi's waiting
+					sock_select(ERL_DRV_ACCEPT, SelectMode.CLEAR);
+					state = TCP_STATE_LISTEN;
+				}
+				
+				if (multi.timeout != null) {
+					remove_multi_timer(multi.timeout);
+				}
+				
+				driver_demonitor_process(multi.op.monitor);
+
+				if (sock == null) {
+					send_async_error(multi.op.id, multi.op.caller, 
+							EAtom.intern(Posix.errno_id(err).toLowerCase()));
+					// return //
+				} else {
+	
+					TCPINet accept_desc = this.copy(multi.op.caller, sock);
+					accept_desc.state = TCP_STATE_CONNECTED;
+	
+					try {
+						sock.setNonBlocking();
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+					// accept_desc.select(sock.channel(), ERL_DRV_READ,
+					// SelectMode.SET);
+	
+					send_async_ok_port(multi.op.id, multi.op.caller, accept_desc.port());
+				}
+			}
 		}
 	}
 
@@ -1203,7 +1302,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 			sock_select(ERL_DRV_CONNECT, SelectMode.CLEAR);
 
 			// cancel the timer
-			driver_cancel_timer(port());
+			driver_cancel_timer();
 
 			try {
 				if (!fd.finishConnect()) {
@@ -1280,6 +1379,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 			}
 			state = TCP_STATE_LISTEN;
 			async_error(ERT.am_timeout);
+
 		}
 	}
 
@@ -1287,9 +1387,40 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 		return (state & INET_F_BUSY) == INET_F_BUSY;
 	}
 
-	private void fire_multi_timers() {
-		throw new erjang.NotImplemented();
+	private void fire_multi_timers() throws Pausable {
+		long next_timeout = 0;
+		if (this.mtd_queue == null || this.mtd_queue.isEmpty()) {
+			throw new InternalError();
+		}
+		
+		do {
+			MultiTimerData save = mtd_queue.remove();
+			tcp_inet_multi_timeout(save.caller);
+			
+			if (mtd_queue.isEmpty())
+				return;
+			
+			next_timeout = mtd_queue.peek().when;
+			
+		} while (next_timeout == 0);
+		driver_set_timer(next_timeout);
+	}
 
+	private void tcp_inet_multi_timeout(EPID caller) throws Pausable {
+
+		AsyncMultiOp multi;
+		if ((multi = remove_multi_op(caller)) == null) {
+			return;
+		}
+		
+		driver_demonitor_process(multi.op.monitor);
+		
+		if (multi_first == null) {
+			sock_select(ERL_DRV_ACCEPT, SelectMode.CLEAR);
+			this.state = TCP_STATE_LISTEN;
+		}
+		
+		send_async_error(multi.op.id, caller, am_timeout);
 	}
 
 	private boolean async_error(EAtom reason) throws Pausable {
@@ -1714,12 +1845,58 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 		int timeout = buf.getInt();
 
 		switch (state) {
-		case TCP_STATE_ACCEPTING:
-			throw new NotImplemented();
+		case TCP_STATE_ACCEPTING: {
+			long time_left;
+		    MultiTimerData mtd = null, omtd = null;
+		    ERef monitor;
+
+		    if ((monitor = driver_monitor_process(caller)) == null) {
+		    	return ctl_xerror(NOPROC);
+		    }
+		    
+		    AsyncOp op = deq_async_w_tmo();
+		    if (op.timeout != INET_INFINITY) {
+		    	time_left = driver_read_timer();
+		    	driver_cancel_timer();
+		    	
+		    	if (time_left <= 0) {
+		    		time_left = 1;
+		    	}
+		    	omtd = add_multi_timer(op.caller, time_left); 
+		    }
+		    enq_old_multi_op(op, omtd);
+		    if (timeout != INET_INFINITY) {
+		    	mtd = add_multi_timer(caller, timeout);
+		    }
+		    short id = enq_multi_op(TCP_REQ_ACCEPT, caller, mtd, monitor);
+		    byte[] data = new byte[2];
+		    data[0] = (byte) (id >>> 8);
+		    data[1] = (byte) (id & 0xff);
+		    state = TCP_STATE_MULTI_ACCEPTING;
+		    return ctl_reply(INET_REP_OK, data);
+		}
 			// break;
 
 		case TCP_STATE_MULTI_ACCEPTING:
-			throw new NotImplemented();
+		{
+		    MultiTimerData mtd = null, omtd = null;
+		    ERef monitor;
+
+		    if ((monitor = driver_monitor_process(caller)) == null) {
+		    	return ctl_xerror(NOPROC);
+		    }
+		    
+		    if (timeout != INET_INFINITY) {
+		    	mtd = add_multi_timer(caller, timeout);
+		    }
+		    
+		    short id = enq_multi_op(TCP_REQ_ACCEPT, caller, mtd, monitor);
+		    byte[] data = new byte[2];
+		    data[0] = (byte) (id >>> 8);
+		    data[1] = (byte) (id & 0xff);
+		    return ctl_reply(INET_REP_OK, data);
+
+		}
 			// break;
 
 		case TCP_STATE_LISTEN:
@@ -1733,6 +1910,9 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 			if (sock == null) {
 				// async ...
 				ERef monitor = driver_monitor_process(caller);
+				if (monitor == null) {
+					return ctl_xerror(NOPROC);
+				}
 				enq_async_w_tmo(caller, reply, TCP_REQ_ACCEPT, timeout, monitor);
 				state = TCP_STATE_ACCEPTING;
 				sock_select(ERL_DRV_ACCEPT, SelectMode.SET);
@@ -1758,6 +1938,101 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 		default:
 			throw new InternalError();
 		}
+	}
+	
+	private MultiTimerData add_multi_timer(EPID caller, long timeout) {
+
+		MultiTimerData mtd = new MultiTimerData();
+		mtd.when = System.currentTimeMillis() + timeout;
+		mtd.caller = caller;
+
+		if (this.mtd_queue == null) {
+			this.mtd_queue = new PriorityQueue<MultiTimerData>();
+		}
+		
+		this.mtd_queue.add(mtd);
+		
+		if (this.mtd_queue.peek() == mtd) {			
+			// are we in front?
+			
+			if (this.mtd_queue.size() > 1) {
+				// we're not alone, so there must already be a timer set
+				driver_cancel_timer();
+			}
+			
+			// then set our timer.
+			driver_set_timer(timeout);			
+		}
+		
+		return mtd;
+	}
+
+
+	private AsyncMultiOp remove_multi_op(EHandle caller) {
+		
+		AsyncMultiOp opp, slap = null;
+		
+		for (opp = multi_first; 
+			 opp != null && opp.op.caller != caller;
+			 slap = opp, opp = opp.next
+		) {
+			/* skip */
+		}
+		
+		if (opp == null) {
+			return null;
+		}
+		
+		if (slap == null) {
+			multi_first = opp.next;
+		} else {
+			slap.next = opp.next;
+		}
+		
+		if (multi_last == opp) {
+			multi_last = slap;
+		}
+		
+		opp.next = null;
+		return opp;
+	}
+
+	private short enq_multi_op(int req, EPID caller,
+			MultiTimerData timeout, ERef monitor) {
+
+		short id = (short) (aid.incrementAndGet() & 0xffff);
+		
+		AsyncOp op = new AsyncOp(id, caller, req, -1, monitor);
+		enq_old_multi_op(op, timeout);
+		
+		return id;
+	}
+	
+	AsyncMultiOp deq_multi_op() {
+		AsyncMultiOp first = multi_first;
+		if (first == null) {
+			return null;
+		}
+		
+		multi_first = first.next;
+		if (multi_first == null) {
+			multi_last = null;
+		} 
+		first.next = null;
+		return first;
+	}
+
+	private void enq_old_multi_op(AsyncOp op, MultiTimerData timeout) {
+		AsyncMultiOp opp = new AsyncMultiOp();
+		opp.op = op;
+		opp.timeout = timeout;
+		
+		if (this.multi_first == null) {
+			multi_first = opp;
+		} else {
+			multi_last.next = opp;
+		}
+		multi_last = opp;
 	}
 
 	private boolean async_ok_port(EPID caller, EInternalPort port2) throws Pausable {
@@ -2215,7 +2490,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 			len = 0;
 
 			if (active == ActiveType.PASSIVE) {
-				driver_cancel_timer(port());
+				driver_cancel_timer();
 				sock_select(ERL_DRV_READ | 0, SelectMode.CLEAR);
 				if (i_buf != null) {
 					tcp_restart_input();
@@ -2753,12 +3028,8 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 	private short enq_async_w_tmo(EPID caller, ByteBuffer reply, int req,
 			int timeout, ERef monitor) {
 
-		AsyncOp op = new AsyncOp();
-		op.caller = caller;
-		op.req = req;
-		op.id = (short) (aid.incrementAndGet() & 0xffff);
-		op.timeout = timeout;
-		op.monitor = monitor;
+		short id = (short) (aid.incrementAndGet() & 0xffff);
+		AsyncOp op = new AsyncOp(id, caller, req, timeout, monitor);
 
 		if (reply != null) {
 			reply.putShort(op.id);

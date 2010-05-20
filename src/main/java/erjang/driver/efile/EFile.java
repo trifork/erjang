@@ -1647,7 +1647,7 @@ public class EFile extends EDriverInstance {
 		d.deq_free_size();
 
 		if (timer_state != TimerState.IDLE) {
-			driver_cancel_timer(port);
+			driver_cancel_timer();
 		}
 
 		timer_state = TimerState.AGAIN;

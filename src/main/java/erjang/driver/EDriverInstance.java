@@ -35,7 +35,6 @@ import erjang.EInternalPort;
 import erjang.EObject;
 import erjang.EPID;
 import erjang.EPeer;
-import erjang.EPort;
 import erjang.ERT;
 import erjang.ERef;
 import erjang.EString;
@@ -232,15 +231,17 @@ public abstract class EDriverInstance extends EDriverControl {
 	}
 
 	/**
-	 * @param port2
 	 */
-	protected void driver_cancel_timer(EPort port2) {
-		// TODO 
-		task.cancel_timer(port2);
+	protected void driver_cancel_timer() {
+		task.cancel_timer(port());
 	}
 
 	protected void driver_set_timer(long howlong) {
 		task.set_timer(howlong);
+	}
+
+	protected long driver_read_timer() {
+		return task.read_timer();
 	}
 
 	/**

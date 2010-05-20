@@ -678,6 +678,10 @@ public class EDriverTask extends ETask<EInternalPort> implements
 		this.abs_timeout = System.currentTimeMillis() + howlong;
 	}
 	
+	public long read_timer() {
+		return this.abs_timeout - System.currentTimeMillis();
+	}
+	
 	/**
 	 * @param port2
 	 */
