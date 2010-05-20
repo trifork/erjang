@@ -597,8 +597,29 @@ public class ERT {
 		EAtom f = fun.testAtom();
 		
 		if (m == null || f == null )
+		{
+			final ETuple tup;
+			EAtom pmod;
+			if ((tup = mod.testTuple()) != null 
+					&& tup.arity() > 0
+					&& (pmod=tup.elm(1).testAtom()) != null) {
+				
+				final EFun pfun = EModuleManager.resolve(new FunID(pmod, f, arity+1));
+				
+				return EFun.get_fun_with_handler(arity, new EFunHandler() {
+					@Override
+					public EObject invoke(EProc proc, EObject[] args) throws Pausable {
+						EObject[] real_args = new EObject[args.length+1];
+						System.arraycopy(args, 0, real_args, 0, args.length);
+						real_args[args.length] = tup;
+						return pfun.invoke(proc, real_args);
+					}
+				}, ERT.class.getClassLoader());
+				
+			}
+			
 			throw ERT.badarg(mod, fun, new ESmall(arity));
-
+		}
 		EFun efun = EModuleManager.resolve(new FunID(m, f, arity));
 
 		return efun;
