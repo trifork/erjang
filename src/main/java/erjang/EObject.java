@@ -171,10 +171,10 @@ public abstract class EObject implements Comparable<EObject> {
 	public ENumber negate() { throw ERT.badarith(this); }
 
 	@BIF(name="+")
-	public final ENumber add(EObject rhs) { return add(rhs, false); }
+	public ENumber add(EObject rhs) { return add(rhs, false); }
 
 	@BIF(name="+")
-	public final ENumber add(ESmall rhs) { return add(rhs.value, false); }
+	public ENumber add(ESmall rhs) { return add(rhs.value, false); }
 
 	@BIF(name="+", type=BIF.Type.GUARD)
 	public final ENumber add$g(ESmall rhs) { return add(rhs.value, true); }
@@ -186,6 +186,7 @@ public abstract class EObject implements Comparable<EObject> {
 
 	@BIF(name="-")
 	public ENumber subtract(EObject rhs) { return subtract(rhs, false); }
+	public ENumber subtract(ESmall rhs) { return subtract(rhs, false); }
 	public ENumber subtract(EObject rhs, boolean guard) { if (guard) return null; throw ERT.badarith(this, rhs); }
 	public ENumber subtract(int rhs) { throw ERT.badarith(this, rhs); }
 	ENumber r_subtract(int lhs, boolean guard) { if (guard) return null; throw ERT.badarith(lhs, this); }

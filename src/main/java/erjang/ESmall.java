@@ -85,6 +85,9 @@ public final class ESmall extends EInteger {
 
 	@Override
 	public boolean equalsExactly(EObject rhs) {
+		if (rhs instanceof ESmall) {
+			return value == ((ESmall)rhs).value;
+		}
 		return rhs.r_equals_exactly(this);
 	}
 
@@ -181,8 +184,18 @@ public final class ESmall extends EInteger {
 		return other.add(value, guard);
 	}
 
-	public ENumber add(int rhs, boolean guard) {
+	@BIF(name="+")
+	public ENumber add(EObject rhs) { 
+		return rhs.add(value, false);
+	}
+
+	public EInteger add(int rhs, boolean guard) {
 		return ERT.box((long) value + (long) rhs);
+	}
+
+	@BIF(name="+")
+	public EInteger add(ESmall rhs) { 
+		return ERT.box((long)value + (long)rhs.value); 
 	}
 
 	public ENumber add(double lhs, boolean guard) {
@@ -197,6 +210,10 @@ public final class ESmall extends EInteger {
 
 	public ENumber subtract(EObject other, boolean guard) {
 		return other.r_subtract(value, guard);
+	}
+
+	public ENumber subtract(ESmall rhs) { 
+		return ERT.box((long)value - (long)rhs.value);
 	}
 
 	@Deprecated

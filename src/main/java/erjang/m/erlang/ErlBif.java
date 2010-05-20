@@ -800,10 +800,10 @@ public class ErlBif {
 		return ERT.box((long) v1 - (long) v2);
 	}
 
-	@BIF(name = "-")
-	static public ENumber minus(EObject v1, EObject v2) {
-		return v1.subtract(v2, false);
-	}
+//	@BIF(name = "-")
+//	static public ENumber minus(EObject v1, EObject v2) {
+//		return v1.subtract(v2, false);
+//	}
 
 	@BIF(name = "-", type = Type.GUARD)
 	static public ENumber subtract$p(EObject v1, EObject v2) {
