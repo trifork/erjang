@@ -1665,9 +1665,7 @@ public class ErlBif {
 	@BIF
 	public static ETuple2 universaltime()
 	{
-		Calendar c = GregorianCalendar.getInstance();
-		
-		c.setTimeZone(UTC_TIME_ZONE);
+		Calendar c = GregorianCalendar.getInstance(UTC_TIME_ZONE);
 		
 		ETuple3 date = new ETuple3();
 		date.set(1, ERT.box(c.get(Calendar.YEAR)));
@@ -1683,9 +1681,117 @@ public class ErlBif {
 	}
 	
 	@BIF
+	static public EObject localtime_to_universaltime(EObject a1)
+	{
+		return localtime_to_universaltime(a1, ERT.am_undefined);
+	}
+	
+	@BIF
 	static public EObject localtime_to_universaltime(EObject a1, EObject a2)
 	{
-		throw new NotImplemented();
+		ETuple2 dt;
+		if ((dt=ETuple2.cast(a1)) != null) {
+			ETuple3 date;
+			ETuple3 time;
+			ESmall year;
+			ESmall month;
+			ESmall day;
+			ESmall hour;
+			ESmall minute;
+			ESmall sec;
+			if (   (date=ETuple3.cast( dt.elem1 )) != null
+				&& (year = date.elem1.testSmall()) != null
+				&& (month = date.elem2.testSmall()) != null
+				&& (day = date.elem3.testSmall()) != null
+				
+				&& (time=ETuple3.cast( dt.elem2 )) != null
+				&& (hour = time.elem1.testSmall()) != null
+				&& (minute = time.elem2.testSmall()) != null
+				&& (sec = time.elem3.testSmall()) != null
+				
+			) {
+
+				Calendar in_date = GregorianCalendar.getInstance();
+				in_date.set(Calendar.YEAR, year.value);
+				in_date.set(Calendar.MONTH, month.value-1+Calendar.JANUARY);
+				in_date.set(Calendar.DAY_OF_MONTH, day.value);
+				
+				in_date.set(Calendar.HOUR_OF_DAY, hour.value);
+				in_date.set(Calendar.MINUTE, minute.value);
+				in_date.set(Calendar.SECOND, sec.value);
+				
+				Calendar out_date = GregorianCalendar.getInstance(UTC_TIME_ZONE);
+				out_date.setTimeInMillis(in_date.getTimeInMillis());
+				
+				ETuple3 date2 = new ETuple3();
+				date2.set(1, ERT.box(out_date.get(Calendar.YEAR)));
+				date2.set(2, ERT.box(out_date.get(Calendar.MONTH)-Calendar.JANUARY+1));
+				date2.set(3, ERT.box(out_date.get(Calendar.DAY_OF_MONTH)));
+				
+				ETuple3 time2 = new ETuple3();
+				time2.set(1, ERT.box(out_date.get(Calendar.HOUR_OF_DAY)));
+				time2.set(2, ERT.box(out_date.get(Calendar.MINUTE)));
+				time2.set(3, ERT.box(out_date.get(Calendar.SECOND)));
+				
+				return new ETuple2(date2, time2);		
+			}
+		}
+
+		throw ERT.badarg(a1, a2);
+	}
+	
+	@BIF
+	static public EObject universaltime_to_localtime(EObject a1)
+	{
+		ETuple2 dt;
+		if ((dt=ETuple2.cast(a1)) != null) {
+			ETuple3 date;
+			ETuple3 time;
+			ESmall year;
+			ESmall month;
+			ESmall day;
+			ESmall hour;
+			ESmall minute;
+			ESmall sec;
+			if (   (date=ETuple3.cast( dt.elem1 )) != null
+				&& (year = date.elem1.testSmall()) != null
+				&& (month = date.elem2.testSmall()) != null
+				&& (day = date.elem3.testSmall()) != null
+				
+				&& (time=ETuple3.cast( dt.elem2 )) != null
+				&& (hour = time.elem1.testSmall()) != null
+				&& (minute = time.elem2.testSmall()) != null
+				&& (sec = time.elem3.testSmall()) != null
+				
+			) {
+
+				Calendar in_date = GregorianCalendar.getInstance(UTC_TIME_ZONE);
+				in_date.set(Calendar.YEAR, year.value);
+				in_date.set(Calendar.MONTH, month.value-1+Calendar.JANUARY);
+				in_date.set(Calendar.DAY_OF_MONTH, day.value);
+				
+				in_date.set(Calendar.HOUR_OF_DAY, hour.value);
+				in_date.set(Calendar.MINUTE, minute.value);
+				in_date.set(Calendar.SECOND, sec.value);
+				
+				Calendar out_date = GregorianCalendar.getInstance();
+				out_date.setTimeInMillis(in_date.getTimeInMillis());
+				
+				ETuple3 date2 = new ETuple3();
+				date2.set(1, ERT.box(out_date.get(Calendar.YEAR)));
+				date2.set(2, ERT.box(out_date.get(Calendar.MONTH)-Calendar.JANUARY+1));
+				date2.set(3, ERT.box(out_date.get(Calendar.DAY_OF_MONTH)));
+				
+				ETuple3 time2 = new ETuple3();
+				time2.set(1, ERT.box(out_date.get(Calendar.HOUR_OF_DAY)));
+				time2.set(2, ERT.box(out_date.get(Calendar.MINUTE)));
+				time2.set(3, ERT.box(out_date.get(Calendar.SECOND)));
+				
+				return new ETuple2(date2, time2);		
+			}
+		}
+
+		throw ERT.badarg(a1);
 	}
 	
 	@BIF
