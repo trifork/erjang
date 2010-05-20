@@ -1245,6 +1245,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 				try {
 					sock = fd.accept();
 					if (sock == null) {
+						sock_select(ERL_DRV_ACCEPT, SelectMode.SET);
 						return;
 					}
 				} catch (IOException e) {
@@ -1254,7 +1255,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 	
 				AsyncMultiOp multi = deq_multi_op();
 				if (multi == null) {
-					return; /* -1 */
+					return; /* -1; close? */
 				}
 
 				if (this.multi_first == null) {
