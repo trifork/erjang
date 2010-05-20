@@ -62,7 +62,7 @@ public abstract class EDriverInstance extends EDriverControl {
 		return driver;
 	}
 
-	protected EInternalPort port() {
+	public EInternalPort port() {
 		return task.self_handle();
 	}
 
@@ -205,11 +205,11 @@ public abstract class EDriverInstance extends EDriverControl {
 		task.output_from_driver(out);
 	}
 	
-	protected void driver_output_term(EObject term) throws Pausable {
+	public void driver_output_term(EObject term) throws Pausable {
 		task.output_term_from_driver(term);
 	}
 
-	protected void driver_send_term(EHandle caller, ETuple msg) throws Pausable {
+	public void driver_send_term(EHandle caller, ETuple msg) throws Pausable {
 		if (caller != null) {
 			caller.send(task.self_handle(), msg);
 		}
