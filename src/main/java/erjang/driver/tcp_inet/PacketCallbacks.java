@@ -18,6 +18,18 @@
 
 package erjang.driver.tcp_inet;
 
+import kilim.Pausable;
+
 public abstract class PacketCallbacks<T> {
-	abstract void http_error(T src, byte[] data, int pos, int len);
+	abstract int http_error(T src, byte[] data, int pos, int len) throws Pausable;
+
+	abstract int http_response(T arg, int major, int minor, int status,
+			byte[] data, int ptr, int n) throws Pausable;
+
+	abstract int http_request(T arg, Packet.HTTPAtom method, byte[] data,
+			int meth_ptr, int meth_len, PacketHttpURI uri, int major, int minor) throws Pausable;
+	
+	abstract int http_header(T arg, Packet.HTTPAtom name, byte[] name_buf, int name_ptr, int name_len, byte[] val_buf, int val_ptr, int val_len) throws Pausable;
+	
+	abstract int http_eoh(T arg) throws Pausable;
 }

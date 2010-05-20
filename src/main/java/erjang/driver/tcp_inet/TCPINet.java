@@ -424,12 +424,13 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 	private static final EAtom am_timeout = EAtom.intern("timeout");
 	private static final EAtom am_tcp_error = EAtom.intern("tcp_error");
 	private static final byte[] NOPROC = new byte[] { 'n', 'o', 'p', 'r', 'o', 'c'} ;
+	private static final PacketCallbacks<TCPINet> INET_CALLBACKS = new TCPINetCallbacks();
 
 	private int state = INET_STATE_CLOSED;
 	private InetSocket fd;
 	private List<EHandle> empty_out_q_subs = new ArrayList<EHandle>(1);
 	private InetSocketAddress remote;
-	private ActiveType active = ActiveType.PASSIVE;
+	ActiveType active = ActiveType.PASSIVE;
 	private RingQueue<AsyncOp> opt = new RingQueue<AsyncOp>(1);
 	private boolean busy_on_send;
 	private EHandle caller;
@@ -442,7 +443,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 	private PriorityQueue<MultiTimerData> mtd_queue;
 	private boolean prebound;
 	private int event_mask;
-	private PacketParseType htype = PacketParseType.TCP_PB_RAW;
+	PacketParseType htype = PacketParseType.TCP_PB_RAW;
 	private int hsz;
 	private int mode = INET_MODE_LIST;
 	private int deliver = INET_DELIVER_TERM;
@@ -462,8 +463,8 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 	private ProtocolFamily sfamily;
 	private ByteBuffer i_buf;
 	private int i_ptr_start;
-	private IntCell http_state;
-	private PacketCallbacks<TCPINet> packet_callbacks;
+	private IntCell http_state = new IntCell();
+	private PacketCallbacks<TCPINet> packet_callbacks = INET_CALLBACKS;
 
 	private int recv_cnt;
 	private int recv_max;
@@ -2656,7 +2657,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 
 	}
 
-	private int tcp_reply_binary_data(byte[] ib, int start, int len) {
+	private int tcp_reply_binary_data(byte[] ib, int start, int len) throws Pausable {
 
 		ByteBuffer out = ByteBuffer.wrap(ib, start, len);
 		Packet.get_body(htype, out);
@@ -2956,7 +2957,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 		return send_async_ok(op.id, op.caller);
 	}
 
-	private AsyncOp deq_async() {
+	AsyncOp deq_async() {
 		return deq_async_w_tmo();
 	}
 
