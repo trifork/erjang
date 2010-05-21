@@ -301,8 +301,9 @@ public abstract class EDriverInstance extends EDriverControl {
 		
 		int size = 0;
 		int p = 0;
-		for (p = 0; p < queue.length && !queue[p].hasRemaining(); p++) {
-			size += queue[p].remaining();
+		for (p = 0; p < queue.length; p++) {
+			if (queue[p] != null)
+				size += queue[p].remaining();
 		}
 		return size;
 	}
