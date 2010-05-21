@@ -17,7 +17,7 @@
 %%
 -module(ts).
 
--export([run/1, run/2, list/1, count/1]).
+-export([run/1, run/2, list/1, count/1, term_to_list/1]).
 
 %% @doc List tests in module Mod
 %% @spec list( atom() ) -> [ atom() ]
@@ -45,7 +45,9 @@ run(Mod,What) ->
     run(ModSuite,What,[]).
 
 run(ModSuite, What, Acc) when is_atom(ModSuite), is_atom(What) ->
-    test_loop (ModSuite, [], [What], [], Acc);
+    test_loop (ModSuite, [], [What], 
+	       [{data_dir, atom_to_list(ModSuite) ++ "_data"}], 
+	       Acc);
 
 run(ModSuite,{Group,List},Acc) when is_atom(Group) ->
     run(ModSuite,List,Acc);
@@ -79,7 +81,15 @@ run_single_test(ModSuite,Test,Config) ->
     TestName = [ModSuite,Test],
     io:format("~n~n*** Running ~p~n", [TestName]),
 
-    Config1 = [{test_case, Test} | Config],
+    file:make_dir("priv"),
+    PrivDir = "priv/" ++ atom_to_list(ModSuite) ++ "__" ++ atom_to_list(Test),
+
+    case file:make_dir(PrivDir) of
+	ok -> ok;
+	{error, eexist} -> ok
+    end,
+
+    Config1 = [{test_case, Test}, {priv_dir, PrivDir} | Config],
 
     Owner = self(),
     {PID,Ref} = spawn_monitor
@@ -87,6 +97,7 @@ run_single_test(ModSuite,Test,Config) ->
 			   %erlang:group_leader(Owner, self()),
 			   put('$ts$owner', Owner),
 			   case Test of
+			       evil_delete -> erlang:throw(skipped);
 			       smp_unfix_fix -> erlang:throw(skipped);
 			       t_repair_continuation -> erlang:throw(skipped);
 			       evil_rename -> erlang:throw(skipped);
