@@ -412,6 +412,12 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 	public static final byte[] EXBADSEQ = "exbadseq".getBytes(Charset
 			.forName("ASCII"));
 
+	public static final int INET_HIGH_WATERMARK =(1024*8); /* 8k pending high => busy  */
+	/* Note: INET_LOW_WATERMARK MUST be less than INET_MAX_BUFFER and
+	** less than INET_HIGH_WATERMARK
+	*/
+	public static final int INET_LOW_WATERMARK  =(1024*4); /* 4k pending => allow more */
+
 	public static final int INET_INFINITY = 0xffffffff;
 	private static final EAtom am_inet_async = EAtom.intern("inet_async");
 	private static final EAtom am_inet_reply = EAtom.intern("inet_reply");
@@ -452,8 +458,8 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 	private int psize;
 	private boolean bit8f = false;
 	private boolean bit8 = false;
-	private int low;
-	private int high;
+	private int low = INET_LOW_WATERMARK;
+	private int high = INET_HIGH_WATERMARK;
 	private int send_timeout = INET_INFINITY;
 	private int tcp_add_flags;
 	private int read_packets;
@@ -602,12 +608,25 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 		}
 
 		if ((sz = driver_sizeq()) > 0) {
+			
 			driver_enqv(ev);
+			sock_select(ERL_DRV_WRITE, SelectMode.SET);
+
+			//System.err.println("enqued output [1]!");
+			//dump_write(ev);
+			//System.err.println("queue is now");
+			//dump_write(driver_peekq());
+
+
+
 			if (sz + len >= high) {
 
+				// TODO: we somehow fail in this case.
+				// The data is put on the queue, but never written?
+				
 				state |= INET_F_BUSY; /* mark for low-watermark */
 				busy_caller = caller;
-				set_busy_port(port(), 1);
+				set_busy_port(port(), true);
 				if (this.send_timeout != INET_INFINITY) {
 					busy_on_send = true;
 					driver_set_timer(send_timeout);
@@ -620,6 +639,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 			long n;
 
 			if ((tcp_add_flags & TCP_ADDF_DELAY_SEND) != 0) {
+				System.err.println("tcp_delay_send!");
 				n = 0;
 			} else {
 				GatheringByteChannel gbc = (GatheringByteChannel) fd.channel();
@@ -653,6 +673,10 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 				return 0;
 			}
 
+			
+			//System.err.println("enqueing output [2]! n="+n);
+			//dump_write(ev);
+
 			driver_enqv(ev);
 			sock_select(ERL_DRV_WRITE | 0, SelectMode.SET);
 
@@ -675,7 +699,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 	
 	public static void dump_write(ByteBuffer[] ev) {
 
-		if (!ERT.DEBUG_INET) return;
+		//if (!ERT.DEBUG_INET) return;
 		
 		System.err.println(" vec[" + ev.length + "]:: ");
 
@@ -683,14 +707,16 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 
 			ByteBuffer evp = ev[i];
 			int off = 0;
+			boolean did_print = false;
 			for (int p = evp.position(); p < evp.limit(); p++) {
 
 				if ((off % 0x10) == 0 && off != 0)
 					System.err.println("");
 
 				if ((off % 0x10) == 0)
-					System.err.print("0x" + hex4(off) + " :");
+					System.err.print("["+i+"] 0x" + hex4(off) + " :");
 
+				did_print = true;
 				System.err.print(" ");
 				byte ch = evp.get(p);
 				System.err.print(hex2(ch&0xff));
@@ -699,7 +725,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 
 			}
 
-			if (i < ev.length-1) System.out.println();
+			if (i < ev.length-1 && did_print) System.out.println();
 		}
 
 		System.err.println("---");
@@ -708,14 +734,16 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 
 			ByteBuffer evp = ev[i];
 			int off = 0;
+			boolean did_print = false;
 			for (int p = evp.position(); p < evp.limit(); p++) {
 
 				if ((off % 0x10) == 0 && off != 0)
 					System.err.println("");
 
 				if ((off % 0x10) == 0)
-					System.err.print("0x" + hex4(off) + " : ");
+					System.err.print("["+i+"] 0x" + hex4(off) + " : ");
 
+				did_print = true;
 				byte ch = evp.get(p);
 				if (ch >= 32 && ch <= 127) {
 					System.err.print((char)ch);
@@ -727,7 +755,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 
 			}
 
-			if (i < ev.length-1) System.out.println();
+			if (i < ev.length-1 && did_print) System.out.println();
 		}
 
 
@@ -1059,10 +1087,18 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 			try {
 				// dump_write(iov);
 				n = gbc.write(iov);
+				
+				
+				//System.err.println("delayed write!");
+				//dump_write(iov);
+
+
 			} catch (IOException e) {
 				tcp_send_error(IO.exception_to_posix_code(e));
 				return;
 			}
+			
+			driver_deq(n);
 			
 			int dsq = driver_sizeq();
 			if (dsq != 0) {
@@ -1073,7 +1109,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 				if (is_busy()) {
 					caller = busy_caller;
 					state &= ~INET_F_BUSY;
-					set_busy_port(port(), 0);
+					set_busy_port(port(), false);
 					if (busy_on_send) {
 						driver_cancel_timer();
 						busy_on_send = false;
@@ -1085,9 +1121,12 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 
 	}
 
-	private void set_busy_port(EInternalPort port, int i) {
-		throw new erjang.NotImplemented();
-
+	private void set_busy_port(EInternalPort port, boolean on) {
+		if (on) {
+			task.status |= EDriverTask.ERTS_PORT_SFLG_PORT_BUSY;
+		} else {
+			task.status &= ~EDriverTask.ERTS_PORT_SFLG_PORT_BUSY;
+		}
 	}
 
 	private void inet_reply_ok() throws Pausable {
