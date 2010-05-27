@@ -949,9 +949,14 @@ public class ErlBif {
 	@BIF(name = "round")
 	static public EInteger round(EObject o) {
 		EDouble d;
-		if ((d = o.testFloat()) == null)
-			throw ERT.badarg(o);
-		return ERT.box(Math.round(d.value));
+		if ((d = o.testFloat()) != null)
+			return ERT.box(Math.round(d.value));
+
+		EInteger i;
+		if ((i = o.testInteger()) != null)
+			return i;
+		
+		throw ERT.badarg(o);
 	}
 
 	@BIF(name = "round", type = Type.GUARD)
