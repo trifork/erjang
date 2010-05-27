@@ -322,7 +322,7 @@ public abstract class EFun extends EObject implements Opcodes {
 	public static byte[] weave(byte[] data) {
 		ClassWeaver w = new ClassWeaver(data, new Compiler.ErjangDetector("/xx/", (Set<String>)Collections.EMPTY_SET));
 		for (ClassInfo ci : w.getClassInfos()) {
-			ETuple.dump(ci.className, ci.bytes);
+			// ETuple.dump(ci.className, ci.bytes);
 			
 			if (!ci.className.startsWith("kilim"))
 				data = ci.bytes;
