@@ -245,7 +245,9 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 	 */
 	public final void send_exit(EHandle from, EObject reason, boolean is_erlang_exit2) throws Pausable {
 
-		log.fine("exit " + from + " -> " + this + ", reason="+reason);
+		if (log.isLoggable(Level.FINE)) {
+			log.log (Level.FINE, "exit " + from + " -> " + this + ", reason="+reason, new Throwable("trace"));
+		}
 		
 		// ignore exit signals from myself
 		if (from == self_handle()) {

@@ -211,9 +211,29 @@ public final class EProc extends ETask<EInternalPID> {
 	
 	protected void process_incoming_exit(EHandle from, EObject reason, boolean is_erlang_exit2) throws Pausable
 	{
+		if (pstate == State.EXIT_SIG || pstate == State.SENDING_EXIT) {
+			if (log.isLoggable(Level.FINE)) {
+				log.fine("Ignoring incoming exit reason="+reason+", as we're already exiting reason="+exit_reason);
+			}
+		}
+		
+		if (log.isLoggable(Level.FINE)) {
+			log.log(Level.FINE, "incoming exit to "+this+" from "+from+" reason="+reason+"; is_exit2="+is_erlang_exit2);
+		}
+		
 		if (is_erlang_exit2) {
 			if (reason == am_kill) {
 				exit_reason = am_killed;
+				
+			} else if (trap_exit == ERT.TRUE) {
+				// we're trapping exits, so we in stead send an {'EXIT', from,
+				// reason} to self
+				ETuple msg = ETuple.make(ERT.am_EXIT, from, reason);
+				// System.err.println("kill message to self: "+msg);
+				
+				mbox.put(msg);
+				return;
+				
 			} else {
 				this.exit_reason = reason;
 			}
