@@ -51,6 +51,7 @@ import erjang.ErlangException;
 import erjang.ErlangExit;
 import erjang.Import;
 import erjang.NotImplemented;
+import erjang.OTPMain;
 
 /**
  * 
@@ -563,8 +564,7 @@ public class ErlProc {
 			return ERT.TRUE;
 			
 		} else if (type == am_version) {
-			// TODO: be smarter somehow
-			return new EString("5.7.3");
+			return EString.fromString( erjang.Main.erts_version().substring("erts-".length()) );
 			
 		} else if (type == am_otp_version) {
 			// TODO: be smarter somehow
