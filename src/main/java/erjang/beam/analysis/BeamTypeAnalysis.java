@@ -1034,7 +1034,8 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					Arg arg = src_arg(insn_idx, insn.dest);
 					Type test_type = type_tested_for(insn);
 					if (test_type != null) {
-						vis.visitTest(test, failLabel, arg, test_type);
+						if (!test_type.equals(arg.type))
+							vis.visitTest(test, failLabel, arg, test_type);
 						return;
 					}
 				}
