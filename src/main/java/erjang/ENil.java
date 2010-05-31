@@ -77,6 +77,11 @@ public class ENil extends ESeq {
 		return ENIL_TYPE;
 	}
 	
+	@Override
+	public ECons testNonEmptyList() {
+		return null;
+	}
+	
 	public ENil testNil() {
 		return this;
 	}
