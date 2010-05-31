@@ -297,7 +297,12 @@ public class EString extends ESeq implements CharSequence {
 	 * @see erjang.ESeq#cons(erjang.EObject)
 	 */
 	@Override
-	public EList cons(EObject h) {
+	public ESeq cons(EObject h) {
+//		ESmall sm;
+//		if ((sm=h.testSmall()) != null && ((sm.value & ~0xff) == 0)) {
+//			return new EStringList((byte)sm.value, this);
+//		}
+
 		return new EList(h, this);
 	}
 
@@ -320,7 +325,7 @@ public class EString extends ESeq implements CharSequence {
 	 */
 	@Override
 	public ESmall head() {
-		return new ESmall(data[off] & 0xff);
+		return EStringList.little[(data[off] & 0xff)];
 	}
 
 	@Override

@@ -34,7 +34,7 @@ import org.objectweb.asm.Type;
  * array grows backwards; so the bytes contained in it are stored in
  * the last bytes of the <code>data</code> array variable.
  */
-public class EBinList extends ECons {
+public class EStringList extends ESeq {
 
 	/**
 	 * 
@@ -43,15 +43,22 @@ public class EBinList extends ECons {
 	final byte[] data;
 	final int off;
 	final int len;
-	final EObject tail;
+	final ESeq tail;
 
+	static final ESmall[] little = new ESmall[256];
+	static {
+		for (int i = 0; i < 256; i++) {
+			little[i] = ERT.box(i);
+		}
+	}
+	
 	// synchronized access
 	/** True if <code>data</code> is shared by other instances of EBinList.
 	 * In that case, we need to copy the data array if we need to grow. */
 	private boolean shared;
 
 	/** create list as sublist of data given */
-	private EBinList(byte[] data, int off, int len, EObject tail, boolean shared) {
+	private EStringList(byte[] data, int off, int len, ESeq tail, boolean shared) {
 		
 		assert len != 0;
 		
@@ -68,7 +75,7 @@ public class EBinList extends ECons {
 	}
 
 	/** create a list with [value|tail], where value is a smallint 0..255 */
-	public EBinList(byte value, EObject tail) {
+	public EStringList(byte value, ESeq tail) {
 		this.data = new byte[INITIAL_BUFFER_SIZE];
 		this.off = INITIAL_BUFFER_SIZE-1;
 		this.len = 1;
@@ -85,11 +92,7 @@ public class EBinList extends ECons {
 	}
 	
 	public ESeq testSeq() {
-		if (tail.testSeq() != null) {
-			return this.seq();
-		} else {
-			return null;
-		}
+		return this;
 	}
 
 
@@ -97,7 +100,7 @@ public class EBinList extends ECons {
 	 * @param header
 	 * @param tail
 	 */
-	public EBinList(byte[] header, EObject tail) {
+	public EStringList(byte[] header, ESeq tail) {
 		this(header, 0, header.length, tail, true);
 	}
 
@@ -105,14 +108,15 @@ public class EBinList extends ECons {
 	 * @param header
 	 * @param tail2
 	 */
-	public EBinList(ByteBuffer buf, EObject tail) {
+	public EStringList(ByteBuffer buf, ESeq tail) {
 		this(buf.array(), buf.arrayOffset()+buf.position(), buf.remaining(), tail, true);
 	}
 
 	@Override
-	public ECons cons(EObject h) {
+	public ESeq cons(EObject h) {
 		ESmall sm;
-		if ((sm = h.testSmall()) != null && sm.value >= 0 && sm.value < 256) {
+		byte bvalue;
+		if ((sm = h.testSmall()) != null && (((bvalue = (byte)sm.value) == sm.value))) {
 
 			byte[] res_data = data;
 			int res_off = off;
@@ -128,11 +132,11 @@ public class EBinList extends ECons {
 				}
 			}
 
-			res_data[--res_off] = (byte) sm.value;
-			return new EBinList(res_data, res_off, res_len, tail, res_data==data);
+			res_data[--res_off] = bvalue;
+			return new EStringList(res_data, res_off, res_len, tail, res_data==data);
 
 		} else {
-			return new EPair(h, this);
+			return new EList(h, this);
 		}
 	}
 
@@ -143,20 +147,20 @@ public class EBinList extends ECons {
 		synchronized (this) {
 			shared = true;
 		}
-		return new EBinList(data, off+n, len-n, tail, true);
+		return new EStringList(data, off+n, len-n, tail, true);
 	}
 
 	@Override
 	public EObject head() {
-		return EStringList.little[(data[off] & 0xff)];
+		return little[(data[off] & 0xff)];
 	}
 
 	@Override
-	public EObject tail() {
+	public ESeq tail() {
 		if (len == 1)
 			return tail;
 
-		return new EBinList(data, off + 1, len - 1, tail, true);
+		return new EStringList(data, off + 1, len - 1, tail, true);
 	}
 
 	// TODO: Remote this method all together
@@ -193,27 +197,27 @@ public class EBinList extends ECons {
 	private class Seq extends ESeq {
 		@Override
 		public ECons testNonEmptyList() {
-			return EBinList.this.testNonEmptyList();
+			return EStringList.this.testNonEmptyList();
 		}
 
 		@Override
 		public ESeq cons(EObject h) {
-			return EBinList.this.cons(h).testSeq();
+			return EStringList.this.cons(h).testSeq();
 		}
 
 		@Override
 		public ESeq tail() {
-			return EBinList.this.tail().testSeq();
+			return EStringList.this.tail().testSeq();
 		}
 
 		@Override
 		public EObject head() {
-			return EBinList.this.head();
+			return EStringList.this.head();
 		}
 
 		@Override
 		public void encode(EOutputStream eos) {
-			EBinList.this.encode(eos);
+			EStringList.this.encode(eos);
 		}
 	}
 	
@@ -308,22 +312,22 @@ public class EBinList extends ECons {
 		eos.write_any(tail);
 	}
 	
-	public static EBinList fromString(String c, EObject tail) {
+	public static EStringList fromString(String c, ESeq tail) {
 		byte[] data = new byte[c.length()];
 		for (int i = 0; i < data.length; i++) {
 			data[i] = (byte) c.charAt(i);
 		}
-		return new EBinList(data, tail);
+		return new EStringList(data, tail);
 	}
 	
-	private static final Type EBINLIST_TYPE = Type.getType(EBinList.class);
+	private static final Type ESTRINGLIST_TYPE = Type.getType(EStringList.class);
 	private static final Type STRING_TYPE = Type.getType(String.class);
-	private static final String EOBJECT_DESC = Type.getDescriptor(EObject.class);
+	private static final String ESEQ_DESC = Type.getDescriptor(ESeq.class);
 
 	@Override
 	public Type emit_const(MethodVisitor fa) {
 
-		Type type = EBINLIST_TYPE;
+		Type type = ESTRINGLIST_TYPE;
 
 		char[] ch = new char[len];
 		for (int i = 0; i < len; i++) {
@@ -333,7 +337,7 @@ public class EBinList extends ECons {
 		fa.visitLdcInsn(new String(ch));
 		tail.emit_const(fa);
 		fa.visitMethodInsn(Opcodes.INVOKESTATIC, type.getInternalName(),
-				"fromString", "(" + STRING_TYPE.getDescriptor() + EOBJECT_DESC + ")"
+				"fromString", "(" + STRING_TYPE.getDescriptor() + ESEQ_DESC + ")"
 						+ type.getDescriptor());
 
 		return type;
