@@ -2966,7 +2966,9 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 		make_invoke_method(cw, outer_name, fname, arity, proc, freevars,
 				return_type, is_tail_call);
-		make_invoketail_method(cw, full_inner_name, arity, freevars);
+		
+		// make_invoketail_method(cw, full_inner_name, arity, freevars);
+		
 		make_go_method(cw, outer_name, fname, full_inner_name, arity, proc,
 				freevars, return_type, is_tail_call, is_pausable);
 		make_go2_method(cw, outer_name, fname, full_inner_name, arity, proc,
@@ -3107,7 +3109,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 	public static void make_invoketail_method(ClassWriter cw,
 			String full_inner, int arity, int freevars) {
 		MethodVisitor mv;
-		mv = cw.visitMethod(ACC_PUBLIC, "invoke_tail", EUtil.getSignature(arity
+		mv = cw.visitMethod(ACC_PUBLIC|ACC_FINAL, "invoke_tail", EUtil.getSignature(arity
 				- freevars, true), null, null);
 		mv.visitCode();
 		for (int i = 0; i < arity - freevars; i++) {
