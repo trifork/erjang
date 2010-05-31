@@ -420,10 +420,14 @@ public abstract class EFun extends EObject implements Opcodes {
 		Label loop = new Label();
 		mv.visitLabel(loop);
 		mv.visitVarInsn(ALOAD, arity + 2);
-		mv.visitFieldInsn(GETSTATIC, EPROC_TYPE.getInternalName(),
-				"TAIL_MARKER", EOBJECT_TYPE.getDescriptor());
-		mv.visitJumpInsn(IF_ACMPNE, done);
-
+		if (EProc.TAIL_MARKER == null) {
+			mv.visitJumpInsn(IFNONNULL, done);
+		} else {
+			mv.visitFieldInsn(GETSTATIC, EPROC_TYPE.getInternalName(),
+					"TAIL_MARKER", EOBJECT_TYPE.getDescriptor());
+			mv.visitJumpInsn(IF_ACMPNE, done);
+		}
+		
 		// load proc
 		mv.visitVarInsn(ALOAD, 1);
 		mv.visitFieldInsn(GETFIELD, EPROC_TYPE.getInternalName(), "tail",

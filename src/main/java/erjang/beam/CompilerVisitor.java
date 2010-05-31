@@ -670,10 +670,13 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			Label loop = new Label();
 			mv.visitLabel(loop);
 			mv.visitVarInsn(ALOAD, arity + 1);
-			mv.visitFieldInsn(GETSTATIC, EPROC_NAME, "TAIL_MARKER",
-					EOBJECT_DESC);
-			mv.visitJumpInsn(IF_ACMPNE, done);
-
+			if (EProc.TAIL_MARKER == null) {
+				mv.visitJumpInsn(IFNONNULL, done);
+			} else {
+				mv.visitFieldInsn(GETSTATIC, EPROC_NAME, "TAIL_MARKER",
+						EOBJECT_DESC);
+				mv.visitJumpInsn(IF_ACMPNE, done);
+			}
 			// load proc
 			mv.visitVarInsn(ALOAD, 0);
 			mv.visitFieldInsn(GETFIELD, EPROC_NAME, "tail", EFUN_DESCRIPTOR);
@@ -721,9 +724,13 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			mv.visitFieldInsn(GETSTATIC, self_type.getInternalName(), javaName,
 					"L" + EFUN_NAME + arity + ";");
 			mv.visitFieldInsn(PUTFIELD, EPROC_NAME, "tail", EFUN_DESCRIPTOR);
-			mv.visitFieldInsn(GETSTATIC, EPROC_NAME, "TAIL_MARKER",
-					EOBJECT_DESC);
-
+			if (EProc.TAIL_MARKER == null) {
+				mv.visitInsn(ACONST_NULL);
+			} else {
+				mv.visitFieldInsn(GETSTATIC, EPROC_NAME, "TAIL_MARKER",
+						EOBJECT_DESC);
+			}
+			
 			/*
 			 * } else { for (int i = 0; i < arity + 1; i++) {
 			 * mv.visitVarInsn(ALOAD, i); }
@@ -3071,9 +3078,13 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 		Label loop = new Label();
 		mv.visitLabel(loop);
 		mv.visitVarInsn(ALOAD, arity + 2);
-		mv.visitFieldInsn(GETSTATIC, EPROC_NAME, "TAIL_MARKER", EOBJECT_DESC);
-		mv.visitJumpInsn(IF_ACMPNE, done);
-
+		if (EProc.TAIL_MARKER == null) {
+			mv.visitJumpInsn(IFNONNULL, done);
+		} else {
+			mv.visitFieldInsn(GETSTATIC, EPROC_NAME, "TAIL_MARKER", EOBJECT_DESC);
+			mv.visitJumpInsn(IF_ACMPNE, done);
+		}
+			
 		// load proc
 		mv.visitVarInsn(ALOAD, 1);
 		mv.visitFieldInsn(GETFIELD, EPROC_NAME, "tail", EFUN_DESCRIPTOR);
@@ -3108,7 +3119,11 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 		mv.visitVarInsn(ALOAD, 1);
 		mv.visitVarInsn(ALOAD, 0);
 		mv.visitFieldInsn(PUTFIELD, EPROC_NAME, "tail", EFUN_DESCRIPTOR);
-		mv.visitFieldInsn(GETSTATIC, EPROC_NAME, "TAIL_MARKER", EOBJECT_DESC);
+		if (EProc.TAIL_MARKER == null) {
+			mv.visitInsn(ACONST_NULL);
+		} else {
+			mv.visitFieldInsn(GETSTATIC, EPROC_NAME, "TAIL_MARKER", EOBJECT_DESC);
+		}
 		mv.visitInsn(ARETURN);
 		mv.visitMaxs(arity + 2, arity + 2);
 		mv.visitEnd();
