@@ -2100,12 +2100,22 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					Type outType) {
 
 				switch (test) {
-				case is_lt:
-				case is_ge:
 				case is_eq_exact:
 				case is_ne_exact:
 				case is_ne:
-				case is_eq: {
+				case is_eq: 
+				{
+					// if arg[0] is object type, and arg[1] is not, then swap args.
+					if (args[0].type.equals(EOBJECT_TYPE) && !args[1].type.equals(EOBJECT_TYPE)) {
+						Arg t = args[0];
+						args[0] = args[1];
+						args[1] = t;
+					}
+				}
+				
+				case is_lt:
+				case is_ge:
+				{
 				
 					// this particular case can be coded as a java instruction instruction
 					if ((test == BeamOpcode.is_eq_exact || test == BeamOpcode.is_eq)
