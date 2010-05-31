@@ -562,7 +562,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				generate_tail_call_self();
 
 				FieldVisitor fv = cv.visitField(ACC_STATIC | ACC_FINAL, mname,
-						"L" + EFUN_NAME + arity + ";", null, null);
+						"L" + full_inner_name + ";", null, null);
 				EFun.ensure(arity);
 
 				if (isExported(fun_name, arity)) {
@@ -580,7 +580,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				fv.visitEnd();
 
 				funs.put(mname, full_inner_name);
-				funt.put(mname, EFUN_NAME + arity);
+				funt.put(mname, full_inner_name);
 				EFun.ensure(arity);
 			}
 
@@ -722,7 +722,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 			mv.visitVarInsn(ALOAD, 0);
 			mv.visitFieldInsn(GETSTATIC, self_type.getInternalName(), javaName,
-					"L" + EFUN_NAME + arity + ";");
+					"L" + full_inner_name + ";");
 			mv.visitFieldInsn(PUTFIELD, EPROC_NAME, "tail", EFUN_DESCRIPTOR);
 			if (EProc.TAIL_MARKER == null) {
 				mv.visitInsn(ACONST_NULL);
