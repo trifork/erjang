@@ -25,11 +25,21 @@ public class ModuleAnalyzer implements ModuleVisitor {
 	static class FunInfo {
 		Set<FunInfo> callers = new HashSet<FunInfo>();
 		FunID name;
-		boolean is_tail_recursive, is_pausable, call_is_pausable;
+		boolean may_return_tail_marker, is_pausable, call_is_pausable;
+		public boolean exported;
+		protected boolean is_called_locally_in_tail_position;
+		protected boolean is_anon_fun;
+		protected boolean is_called_locally_in_nontail_position;
 
+		boolean mustHaveFun() {
+			return exported 
+				|| is_called_locally_in_tail_position
+				|| is_anon_fun;
+		}
+		
 		@Override
 		public String toString() {
-			return (is_tail_recursive ? "T" : "-") + (is_pausable ? "P" : "-")
+			return (may_return_tail_marker ? "T" : "-") + (is_pausable ? "P" : "-")
 					+ " " + name;
 
 		}
@@ -98,6 +108,14 @@ public class ModuleAnalyzer implements ModuleVisitor {
 	}
 
 	@Override
+	public void visitExport(EAtom fun, int arity, int entry) {
+		Label label = new Label(entry);
+		FunInfo fi = get(label);
+		fi.exported = true;
+	}
+
+
+	@Override
 	public void visitEnd() {
 		propagate();
 
@@ -107,10 +125,6 @@ public class ModuleAnalyzer implements ModuleVisitor {
 		}
 		}
 
-	}
-
-	@Override
-	public void visitExport(EAtom fun, int arity, int entry) {
 	}
 
 	@Override
@@ -140,32 +154,47 @@ public class ModuleAnalyzer implements ModuleVisitor {
 						
 						case call: {
 							Insn.IL cl = (Insn.IL) insn;
-							get(cl.label).addCaller(self);
+							FunInfo target = get(cl.label);
+							target.addCaller(self);
+							target.is_called_locally_in_nontail_position = true;
 							break;
 						}
 
 						case call_last: {
 							ILI cl = (Insn.ILI) insn;
-							self.is_tail_recursive |= (cl.label.nr != startLabel);
-							get(cl.label).addCaller(self);
+							boolean is_self_call = cl.label.nr == startLabel;
+							self.may_return_tail_marker |= !is_self_call;
+							FunInfo target = get(cl.label);
+							target.addCaller(self);
+							target.is_called_locally_in_tail_position |= !is_self_call;
 							break;
 						}
 
 						case call_only: {
 							IL cl = (Insn.IL) insn;
-							self.is_tail_recursive |= (cl.label.nr != startLabel);
-							get(cl.label).addCaller(self);
+							boolean is_self_call = cl.label.nr == startLabel;
+							self.may_return_tail_marker |= !is_self_call;
+							FunInfo target = get(cl.label);
+							target.addCaller(self);
+							target.is_called_locally_in_tail_position |= !is_self_call;
+							break;
+						}
+						
+						case make_fun2: {
+							Insn.F fi = (Insn.F) insn;
+							Label anon = new Label(fi.anon_fun.label);
+							get(anon).is_anon_fun = true;
 							break;
 						}
 
 						case apply_last:
-							self.is_tail_recursive = true;
+							self.may_return_tail_marker = true;
 							self.call_is_pausable = true;
 							break;
 
 						case call_ext_last:
 						case call_ext_only:
-							self.is_tail_recursive = true;
+							self.may_return_tail_marker = true;
 							self.call_is_pausable = true;
 							/* FALL THRU */
 

@@ -552,15 +552,21 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 			int freevars = 0;
 			Lambda lambda = get_lambda_freevars(fun_name, arity);
+			boolean make_fun = false;
 			if (lambda != null) {
 				freevars = lambda.freevars;
 				CompilerVisitor.this.module_md5 = lambda.uniq;
+				make_fun = true;
 			} else {
 				freevars = 0;
 
-				generate_invoke_call_self();
-				generate_tail_call_self();
+				if (funInfo.is_called_locally_in_nontail_position)
+					generate_invoke_call_self();
+				
+				if (funInfo.is_called_locally_in_tail_position)
+					generate_tail_call_self(full_inner_name);
 
+				if (funInfo.mustHaveFun()) {
 				FieldVisitor fv = cv.visitField(ACC_STATIC | ACC_FINAL, mname,
 						"L" + full_inner_name + ";", null, null);
 				EFun.ensure(arity);
@@ -582,13 +588,17 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				funs.put(mname, full_inner_name);
 				funt.put(mname, full_inner_name);
 				EFun.ensure(arity);
+				make_fun = true;
+				}
 			}
 
+			if (make_fun) {
+			
 			cv.visitInnerClass(full_inner_name, outer_name, inner_name,
 					ACC_STATIC);
 
 			byte[] data = CompilerVisitor.make_invoker(module_name.getName(), self_type, mname, mname,
-					arity, true, lambda, EOBJECT_TYPE, funInfo.is_tail_recursive, funInfo.is_pausable || funInfo.call_is_pausable);
+					arity, true, lambda, EOBJECT_TYPE, funInfo.may_return_tail_marker, funInfo.is_pausable || funInfo.call_is_pausable);
 
 			ClassWeaver w = new ClassWeaver(data, new Compiler.ErjangDetector(
 					self_type.getInternalName(), non_pausable_methods));
@@ -599,6 +609,8 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
+			}
+			
 			}
 
 		}
@@ -662,7 +674,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			mv.visitMethodInsn(INVOKESTATIC, self_type.getInternalName(),
 					javaName, EUtil.getSignature(arity, true));
 			
-			if (funInfo.is_tail_recursive) {
+			if (funInfo.may_return_tail_marker) {
 			
 			mv.visitVarInsn(ASTORE, arity + 1);
 
@@ -700,9 +712,10 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 		}
 
 		/**
+		 * @param full_inner_name TODO
 		 * 
 		 */
-		private void generate_tail_call_self() {
+		private void generate_tail_call_self(String full_inner_name) {
 
 			String javaName = EUtil.getJavaName(fun_name, arity);
 			String signature = EUtil.getSignature(arity, true);
@@ -2775,7 +2788,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					mv.visitMethodInsn(INVOKESTATIC, self_type
 							.getInternalName(), EUtil.getJavaName(fun.fun,
 							fun.arity)
-							+ (is_tail ? "$tail" : (target.is_tail_recursive ? "$call" : "")), EUtil
+							+ (is_tail ? "$tail" : (target.may_return_tail_marker ? "$call" : "")), EUtil
 							.getSignature(args.length, true));
 					
 					if (is_tail) {
