@@ -62,6 +62,8 @@ public final class ESmall extends EInteger {
 		}
 	}
 
+	public boolean is_zero() { return value==0; }
+
 	@Override
 	public boolean collectIOList(List<ByteBuffer> out) {
 		ByteBuffer b = ByteBuffer.allocate(1);

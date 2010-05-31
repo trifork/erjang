@@ -2101,6 +2101,24 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 				switch (test) {
 				case is_eq_exact:
+				{
+					if (args[0].kind==Kind.IMMEDIATE && args[0].value.equalsExactly(ESmall.ZERO)) {
+						push(args[1], EOBJECT_TYPE);
+						mv.visitMethodInsn(INVOKEVIRTUAL, EOBJECT_NAME, "is_zero", 
+								"()Z");
+						mv.visitJumpInsn(IFEQ, getLabel(failLabel));
+						return;
+					}
+
+					if (args[1].kind==Kind.IMMEDIATE && args[1].value.equalsExactly(ESmall.ZERO)) {
+						push(args[0], EOBJECT_TYPE);
+						mv.visitMethodInsn(INVOKEVIRTUAL, EOBJECT_NAME, "is_zero", 
+								"()Z");
+						mv.visitJumpInsn(IFEQ, getLabel(failLabel));
+						return;
+					}
+				}
+				
 				case is_ne_exact:
 				case is_ne:
 				case is_eq: 
