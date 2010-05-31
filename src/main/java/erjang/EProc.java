@@ -211,7 +211,7 @@ public final class EProc extends ETask<EInternalPID> {
 	
 	protected void process_incoming_exit(EHandle from, EObject reason, boolean is_erlang_exit2) throws Pausable
 	{
-		if (pstate == State.EXIT_SIG || pstate == State.SENDING_EXIT) {
+		if (pstate == STATE_EXIT_SIG || pstate == STATE_SENDING_EXIT) {
 			if (log.isLoggable(Level.FINE)) {
 				log.fine("Ignoring incoming exit reason="+reason+", as we're already exiting reason="+exit_reason);
 			}
@@ -238,7 +238,7 @@ public final class EProc extends ETask<EInternalPID> {
 				this.exit_reason = reason;
 			}
 			
-			this.pstate = State.EXIT_SIG;
+			this.pstate = STATE_EXIT_SIG;
 			this.resume();
 			return;
 		}
@@ -250,7 +250,7 @@ public final class EProc extends ETask<EInternalPID> {
 
 		if (reason == am_kill) {
 			this.exit_reason = am_killed;
-			this.pstate = State.EXIT_SIG;
+			this.pstate = STATE_EXIT_SIG;
 			this.resume();
 
 		} else if (trap_exit == ERT.TRUE) {
@@ -265,7 +265,7 @@ public final class EProc extends ETask<EInternalPID> {
 			// System.err.println("kill signal: " +reason + " from "+from);
 			// try to kill this thread
 			this.exit_reason = reason;
-			this.pstate = State.EXIT_SIG;
+			this.pstate = STATE_EXIT_SIG;
 			this.resume();
 		}
 	}
@@ -479,7 +479,7 @@ public final class EProc extends ETask<EInternalPID> {
 			try {
 				this.check_exit();
 				synchronized(this) {
-					this.pstate = State.RUNNING;
+					this.pstate = STATE_RUNNING;
 				}
 
 				while(this.tail.go(this) == TAIL_MARKER) {
@@ -521,7 +521,7 @@ public final class EProc extends ETask<EInternalPID> {
 
 			} finally {
 				// this.runner = null;
-				this.pstate = State.DONE;
+				this.pstate = STATE_DONE;
 			}
 			
 			if (monitors.isEmpty() && links.isEmpty()) {
@@ -681,8 +681,8 @@ public final class EProc extends ETask<EInternalPID> {
 	 * @return
 	 */
 	public boolean is_alive() {
-		State ps = pstate;
-		return ps == State.INIT || ps == State.RUNNING;
+		int ps = pstate;
+		return ps == STATE_INIT || ps == STATE_RUNNING;
 	}
 
 	List<ExitHook> exit_hooks = new ArrayList<ExitHook>();
