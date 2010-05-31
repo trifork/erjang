@@ -83,6 +83,7 @@ import erjang.beam.Arg.Kind;
 import erjang.beam.ModuleAnalyzer.FunInfo;
 import erjang.beam.repr.ExtFun;
 import erjang.beam.repr.Insn;
+import erjang.m.erlang.ErlBif;
 
 /**
  * 
@@ -587,7 +588,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					ACC_STATIC);
 
 			byte[] data = CompilerVisitor.make_invoker(module_name.getName(), self_type, mname, mname,
-					arity, true, lambda, EOBJECT_TYPE, funInfo.is_tail_recursive, funInfo.is_pausable);
+					arity, true, lambda, EOBJECT_TYPE, funInfo.is_tail_recursive, funInfo.is_pausable || funInfo.call_is_pausable);
 
 			ClassWeaver w = new ClassWeaver(data, new Compiler.ErjangDetector(
 					self_type.getInternalName(), non_pausable_methods));
@@ -641,7 +642,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 		 */
 		private void generate_invoke_call_self() {
 
-			boolean pausable = funInfo.is_pausable;
+			boolean pausable = funInfo.is_pausable || funInfo.call_is_pausable;
 			String javaName = EUtil.getJavaName(fun_name, arity);
 			String signature = EUtil.getSignature(arity, true);
 			mv = cv.visitMethod(ACC_STATIC, javaName + "$call", signature,

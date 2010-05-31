@@ -85,7 +85,9 @@ public abstract class EFun extends EObject implements Opcodes {
 	public EObject go(EProc eproc) throws Pausable { return go2(eproc); }
 
 	/** used for translation of tail recursive methods */
-	public abstract EObject go2(EProc eproc);
+	public EObject go2(EProc eproc) {
+		throw new java.lang.AbstractMethodError(this.getClass().getName() + "#go2(EProc)");
+	}
 
 	/** generic invoke, used only for apply */
 	public abstract EObject invoke(EProc proc, EObject[] args) throws Pausable;

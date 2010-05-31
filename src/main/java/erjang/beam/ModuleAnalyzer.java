@@ -25,7 +25,7 @@ public class ModuleAnalyzer implements ModuleVisitor {
 	static class FunInfo {
 		Set<FunInfo> callers = new HashSet<FunInfo>();
 		FunID name;
-		boolean is_tail_recursive, is_pausable;
+		boolean is_tail_recursive, is_pausable, call_is_pausable;
 
 		@Override
 		public String toString() {
@@ -63,7 +63,7 @@ public class ModuleAnalyzer implements ModuleVisitor {
 		boolean effect = false;
 
 		for (FunInfo fi : result.values()) {
-			if (fi.is_pausable) {
+			if (fi.is_pausable || fi.call_is_pausable) {
 				for (FunInfo ffi : fi.callers) {
 					if (!ffi.is_pausable) {
 						effect = ffi.is_pausable = true;
@@ -130,7 +130,8 @@ public class ModuleAnalyzer implements ModuleVisitor {
 					@Override
 					public void visitInsn(Insn insn) {
 
-						switch (insn.opcode()) {
+						BeamOpcode op;
+						switch (op = insn.opcode()) {
 
 						case send: {
 							self.is_pausable = true;
@@ -159,12 +160,13 @@ public class ModuleAnalyzer implements ModuleVisitor {
 
 						case apply_last:
 							self.is_tail_recursive = true;
-							self.is_pausable = true;
+							self.call_is_pausable = true;
 							break;
 
 						case call_ext_last:
 						case call_ext_only:
 							self.is_tail_recursive = true;
+							self.call_is_pausable = true;
 							/* FALL THRU */
 
 						case call_ext:
@@ -183,7 +185,7 @@ public class ModuleAnalyzer implements ModuleVisitor {
 									System.err.println("! "+mod+":"+fun+"/"+e.ext_fun.arity);
 								}
 								
-							} else {
+							} else if (op == BeamOpcode.call_ext) {
 								self.is_pausable = true;
 							}
 
