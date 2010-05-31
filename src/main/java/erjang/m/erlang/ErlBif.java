@@ -451,22 +451,22 @@ public class ErlBif {
 
 	@BIF(type = Type.GUARD, name = "element")
 	static public EObject element$g(EObject idx, EObject tup) {
-		EInteger i = idx.testInteger();
+		ESmall i = idx.testSmall();
 		ETuple t = tup.testTuple();
 		if (i == null || t == null) {
 			return null;
 		}
-		if (i.intValue() > t.arity())
+		if (i.value > t.arity())
 			return null;
 
-		return t.elm(i.asInt());
+		return t.elm(i.value);
 	}
 
 	@BIF
 	static public EObject element(EObject idx, EObject tup) {
-		EInteger i = idx.testInteger();
+		ESmall i = idx.testSmall();
 		ETuple t = tup.testTuple();
-		if (i == null || t == null || i.intValue() > t.arity()) {
+		if (i == null || t == null || i.value > t.arity()) {
 			throw ERT.badarg(idx, tup);
 		}
 
@@ -1083,7 +1083,7 @@ public class ErlBif {
 	// what are these supposed to do? Get the size of a tuple_
 
 	@BIF
-	public static final EInteger size(EObject o) {
+	public static final ESmall size(EObject o) {
 		ETuple t;
 		if ((t = o.testTuple()) == null)
 		{
@@ -1097,12 +1097,12 @@ public class ErlBif {
 	}
 
 	@BIF
-	public static final EInteger size(ETuple t) {
+	public static final ESmall size(ETuple t) {
 		return ERT.box(t.arity());
 	}
 
 	@BIF(type = Type.GUARD, name = "size")
-	public static final EInteger size$g(EObject o) {
+	public static final ESmall size$g(EObject o) {
 		ETuple t;
 		if ((t = o.testTuple()) == null)
 			return null;
@@ -1110,7 +1110,7 @@ public class ErlBif {
 	}
 
 	@BIF(type = Type.GUARD, name = "size")
-	public static final EInteger size$g(ETuple t) {
+	public static final ESmall size$g(ETuple t) {
 		return ERT.box(t.arity());
 	}
 
@@ -1126,7 +1126,7 @@ public class ErlBif {
 			return ERT.guard(s1.value == s2.value);
 		}
 
-		return ERT.guard(a1.equalsExactly(s2));
+		return ERT.guard(s2.equalsExactly(a1));
 	}
 
 	@BIF(name = "=:=", type = Type.GUARD)

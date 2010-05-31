@@ -226,16 +226,12 @@ public class ERT {
 
 	public static EInteger box(long longVal) {
 
-		// compute l's offset from Integer.MIN_VALUE
-		long offset_from_int_min = longVal - (long) Integer.MIN_VALUE;
-
-		// strip sign bit
-		long unsigned_offset = offset_from_int_min & Long.MAX_VALUE;
-
-		if (unsigned_offset >= 0x100000000L) {
-			return new EBig(longVal);
+		int intVal = (int)longVal;
+		
+		if (intVal == longVal) {
+			return new ESmall(intVal);
 		} else {
-			return new ESmall((int) longVal);
+			return new EBig(longVal);
 		}
 
 	}

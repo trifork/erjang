@@ -73,14 +73,6 @@ public class EDouble extends ENumber {
 		return rhs.r_equals_exactly(this);
 	}
 
-	boolean r_equals_exactly(ESmall lhs) {
-		return false;
-	}
-
-	boolean r_equals_exactly(EBig lhs) {
-		return false;
-	}
-
 	boolean r_equals_exactly(EDouble lhs) {
 		return lhs.value == value;
 	}

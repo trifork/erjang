@@ -31,6 +31,7 @@ public final class ESmall extends EInteger {
 	private static final Type ESMALL_TYPE = Type.getType(ESmall.class);
 	public static final ESmall ZERO = new ESmall(0);
 	public static final ESmall MINUS_ONE = new ESmall(-1);
+	public static final ESmall ONE = new ESmall(1);
 	public final int value;
 
 	public ESmall testSmall() {
@@ -43,6 +44,22 @@ public final class ESmall extends EInteger {
 	
 	public long longValue() {
 		return value;
+	}
+	
+	public EInteger inc() { 
+		if (value==Integer.MAX_VALUE) { 
+			return ERT.box((long)Integer.MAX_VALUE + 1L); 
+		} else {
+			return new ESmall(value+1);
+		}
+	}
+	
+	public EInteger dec() { 		
+		if (value==Integer.MIN_VALUE) { 
+			return ERT.box((long)Integer.MIN_VALUE - 1L); 
+		} else {
+			return new ESmall(value-1);
+		}
 	}
 
 	@Override
@@ -85,22 +102,11 @@ public final class ESmall extends EInteger {
 
 	@Override
 	public boolean equalsExactly(EObject rhs) {
-		if (rhs instanceof ESmall) {
-			return value == ((ESmall)rhs).value;
-		}
 		return rhs.r_equals_exactly(this);
 	}
 
 	boolean r_equals_exactly(ESmall lhs) {
 		return lhs.value == value;
-	}
-
-	boolean r_equals_exactly(EBig lhs) {
-		return lhs.value.equals(BigInteger.valueOf(value));
-	}
-
-	boolean r_equals_exactly(EDouble lhs) {
-		return false;
 	}
 
 	/*
@@ -111,10 +117,6 @@ public final class ESmall extends EInteger {
 	@Override
 	public int asInt() {
 		return value;
-	}
-
-	public ESmall testInteger() {
-		return this;
 	}
 
 	@Override
@@ -353,6 +355,8 @@ public final class ESmall extends EInteger {
 	}
 
 	public EInteger r_bsl(int lhs) {
+		if ((value & ~31) == 0) 
+			return ERT.box(((long)lhs) << value);
 		return ERT.box(BigInteger.valueOf(lhs).shiftLeft(value));
 	}
 

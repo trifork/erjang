@@ -207,4 +207,7 @@ public interface BlockVisitor2 extends BlockVisitor {
 	void visitUnreachablePoint();
 	void visitCatchBlockStart(BeamOpcode opcode, int label, Arg out, BeamExceptionHandler exh);
 	void visitCatchBlockEnd(BeamOpcode opcode, Arg out, BeamExceptionHandler exh);
+
+	void visitIncrement(Arg src, Arg out);
+	void visitDecrement(Arg src, Arg out);
 }

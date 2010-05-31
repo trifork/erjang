@@ -44,7 +44,7 @@ public final class EBig extends EInteger {
 	}
 	
 	int r_compare_same(ESmall lhs) {
-		return lhs.bigintValue().compareTo(value);
+		return -value.signum();
 	}
 
 	int r_compare_same(EBig lhs) {
@@ -61,16 +61,8 @@ public final class EBig extends EInteger {
 		return rhs.r_equals_exactly(this);
 	}
 	
-	boolean r_equals_exactly(ESmall lhs) {
-		return lhs.bigintValue().equals(value);
-	}
-
 	boolean r_equals_exactly(EBig lhs) {
 		return lhs.value.equals(value);
-	}
-
-	boolean r_equals_exactly(EDouble lhs) {
-		return false;
 	}
 
 

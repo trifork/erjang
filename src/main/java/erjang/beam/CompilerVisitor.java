@@ -1178,6 +1178,25 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			 * int, erjang.beam.Arg[], erjang.beam.Arg,
 			 * java.lang.reflect.Method)
 			 */
+			
+			public void visitDecrement(Arg src, Arg out) {
+				
+				push(src, src.type);
+				mv.visitMethodInsn(INVOKEVIRTUAL, EOBJECT_NAME, "dec", "()"+EOBJECT_DESC);
+				pop(out, EOBJECT_TYPE);
+				
+			};
+			
+			@Override
+			public void visitIncrement(Arg src, Arg out) {
+
+				push(src, src.type);
+				mv.visitMethodInsn(INVOKEVIRTUAL, EOBJECT_NAME, "inc", "()"+EOBJECT_DESC);
+				pop(out, EOBJECT_TYPE);
+				return;
+				
+			}
+			
 			@Override
 			public void visitInsn(BeamOpcode opcode, int failLabel, Arg[] in,
 					Arg out, BuiltInFunction bif) {
@@ -1188,7 +1207,6 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				case bif0:
 				case bif1:
 				case bif2:
-
 				case gc_bif1:
 				case gc_bif2:
 

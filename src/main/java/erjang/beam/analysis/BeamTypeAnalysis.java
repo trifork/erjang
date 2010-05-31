@@ -74,6 +74,7 @@ import erjang.beam.Arg.Kind;
 import erjang.beam.repr.Insn;
 import erjang.beam.repr.ExtFun;
 import erjang.beam.repr.Operands;
+import erjang.beam.repr.Operands.Int;
 import static erjang.beam.repr.Operands.SourceOperand;
 import static erjang.beam.repr.Operands.DestinationOperand;
 
@@ -106,6 +107,9 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 	static final Type EPORT_TYPE = Type.getType(EPort.class);
 	static final Type EREFERENCE_TYPE = Type.getType(ERef.class);
 	static final Type EMATCHSTATE_TYPE = Type.getType(EBinMatchState.class);
+	
+	static final EAtom am_plus = EAtom.intern("+");
+	static final EAtom am_minus = EAtom.intern("-");
 
 	private static final ETuple X0_REG = ETuple.make(new EObject[] { X_ATOM,
 			new ESmall(0) });
@@ -517,6 +521,24 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						Arg[] in = src_args(insn_idx, srcs);
 						Arg out  = dest_arg(insn_idx, insn.dest);
 
+						// special case for X+1, 1+X, X-1.
+						Int lop = null, rop = null;
+						if (srcs.length==2 
+								&& (((name==am_plus || name == am_minus) && (rop=srcs[1].testInt()) != null && rop.equals(1))
+								 || (name==am_plus && (lop=srcs[0].testInt()) != null && lop.equals(1)))) 
+						{
+							if (name == am_plus) {
+								Arg src = (lop == null) ? in[0] : in[1];
+								
+								vis.visitIncrement(src, out);
+								break;
+							} else if (name == am_minus) {
+								Arg src = in[0];
+								vis.visitDecrement(src, out);
+								break;								
+							}
+						}
+						
 						BuiltInFunction bif = BIFUtil.getMethod("erlang", name.getName(),
 								parmTypes(type_map, srcs),
 								failLabel != 0, true);

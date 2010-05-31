@@ -128,6 +128,8 @@ public class Operands {
 		public final int value;
 		public Int(int value) {this.value=value;}
 
+		public boolean equals(int val) { return value == val; }
+		
 		@Override
 		public Int testInt() {return this;}
 

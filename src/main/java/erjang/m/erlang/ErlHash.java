@@ -57,7 +57,7 @@ public class ErlHash {
 	{
 		long hash, final_hash, range;
 		
-		if (I2POW32.equals(a2)) {
+		if (I2POW32.equalsExactly(a2)) {
 			range = 0;
 		} else {
 			EInteger ival;
