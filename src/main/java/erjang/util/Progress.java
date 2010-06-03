@@ -21,26 +21,36 @@ package erjang.util;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import erjang.ERT;
+
 public class Progress {
 
-	static AtomicInteger step = new AtomicInteger();
-	
-	static byte[][] wheel = 
-			new byte[][] {
-			   new byte[]{'|','\b'}, 
-			   new byte[]{'/','\b'},
-			   new byte[]{'-','\b'},
-			   new byte[]{'\\','\b'},
-	};
-	
-	static public void activity()
-	{
-		int next = step.incrementAndGet();
-		try {
-			System.out.write(wheel[next%4]);
-		} catch (IOException e) {
-			// ignore
-		}
+	static ProgressListener listener;
+
+	public static void setListener(ProgressListener listener) {
+		Progress.listener = listener;
 	}
 	
+	static AtomicInteger step = new AtomicInteger();
+
+	static byte[][] wheel = new byte[][] { new byte[] { '|', '\b' },
+			new byte[] { '/', '\b' }, new byte[] { '-', '\b' },
+			new byte[] { '\\', '\b' }, };
+
+	static public void activity(String string) {
+		if (listener != null) {
+			listener.progress(string);
+		} else {
+			int next = step.incrementAndGet();
+			try {
+				ERT.out.write(wheel[next % 4]);
+			} catch (IOException e) {
+				// ignore
+			}
+		}
+	}
+
+	public static void done() {
+	}
+
 }
