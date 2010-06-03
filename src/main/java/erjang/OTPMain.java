@@ -19,9 +19,10 @@
 package erjang;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.FileHandler;
 import java.util.logging.Handler;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import erjang.driver.EDriver;
@@ -57,6 +58,9 @@ public class OTPMain {
 		for (EDriver d : DRIVERS) {
 			erjang.driver.Drivers.register(d);
 		}
+		for (EDriver d : extra_drivers) {
+			erjang.driver.Drivers.register(d);
+		}
 
 		EAtom am_otp_ring0 = EAtom.intern("otp_ring0");
 		EAtom am_start = EAtom.intern("start");
@@ -73,5 +77,10 @@ public class OTPMain {
 		proc.joinb();
 		
 		System.out.println("done.");
+	}
+
+	static List<EDriver> extra_drivers = new ArrayList<EDriver>();
+	public static void add_driver(EDriver driver) {
+		extra_drivers.add(driver);
 	}
 }
