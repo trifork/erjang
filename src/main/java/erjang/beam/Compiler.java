@@ -45,6 +45,7 @@ import com.ericsson.otp.erlang.OtpAuthException;
 import erjang.EBinary;
 import erjang.EFun;
 import erjang.EObject;
+import erjang.ERT;
 import erjang.ETuple;
 import erjang.beam.analysis.BeamTypeAnalysis;
 
@@ -258,7 +259,7 @@ public class Compiler implements Opcodes {
 
 	public static File compile(String name, EBinary beam_data, BeamLoader beam_parser) throws IOException {
 
-		Progress.activity();
+		Progress.activity("loading "+name+"...");
 		
 		long crc = beam_data.crc();
 
@@ -267,7 +268,6 @@ public class Compiler implements Opcodes {
 
 		if (!jarFile.exists()) {
 			JarClassRepo repo = new JarClassRepo(jarFile);
-
 
 			try {
 				compile(beam_parser.load(beam_data.getByteArray()), repo);
@@ -284,6 +284,8 @@ public class Compiler implements Opcodes {
 			
 		}
 
+		Progress.done();
+		
 		return jarFile;
 	}
 
