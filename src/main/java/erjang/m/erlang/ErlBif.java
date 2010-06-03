@@ -365,7 +365,11 @@ public class ErlBif {
 		// TODO: get all the attributes from the beam code
 		ESeq res = ERT.NIL;
 		res = res.cons(new ETuple2(ERT.am_attributes, 
-								   get_module_info(mod, ERT.am_attributes)));
+				   get_module_info(mod, ERT.am_attributes)));
+
+		res = res.cons(new ETuple2(ERT.am_exports, 
+				   get_module_info(mod, ERT.am_exports)));
+
 		return res;
 	}
 
