@@ -409,15 +409,15 @@ public abstract class EDriverInstance extends EDriverControl {
 	/*
 	 * called when we have input from one of the driver's handles)
 	 */
-	protected abstract void readyInput(SelectableChannel ch) throws Pausable;
+	protected void readyInput(SelectableChannel ch) throws Pausable {};
 
 	/*
 	 * called when output is possible to one of the driver's handles
 	 */
-	protected abstract void readyOutput(SelectableChannel evt) throws Pausable;
+	protected void readyOutput(SelectableChannel evt) throws Pausable {};
 
 	/* called when "action" is possible, async job done */
-	protected abstract void readyAsync(EAsync data) throws Pausable;
+	protected void readyAsync(EAsync data) throws Pausable {}
 
 	/*
 	 * "ioctl" for drivers - invoked by port_control/3)
@@ -427,13 +427,13 @@ public abstract class EDriverInstance extends EDriverControl {
 	}
 
 	/* Handling of timeout in driver */
-	protected abstract void timeout() throws Pausable;
+	protected void timeout() throws Pausable {};
 
 	/*
 	 * called when the port is about to be closed, and there is data in the
 	 * driver queue that needs to be flushed before 'stop' can be called
 	 */
-	protected abstract void flush() throws Pausable;
+	protected void flush() throws Pausable {};
 
 	/*
 	 * Works mostly like 'control', a syncronous call into the driver.
