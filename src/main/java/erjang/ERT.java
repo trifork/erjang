@@ -20,6 +20,8 @@ package erjang;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Method;
@@ -319,6 +321,8 @@ public class ERT {
 	public static final EAtom am_latin1 = EAtom.intern("latin1");
 	public static final EAtom am_utf8 = EAtom.intern("utf8");
 	public static final EAtom am_unicode = EAtom.intern("unicode");
+	private static final EAtom am_init = EAtom.intern("init");
+	private static final EAtom am_stop = EAtom.intern("stop");
 
 	public static EBitStringBuilder bs_init(int size, int flags) {
 		return new EBitStringBuilder(size, flags);
@@ -974,6 +978,27 @@ public class ERT {
 			res = res.cons(reg);
 		}
 		return res;
+	}
+
+	/** Shuts down currently running OTP */
+	public static void shutdown() {
+		EObject init_proc = whereis(am_init);
+		ETuple tup = ETuple.make(am_stop, am_stop);
+		EPID init_pid;
+		if ((init_pid = init_proc.testPID()) != null) {
+			init_pid.sendb(tup);
+		}
+	}
+
+	static public InputStream orig_in = System.in;
+	static public PrintStream orig_out = System.out;
+	static public PrintStream orig_err = System.err;
+	
+	public static void set_stdio(InputStream in,
+			PrintStream out, PrintStream err) {
+		System.setIn(in);
+		System.setOut(out);
+		System.setErr(err);
 	}
 
 }
