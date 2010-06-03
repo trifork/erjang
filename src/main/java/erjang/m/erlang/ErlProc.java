@@ -62,6 +62,7 @@ public class ErlProc {
 
 	private static final EAtom am_smp_support = EAtom.intern("smp_support");
 	private static final EAtom am_schedulers = EAtom.intern("schedulers");
+	private static final EAtom am_break_ignored = EAtom.intern("break_ignored");
 	private static final EAtom am_threads = EAtom.intern("threads");
 	public static final EAtom am_process = EAtom.intern("process");
 	private static final EAtom am_wordsize = EAtom.intern("wordsize");
@@ -494,6 +495,8 @@ public class ErlProc {
 			return ERT.TRUE;
 		} else if (type == am_schedulers) {
 			return ERT.box(ERT.threadPoolSize());
+		} else if (type == am_break_ignored) {
+			return ERT.box(false);
 		}
 		
 		ETuple2 tup;
@@ -590,6 +593,7 @@ public class ErlProc {
 			return am_undefined;
 
 		} else {
+			log.info("erlang:system_info("+type+") unknown");
 			return am_undefined;
 		}
 
