@@ -712,9 +712,18 @@ public class EDriverTask extends ETask<EInternalPort> implements
 		output_term_from_driver(new ETuple2(port, new ETuple2(am_data, out)));
 	}
 
+	public void output_from_driver_b(EObject out) {
+		output_term_from_driver_b(new ETuple2(port, new ETuple2(am_data, out)));
+	}
+
 	public void output_term_from_driver(EObject out) throws Pausable {
 		if (ERT.DEBUG_PORT) System.err.println(""+owner+" ! "+out);
 		owner.send(port, out);
+	}
+
+	public void output_term_from_driver_b(EObject out) {
+		if (ERT.DEBUG_PORT) System.err.println(""+owner+" ! "+out);
+		owner.sendb(out);
 	}
 
 	/**
@@ -771,6 +780,10 @@ public class EDriverTask extends ETask<EInternalPort> implements
 	/** magic direct call ! */
 	public void outputv(EHandle sender, ByteBuffer[] ev) throws IOException, Pausable {
 		this.command(sender, ev);
+	}
+
+	public boolean send_binary_data() {
+		return send_binary_data;
 	}
 
 
