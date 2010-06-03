@@ -22,7 +22,6 @@ import java.lang.ref.WeakReference;
 import java.util.concurrent.Callable;
 
 import kilim.Pausable;
-
 import clojure.lang.APersistentMap;
 import clojure.lang.IMapEntry;
 import clojure.lang.IPersistentMap;
@@ -31,13 +30,10 @@ import clojure.lang.LockingTransaction;
 import clojure.lang.PersistentTreeMap;
 import clojure.lang.RT;
 import clojure.lang.Ref;
-import clojure.lang.Var;
 import erjang.EAtom;
 import erjang.EInteger;
 import erjang.EInternalPID;
-import erjang.ELazySeq;
 import erjang.EObject;
-import erjang.EPID;
 import erjang.EProc;
 import erjang.ERT;
 import erjang.ESeq;
@@ -173,7 +169,9 @@ abstract class ETable implements ExitHook {
 
 	
 	@Override
-	public void on_exit(EInternalPID dyingPID)  throws Pausable {
+	public void on_exit(EInternalPID dyingPID) 
+		throws Pausable 
+	{
 		if (dyingPID == owner_pid()) {
 			
 			EInternalPID heirPID = this.heirPID;

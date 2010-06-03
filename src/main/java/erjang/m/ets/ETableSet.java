@@ -68,7 +68,9 @@ public class ETableSet extends ETable {
 		in_tx(new WithMap<Object>() {
 			@Override
 			protected Object run(IPersistentMap map) {
-				set(map.assoc(get_key(value), value));
+				EObject key = get_key(value);
+				IPersistentMap new_map = map.assoc(key, value);
+				set(new_map);
 				return null;
 			}
 		});
@@ -80,7 +82,7 @@ public class ETableSet extends ETable {
 			@Override
 			protected Object run(IPersistentMap map) {		
 				for (ESeq seq = values; !seq.isNil(); seq = seq.tail()) {
-					ETuple value = values.head().testTuple();
+					ETuple value = seq.head().testTuple();
 					if (value == null) throw ERT.badarg(values);
 					map = map.assoc(get_key(value), value);
 				}
@@ -171,7 +173,7 @@ public class ETableSet extends ETable {
 			@Override
 			protected Boolean run(IPersistentMap map) {
 				for (ESeq seq = values; !seq.isNil(); seq = seq.tail()) {
-					ETuple value = values.head().testTuple();
+					ETuple value = seq.head().testTuple();
 					if (value == null) throw ERT.badarg(values);
 					EObject key = get_key(value);
 					if (map.containsKey(key)) {
@@ -180,7 +182,7 @@ public class ETableSet extends ETable {
 				}
 	
 				for (ESeq seq = values; !seq.isNil(); seq = seq.tail()) {
-					ETuple value = values.head().testTuple();
+					ETuple value = seq.head().testTuple();
 					EObject key = get_key(value);
 					map = map.assoc(key, value);
 				}
