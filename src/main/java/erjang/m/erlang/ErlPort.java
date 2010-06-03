@@ -280,7 +280,10 @@ public class ErlPort {
 		ETuple3 name3;
 		if ((name = ETuple2.cast(t)) != null) {
 
-			EString command = (EString)EString.make(name.elem2);
+			EAtom am = name.elem2.testAtom();
+			EString command = (am == null)
+					? (EString)EString.make(name.elem2) 
+					: EString.fromString(am.getName());
 
 			if (name.elem1 == am_spawn) {
 				EDriver drv = ERT.find_driver(command);
