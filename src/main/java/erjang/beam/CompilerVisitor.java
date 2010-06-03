@@ -394,7 +394,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 	}
 
 	public static String anon_fun_name(Lambda l) {
-		return "lambda_"+l.index+"_"+l.old_uniq;
+		return "lambda_"+l.index+"_"+l.old_index+"_"+l.old_uniq;
 	}
 	
 	private void push_int(MethodVisitor mv, int val) {
