@@ -5,8 +5,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.objectweb.asm.Type;
-
 import erjang.EAtom;
 import erjang.EObject;
 import erjang.ERT;
@@ -20,7 +18,8 @@ import erjang.beam.repr.Operands.SourceOperand;
 
 public class ModuleAnalyzer implements ModuleVisitor {
 
-	Map<Label, FunInfo> result = new HashMap<Label, FunInfo>();
+	private static final boolean DEBUG_ANALYZE = false;
+	Map<Label, FunInfo> info = new HashMap<Label, FunInfo>();
 
 	static class FunInfo {
 		Set<FunInfo> callers = new HashSet<FunInfo>();
@@ -72,11 +71,16 @@ public class ModuleAnalyzer implements ModuleVisitor {
 	boolean propagate_one() {
 		boolean effect = false;
 
-		for (FunInfo fi : result.values()) {
-			if (fi.is_pausable || fi.call_is_pausable) {
-				for (FunInfo ffi : fi.callers) {
-					if (!ffi.is_pausable) {
-						effect = ffi.is_pausable = true;
+		for (FunInfo fun : info.values()) {
+			if (fun.is_pausable || fun.call_is_pausable) {
+				for (FunInfo caller : fun.callers) {
+					
+					if (!caller.is_pausable) {
+						effect = caller.is_pausable = true;
+						
+						if (DEBUG_ANALYZE) {
+							System.err.println("propagate " +fun+ " -> " + caller);
+						}
 					}
 				}
 			}
@@ -86,10 +90,10 @@ public class ModuleAnalyzer implements ModuleVisitor {
 	}
 
 	FunInfo get(Label label) {
-		FunInfo fi = result.get(label);
+		FunInfo fi = info.get(label);
 		if (fi == null) {
 			fi = new FunInfo();
-			result.put(label, fi);
+			info.put(label, fi);
 		}
 
 		return fi;
@@ -120,7 +124,7 @@ public class ModuleAnalyzer implements ModuleVisitor {
 		propagate();
 
 		if (ERT.DEBUG2) {
-		for (Map.Entry<Label, FunInfo> e : result.entrySet()) {
+		for (Map.Entry<Label, FunInfo> e : info.entrySet()) {
 			System.err.println(e.getValue());
 		}
 		}
@@ -130,6 +134,10 @@ public class ModuleAnalyzer implements ModuleVisitor {
 	@Override
 	public FunctionVisitor visitFunction(EAtom name, int arity,
 			final int startLabel) {
+		
+		if (DEBUG_ANALYZE) {
+			System.err.println("== analyzing "+ModuleAnalyzer.this.name+":"+name+"/"+arity);
+		}
 
 		Label start = new Label(startLabel);
 		final FunInfo self = get(name, arity, start);
@@ -148,6 +156,10 @@ public class ModuleAnalyzer implements ModuleVisitor {
 						switch (op = insn.opcode()) {
 
 						case send: {
+							if (DEBUG_ANALYZE && !self.is_pausable) {
+								System.err.println("pausable: send");
+							}
+							
 							self.is_pausable = true;
 							break;
 						}
@@ -162,7 +174,7 @@ public class ModuleAnalyzer implements ModuleVisitor {
 
 						case call_last: {
 							ILI cl = (Insn.ILI) insn;
-							boolean is_self_call = cl.label.nr == startLabel;
+							boolean is_self_call = cl.label.nr == startLabel;	
 							self.may_return_tail_marker |= !is_self_call;
 							FunInfo target = get(cl.label);
 							target.addCaller(self);
@@ -188,17 +200,43 @@ public class ModuleAnalyzer implements ModuleVisitor {
 						}
 
 						case apply_last:
+							if (DEBUG_ANALYZE && !self.call_is_pausable) {
+								System.err.println("call_pausable: " + op);
+							}
+
 							self.may_return_tail_marker = true;
 							self.call_is_pausable = true;
 							break;
 
 						case call_ext_last:
-						case call_ext_only:
+						case call_ext_only: 
+						{
+							Insn.IE e = (IE) insn;
+
+							String mod = e.ext_fun.mod.getName();
+							String fun = e.ext_fun.fun.getName();
+							int arity = e.ext_fun.arity;
+							
+							if (mod.equals("erlang")
+								&& arity == 1
+								&& (fun.equals("throw") || fun.equals("error") || fun.equals("exit"))) {
+								break;
+							}
+						}							
+							
+							if (DEBUG_ANALYZE && !self.call_is_pausable) {
+								System.err.println("call_pausable: " + op);
+							}
+
 							self.may_return_tail_marker = true;
 							self.call_is_pausable = true;
 							/* FALL THRU */
 
 						case call_ext:
+							if (self.is_pausable) {
+								break;
+							}
+							
 							Insn.IE e = (IE) insn;
 
 							String mod = e.ext_fun.mod.getName();
@@ -208,13 +246,21 @@ public class ModuleAnalyzer implements ModuleVisitor {
 									fun, arity, false, false);
 							
 							if (bif != null) {
+								
+								if (DEBUG_ANALYZE && !self.is_pausable && bif.isPausable()) {
+									System.err.println("pausable: calls " + bif.javaMethod);
+								}
+
+								
 								self.is_pausable |= bif.isPausable();
 								
-								if (ERT.DEBUG2 && !self.is_pausable) {
-									System.err.println("! "+mod+":"+fun+"/"+e.ext_fun.arity);
-								}
-								
+
 							} else if (op == BeamOpcode.call_ext) {
+
+								if (DEBUG_ANALYZE && !self.is_pausable) {
+									System.err.println("pausable: calls "+mod+":"+fun+"/"+arity);
+								}
+
 								self.is_pausable = true;
 							}
 
@@ -224,7 +270,11 @@ public class ModuleAnalyzer implements ModuleVisitor {
 						case call_fun:
 						case wait:
 						case wait_timeout:
+							if (DEBUG_ANALYZE && !self.is_pausable) {
+								System.err.println("pausable: "+op);
+							}
 							self.is_pausable = true;
+							
 							break;
 
 						case bif:
@@ -249,6 +299,10 @@ public class ModuleAnalyzer implements ModuleVisitor {
 							}
 
 							self.is_pausable |= bif.isPausable();
+
+							if (DEBUG_ANALYZE && self.is_pausable) {
+								System.err.println("pausable: calls "+bif.javaMethod);
+							}
 
 						}
 						default:
@@ -282,7 +336,7 @@ public class ModuleAnalyzer implements ModuleVisitor {
 		
 		Map<FunID, FunInfo> res = new HashMap<FunID, FunInfo>();
 		
-		for (FunInfo fi : result.values()) {
+		for (FunInfo fi : info.values()) {
 			res.put(fi.name, fi);
 		}
 		
