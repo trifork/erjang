@@ -107,7 +107,7 @@ public class EBinMatchState extends EPseudoTerm {
 	public static void bs_save2_start (EObject obj) {
 		EBinMatchState bms;
 		if ((bms=obj.testBinMatchState()) != null) {
-			bms.save_offset(0, bms.offset);
+			bms.start_offset = bms.offset;
 		} else {
 			throw new Error("BADARG: be called with EBinMatchState");
 		}
@@ -332,8 +332,9 @@ public class EBinMatchState extends EPseudoTerm {
 		return ERT.TRUE;
 	}
 	
-	public boolean bs_test_unit(int size) {
-		return (offset % size == 0);
+	public boolean bs_test_unit(int unit) {
+		boolean res = (bitsLeft() % unit) == 0;
+		return res;
 	}
 
 	/** Tests whether there is exactly expected_left bits left. */
