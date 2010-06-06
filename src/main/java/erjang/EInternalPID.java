@@ -95,6 +95,13 @@ public class EInternalPID extends EPID implements ELocalHandle {
 		return false;
 	}
 	
+	@Override
+	public void unlink_oneway(EHandle other) throws Pausable {
+		EProc task = this.task;
+		if (task != null)
+			task.unlink_oneway(other);
+	}
+	
 	public synchronized boolean add_monitor(EHandle observer, ERef ref) throws Pausable {
 		EProc task = this.task;
 		if (task != null) 
@@ -192,4 +199,6 @@ public class EInternalPID extends EPID implements ELocalHandle {
 	public void set_dist_entry(DistEntry distEntry) {
 		this.distEntry = distEntry;
 	}
+
+	
 }

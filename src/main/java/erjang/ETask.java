@@ -54,7 +54,12 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 	protected Set<EHandle> links = new ConcurrentSkipListSet<EHandle>();
 	protected Map<ERef,EHandle> monitors = new ConcurrentHashMap<ERef, EHandle>();
 
-	public void unlink(EHandle handle) {
+	public void unlink(EHandle other) throws Pausable {
+		unlink_oneway(other);
+		other.unlink_oneway(self_handle());
+	}
+	
+	public void unlink_oneway(EHandle handle) {
 		links.remove(handle);
 	}
 	

@@ -185,6 +185,17 @@ public class EPeer extends EAbstractNode {
 				return;
 			}
 			
+			case UNLINK: { // {1, observer, observed }
+				
+				EPID from_pid = head.elm(2).testPID();
+				EInternalPID to_pid = head.elm(3).testInternalPID();
+				
+				if (to_pid != null && from_pid != null) {
+					to_pid.unlink_oneway(from_pid);
+				}
+				return;
+			}
+			
 			case SEND: { // {2, Cookie, ToPid}
 
 				EObject msg = ibuf.read_any();
@@ -474,6 +485,11 @@ public class EPeer extends EAbstractNode {
 
 	public void dsig_link(EHandle sender, EExternalPID to_pid) throws Pausable {
 		ETuple hdr = ETuple.make(ERT.box(LINK), sender, to_pid);
+		dsig_cast(sender, hdr);
+	}
+
+	public void dsig_unlink(EHandle sender, EExternalPID to_pid) throws Pausable {
+		ETuple hdr = ETuple.make(ERT.box(UNLINK), sender, to_pid);
 		dsig_cast(sender, hdr);
 	}
 

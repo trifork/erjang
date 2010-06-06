@@ -69,6 +69,11 @@ public class EInternalPort extends EPort implements ELocalHandle {
 		return task.link_oneway(other);
 	}
 	
+	@Override
+	public void unlink_oneway(EHandle other) throws Pausable {
+		task.unlink_oneway(other);
+	}
+	
 	public boolean add_monitor(EHandle target, ERef ref) throws Pausable {
 		// TODO: check if task is alive!
 		return task.add_monitor(target, ref);

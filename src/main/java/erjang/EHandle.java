@@ -96,6 +96,8 @@ public abstract class EHandle extends EObject {
 	 */
 	public abstract boolean link_oneway(EHandle other) throws Pausable;
 
+	public abstract void unlink_oneway(EHandle other) throws Pausable;
+	
 	/**
 	 * @param ref TODO
 	 * @param selfHandle

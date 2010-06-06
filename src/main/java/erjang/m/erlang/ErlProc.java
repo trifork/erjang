@@ -283,7 +283,7 @@ public class ErlProc {
 	}
 	
 	@BIF
-	public static EObject unlink(EProc self, EObject pid) {
+	public static EObject unlink(EProc self, EObject pid) throws Pausable {
 		EHandle h = EHandle.cast(pid);
 		if (h != null) {
 			self.unlink(h);

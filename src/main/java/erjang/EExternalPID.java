@@ -95,6 +95,11 @@ public class EExternalPID extends EPID {
 	}
 
 	@Override
+	public void unlink_oneway(EHandle other) throws Pausable {
+		peer().dsig_unlink(other, this);
+	}
+	
+	@Override
 	public void remove_monitor(EHandle sender, ERef ref, boolean flush) throws Pausable {
 		peer().dsig_demonitor(sender, ref, this);
 	}
