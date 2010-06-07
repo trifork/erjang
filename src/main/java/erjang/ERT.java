@@ -825,9 +825,12 @@ public class ERT {
 	/** wait for howlong, for one more message to be available */
 	public static boolean wait_timeout(EProc proc, EObject howlong)
 			throws Pausable {
+		proc.check_exit();
+
 		if (ERT.DEBUG_WAIT) System.err.println("WAIT| "+proc+" waits for messages for "+howlong+" ms");
 			if (howlong == am_infinity) {
 				proc.mbox.untilHasMessages(proc.midx+1);
+				proc.check_exit();
 				if (ERT.DEBUG_WAIT) System.err.println("WAIT| "+proc+" wakes up on message");
 				return true;
 			} else {
@@ -850,6 +853,7 @@ public class ERT {
 				if (ERT.DEBUG_WAIT) System.err.println("WAIT| "+proc+" waiting for "+left+"ms for msg #"+(proc.midx+1));
 				boolean res = proc.mbox
 					.untilHasMessages(proc.midx + 1, left);
+				proc.check_exit();
 				if (ERT.DEBUG_WAIT) System.err.println("WAIT| "+proc+" wakes up "+(res?"on message" : "after timeout"));
 
 				return res;
