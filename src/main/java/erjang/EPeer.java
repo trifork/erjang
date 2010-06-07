@@ -24,6 +24,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import erjang.driver.EDriverTask;
+
 import kilim.Pausable;
 
 /**
@@ -421,7 +423,12 @@ public class EPeer extends EAbstractNode {
 		ByteBuffer[] ev = new ByteBuffer[] { disthdr, barr };
 
 		try {
-			this.port.task().outputv(null, ev);
+			EDriverTask task;
+			if (this.port != null && (task = this.port.task()) != null) {
+				task.outputv(null, ev);
+			} else {
+				System.err.println("sending cast to dead task");
+			}
 		} catch (IOException e) {
 			e.printStackTrace();
 			close_and_finish(port);
