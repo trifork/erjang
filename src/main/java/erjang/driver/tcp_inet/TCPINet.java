@@ -536,7 +536,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 		if (!is_connected()) {
 			inet_reply_error(Posix.ENOTCONN);
 		} else if (tcp_sendv(new ByteBuffer[]{buf}) == 0) {
-			inet_reply_ok();
+			inet_reply_ok(caller);
 		}
 		
 		//System.err.println("OUTPUT!!");
@@ -563,7 +563,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 				inet_reply_error(Posix.ENOTCONN);
 			}
 		} else if (tcp_sendv(ev) == 0) {
-			inet_reply_ok();
+			inet_reply_ok(caller);
 		} else {
 			// System.err.println("bad output");
 		}
@@ -1118,14 +1118,14 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 			
 			if (dsq <= low) {
 				if (is_busy()) {
-					caller = busy_caller;
+					this.caller = busy_caller;
 					state &= ~INET_F_BUSY;
 					set_busy_port(port(), false);
 					if (busy_on_send) {
 						driver_cancel_timer();
 						busy_on_send = false;
 					}
-					inet_reply_ok();
+					inet_reply_ok(caller);
 				}
 			}
 		}
@@ -1140,13 +1140,16 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 		}
 	}
 
-	private void inet_reply_ok() throws Pausable {
+	private void inet_reply_ok(EHandle caller2) throws Pausable {
 		ETuple msg = ETuple.make(am_inet_reply, port(), ERT.am_ok);
 		EHandle caller = this.caller;
 		this.caller = null;
 
-		if (ERT.DEBUG_INET) {
-			System.out.println("sending to " + caller + " ! " + msg);
+		if (ERT.DEBUG_INET && caller != null) {
+			System.err.println("sending to " + caller + " ! " + msg);
+//			if (caller == null) {
+//				new Throwable("caller is null, caller2="+caller2).printStackTrace(System.err);
+//			}
 		}
 
 		driver_send_term(caller, msg);
