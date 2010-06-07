@@ -40,9 +40,9 @@ public class TTYTextAreaDriver implements EDriver {
 		this.message = message;
 		this.control = new TTYTextAreaDriverControl(this, text, message);
 
-//		ERT.set_stdio(control.getInputStream(), 
-//				new PrintStream(control.getOutputStream()), 
-//				new PrintStream(control.getErrorStream()));
+		ERT.set_stdio(control.getInputStream(), 
+				new PrintStream(control.getOutputStream()), 
+				new PrintStream(control.getErrorStream()));
 
 	}
 	
