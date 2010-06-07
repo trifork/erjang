@@ -412,10 +412,16 @@ public class EDriverTask extends ETask<EInternalPort> implements
 
 					if (cmd.elem1 == EPort.am_command) {
 						if (cmd.elem2.collectIOList(out)) {
+							EHandle caller = sender.testHandle();
+							
+							if (caller == null) {
+								System.err.println("*** sender is null? "+sender);
+							}
+							
 							if (out.size() == 0) {
-								instance.outputv(null, ERT.EMPTY_BYTEBUFFER_ARR);
+								instance.outputv(caller, ERT.EMPTY_BYTEBUFFER_ARR);
 							} else {
-								instance.outputv(null, out.toArray(new ByteBuffer[out
+								instance.outputv(caller, out.toArray(new ByteBuffer[out
 										.size()]));
 							}
 							// if collectIOList fails, do the port task die?
