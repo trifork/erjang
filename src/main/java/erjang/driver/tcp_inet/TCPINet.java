@@ -42,6 +42,7 @@ import java.nio.channels.GatheringByteChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
+import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
@@ -924,6 +925,16 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 
 		try {
 			ReadableByteChannel rbc = (ReadableByteChannel) fd.channel();
+			
+			if (rbc instanceof SocketChannel) {
+				SocketChannel sc = (SocketChannel) rbc;
+				if (sc.isBlocking()) {
+					System.err.println("SOCKET IS BLOCKING! "+sc);
+				}
+			} else {
+				System.err.println("NOT A SOCKET! "+rbc);
+			}
+			
 			n = rbc.read(i_buf);
 			if (ERT.DEBUG_INET)
 				System.err.println("did read " + n + " bytes");
