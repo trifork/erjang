@@ -393,7 +393,7 @@ public class ERT {
 	}
 	
 	@BIF
-	public static EObject send_after(EObject time, final EObject rcv, final EObject msg)
+	public static EObject send_after(final EProc proc, EObject time, final EObject rcv, final EObject msg)
 	{
 		// check arguments 
 		EInteger when = time.testInteger();
@@ -409,17 +409,17 @@ public class ERT {
 			
 		ETimerTask send_task = new ETimerTask(rcv_pid) {
 			@Override
-			public void on_timeout() {
+			public void on_timeout()  throws Pausable {
 				
 				EHandle p;
 				if ((p = rcv.testHandle()) != null) {
-					p.sendb(msg);
+					p.send(proc.self_handle(), msg);
 					return;
 				}
 
 				p = register.get(rcv);
 				if (p != null) {
-					p.sendb(msg);
+					p.send(proc.self_handle(), msg);
 				}
 			}
 		};
@@ -446,7 +446,7 @@ public class ERT {
 			
 		ETimerTask send_task = new ETimerTask(rcv_pid) {
 			@Override
-			public void on_timeout() {
+			public void on_timeout() throws Pausable {
 				
 				ETuple3 timeout_msg = new ETuple3();
 				timeout_msg.elem1 = am_timeout;

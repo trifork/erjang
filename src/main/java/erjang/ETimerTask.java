@@ -24,6 +24,7 @@ import java.util.TimerTask;
 import java.util.WeakHashMap;
 
 import kilim.Pausable;
+import kilim.Task;
 
 /**
  * 
@@ -67,7 +68,12 @@ public abstract class ETimerTask extends TimerTask implements ExitHook {
 			pid.remove_exit_hook(this); 
 		}
 
-		on_timeout();
+		ERT.scheduler.schedule( new Task() {
+			@Override
+			public void execute() throws Pausable, Exception {
+				on_timeout();
+			}
+		} );
 	}
 
 	@Override
@@ -103,7 +109,7 @@ public abstract class ETimerTask extends TimerTask implements ExitHook {
 		this.cancel();
 	};
 
-	protected abstract void on_timeout();
+	protected abstract void on_timeout() throws Pausable;
 
 	/**
 	 * @param longValue
