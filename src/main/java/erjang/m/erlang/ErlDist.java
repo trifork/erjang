@@ -236,7 +236,7 @@ public class ErlDist {
 	@BIF
 	public static EObject setnode(EObject node_arg, EObject cid_arg, EObject type_arg)
 	{
-		System.err.println("SETNODE("+node_arg+", "+cid_arg+", "+type_arg+")");
+		//System.err.println("SETNODE("+node_arg+", "+cid_arg+", "+type_arg+")");
 		
 		EAtom node;
 		int creation = 0;

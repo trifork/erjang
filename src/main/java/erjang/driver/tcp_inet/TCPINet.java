@@ -1642,11 +1642,15 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 	private ByteBuffer inet_peer(ByteBuffer buf) {
 
 		if ((state & INET_F_ACTIVE) == 0) {
+			//System.err.println("peer -> not connected");
+			
 			return ctl_error(Posix.ENOTCONN);
 		}
 
 		InetSocketAddress addr = fd.getRemoteAddress();
 		InetAddress a = addr.getAddress();
+
+		//System.err.println("peer -> "+addr);
 
 		byte[] bytes = a.getAddress();
 		int port = addr.getPort();

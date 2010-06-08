@@ -92,7 +92,7 @@ public class EPeer extends EAbstractNode {
 		try {
 			net_message2(port, hdr, buf);
 		} catch (IOException e) {
-			e.printStackTrace();
+			//e.printStackTrace();
 			close_and_finish(port);
 		}
 	}
