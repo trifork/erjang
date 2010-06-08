@@ -788,15 +788,15 @@ public class ERT {
 	  *
 	  *      L1:          <-------------------+
 	  *                   <-----------+       |
-	  *     	     	       	  |   	  |
+	  *     	     	       	      |   	  |
 	  *             loop_rec L2 ------+---+   |
 	  *             ...               |   |   |
 	  *             remove_message 	  |   |	  |
 	  *             jump L3           |   |   |
-	  *		...	          |   |   |
-	  *		loop_rec_end L1 --+   |   |
+	  *		        ...	              |   |   |
+	  *		loop_rec_end L1         --+   |   |
 	  *      L2:          <---------------+   |
-	  *	   	wait L1  -----------------+      or wait_timeout
+	  *	   	wait L1          -----------------+      or wait_timeout
 	  *		timeout
 	  *
 	  *	 L3:    Code after receive...
@@ -806,6 +806,7 @@ public class ERT {
 	/** peek mbox at current index (proc.midx), which is 0 upon entry to the loop. */
 	public static EObject loop_rec(EProc proc) {
 		int idx = proc.midx;
+		proc.in_receive = true;
 		EObject msg = proc.mbox.peek(idx);		
 		if (DEBUG_WAIT) System.err.println("WAIT| entered loop #"+idx+" message="+msg);
 		return msg;
@@ -815,6 +816,7 @@ public class ERT {
 	public static void remove_message(EProc proc) {
 		proc.mbox.remove(proc.midx);
 		proc.midx = 0;
+		proc.in_receive = false;
 	}
 
 	/** message did not match incoming, goto next message (will be followed by goto top-of-loop)*/
@@ -825,7 +827,8 @@ public class ERT {
 	/** wait for howlong, for one more message to be available */
 	public static boolean wait_timeout(EProc proc, EObject howlong)
 			throws Pausable {
-		proc.check_exit();
+		try {
+			proc.check_exit();
 
 		if (ERT.DEBUG_WAIT) System.err.println("WAIT| "+proc+" waits for messages for "+howlong+" ms");
 			if (howlong == am_infinity) {
@@ -849,23 +852,37 @@ public class ERT {
 				if (left < 0) { 
 					return false;
 				}
+
+				if (!proc.in_receive) {
+					Task.sleep(left);
+					return false;
+				} else {
 				
+
 				if (ERT.DEBUG_WAIT) System.err.println("WAIT| "+proc+" waiting for "+left+"ms for msg #"+(proc.midx+1));
 				boolean res = proc.mbox
 					.untilHasMessages(proc.midx + 1, left);
 				proc.check_exit();
 				if (ERT.DEBUG_WAIT) System.err.println("WAIT| "+proc+" wakes up "+(res?"on message" : "after timeout"));
-
+				
 				return res;
+				}
 			}
+		} finally {
+			proc.in_receive = false;
+		}
 	}
 
 	/** wait forever, for one more message to be available */
 	public static void wait(EProc proc) throws Pausable {
-		int idx = proc.midx + 1;
-		if (DEBUG_WAIT) System.err.println("WAIT| "+proc+" waits for "+idx+" messages");
-		proc.mbox.untilHasMessages(idx);
-		if (DEBUG_WAIT) System.err.println("WAIT| "+proc+" wakes up after timeout; now has "+(idx));
+		try {
+			int idx = proc.midx + 1;
+			if (DEBUG_WAIT) System.err.println("WAIT| "+proc+" waits for "+idx+" messages");
+			proc.mbox.untilHasMessages(idx);
+			if (DEBUG_WAIT) System.err.println("WAIT| "+proc+" wakes up after timeout; now has "+(idx));
+		} finally {
+			proc.in_receive = false;
+		}		
 	}
 
 	/** message reception timed out, reset message index */
@@ -873,6 +890,7 @@ public class ERT {
 		if (DEBUG_WAIT) System.err.println("WAIT| "+proc+" timed out");
 		proc.midx = 0;
 		proc.timeout_start = 0L;
+		proc.in_receive = false;
 	}
 
 	public static int unboxToInt(EInteger i) {
