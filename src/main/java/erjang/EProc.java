@@ -524,8 +524,7 @@ public final class EProc extends ETask<EInternalPID> {
 				this.pstate = STATE_DONE;
 			}
 			
-			if (monitors.isEmpty() && links.isEmpty()) {
-				if (result != am_normal && result != am_killed) {
+			if (result != am_normal && monitors.isEmpty() && links.isEmpty() && !(death instanceof ErlangExitSignal)) {
 					
 					EFun fun = EModuleManager.resolve(new FunID(am_error_logger, am_info_report, 1));
 					
@@ -541,7 +540,6 @@ public final class EProc extends ETask<EInternalPID> {
 						e.printStackTrace();
 						// ignore //
 					}
-				}
 
 			}
 
