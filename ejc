@@ -1,5 +1,18 @@
 #!/bin/sh
 
+## Script to run the ERLConsole
+##
+
+## Config: Which version of the Erlang Runtime System ?
+##
+ERTS_VSN=5.8
+
+## Config: Where to find ${ERL_ROOT}/lib/erts-${ERTS_VSN}
+##
+ERL_ROOT=/Users/krab/Projects/otp-5.8
+
+###########################################################
+
 EJC_CMD=$0
 while [ -h "$EJC_CMD" ]; do
   ls=`ls -ld "$EJC_CMD"`
@@ -13,15 +26,15 @@ done
 
 EJC_BIN=`dirname "$EJC_CMD"`
 
-java \
+exec java \
     -server \
     -Xss1m \
     -Xmx2g \
     -Xdock:icon=$EJC_BIN/erjang_logo4.png \
     -Derj.threads=1 \
     -cp $EJC_BIN/erjang-0.1.jar erjang.console.ERLConsole \
-    -root /Users/krab/Projects/otp-5.8 \
-    +e 5.8 \
+    -root "$ERL_ROOT" \
+    +e "$ERTS_VSN" \
     -name erjang@`hostname` \
     -home "$HOME" \
     $*
