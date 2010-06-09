@@ -267,7 +267,11 @@ public class Compiler implements Opcodes {
 				+ ".jar");
 
 		if (!jarFile.exists()) {
-			JarClassRepo repo = new JarClassRepo(jarFile);
+			
+			File jarFile2 = new File(erjdir(), name + "-" + Long.toHexString(crc)
+					+ ".ja#");
+
+			JarClassRepo repo = new JarClassRepo(jarFile2);
 
 			try {
 				compile(beam_parser.load(beam_data.getByteArray()), repo);
@@ -277,10 +281,12 @@ public class Compiler implements Opcodes {
 			} finally {
 				if (repo != null) {
 					try {repo.close();
-					jarFile.delete();
+					 // jarFile.delete();
 					} catch (Exception e) {}
 				}
 			}
+			
+			jarFile2.renameTo(jarFile);
 			
 		}
 
