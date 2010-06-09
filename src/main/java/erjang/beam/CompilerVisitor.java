@@ -2808,7 +2808,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				if (fun.mod == ERLANG_ATOM) {
 					if (fun.fun == CodeAtoms.EXIT_ATOM && fun.arity==1)
 						return true;
-					if (fun.fun == CodeAtoms.ERROR_ATOM && fun.arity==1)
+					if (fun.fun == CodeAtoms.ERROR_ATOM &&  (fun.arity==1 || fun.arity==2))
 						return true;
 					if (fun.fun == CodeAtoms.THROW_ATOM && fun.arity==1)
 						return true;
