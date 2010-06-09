@@ -440,7 +440,7 @@ public class EOutputStream extends ByteArrayOutputStream {
 
     public void write_big_integer(BigInteger v) {
 	if (v.bitLength() < 64) {
-	    this.write_long(v.longValue(), true);
+	    this.write_long(v.longValue(), false);
 	    return;
 	}
 	final int signum = v.signum();
