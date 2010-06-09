@@ -27,6 +27,7 @@ import erjang.EAtom;
 import erjang.EBinary;
 import erjang.EBitString;
 import erjang.ECons;
+import erjang.EExternal;
 import erjang.EInputStream;
 import erjang.EInteger;
 import erjang.EDouble;
@@ -72,6 +73,7 @@ public class ErlConvert {
 	@BIF
 	public static EBinary term_to_binary(EObject obj) {
 		EOutputStream eos = new EOutputStream();
+		eos.write(EExternal.versionTag);
 		eos.write_any(obj);
 		return eos.getBinaryContent();		
 	}
