@@ -167,7 +167,7 @@ public class ErlConvert {
 		if ((seq = obj.testString()) == null)
 			throw ERT.badarg(obj);
 		
-		return EAtom.existing_atom(seq);
+		return EAtom.existing_atom(seq.stringValue());
 	}
 	
 	@BIF

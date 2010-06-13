@@ -168,10 +168,10 @@ public final class EAtom extends EObject implements CharSequence {
 		return res;
 	}
 
-	public static EAtom existing_atom(EString name) {
+	public static EAtom existing_atom(String name) {
 		EAtom res = interns.get(name);
 		if (res == null) {
-			throw ERT.badarg(name);
+			throw ERT.badarg(EString.fromString(name));
 		}
 
 		return res;
