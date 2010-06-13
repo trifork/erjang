@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 ## Script to run the ERLConsole
 ##
@@ -26,17 +26,15 @@ done
 
 EJC_BIN=`dirname "$EJC_CMD"`
 
-exec java \
-    -server \
-    -Xss1m \
-    -Xmx2g \
-    -Xdock:icon=$EJC_BIN/erjang_logo4.png \
-    -Xdock:name="Erjang Console" \
+java -server -da \
     -Derj.threads=1 \
-    -cp $EJC_BIN/erjang-0.1.jar erjang.console.ERLConsole \
-    -root "$ERL_ROOT" \
-    +e "$ERTS_VSN" \
-    -name erjang@`hostname` \
-    -home "$HOME" \
+    -jar $EJC_BIN/erjang-0.1.jar \
+    -home $HOME \
+    -root $ERL_ROOT \
+    +e $ERTS_VSN
     $*
+
+
+
+
 
