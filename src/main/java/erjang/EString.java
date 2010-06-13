@@ -434,6 +434,10 @@ public class EString extends ESeq implements CharSequence {
 	public EBinary asBitString() {
 		return new EBinary(data, off, length());
 	}
+	
+	public static EString make(CharSequence seq, int start, int end) {
+		return fromString( seq.subSequence(start, end).toString() );
+	}
 
 	/**
 	 * @param eObject
