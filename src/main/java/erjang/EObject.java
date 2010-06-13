@@ -30,6 +30,7 @@ import org.objectweb.asm.Type;
 import erjang.driver.EPortControl;
 import erjang.m.ets.EMatchContext;
 import erjang.m.ets.ETermPattern;
+import erjang.m.java.JavaObject;
 
 public abstract class EObject implements Comparable<EObject> {
 
@@ -43,6 +44,10 @@ public abstract class EObject implements Comparable<EObject> {
 		}
 	}
 	
+	public JavaObject testJavaObject() {
+		return null;
+	}
+
 	public ERef testReference() {
 		return null;
 	}

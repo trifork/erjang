@@ -40,6 +40,7 @@ import erjang.driver.EAsync;
 import erjang.driver.EDriver;
 import erjang.driver.EDriverTask;
 import erjang.m.erlang.ErlDist;
+import erjang.m.java.JavaObject;
 
 @Module(value = "erlang")
 public class ERT {
@@ -593,10 +594,19 @@ public class ERT {
 	}
 
 	public static EFun resolve_fun(EObject mod, EObject fun, int arity) {
-		EAtom m = mod.testAtom();
 		EAtom f = fun.testAtom();
+		if (f == null) {
+			throw ERT.badarg(mod, fun, new ESmall(arity));
+		}
+
+		JavaObject jo;
+		if ((jo = mod.testJavaObject()) != null) {
+			return jo.resolve_fun(f, arity);
+		}
 		
-		if (m == null || f == null )
+		EAtom m = mod.testAtom();
+		
+		if (m == null)
 		{
 			final ETuple tup;
 			EAtom pmod;
