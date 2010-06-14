@@ -20,7 +20,9 @@ package erjang;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.Collection;
 import java.util.Comparator;
@@ -32,6 +34,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import erjang.beam.Compiler;
+import erjang.m.java.JavaObject;
 
 import kilim.Pausable;
 
@@ -122,7 +125,23 @@ public class EModuleManager {
 							} else {
 								log.log(Level.FINER, "resolving"+fun);
 							}
-								
+
+							Class c = null;
+							try {
+								c = Class.forName(fun.module.getName());
+							} catch (ClassNotFoundException e) {
+							}
+
+							if (c != null) {
+								if (fun.function == ERT.am_new) {
+									Constructor[] cons = c.getConstructors();
+									return JavaObject.choose_and_invoke_constructor(args, cons);
+								} else {
+									Method[] methods = c.getMethods();
+									return JavaObject.choose_and_invoke_method(null, fun.function, args, methods, true);
+								}
+							}
+							
 							if (uf == null) {
 								if (!module_loaded(fun.module)) {
 									try {

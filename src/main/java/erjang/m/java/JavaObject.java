@@ -4,8 +4,10 @@
 package erjang.m.java;
 
 import java.lang.reflect.Array;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -506,194 +508,107 @@ public class JavaObject extends EPseudoTerm {
 				}
 				
 				Method[] methods = real_object.getClass().getMethods();
-				for (int i = 0; i < methods.length; i++) {
-					// TODO: handle reflective invocation of Pausable methods
-
-					Method m = methods[i];
-					if (!m.getName().equals(f.getName()))
-						continue;
-					Class<?>[] pt = m.getParameterTypes();
-					if (pt.length != arity)
-						continue;
-					Object[] a;
-					try {
-						a = convert_args(pt, args);
-					} catch (IllegalArgumentException e) {
-						// TODO: make this a null check
-						continue;
-					}
-
-					// point-of-no-return
-					Object result;
-					try {
-
-						result = m.invoke(real_object, a);
-					} catch (IllegalArgumentException e) {
-						throw ERT.badarg(args);
-					} catch (IllegalAccessException e) {
-						throw new ErlangError(am_badaccess, args);
-					} catch (InvocationTargetException e) {
-						Throwable te = e.getTargetException();
-						if (te instanceof ErlangException) {
-							throw (ErlangException) te;
-						} else {
-							throw new ErlangError(EString.fromString(e
-									.getMessage()), args);
-						}
-					}
-
-					if (m.getReturnType() == Void.TYPE) {
-						return ERT.am_ok;
-					}
-
-					return JavaObject.box(result);
-				}
-
-				throw new ErlangError(am_badfun, args);
+				
+				return choose_and_invoke_method(real_object, f, args, methods, false);
 			}
 		}, JavaObject.class.getClassLoader());
 
 	}
-}
 
-/** Wrap an array and present it as an ESeq */
-class JavaArray extends ESeq {
+	public static EObject choose_and_invoke_method(Object target, final EAtom method_name, EObject[] args, Method[] methods, boolean static_only) {
+		for (int i = 0; i < methods.length; i++) {
+			// TODO: handle reflective invocation of Pausable methods
 
-	private final int idx;
-	private final Object arr;
-
-	static ESeq box(Object arr, int idx) {
-		if (Array.getLength(arr) == idx)
-			return ERT.NIL;
-		return new JavaArray(arr, idx);
-	}
-
-	private JavaArray(Object arr, int idx) {
-		this.arr = arr;
-		this.idx = idx;
-	}
-
-	@Override
-	public ESeq cons(EObject h) {
-		return new EList(h, this);
-	}
-
-	@Override
-	public ESeq tail() {
-		return box(arr, idx + 1);
-	}
-
-	@Override
-	public EObject head() {
-		return JavaObject.box(Array.get(arr, idx));
-	}
-}
-
-/** Wrap an java.util.Iterator and present it as an ESeq */
-class JavaIterator extends ESeq {
-	Iterator<?> rest;
-	Object head;
-
-	static ESeq box(Iterator<?> it) {
-		if (it.hasNext())
-			return new JavaIterator(it);
-		return ERT.NIL;
-	}
-
-	private JavaIterator(Iterator<?> it) {
-		this.head = it.next();
-		this.rest = it;
-	}
-
-	@Override
-	public ESeq cons(EObject h) {
-		return new EList(h, this);
-	}
-
-	@Override
-	public ESeq tail() {
-		return box(rest);
-	}
-
-	@Override
-	public EObject head() {
-		return JavaObject.box(head);
-	}
-}
-
-class JavaMapIterator extends ESeq {
-	final Iterator<Entry> rest;
-	final Entry<?, ?> ent;
-
-	@SuppressWarnings("unchecked")
-	static ESeq box(Iterator<Map.Entry> iterator) {
-		if (iterator.hasNext())
-			return new JavaMapIterator(iterator);
-		return ERT.NIL;
-	}
-
-	@SuppressWarnings("unchecked")
-	private JavaMapIterator(Iterator<Map.Entry> it) {
-		ent = it.next();
-		this.rest = it;
-	}
-
-	@Override
-	public ESeq cons(EObject h) {
-		return new EList(h, this);
-	}
-
-	@Override
-	public ESeq tail() {
-		return box(rest);
-	}
-
-	@Override
-	public EObject head() {
-		return new ETuple2(JavaObject.box(ent.getKey()), JavaObject.box(ent
-				.getValue()));
-	}
-}
-
-/** Wrap an java.lang.CharSequence and present it as an ESeq */
-class JavaCharSeq extends ESeq {
-	private final CharSequence seq;
-	private final int pos;
-
-	@Override
-	public EString testString() {
-		return EString.make(seq, pos, seq.length());
-	}
-
-	static ESeq box(CharSequence cs, int pos) {
-		if (cs.length() == pos)
-			return ERT.NIL;
-		return new JavaCharSeq(cs, pos);
-	}
-
-	private JavaCharSeq(CharSequence cs, int pos) {
-		this.seq = cs;
-		this.pos = pos;
-	}
-
-	@Override
-	public ESeq cons(EObject h) {
-		ESmall s;
-		if ((s = h.testSmall()) != null) {
-			if ((s.value & 0xff) == s.value) {
-				return new EStringList((byte) s.value, this);
+			Method m = methods[i];
+			int modifier = m.getModifiers();
+			boolean is_static = (Modifier.STATIC & modifier) == Modifier.STATIC; 
+			if (is_static != static_only) 
+				continue;
+			
+			if (!m.getName().equals(method_name.getName()))
+				continue;
+			Class<?>[] pt = m.getParameterTypes();
+			if (pt.length != args.length)
+				continue;
+			Object[] a;
+			try {
+				a = convert_args(pt, args);
+			} catch (IllegalArgumentException e) {
+				// TODO: make this a null check
+				continue;
 			}
+
+			// point-of-no-return
+			Object result;
+			try {
+
+				result = m.invoke(target, a);
+			} catch (IllegalArgumentException e) {
+				throw ERT.badarg(args);
+			} catch (IllegalAccessException e) {
+				throw new ErlangError(am_badaccess, args);
+			} catch (InvocationTargetException e) {
+				Throwable te = e.getTargetException();
+				if (te instanceof ErlangException) {
+					throw (ErlangException) te;
+				} else {
+					throw new ErlangError(EString.fromString(e
+							.getMessage()), args);
+				}
+			}
+
+			if (m.getReturnType() == Void.TYPE) {
+				return ERT.am_ok;
+			}
+
+			return JavaObject.box(result);
 		}
-		return new EList(h, this);
+
+		throw new ErlangError(am_badfun, args);
 	}
 
-	@Override
-	public ESeq tail() {
-		return box(seq, pos + 1);
-	}
+	public static EObject choose_and_invoke_constructor(EObject[] args, Constructor[] cons) {
+		for (int i = 0; i < cons.length; i++) {
+			// TODO: handle reflective invocation of Pausable methods
 
-	@Override
-	public EObject head() {
-		return ERT.box(seq.charAt(pos));
+			Constructor m = cons[i];
+			
+			Class<?>[] pt = m.getParameterTypes();
+			if (pt.length != args.length)
+				continue;
+			Object[] a;
+			try {
+				a = convert_args(pt, args);
+			} catch (IllegalArgumentException e) {
+				// TODO: make this a null check
+				continue;
+			}
+
+			// point-of-no-return
+			Object result;
+			try {
+
+				result = m.newInstance(a);
+			} catch (InstantiationException e) {
+				throw ERT.badarg(args);
+			} catch (IllegalArgumentException e) {
+				throw ERT.badarg(args);
+			} catch (IllegalAccessException e) {
+				throw new ErlangError(am_badaccess, args);
+			} catch (InvocationTargetException e) {
+				Throwable te = e.getTargetException();
+				if (te instanceof ErlangException) {
+					throw (ErlangException) te;
+				} else {
+					throw new ErlangError(EString.fromString(e
+							.getMessage()), args);
+				}
+			}
+
+			return JavaObject.box(result);
+		}
+
+		throw new ErlangError(am_badfun, args);
 	}
 }
+

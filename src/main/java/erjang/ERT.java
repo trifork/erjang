@@ -324,6 +324,7 @@ public class ERT {
 	public static final EAtom am_unicode = EAtom.intern("unicode");
 	private static final EAtom am_init = EAtom.intern("init");
 	private static final EAtom am_stop = EAtom.intern("stop");
+	protected static final EAtom am_new = EAtom.intern("new");
 
 	public static EBitStringBuilder bs_init(int size, int flags) {
 		return new EBitStringBuilder(size, flags);
