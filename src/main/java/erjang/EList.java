@@ -39,6 +39,19 @@ public final class EList extends ESeq {
 		this.tail = tail;
 	}
 	
+	@Override
+	public int hashCode() {
+
+		int h = 0;
+		ESeq curr = this;
+		do {
+			h = 31*h + curr.head().hashCode();
+			curr = curr.tail();
+		} while (curr != ERT.NIL);
+
+		return h;
+	}
+	
 	public ECons testNonEmptyList() {
 		return this;
 	}

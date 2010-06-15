@@ -42,6 +42,11 @@ public final class ESmall extends EInteger {
 		this.value = value;
 	}
 	
+	@Override
+	public int hashCode() {
+		return value;
+	}
+
 	public long longValue() {
 		return value;
 	}
@@ -119,11 +124,6 @@ public final class ESmall extends EInteger {
 	@Override
 	public int asInt() {
 		return value;
-	}
-
-	@Override
-	public int hashCode() {
-		return (int) ((long) value ^ (((long) value) >>> 32));
 	}
 
 	@Override
