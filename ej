@@ -31,7 +31,7 @@ java -server -da \
     -jar $EJC_BIN/erjang-0.1.jar \
     -home $HOME \
     -root $ERL_ROOT \
-    +e $ERTS_VSN
+    +e $ERTS_VSN \
     $*
 
 
