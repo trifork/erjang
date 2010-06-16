@@ -3,6 +3,7 @@
 	<property name="erjang.version" value="0.1" />
 	<path id="erjang.classpath">
 		<pathelement location="target/classes/" />
+		<pathelement location="lib/js.jar" />
 		<pathelement location="lib/kilim-0.6-krab.jar" />
 		<pathelement location="lib/OtpErlang.jar" />
 		<pathelement location="lib/junit.jar" />

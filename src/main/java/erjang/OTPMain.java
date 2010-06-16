@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.FileHandler;
 import java.util.logging.Handler;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import erjang.driver.EDriver;
@@ -42,7 +43,8 @@ public class OTPMain {
 	    new erjang.driver.efile.Driver(),
 	    new erjang.driver.ram_file.Driver(),
 	    new erjang.driver.tcp_inet.Driver(),
-	    new erjang.driver.inet_gethost.Driver()
+	    new erjang.driver.inet_gethost.Driver(),
+	    new erjang.driver.js.EJSDriver()
 	};
 
 	public static void main(String[] args) throws ClassNotFoundException, InstantiationException, IllegalAccessException, IOException {
@@ -50,7 +52,7 @@ public class OTPMain {
 	    Handler fh = new FileHandler("erjang.log");
 	    Logger.getLogger("").addHandler(fh);
 	   // Logger.getLogger("erjang").setLevel(Level.FINE);
-	   // Logger.getLogger("kilim.Task").setLevel(Level.FINEST);
+	    // Logger.getLogger("kilim.Task").setLevel(Level.FINEST);
 
 		for (String m : MODULES) {
 			ERT.load_module(EAtom.intern(m));
