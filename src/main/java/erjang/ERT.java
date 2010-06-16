@@ -315,8 +315,8 @@ public class ERT {
 	public static final EAtom am_timeout = EAtom.intern("timeout");
 	public static final EAtom am_function_clause = EAtom
 			.intern("function_clause");
-	public static final EObject am_ok = EAtom.intern("ok");
-	private static final EObject am_noconnect = EAtom.intern("noconnect");
+	public static final EAtom am_ok = EAtom.intern("ok");
+	public static final EAtom am_noconnect = EAtom.intern("noconnect");
 	public static final boolean DEVEL = true;
 	public static final boolean DEBUG_DIST = false;
 	public static final EAtom am_latin1 = EAtom.intern("latin1");
