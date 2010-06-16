@@ -1,16 +1,18 @@
+#!/bin/bash
 
-if [ "x${OTPROOT}" == "x" ]; then
-  OTPROOT=/sw/lib/erlang
-fi
+EJC_CMD=`which "$0"`
+EJC_DIR=`dirname "$EJC_CMD"`
+EJC_BIN=`readlink -m "$EJC_DIR"`
+
+source $EJC_BIN/env_cfg
 
 java -ea -cp erjang-0.1.jar \
-    -Derjpath=$OTPROOT/lib/erts-5.7.3/ebin erjang.OTPMain \
-    $OTPROOT/erts-5.7.3/bin/erl \
+    -Derjpath=$ERL_ROOT/lib/erts-$ERTS_VSN/ebin erjang.OTPMain \
+    $ERL_ROOT/erts-$ERTS_VSN/bin/erl \
     -- \
     -boot start \
-    -root $OTPROOT \
+    -root $ERL_ROOT \
     -progname erl \
     -home $HOME \
     -init_debug \
     -loader_debug
-

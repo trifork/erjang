@@ -3,28 +3,11 @@
 ## Script to run the ERLConsole
 ##
 
-## Config: Which version of the Erlang Runtime System ?
-##
-ERTS_VSN=5.8
+EJC_CMD=`which "$0"`
+EJC_DIR=`dirname "$EJC_CMD"`
+EJC_BIN=`readlink -m "$EJC_DIR"`
 
-## Config: Where to find ${ERL_ROOT}/lib/erts-${ERTS_VSN}
-##
-ERL_ROOT=/Users/krab/Projects/otp-5.8
-
-###########################################################
-
-EJC_CMD=$0
-while [ -h "$EJC_CMD" ]; do
-  ls=`ls -ld "$EJC_CMD"`
-  link=`expr "$ls" : '.*-> \(.*\)$'`
-  if expr "$link" : '/' > /dev/null; then
-        EJC_CMD="$link"
-  else
-        EJC_CMD="`dirname $EJC_CMD`/$link"
-  fi
-done
-
-EJC_BIN=`dirname "$EJC_CMD"`
+source $EJC_BIN/env_cfg
 
 java -server -da \
     -Derj.threads=1 \
@@ -33,8 +16,3 @@ java -server -da \
     -root $ERL_ROOT \
     +e $ERTS_VSN \
     $*
-
-
-
-
-
