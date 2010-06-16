@@ -2627,6 +2627,10 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 				push(in, ETUPLE_TYPE);
 
+				//if (in.type == null) {
+				mv.visitTypeInsn(CHECKCAST, ETUPLE_NAME);
+				//}
+
 				mv.visitMethodInsn(INVOKEVIRTUAL, ETUPLE_NAME, "arity", "()I");
 				
 				TupleArityLabel[] cases = new TupleArityLabel[targets.length];
