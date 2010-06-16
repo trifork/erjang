@@ -8,5 +8,6 @@
 	<classpathentry kind="lib" path="lib/clojure-slim.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/3"/>
 	<classpathentry kind="lib" path="lib/kilim-0.6-krab.jar" sourcepath="/kilim/src"/>
+	<classpathentry kind="lib" path="lib/js.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>
