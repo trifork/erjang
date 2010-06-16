@@ -18,8 +18,11 @@
 
 package erjang.driver;
 
-import java.lang.reflect.Constructor;
 import java.util.HashMap;
+
+import erjang.ERT;
+import erjang.ESeq;
+import erjang.EString;
 
 /** The collection of known drivers.
  */
@@ -34,4 +37,12 @@ public class Drivers {
 		EDriver res = drivers.get(name);
 		return res;
     }
+
+	public static ESeq getLoaded() {
+		ESeq res = ERT.NIL;
+		for (String driver : drivers.keySet()) {
+			res = res.cons(EString.fromString(driver));
+		}
+		return res;
+	}
 }
