@@ -46,13 +46,13 @@ public class Native extends ENative {
 	private static final EAtom am_unix = EAtom.intern("unix");
 	private static final EAtom am_win32 = EAtom.intern("win32");
 
-	private static final EAtom am_macosx = EAtom.intern("macosx");
+	private static final EAtom am_darwin = EAtom.intern("darwin");
 	private static final EAtom am_linux = EAtom.intern("linux");
 	private static final EAtom am_sunos = EAtom.intern("sunos");
 	private static final EAtom am_windows = EAtom.intern("windows");
 	private static final EAtom am_nt = EAtom.intern("nt");
 
-	private static final ETuple2 OS_TYPE_MACOS = new ETuple2(am_unix, am_macosx);
+	private static final ETuple2 OS_TYPE_MACOS = new ETuple2(am_unix, am_darwin);
 	private static final ETuple2 OS_TYPE_LINUX = new ETuple2(am_unix, am_linux);
 	private static final ETuple2 OS_TYPE_SUNOS = new ETuple2(am_unix, am_sunos);
 	private static final ETuple2 OS_TYPE_WINDOWS = new ETuple2(am_win32,
