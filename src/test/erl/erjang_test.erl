@@ -26,7 +26,7 @@
 
 -include("triq.hrl").
 
--export([prop_binop/0, prop_echo/0, main/0, echo/1, echo2/1]).
+-export([main/0, echo/1, echo2/1]).
 
 
 %% ===========================================
@@ -83,20 +83,62 @@ here(Fun,Args) ->
 %% ===========================================
 prop_binop() ->
     ?FORALL({A,B,OP}, 
-	    {any(),any(),
+	    {xany(),xany(),
 	     elements(['>', '<', 
 		       '==', '=:=', '/=', 
 		       '=<', '>=', 
 		       '++',
 		       '+', '-', '/', '*', 'div',
-		       'bsl', 'bsr',
+%		       'bsl', 'bsr',
 		       'or'
 		      ])},
 	    begin
 		Here  = here(OP,[A,B]),
 		There = other(OP,[A,B]),
-%		io:format("here=~p~nthere=~p~n~n", [Here,There]),
-		Here == There
+		?WHENFAIL(io:format("here=~p~nthere=~p~n~n", [Here,There]),
+			  Here == There)
+	    end).
+
+smaller(Domain) ->
+    ?SIZED(SZ, triq_dom:resize(random:uniform((SZ div 2)+1), Domain)).
+
+-define(MIN_INT32, (-(1 bsl 31))).
+-define(MAX_INT32, ((1 bsl 31))).
+
+-define(MIN_INT64, (-(1 bsl 63))).
+-define(MAX_INT64, ((1 bsl 63))).
+
+
+xany()  ->
+    oneof([int(), real(), bool(), atom(), 
+
+	   %% also test integers around +/- MIN_INT32 limits
+	   choose(?MIN_INT32-10, ?MIN_INT32+10),
+	   choose(?MAX_INT32-10, ?MAX_INT32+10),
+
+	   %% also test integers around +/- MIN_INT64 limits
+	   choose(?MIN_INT64-10, ?MIN_INT64+10),
+	   choose(?MAX_INT64-10, ?MAX_INT64+10),
+
+	   [smaller(?DELAY(any())) | smaller(?DELAY(any()))],
+
+	   %% list(any()), but with a size in the range 1..GenSize
+	   list(smaller(?DELAY(any()))),
+
+	   tuple(smaller(?DELAY(any())))
+
+	  ]).
+
+
+prop_encode() ->
+    ?FORALL({T,ENC,DEC}, {xany(), 
+			oneof([server(), node()]), 
+			oneof([server(), node()])},
+	    begin
+		B = call(ENC, 'erlang', 'term_to_binary', [T]),
+		R = call(DEC, 'erlang', 'binary_to_term', [B]),
+		?WHENFAIL(io:format("T=~p, R=~p, B=~p~n", [T,R,B]),
+			  T == R)
 	    end).
 
 prop_echo() ->
