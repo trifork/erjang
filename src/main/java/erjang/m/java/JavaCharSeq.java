@@ -1,5 +1,6 @@
 package erjang.m.java;
 
+import erjang.ECons;
 import erjang.EList;
 import erjang.EObject;
 import erjang.EProc;
@@ -15,6 +16,12 @@ class JavaCharSeq extends ESeq {
 	private final int pos;
 	private EProc self;
 
+	public ECons testNonEmptyList() {
+		if (seq.length() == pos)
+			return null;
+		return this;
+	}
+	
 	@Override
 	public EString testString() {
 		return EString.make(seq, pos, seq.length());

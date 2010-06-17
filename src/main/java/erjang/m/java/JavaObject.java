@@ -23,7 +23,6 @@ import erjang.EDouble;
 import erjang.EFun;
 import erjang.EFunHandler;
 import erjang.EInteger;
-import erjang.EJob;
 import erjang.EList;
 import erjang.ENil;
 import erjang.ENumber;
