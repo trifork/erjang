@@ -11,6 +11,6 @@ fi
 
 # OS X - specific config
 if [[ $(uname) == "Darwin" ]]; then
-    OSX_DOCK_ICON=-Xdock:icon=$EJC_BIN/erjang_logo4.png
-    OSX_DOCK_NAME=-Xdock:name="Erjang Console"
+    OSX_DOCK_ICON="-Xdock:icon=$EJC_DIR/erjang_logo4.png"
+    OSX_DOCK_NAME="-Xdock:name=ErjangConsole"
 fi

@@ -4,10 +4,10 @@
 ##
 
 EJC_CMD=`which "$0"`
+while LINK=`readlink "$EJC_CMD"`; do EJC_CMD=$LINK; done
 EJC_DIR=`dirname "$EJC_CMD"`
-EJC_BIN=`readlink -m "$EJC_DIR"`
 
-source $EJC_BIN/env_cfg
+source $EJC_DIR/env_cfg
 
 exec java \
     -server \
@@ -16,7 +16,7 @@ exec java \
     $OSX_DOCK_ICON \
     $OSX_DOCK_NAME \
     -Derj.threads=1 \
-    -cp $EJC_BIN/erjang-0.1.jar erjang.console.ERLConsole \
+    -cp $EJC_DIR/erjang-0.1.jar erjang.console.ERLConsole \
     -root "$ERL_ROOT" \
     +e "$ERTS_VSN" \
     -name erjang@`hostname` \
