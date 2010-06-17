@@ -118,6 +118,11 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 	private List<FV> functions = new ArrayList<FV>();
 
 	@Override
+	public void declareFunction(EAtom fun, int arity, int label) {
+		/* ignore */
+	}
+	
+	@Override
 	public FunctionVisitor visitFunction(EAtom name, int arity, int startLabel) {
 		FV f = new FV(super.visitFunction(name, arity, startLabel), name,
 				arity, startLabel);

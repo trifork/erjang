@@ -60,6 +60,7 @@ public class ModuleRepr implements BeamFileData {
 		visit_attributes(v);
 
 		try {
+			for (FunctionRepr fun : functions) fun.declare(v);
 			for (FunctionRepr fun : functions) fun.accept(v);
 		} catch (RuntimeException e) {
 			System.err.println("ModuleRepr: Error in traversal: "+e);

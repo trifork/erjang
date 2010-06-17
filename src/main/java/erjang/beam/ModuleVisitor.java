@@ -34,6 +34,9 @@ public interface ModuleVisitor {
 	/** list of {Atom,Value} */
 	void visitAttribute(EAtom att, EObject value);
 
+	/** declare all local functions (happens before any visitFunction) */
+	void declareFunction(EAtom fun, int arity, int label);
+
 	/** Visit function */
 	FunctionVisitor visitFunction(EAtom name, int arity, int startLabel);
 

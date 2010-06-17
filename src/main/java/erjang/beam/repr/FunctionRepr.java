@@ -42,6 +42,10 @@ public class FunctionRepr {
 	}
 
 	//==================== Visitation ====================
+	public void declare(ModuleVisitor mv) {
+		mv.declareFunction(sig.fun, sig.arity, sig.label);
+	}
+	
 	public void accept(ModuleVisitor mv) {
 		FunctionVisitor fv =
 			mv.visitFunction(sig.fun, sig.arity, sig.label);

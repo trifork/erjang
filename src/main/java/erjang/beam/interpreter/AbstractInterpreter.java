@@ -125,6 +125,7 @@ public class AbstractInterpreter {
 		}
 
 
+		public void declareFunction(EAtom name, int arity, int startLabel) { /* ignore */ }
 		public abstract FunctionVisitor visitFunction(EAtom name, int arity, int startLabel);
 
 		//---------- Utility functions for encoder: --------------------

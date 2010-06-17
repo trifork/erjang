@@ -47,6 +47,11 @@ public class ModuleAdapter implements ModuleVisitor  {
 		mv.visitAttribute(att, value);
 	}
 
+	@Override
+	public void declareFunction(EAtom fun, int arity, int label) {
+		mv.declareFunction(fun, arity, label);
+	}
+	
 	/** Visit function */
 	public FunctionVisitor visitFunction(EAtom name, int arity, int startLabel) {
 		return mv.visitFunction(name, arity, startLabel);

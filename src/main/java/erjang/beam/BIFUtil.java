@@ -424,4 +424,9 @@ public class BIFUtil {
 		return getMethod(module, name, parms, isGuard, fail_when_missing);
 	}
 
+	public static BuiltInFunction getMethod(EAtom module, EAtom function,
+			int arity, boolean isGuard, boolean failWhenMissing) {
+		return getMethod(module.getName(), function.getName(), arity, isGuard, failWhenMissing);
+	}
+
 }

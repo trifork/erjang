@@ -130,6 +130,12 @@ public class ModuleAnalyzer implements ModuleVisitor {
 		}
 
 	}
+	
+	@Override
+	public void declareFunction(EAtom fun, int arity, int startLabel) {
+		Label label = new Label(startLabel);
+		get(fun,arity,label);
+	}
 
 	@Override
 	public FunctionVisitor visitFunction(EAtom name, int arity,
@@ -167,8 +173,15 @@ public class ModuleAnalyzer implements ModuleVisitor {
 						case call: {
 							Insn.IL cl = (Insn.IL) insn;
 							FunInfo target = get(cl.label);
-							target.addCaller(self);
-							target.is_called_locally_in_nontail_position = true;
+							
+							BuiltInFunction bif = 
+								BIFUtil.getMethod(target.name.module,
+									target.name.function, target.name.arity, false, false);
+
+							if (bif == null) {							
+								target.addCaller(self);
+								target.is_called_locally_in_nontail_position = true;
+							}
 							break;
 						}
 
@@ -177,8 +190,15 @@ public class ModuleAnalyzer implements ModuleVisitor {
 							boolean is_self_call = cl.label.nr == startLabel;	
 							self.may_return_tail_marker |= !is_self_call;
 							FunInfo target = get(cl.label);
-							target.addCaller(self);
-							target.is_called_locally_in_tail_position |= !is_self_call;
+							
+							BuiltInFunction bif = 
+								BIFUtil.getMethod(target.name.module,
+									target.name.function, target.name.arity, false, false);
+
+							if (bif == null) {							
+								target.addCaller(self);
+								target.is_called_locally_in_tail_position |= !is_self_call;
+							}
 							break;
 						}
 
@@ -187,8 +207,14 @@ public class ModuleAnalyzer implements ModuleVisitor {
 							boolean is_self_call = cl.label.nr == startLabel;
 							self.may_return_tail_marker |= !is_self_call;
 							FunInfo target = get(cl.label);
-							target.addCaller(self);
-							target.is_called_locally_in_tail_position |= !is_self_call;
+							BuiltInFunction bif = 								
+								BIFUtil.getMethod(target.name.module,
+									target.name.function, target.name.arity, false, false);
+
+							if (bif == null) {							
+								target.addCaller(self);
+								target.is_called_locally_in_tail_position |= !is_self_call;
+							}
 							break;
 						}
 						

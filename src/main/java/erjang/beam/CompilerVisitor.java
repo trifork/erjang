@@ -422,11 +422,11 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 		return exported.contains(EUtil.getJavaName(name, arity));
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see erjang.beam.ModuleVisitor#visitFunction(erjang.EAtom, int, int)
-	 */
+	@Override
+	public void declareFunction(EAtom fun, int arity, int label) {
+		/* ignore */
+	}
+
 	@Override
 	public FunctionVisitor visitFunction(EAtom name, int arity, int startLabel) {
 		return new ASMFunctionAdapter(name, arity, startLabel);
@@ -2694,11 +2694,12 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 				ensure_exception_handler_in_place();
 
-				if (isExternal) {
-					BuiltInFunction bif = null;
+				BuiltInFunction bif = null;
 
-					bif = BIFUtil.getMethod(fun.mod.getName(),
-							fun.fun.getName(), args, false, false);
+				bif = BIFUtil.getMethod(fun.mod.getName(),
+						fun.fun.getName(), args, false, false);
+
+				if (bif != null || isExternal) {
 
 					if (bif == null) {
 						String field = CompilerVisitor.this
