@@ -64,6 +64,7 @@ import erjang.FunID;
 import erjang.Module;
 import erjang.NotImplemented;
 import erjang.BIF.Type;
+import erjang.m.java.JavaObject;
 
 /** bifs for the module erlang */
 @Module("erlang")
@@ -199,12 +200,15 @@ public class ErlBif {
 	@BIF
 	public static EObject apply(EProc proc, EObject one, EObject two, EObject three) throws Pausable {
 		EAtom mod = one.testAtom();
+		ETuple t = one.testTuple();
+		JavaObject jo = one.testJavaObject();
+		
 		EAtom fun = two.testAtom();
 		ESeq  args = three.testSeq();
 		
-		if (mod==null||fun==null||args==null) throw ERT.badarg(one, two, three);
+		if ((mod==null && t == null && jo == null)||fun==null||args==null) throw ERT.badarg(one, two, three);
 		
-		EFun f = EModuleManager.resolve(new FunID(mod, fun, args.length()));
+		EFun f = ERT.resolve_fun(one, fun, args.length());
 		
 		EObject res = apply_last(proc, f, args);
 		

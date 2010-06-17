@@ -8,6 +8,7 @@ import erjang.ECons;
 import erjang.EList;
 import erjang.ENil;
 import erjang.EObject;
+import erjang.EProc;
 import erjang.ERT;
 import erjang.ESeq;
 import erjang.ETuple2;
@@ -15,6 +16,7 @@ import erjang.ETuple2;
 class JavaMapIterator extends ESeq {
 	final Iterator<Entry> rest;
 	final Entry<?, ?> ent;
+	private EProc self;
 
 	@Override
 	public ECons testNonEmptyList() {
@@ -32,16 +34,17 @@ class JavaMapIterator extends ESeq {
 	}
 	
 	@SuppressWarnings("unchecked")
-	static ESeq box(Iterator<Map.Entry> iterator) {
+	static ESeq box(EProc self, Iterator<Map.Entry> iterator) {
 		if (iterator.hasNext())
-			return new JavaMapIterator(iterator);
+			return new JavaMapIterator(self, iterator);
 		return ERT.NIL;
 	}
 
 	@SuppressWarnings("unchecked")
-	private JavaMapIterator(Iterator<Map.Entry> it) {
+	private JavaMapIterator(EProc self, Iterator<Map.Entry> it) {
 		ent = it.next();
 		this.rest = it;
+		this.self = self;
 	}
 
 	@Override
@@ -51,14 +54,14 @@ class JavaMapIterator extends ESeq {
 
 	@Override
 	public ESeq tail() {
-		ESeq tail = box(rest);
+		ESeq tail = box(self, rest);
 		return tail;
 	}
 
 	@Override
 	public EObject head() {
-		return new ETuple2(JavaObject.box(ent.getKey()), JavaObject.box(ent
-				.getValue()));
+		return new ETuple2(JavaObject.box(self, ent.getKey()), 
+						   JavaObject.box(self, ent.getValue()));
 	}
 }
 

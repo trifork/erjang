@@ -638,27 +638,25 @@ public class ERT {
 	
 	public static EObject apply_list(EProc proc, EObject mod, EObject fun,
 			ESeq seq, int len) throws Pausable {
-		EAtom m = mod.testAtom();
 		EAtom f = fun.testAtom();
 		ESeq a = seq.testSeq();
 
-		if (m == null || f == null || a == null)
+		if (f == null || a == null)
 			throw ERT.badarg(mod, fun, seq);
 
-		EFun efun = EModuleManager.resolve(new FunID(m, f, len));
+		EFun efun = resolve_fun(mod, fun, len);
 		return efun.apply(proc, a);
 	}
 
 	public static EObject apply_list_last(EProc proc, EObject mod, EObject fun,
 			ESeq seq, int len) throws Pausable {
-		EAtom m = mod.testAtom();
 		EAtom f = fun.testAtom();
 		ESeq a = seq.testSeq();
 
-		if (m == null || f == null || a == null)
+		if (f == null || a == null)
 			throw ERT.badarg(mod, fun, seq);
 
-		EFun found = EModuleManager.resolve(new FunID(m, f, len));
+		EFun found = resolve_fun(mod, fun, len);
 
 		if (len > 9) {
 			// TODO: make it real tail recursion in stead

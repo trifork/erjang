@@ -2,6 +2,7 @@ package erjang.m.java;
 
 import erjang.EList;
 import erjang.EObject;
+import erjang.EProc;
 import erjang.ERT;
 import erjang.ESeq;
 import erjang.ESmall;
@@ -12,21 +13,23 @@ import erjang.EStringList;
 class JavaCharSeq extends ESeq {
 	private final CharSequence seq;
 	private final int pos;
+	private EProc self;
 
 	@Override
 	public EString testString() {
 		return EString.make(seq, pos, seq.length());
 	}
 
-	static ESeq box(CharSequence cs, int pos) {
+	static ESeq box(EProc self, CharSequence cs, int pos) {
 		if (cs.length() == pos)
 			return ERT.NIL;
-		return new JavaCharSeq(cs, pos);
+		return new JavaCharSeq(self, cs, pos);
 	}
 
-	private JavaCharSeq(CharSequence cs, int pos) {
+	private JavaCharSeq(EProc self, CharSequence cs, int pos) {
 		this.seq = cs;
 		this.pos = pos;
+		this.self = self;
 	}
 
 	@Override
@@ -42,7 +45,7 @@ class JavaCharSeq extends ESeq {
 
 	@Override
 	public ESeq tail() {
-		return box(seq, pos + 1);
+		return box(self, seq, pos + 1);
 	}
 
 	@Override

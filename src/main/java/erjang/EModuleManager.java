@@ -135,10 +135,10 @@ public class EModuleManager {
 							if (c != null) {
 								if (fun.function == ERT.am_new) {
 									Constructor[] cons = c.getConstructors();
-									return JavaObject.choose_and_invoke_constructor(args, cons);
+									return JavaObject.choose_and_invoke_constructor(proc, args, cons);
 								} else {
 									Method[] methods = c.getMethods();
-									return JavaObject.choose_and_invoke_method(null, fun.function, args, methods, true);
+									return JavaObject.choose_and_invoke_method(proc, null, fun.function, args, methods, true);
 								}
 							}
 							

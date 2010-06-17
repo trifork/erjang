@@ -5,6 +5,7 @@ package erjang.m.java;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -12,8 +13,8 @@ import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Map.Entry;
 
+import kilim.Mailbox;
 import kilim.Pausable;
 import erjang.EAtom;
 import erjang.EBinary;
@@ -22,6 +23,7 @@ import erjang.EDouble;
 import erjang.EFun;
 import erjang.EFunHandler;
 import erjang.EInteger;
+import erjang.EJob;
 import erjang.EList;
 import erjang.ENil;
 import erjang.ENumber;
@@ -32,12 +34,12 @@ import erjang.ERT;
 import erjang.ESeq;
 import erjang.ESmall;
 import erjang.EString;
-import erjang.EStringList;
 import erjang.ETuple;
 import erjang.ETuple2;
 import erjang.ErlangError;
 import erjang.ErlangException;
 import erjang.driver.IO;
+import erjang.m.erlang.ErlProc;
 
 public class JavaObject extends EPseudoTerm {
 
@@ -47,11 +49,15 @@ public class JavaObject extends EPseudoTerm {
 
 	static final EAtom am_none = EAtom.intern("none");
 	static final EAtom am_java_object = EAtom.intern("java_object");
-	protected static final EAtom am_badaccess = EAtom.intern("badaccess");
-	protected static final EAtom am_badfun = EAtom.intern("badfun");
-	protected static final EAtom am_null_pointer_exception = EAtom.intern("null_pointer_exception");
+	static final EAtom am_badaccess = EAtom.intern("badaccess");
+	static final EAtom am_badfun = EAtom.intern("badfun");
+	static final EAtom am_null_pointer_exception = EAtom
+			.intern("null_pointer_exception");
+	protected static final EAtom am_erlang = EAtom.intern("erlang");
+	protected static final EAtom am_apply = EAtom.intern("apply");
 
-	Object real_object;
+	final Object real_object;
+	final EProc owner;
 
 	@Override
 	public EBinary testBinary() {
@@ -59,7 +65,7 @@ public class JavaObject extends EPseudoTerm {
 			return new EBinary((byte[]) real_object);
 		}
 		if (real_object instanceof String) {
-			return new EBinary(((String)real_object).getBytes(IO.UTF8));
+			return new EBinary(((String) real_object).getBytes(IO.UTF8));
 		}
 		return null;
 	}
@@ -98,6 +104,9 @@ public class JavaObject extends EPseudoTerm {
 				@Override
 				public EObject invoke(EProc proc, EObject[] args)
 						throws Pausable {
+					if (proc != owner)
+						throw new ErlangError(ERT.am_badfun, args);
+
 					r.run();
 					return ERT.am_ok;
 				}
@@ -113,11 +122,15 @@ public class JavaObject extends EPseudoTerm {
 			final java.util.Map<?, ?> r = (java.util.Map<?, ?>) real_object;
 			return EFun.get_fun_with_handler(0, new EFunHandler() {
 				@Override
-				public EObject invoke(EProc proc, EObject[] args)
+				public EObject invoke(EProc self, EObject[] args)
 						throws Pausable {
-					Object key = JavaObject.unbox(args[0]);
+					if (self != owner)
+						throw new ErlangError(ERT.am_badfun, args);
+
+					Object key = JavaObject.unbox(self, Object.class, args[0]);
 					if (r.containsKey(key)) {
-						return new ETuple2(args[0], JavaObject.box(r.get(key)));
+						return new ETuple2(args[0], JavaObject.box(self, r
+								.get(key)));
 					} else {
 						return am_none;
 					}
@@ -128,7 +141,7 @@ public class JavaObject extends EPseudoTerm {
 
 		return null;
 	}
-
+	
 	@Override
 	public ECons testCons() {
 		return testSeq();
@@ -137,7 +150,7 @@ public class JavaObject extends EPseudoTerm {
 	@Override
 	public ECons testNonEmptyList() {
 		ESeq seq = testSeq();
-		if (seq.isNil())
+		if (seq == null || seq.isNil())
 			return null;
 		return seq;
 	}
@@ -181,25 +194,25 @@ public class JavaObject extends EPseudoTerm {
 	@Override
 	public ESeq testSeq() {
 		if (real_object instanceof CharSequence) {
-			return JavaCharSeq.box((CharSequence) real_object, 0);
+			return JavaCharSeq.box(owner, (CharSequence) real_object, 0);
 		}
 
 		if (real_object instanceof Iterable<?>) {
 			Iterable<?> it = (Iterable<?>) real_object;
-			return JavaIterator.box(it.iterator());
+			return JavaIterator.box(owner, it.iterator());
 		}
 
 		if (real_object instanceof Iterator<?>) {
-			return JavaIterator.box(((Iterator<?>) real_object));
+			return JavaIterator.box(owner, ((Iterator<?>) real_object));
 		}
 
 		if (real_object instanceof Map<?, ?>) {
-			return JavaMapIterator.box(((Map) real_object).entrySet()
+			return JavaMapIterator.box(owner, ((Map) real_object).entrySet()
 					.iterator());
 		}
 
 		if (real_object != null && real_object.getClass().isArray()) {
-			return JavaArray.box(real_object, 0);
+			return JavaArray.box(owner, real_object, 0);
 		}
 
 		return null;
@@ -253,57 +266,48 @@ public class JavaObject extends EPseudoTerm {
 		return null;
 	}
 
-	public JavaObject(Object object) {
+	public JavaObject(EProc self, Object object) {
 		real_object = object;
+		owner = self;
 	}
 
 	public String toString() {
 		return String.valueOf(real_object);
 	};
 
-	public static EObject box(Object object) {
+	public static EObject box(EProc self, Object object) {
 		if (object instanceof EObject) {
 			return (EObject) object;
 		}
-		return new JavaObject(object);
+		return new JavaObject(self, object);
 	}
 
-	public static Object unbox(EObject obj) {
-
-		if (obj instanceof JavaObject) {
-			return ((JavaObject) obj).real_object;
-		} else {
-			return obj;
-		}
-
-	}
-
-	public static Object[] convert_args(Class<?>[] arg_types, ESeq arg_seq)
-			throws IllegalArgumentException {
+	public static Object[] convert_args(EProc self, Class<?>[] arg_types,
+			ESeq arg_seq) throws IllegalArgumentException {
 		Object[] out = new Object[arg_types.length];
 
 		ESeq as_iter = arg_seq;
 		for (int i = 0; i < arg_types.length; i++) {
-			out[i] = JavaObject.unbox(arg_types[i], as_iter.head());
+			out[i] = JavaObject.unbox(self, arg_types[i], as_iter.head());
 			as_iter = as_iter.tail();
 		}
 
 		return out;
 	}
 
-	public static Object[] convert_args(Class<?>[] arg_types, EObject[] args)
-			throws IllegalArgumentException {
+	public static Object[] convert_args(EProc self, Class<?>[] arg_types,
+			EObject[] args) throws IllegalArgumentException {
 		Object[] out = new Object[arg_types.length];
 
 		for (int i = 0; i < arg_types.length; i++) {
-			out[i] = JavaObject.unbox(arg_types[i], args[i]);
+			out[i] = JavaObject.unbox(self, arg_types[i], args[i]);
 		}
 
 		return out;
 	}
 
 	/** this logic is used to map an EObject back to a Java object */
-	private static Object unbox(Class<?> type, EObject val)
+	static Object unbox(final EProc self, Class<?> type, EObject val)
 			throws IllegalArgumentException {
 		if (val instanceof JavaObject) {
 			JavaObject jo = (JavaObject) val;
@@ -314,12 +318,17 @@ public class JavaObject extends EPseudoTerm {
 						+ val.getClass().getName() + " to " + type);
 			}
 		}
-		
-		if (type == Object.class) {
-			// TODO: give each erlang term a "natural" conversion to java.lang.Object
+
+		if (type == Object.class || type.isInstance(val)) {
+			// TODO: give each erlang term a "natural" conversion to
+			// java.lang.Object
 			return val;
 		}
 
+		if (type == Void.class || type == void.class) {
+			return null;
+		}
+		
 		/** unbox to array type */
 		if (type.isArray()) {
 			ESeq seq;
@@ -330,7 +339,8 @@ public class JavaObject extends EPseudoTerm {
 
 				int index = 0;
 				while (!seq.isNil()) {
-					Object value = JavaObject.unbox(componentType, seq.head());
+					Object value = JavaObject.unbox(self, componentType, seq
+							.head());
 					Array.set(arr, index++, value);
 					seq = seq.tail();
 				}
@@ -345,7 +355,7 @@ public class JavaObject extends EPseudoTerm {
 				Object arr = Array.newInstance(componentType, length);
 
 				for (int index = 0; index < length; index++) {
-					Object value = JavaObject.unbox(componentType, tup
+					Object value = JavaObject.unbox(self, componentType, tup
 							.elm(index + 1));
 					Array.set(arr, index, value);
 				}
@@ -356,11 +366,61 @@ public class JavaObject extends EPseudoTerm {
 		}
 
 		Mapper mapper = type_mapper.get(type);
-		if (mapper == null) {
-			throw new IllegalArgumentException("cannot convert "
-					+ val.getClass().getName() + " to " + type);
+		if (mapper != null) {
+			return mapper.map(val);
 		}
-		return mapper.map(val);
+
+		final EFun ifun;
+		if (type.isInterface() && (ifun = val.testFunction2(3)) != null) {
+
+			final ClassLoader loader = JavaObject.class
+					.getClassLoader();
+			return 
+			java.lang.reflect.Proxy.newProxyInstance(loader, new Class[] { type }, new InvocationHandler() {
+						@Override
+						public Object invoke(Object proxy, final Method method, final Object[] args)
+								throws Throwable {
+							
+							final Mailbox<Object> reply = new Mailbox<Object>(1);
+							
+							EFun job = EFun.get_fun_with_handler(0, new EFunHandler() {
+								@Override
+								public EObject invoke(EProc proc, EObject[] _) throws Pausable {
+
+									EObject aa = JavaObject.box(proc, args);
+									EObject at = JavaObject.box(proc, method.getParameterTypes());
+									
+									EObject[] call_args = new EObject[] {
+										EAtom.intern(method.getName()), at, aa
+									};
+									
+									EObject result = ifun.invoke(proc, call_args);
+									
+									Object jresult = JavaObject.unbox(proc,
+											method.getReturnType(), 
+											result);
+									
+									if (method.getReturnType() == void.class) {
+										reply.put(ERT.am_ok);
+									} else {
+										reply.put(  jresult );
+									}
+									
+									return ERT.am_ok;
+								}
+							}, loader);
+
+							EProc proc = new EProc(self.group_leader(), 
+									am_erlang, am_apply, EList.make(job, ERT.NIL));
+							ERT.run(proc);
+							
+							return reply.getb();
+						}
+					});
+		}
+
+		throw new IllegalArgumentException("cannot convert "
+				+ val.getClass().getName() + " to " + type);
 	}
 
 	static Map<Class<?>, Mapper> type_mapper = new HashMap<Class<?>, Mapper>();
@@ -370,7 +430,7 @@ public class JavaObject extends EPseudoTerm {
 	}
 
 	static {
-		type_mapper.put(String.class, new Mapper() {
+		Mapper string_mapper = new Mapper() {
 			public Object map(EObject val) {
 
 				EString str;
@@ -383,7 +443,9 @@ public class JavaObject extends EPseudoTerm {
 
 				throw new IllegalArgumentException();
 			}
-		});
+		};
+		type_mapper.put(String.class, string_mapper);
+		type_mapper.put(CharSequence.class, string_mapper);
 
 		Mapper byte_mapper = new Mapper() {
 
@@ -492,7 +554,10 @@ public class JavaObject extends EPseudoTerm {
 		type_mapper.put(Boolean.class, bool_mapper);
 	}
 
-	/** return a fun that will call a Java method; used when calling Object:doThis(a,b,c) */
+	/**
+	 * return a fun that will call a Java method; used when calling
+	 * Object:doThis(a,b,c)
+	 */
 	public EFun resolve_fun(final EAtom f, final int arity) {
 
 		// TODO: we can make this much much faster!
@@ -502,29 +567,32 @@ public class JavaObject extends EPseudoTerm {
 		new EFunHandler() {
 			@Override
 			public EObject invoke(EProc proc, EObject[] args) throws Pausable {
-				
+
 				if (real_object == null) {
 					throw new ErlangError(am_null_pointer_exception);
 				}
-				
+
 				Method[] methods = real_object.getClass().getMethods();
-				
-				return choose_and_invoke_method(real_object, f, args, methods, false);
+
+				return choose_and_invoke_method(proc, real_object, f, args,
+						methods, false);
 			}
 		}, JavaObject.class.getClassLoader());
 
 	}
 
-	public static EObject choose_and_invoke_method(Object target, final EAtom method_name, EObject[] args, Method[] methods, boolean static_only) {
+	public static EObject choose_and_invoke_method(EProc self, Object target,
+			final EAtom method_name, EObject[] args, Method[] methods,
+			boolean static_only) {
 		for (int i = 0; i < methods.length; i++) {
 			// TODO: handle reflective invocation of Pausable methods
 
 			Method m = methods[i];
 			int modifier = m.getModifiers();
-			boolean is_static = (Modifier.STATIC & modifier) == Modifier.STATIC; 
-			if (is_static != static_only) 
+			boolean is_static = (Modifier.STATIC & modifier) == Modifier.STATIC;
+			if (is_static != static_only)
 				continue;
-			
+
 			if (!m.getName().equals(method_name.getName()))
 				continue;
 			Class<?>[] pt = m.getParameterTypes();
@@ -532,7 +600,7 @@ public class JavaObject extends EPseudoTerm {
 				continue;
 			Object[] a;
 			try {
-				a = convert_args(pt, args);
+				a = convert_args(self, pt, args);
 			} catch (IllegalArgumentException e) {
 				// TODO: make this a null check
 				continue;
@@ -552,8 +620,9 @@ public class JavaObject extends EPseudoTerm {
 				if (te instanceof ErlangException) {
 					throw (ErlangException) te;
 				} else {
-					throw new ErlangError(EString.fromString(e
-							.getMessage()), args);
+					ETuple reason = ETuple.make(EAtom.intern(te.getClass()
+							.getName()), EString.fromString(te.getMessage()));
+					throw new ErlangError(reason, args);
 				}
 			}
 
@@ -561,24 +630,25 @@ public class JavaObject extends EPseudoTerm {
 				return ERT.am_ok;
 			}
 
-			return JavaObject.box(result);
+			return JavaObject.box(self, result);
 		}
 
 		throw new ErlangError(am_badfun, args);
 	}
 
-	public static EObject choose_and_invoke_constructor(EObject[] args, Constructor[] cons) {
+	public static EObject choose_and_invoke_constructor(EProc self,
+			EObject[] args, Constructor<?>[] cons) {
 		for (int i = 0; i < cons.length; i++) {
 			// TODO: handle reflective invocation of Pausable methods
 
-			Constructor m = cons[i];
-			
+			Constructor<?> m = cons[i];
+
 			Class<?>[] pt = m.getParameterTypes();
 			if (pt.length != args.length)
 				continue;
 			Object[] a;
 			try {
-				a = convert_args(pt, args);
+				a = convert_args(self, pt, args);
 			} catch (IllegalArgumentException e) {
 				// TODO: make this a null check
 				continue;
@@ -600,15 +670,15 @@ public class JavaObject extends EPseudoTerm {
 				if (te instanceof ErlangException) {
 					throw (ErlangException) te;
 				} else {
-					throw new ErlangError(EString.fromString(e
-							.getMessage()), args);
+					ETuple reason = ETuple.make(EAtom.intern(te.getClass()
+							.getName()), EString.fromString(te.getMessage()));
+					throw new ErlangError(reason, args);
 				}
 			}
 
-			return JavaObject.box(result);
+			return JavaObject.box(self, result);
 		}
 
 		throw new ErlangError(am_badfun, args);
 	}
 }
-

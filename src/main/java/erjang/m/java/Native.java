@@ -3,10 +3,14 @@ package erjang.m.java;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
+import kilim.Pausable;
+
 import erjang.BIF;
 import erjang.EAtom;
+import erjang.EFun;
 import erjang.ENative;
 import erjang.EObject;
+import erjang.EProc;
 import erjang.ERT;
 import erjang.ESeq;
 import erjang.EString;
@@ -15,7 +19,7 @@ import erjang.ErlangError;
 public class Native extends ENative {
 
 	@BIF
-	static EObject get_static(EObject clzz, EObject member) {
+	static EObject get_static(EProc self, EObject clzz, EObject member) {
 
 		EAtom clz_am = clzz.testAtom();
 		EAtom mem_am = member.testAtom();
@@ -29,7 +33,7 @@ public class Native extends ENative {
 			Field f = c.getField(mem_am.getName());
 
 			if (java.lang.reflect.Modifier.isStatic(f.getModifiers())) {
-				return JavaObject.box(f.get(null));
+				return JavaObject.box(self, f.get(null));
 			} else {
 				throw new ErlangError(EString.fromString("not a static field"),
 						clzz, member);
@@ -42,13 +46,13 @@ public class Native extends ENative {
 	}
 
 	@BIF
-	static EObject call(EObject obj, EObject member, EObject typez, EObject argz) {
+	static EObject call(EProc self, EObject obj, EObject member, EObject typez, EObject argz) {
 
 		EAtom mem_am = member.testAtom();
 		ESeq type_seq = typez.testSeq();
 		ESeq arg_seq = argz.testSeq();
 
-		Object receiver = JavaObject.unbox(obj);
+		Object receiver = JavaObject.unbox(self, Object.class, obj);
 
 		if (mem_am == null || type_seq == null || arg_seq == null
 				|| type_seq.length() != arg_seq.length() || receiver == null)
@@ -70,14 +74,14 @@ public class Native extends ENative {
 
 			Method m = c.getMethod(mem_am.getName(), arg_types);
 
-			Object res = m.invoke(receiver, JavaObject.convert_args(arg_types,
+			Object res = m.invoke(receiver, JavaObject.convert_args(self, arg_types,
 					arg_seq));
 
 			if (m.getReturnType() == Void.TYPE) {
 				return ERT.am_ok;
 			}
 
-			return JavaObject.box(res);
+			return JavaObject.box(self, res);
 
 			/*
 			 * } catch (ClassNotFoundException e) { // TODO Auto-generated catch
@@ -101,6 +105,16 @@ public class Native extends ENative {
 
 		}
 
+	}
+	
+	@BIF
+	public static EObject run(EProc proc, EObject fun) throws Pausable {
+		EFun f = fun.testFunction2(0);
+		if (f == null) {
+			throw ERT.badarg(fun);
+		}
+		
+		return f.invoke(proc, new EObject[0]);
 	}
 
 }

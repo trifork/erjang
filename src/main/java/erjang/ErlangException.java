@@ -30,7 +30,7 @@ import erjang.beam.EUtil;
 // TODO: set proc.execption on catch to last known
 public abstract class ErlangException extends RuntimeException {
 
-	private static final EAtom am_java_exception = EAtom
+	public static final EAtom am_java_exception = EAtom
 			.intern("java_exception");
 	static final EAtom am_error = EAtom.intern("error");
 	static final EAtom am_throw = EAtom.intern("throw");

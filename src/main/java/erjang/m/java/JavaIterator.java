@@ -4,6 +4,7 @@ import java.util.Iterator;
 
 import erjang.EList;
 import erjang.EObject;
+import erjang.EProc;
 import erjang.ERT;
 import erjang.ESeq;
 
@@ -11,16 +12,18 @@ import erjang.ESeq;
 class JavaIterator extends ESeq {
 	Iterator<?> rest;
 	Object head;
+	private EProc self;
 
-	static ESeq box(Iterator<?> it) {
+	static ESeq box(EProc self, Iterator<?> it) {
 		if (it.hasNext())
-			return new JavaIterator(it);
+			return new JavaIterator(self, it);
 		return ERT.NIL;
 	}
 
-	private JavaIterator(Iterator<?> it) {
+	private JavaIterator(EProc self, Iterator<?> it) {
 		this.head = it.next();
 		this.rest = it;
+		this.self = self;
 	}
 
 	@Override
@@ -30,12 +33,12 @@ class JavaIterator extends ESeq {
 
 	@Override
 	public ESeq tail() {
-		return box(rest);
+		return box(self, rest);
 	}
 
 	@Override
 	public EObject head() {
-		return JavaObject.box(head);
+		return JavaObject.box(self, head);
 	}
 }
 
