@@ -503,6 +503,30 @@ public class ERT {
 		}
 
 		EAtom name;
+		ETuple tup;
+		EAtom node;
+		if ((tup=pid.testTuple()) != null 
+			&& tup.arity()==2 
+			&& (name=tup.elm(1).testAtom()) != null
+			&& (node=tup.elm(2).testAtom()) != null){
+			
+			if (node == getLocalNode().node) {
+				// ok, we're talking to ourselves
+				
+				pid = name;
+			} else {
+
+				System.err.println("sending msg "+pid+" ! "+msg);
+				
+				EAbstractNode peer = EPeer.get(node);
+				if (peer == null) {
+					return erlang__dsend__2.invoke(proc, new EObject[] { pid, msg });
+				} else {				
+					return peer.dsig_reg_send(proc.self_handle(), name, msg);
+				}
+			}
+		}
+
 		if ((name=pid.testAtom()) != null) {
 			p = register.get(name);
 			if (p != null) {
@@ -512,21 +536,6 @@ public class ERT {
 					Task.yield();
 				}
 				return msg;
-			}
-		}
-
-		ETuple tup;
-		EAtom node;
-		if ((tup=pid.testTuple()) != null 
-			&& tup.arity()==2 
-			&& (name=tup.elm(1).testAtom()) != null
-			&& (node=tup.elm(2).testAtom()) != null){
-			
-			EAbstractNode peer = EPeer.get(node);
-			if (peer == null) {
-				return erlang__dsend__2.invoke(proc, new EObject[] { pid, msg });
-			} else {				
-				return peer.dsig_reg_send(proc.self_handle(), name, msg);
 			}
 		}
 
@@ -556,12 +565,20 @@ public class ERT {
 			if ((reg_name = t.elm(1).testAtom()) != null
 			 && (node_name = t.elm(2).testAtom()) != null) {
 				
-				EAbstractNode node = EPeer.get(node_name);
-				if (node == null) {
-					return erlang__dsend__3.invoke(proc, new EObject[] { pid, msg, options });
+				if (node_name == getLocalNode().node) {
+					// ok, we're talking to ourselves
+					
+					pid = reg_name;
 				} else {
-					node.dsig_reg_send(proc.self_handle(), reg_name, msg);
-					return am_ok;
+					System.err.println("sending msg "+pid+" ! "+msg);
+	
+					EAbstractNode node = EPeer.get(node_name);
+					if (node == null) {
+						return erlang__dsend__3.invoke(proc, new EObject[] { pid, msg, options });
+					} else {
+						node.dsig_reg_send(proc.self_handle(), reg_name, msg);
+						return am_ok;
+					}
 				}
 			}
 			
