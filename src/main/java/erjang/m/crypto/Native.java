@@ -2,6 +2,7 @@ package erjang.m.crypto;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 
@@ -25,6 +26,27 @@ public class Native extends ENative {
 		} catch (NoSuchAlgorithmException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	@BIF
+	public static EObject sha(EObject data) 
+	{
+		EBinary bin = data.testBinary();
+		if (bin == null) 
+			throw ERT.badarg(data);
+		
+		MessageDigest sha;
+		try {
+			sha = MessageDigest.getInstance("SHA");
+		} catch (NoSuchAlgorithmException e) {
+			throw ERT.badarg(data);
+		}
+
+		sha.digest(bin.getByteArray());
+		
+		byte[] res = sha.digest();
+		
+		return EBinary.make(res);
 	}
 	
 	@BIF
