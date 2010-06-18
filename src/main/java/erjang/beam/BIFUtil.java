@@ -55,7 +55,8 @@ public class BIFUtil {
 	static {
 		try {
 			loadBIFs(new String[]{"erlang", "error_logger", "ets", "lists", "math", 
-								  "net_kernel", "os", "re", "unicode"});
+								  "net_kernel", "os", "re", "unicode", 
+								  "crypto"});
 		} catch (Exception e) {
 			throw new Error("Missing native module", e);
 		}
