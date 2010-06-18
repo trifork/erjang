@@ -86,6 +86,11 @@ public class ENil extends ESeq {
 		return null;
 	}
 	
+	@Override
+	public ECons testCons() {
+		return this;
+	}
+	
 	public ENil testNil() {
 		return this;
 	}
