@@ -179,4 +179,8 @@ public class EBinary extends EBitString {
 		sb.append("\">>");
 		return sb.toString();
 	}
+
+	public static EBinary make(byte[] res) {
+		return new EBinary(res);
+	}
 }
