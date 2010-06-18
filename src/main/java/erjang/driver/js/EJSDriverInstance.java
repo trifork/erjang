@@ -86,6 +86,12 @@ public class EJSDriverInstance extends EDriverInstance {
 	private VM vm; 
 	
 	@Override
+	protected void readyAsync(EAsync data) throws Pausable {
+		data.ready();
+	}
+
+
+	@Override
 	protected void output(EHandle caller, final ByteBuffer buf) throws IOException,
 			Pausable {
 
@@ -112,7 +118,7 @@ public class EJSDriverInstance extends EDriverInstance {
 						String filename = read_string(buf);
 						String code = read_string(buf);
 
-						String result = sm_eval(filename, code, false);
+						String result = sm_eval(filename, code, true);
 						if (result.startsWith("{\"error\"")) {
 							err = result;
 						} else {
@@ -124,7 +130,7 @@ public class EJSDriverInstance extends EDriverInstance {
 						String filename = read_string(buf);
 						String code = read_string(buf);
 
-						String result = sm_eval(filename, code, true);
+						String result = sm_eval(filename, code, false);
 						if (result != null) {
 							err = result;
 						}
