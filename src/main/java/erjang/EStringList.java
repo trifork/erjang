@@ -21,6 +21,7 @@ package erjang;
 import java.nio.ByteBuffer;
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -36,6 +37,28 @@ import org.objectweb.asm.Type;
  */
 public class EStringList extends ESeq {
 
+	static class Bytes {
+		AtomicReference<EStringList> owner;
+		byte[] data;
+		int end_pos;
+		
+		Bytes(byte[] data, int end_pos, EStringList owner) {
+			this.owner = new AtomicReference<EStringList>(owner);
+			this.data = data;
+			this.end_pos = end_pos;
+		}
+		
+		Bytes take_and_grow(EStringList from, EStringList give_to) {
+			if (owner.compareAndSet(from, give_to)) {
+				return this;
+			} else {
+				byte[] new_data = new byte[end_pos*2];
+				System.arraycopy(data, 0, new_data, end_pos, end_pos);
+				return new Bytes(new_data, end_pos*2, give_to);
+			}
+		}
+	}
+	
 	/**
 	 * 
 	 */
