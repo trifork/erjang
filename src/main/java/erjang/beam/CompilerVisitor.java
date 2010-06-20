@@ -1165,6 +1165,23 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					pop(dst, EOBJECT_TYPE);
 					return;
 				}
+				case bs_get_float2: {
+					push(in, EBINMATCHSTATE_TYPE);
+					push(bits, Type.INT_TYPE);
+					push_int(unit);
+					push_int(flags);
+					mv.visitMethodInsn(INVOKEVIRTUAL, EBINMATCHSTATE_TYPE
+							.getInternalName(), test.name(), "(III)"
+							+ EDOUBLE_TYPE.getDescriptor());
+
+					mv.visitInsn(DUP);
+					mv.visitVarInsn(ASTORE, scratch_reg);
+					mv.visitJumpInsn(IFNULL, getLabel(failLabel));
+					mv.visitVarInsn(ALOAD, scratch_reg);
+
+					pop(dst, EOBJECT_TYPE);
+					return;
+				}
 				default:
 					throw new Error("unhandled bit string test: " + test);
 				}

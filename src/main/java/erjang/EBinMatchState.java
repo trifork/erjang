@@ -183,6 +183,22 @@ public class EBinMatchState extends EPseudoTerm {
 		}
 	}
 
+	public EDouble bs_get_float2(int size, int unit, int flags) {
+		EInteger i = bs_get_integer2(size, unit, flags);
+		
+		if ((size*unit) == 64) {
+			double d = Double.longBitsToDouble( i.longValue() );
+			return new EDouble(d);
+		}
+
+		if ((size*unit) == 32) {
+			double d = Float.intBitsToFloat( i.intValue() );
+			return new EDouble(d);
+		}
+		
+		return null;
+}
+		
 	public EInteger bs_get_integer2(int size, int unit, int flags) {
 
 		size *= unit;
