@@ -31,6 +31,10 @@ public class ESpawnDriverTask extends EDriverTask {
 	private final EString command;
 	private final EObject portSetting;
 
+	public EObject getName() {
+		return command;
+	}
+	
 	/**
 	 * @param proc
 	 * @param portSetting 

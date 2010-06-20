@@ -31,6 +31,11 @@ import erjang.ETask;
  */
 public class EFDDriverTask extends EDriverTask {
 
+	public EObject getName() {
+		return EString.fromString("fd");
+	}
+	
+
 	/**
 	 * @param owner
 	 * @param portSetting 

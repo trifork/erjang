@@ -76,16 +76,19 @@ import erjang.NotImplemented;
 /**
  * Base class for the two kinds of driver tasks: drivers, and "exec"s
  */
-public class EDriverTask extends ETask<EInternalPort> implements
+public abstract class EDriverTask extends ETask<EInternalPort> implements
 		NIOHandler {
 
 	static Logger log = Logger.getLogger(EProc.class.getName());
 
+	public abstract EObject getName();
+	
 	@Override
 	public String toString() {
 		return "<driver_task:" + super.id + ">";
 	}
 
+	private static final EAtom am_name = EAtom.intern("name");
 	private static final EAtom am_data = EAtom.intern("data");
 	private static final EAtom am_connected = EAtom.intern("connected");
 	private static final EAtom am_closed = EAtom.intern("closed");
@@ -759,6 +762,10 @@ public class EDriverTask extends ETask<EInternalPort> implements
 		
 		if (spec == am_connected) {
 			return new ETuple2(am_connected, owner);
+		}
+		
+		if (spec == am_name) {
+			return new ETuple2(am_name, getName());
 		}
 		
 		throw new NotImplemented("port_info(" + spec + ")");

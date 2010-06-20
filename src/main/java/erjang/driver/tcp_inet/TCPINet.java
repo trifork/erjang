@@ -505,9 +505,14 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 		copy.caller = caller;
 		copy.opt = new RingQueue<AsyncOp>(2);
 		copy.empty_out_q_subs = new ArrayList<EHandle>();
+		copy.active = ActiveType.PASSIVE;
 
-		EDriverTask this_task = port().task();
-		EDriverTask driver = new EDriverTask(caller, copy);
+		final EDriverTask this_task = port().task();
+		EDriverTask driver = new EDriverTask(caller, copy) {
+			public EObject getName() {
+				return this_task.getName();
+			}
+		};
 
 		ERT.run(driver);
 

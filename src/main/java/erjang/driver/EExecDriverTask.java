@@ -66,14 +66,22 @@ public class EExecDriverTask extends EDriverTask {
 	private DataInputStream err;
 
 	private ETuple2 name;
+
+	private EObject command;
+	
+	public EObject getName() {
+		return command;
+	}
 	
 	/**
 	 * @param owner
 	 * @param name
 	 * @param portSetting
 	 */
-	public EExecDriverTask(EProc owner, ETuple2 name, EObject portSetting) {
+	public EExecDriverTask(EProc owner, ETuple2 name, EObject command, EObject portSetting) {
 			super(owner.self_handle(), new ExecDriverInstance(name));
+			
+			this.command = command;
 			
 			// argument can be any list, ... turn it into a string
 			ESeq es = name.elem2.testString();

@@ -289,7 +289,7 @@ public class ErlPort {
 				EDriver drv = ERT.find_driver(command);
 
 				if (drv == null) {
-					task = new EExecDriverTask(proc, name, portSetting);
+					task = new EExecDriverTask(proc, name, command, portSetting);
 				} else {
 					task = new ESpawnDriverTask(proc, drv, command, portSetting);
 				}
@@ -302,7 +302,7 @@ public class ErlPort {
 				task = new ESpawnDriverTask(proc, drv, command, portSetting);
 
 			} else if (name.elem1 == am_spawn_executable) {
-				task = new EExecDriverTask(proc, name, portSetting);
+				task = new EExecDriverTask(proc, name, command, portSetting);
 
 			}
 		} else if ((name3 = ETuple3.cast(portName)) != null
