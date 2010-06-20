@@ -23,6 +23,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 public class Main {
+	public static final String SYSTEM_ARCHITECTURE = "java";
+	public static final String OTP_VERSION = "R14A";
+	public static final String DRIVER_VERSION = "1.5";
 
 	static String erts_version = "erts-5.7.3";
 	static String erl_rootdir;

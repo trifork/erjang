@@ -678,6 +678,18 @@ public final class EProc extends ETask<EInternalPID> {
 		}
 		return res;
 	}
+	
+	public static int process_count() {
+		int count = 0;
+		for (EProc proc : all_tasks.values()) {
+			if (proc.is_alive()) {
+				count += 1;
+			}
+		}
+		return count;
+	}
+
+
 
 	/**
 	 * @return

@@ -50,6 +50,7 @@ import erjang.ETuple2;
 import erjang.ErlangException;
 import erjang.ErlangExit;
 import erjang.Import;
+import erjang.Main;
 import erjang.NotImplemented;
 import erjang.OTPMain;
 
@@ -77,7 +78,12 @@ public class ErlProc {
 	private static final EAtom am_non_heap = EAtom.intern("non_heap");
 	private static final EAtom am_jvm = EAtom.intern("jvm");
 	private static final EAtom am_allocated_areas = EAtom.intern("allocated_areas");
-	private static final EAtom am_otp_version = EAtom.intern("otp_version");
+	private static final EAtom am_otp_release = EAtom.intern("otp_release");
+	private static final EAtom am_driver_version = EAtom.intern("driver_version");
+	private static final EAtom am_global_heaps_size = EAtom.intern("global_heaps_size");
+	private static final EAtom am_process_count = EAtom.intern("process_count");
+	private static final EAtom am_system_architecture = EAtom.intern("system_architecture");
+	private static final EAtom am_logical_processors = EAtom.intern("logical_processors");
 	private static final EAtom am_hipe_architecture = EAtom.intern("hipe_architecture");
 	private static final EAtom am_machine = EAtom.intern("machine");
 	private static final EAtom am_link = EAtom.intern("link");
@@ -572,9 +578,26 @@ public class ErlProc {
 		} else if (type == am_version) {
 			return EString.fromString( erjang.Main.erts_version().substring("erts-".length()) );
 			
-		} else if (type == am_otp_version) {
+		} else if (type == am_otp_release) {
 			// TODO: be smarter somehow
-			return new EString("R13B");
+			return new EString(Main.OTP_VERSION);
+			
+		} else if (type == am_logical_processors) {
+			// TODO: be smarter somehow
+			return ERT.box(Runtime.getRuntime().availableProcessors());
+			
+		} else if (type == am_global_heaps_size) {
+			return ERT.box(Runtime.getRuntime().totalMemory());
+			
+		} else if (type == am_process_count) {
+			return ERT.box(EProc.process_count());
+			
+		} else if (type == am_system_architecture) {
+			return new EString(Main.SYSTEM_ARCHITECTURE);
+			
+		} else if (type == am_driver_version) {
+			// TODO: be smarter somehow
+			return new EString(Main.DRIVER_VERSION);
 			
 		} else if (type == am_wordsize) {
 			return new ESmall(4);
