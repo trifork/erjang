@@ -188,7 +188,7 @@ public interface BlockVisitor2 extends BlockVisitor {
 	 */
 	void visitBitStringPut(BeamOpcode opcode, Arg value, Arg size, int unit, int flags);
 
-	void visitBitStringAppend(BeamOpcode opcode, Arg extra_size, Arg src, int flags, Arg dst);
+	void visitBitStringAppend(BeamOpcode opcode, int label, Arg extra_size, Arg src, int unit, int flags, Arg dst);
 
 	/**
 	 * @param opcode
@@ -210,4 +210,6 @@ public interface BlockVisitor2 extends BlockVisitor {
 
 	void visitIncrement(Arg src, Arg out);
 	void visitDecrement(Arg src, Arg out);
+
+	void visitInitWritable(Arg size, Arg dest);
 }

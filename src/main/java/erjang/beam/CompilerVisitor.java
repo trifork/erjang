@@ -894,6 +894,25 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				throw new Error("unhandled: " + opcode);
 			}
 
+			@Override
+			public void visitInitWritable(Arg size, Arg out) {
+
+				push(size, EOBJECT_TYPE);
+				mv.visitMethodInsn(INVOKESTATIC, 
+						EBITSTRINGBUILDER_TYPE.getInternalName(), "bs_init_writable", 
+						"("+EOBJECT_DESC+")"+EBITSTRINGBUILDER_TYPE.getDescriptor());
+
+				mv.visitInsn(DUP);
+				mv.visitVarInsn(ASTORE, bit_string_builder);
+
+				mv.visitMethodInsn(INVOKEVIRTUAL, EBITSTRINGBUILDER_TYPE
+						.getInternalName(), "bitstring", "()"
+						+ EBITSTRING_TYPE.getDescriptor());
+
+				pop(out, EBITSTRING_TYPE);
+				
+			}
+			
 			/*
 			 * (non-Javadoc)
 			 * 
@@ -920,13 +939,16 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				return;
 			}
 
+			
+			
 			@Override
-			public void visitBitStringAppend(BeamOpcode opcode, Arg extra_size, Arg src, int flags, Arg dst) {
+			public void visitBitStringAppend(BeamOpcode opcode, int label, Arg extra_size, Arg src, int unit, int flags, Arg dst) {
 				push(src, EOBJECT_TYPE);
 				push(extra_size, Type.INT_TYPE);
+				push_int(unit);
 				push_int(flags);
 				mv.visitMethodInsn(INVOKESTATIC, EBITSTRINGBUILDER_TYPE.getInternalName(),
-							"bs_append", "("+ EOBJECT_DESC +"II)"+EBITSTRINGBUILDER_TYPE.getDescriptor());
+							opcode.name(), "("+ EOBJECT_DESC +"III)"+EBITSTRINGBUILDER_TYPE.getDescriptor());
 
 				mv.visitInsn(DUP);
 				mv.visitVarInsn(ASTORE, bit_string_builder);

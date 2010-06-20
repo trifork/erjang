@@ -26,21 +26,38 @@ import java.math.BigInteger;
  */
 public class EBitStringBuilder {
 
+	public static final int PB_IS_WRITABLE = 1;
+	public static final int PB_ACTIVE_WRITER = 2;
+	
 	EBitString bs;
 	int byte_pos;
 	int extra_bits;
 	byte[] data;
+	byte flags;
 	
 	/**
 	 * @param byte_size
 	 * @param flags
 	 */
 	public EBitStringBuilder(int byte_size, int flags) {
-		if (flags != 0) throw new NotImplemented("flags="+flags);
+		this.flags = (byte) flags;
 		data = new byte[byte_size];
 		bs = new EBitString(data, 0, byte_size, 0);
 	}
 
+	public static 
+	EBitStringBuilder bs_init_writable(EObject size) {
+		int bin_size = 1024;
+		ESmall sz = size.testSmall();
+		if (sz != null && sz.value >= 0) {
+			bin_size = sz.value;
+		}
+			
+		EBitStringBuilder res = new EBitStringBuilder(bin_size, PB_IS_WRITABLE|PB_ACTIVE_WRITER);
+		
+		return res;
+	}
+	
 	public EBitStringBuilder(int byte_size, int extra_bits, int flags) {
 		if (flags != 0) throw new NotImplemented("flags="+flags);
 		data = new byte[byte_size+(extra_bits>0?1:0)];
@@ -210,7 +227,27 @@ public class EBitStringBuilder {
 	}
 	
 	/** grow a bitstring by extra_size bits, and return a string builder with position at end of original bitstring */
-	public static EBitStringBuilder bs_append(EObject str_or_builder, int extra_size, int flags)
+	public static EBitStringBuilder bs_private_append(EObject str_or_builder, int extra_size, int unit, int flags)
+	{
+		EBitString ebs = str_or_builder.testBitString();
+		if (ebs == null) throw new NotImplemented();
+		
+		long bitSize = ebs.bitSize() + extra_size;
+		int size = (int) (bitSize/8);
+		int extra = (int) (bitSize % 8);
+		
+		EBitStringBuilder result = new EBitStringBuilder(size, extra, flags);
+		System.arraycopy(ebs.data, ebs.byteOffset(), result.data, 0, ebs.dataByteSize());
+		
+		result.byte_pos = ebs.byteSize();
+		result.extra_bits = ebs.extra_bits;
+		
+		return result;
+	}
+
+
+	/** grow a bitstring by extra_size bits, and return a string builder with position at end of original bitstring */
+	public static EBitStringBuilder bs_append(EObject str_or_builder, int extra_size, int unit, int flags)
 	{
 		EBitString ebs = str_or_builder.testBitString();
 		if (ebs == null) throw new NotImplemented();

@@ -75,6 +75,7 @@ import erjang.beam.repr.Insn;
 import erjang.beam.repr.ExtFun;
 import erjang.beam.repr.Operands;
 import erjang.beam.repr.Operands.Int;
+import erjang.beam.repr.Operands.XReg;
 import static erjang.beam.repr.Operands.SourceOperand;
 import static erjang.beam.repr.Operands.DestinationOperand;
 
@@ -955,6 +956,15 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						break;
 					}
 
+					case bs_init_writable: {
+						Arg size = src_arg(insn_idx, new Operands.XReg(0));
+						Arg dest = dest_arg(new Operands.XReg(0));
+						
+						vis.visitInitWritable(size, dest);
+						
+						break;
+					}
+					
 					case bs_init2:
 					case bs_init_bits: {
 						Insn.LSIIID insn = (Insn.LSIIID) insn_;
@@ -1010,6 +1020,23 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						break;
 					}
 
+					case bs_private_append: {
+						Insn.BSPrivateAppend insn = (Insn.BSPrivateAppend) insn_;
+						// {bs_private_append,{f,0},{integer,8},1,{y,0},{field_flags,[]},{x,1}}.
+						//  * tmp_arg1 = Number of bytes to build
+						//  * tmp_arg2 = Source binary
+						//  * Operands: Fail Unit Dst
+						
+						Arg extra_size = src_arg(insn_idx, insn.src2);
+						Arg src = src_arg(insn_idx, insn.src4);
+						int unit = insn.i3;
+						int flags = insn.i5;
+						Arg dst = dest_arg(insn_idx, insn.dest);
+						
+						vis.visitBitStringAppend(opcode, decode_labelref(insn.label, type_map.exh), extra_size, src, unit, flags, dst);
+						break;
+					}
+					
 					case bs_append: {
 						Insn.BSAppend insn = (Insn.BSAppend) insn_;
 						//     {bs_append,{f,0},{integer,32},0,3,8,{x,1},{field_flags,[]},{x,0}}.
@@ -1019,10 +1046,11 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 						Arg extra_size = src_arg(insn_idx, insn.src2);
 						Arg src = src_arg(insn_idx, insn.src6);
+						int unit = insn.i5;
 						int flags = insn.i7;
 						Arg dst = dest_arg(insn_idx, insn.dest8);
 
-						vis.visitBitStringAppend(opcode, extra_size, src, flags, dst);
+						vis.visitBitStringAppend(opcode, decode_labelref(insn.label, type_map.exh), extra_size, src, unit, flags, dst);
 						break;
 					}
 					default:
@@ -1896,6 +1924,21 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						continue next_insn;
 					}
 
+					case bs_init_writable: {
+						XReg x0 = new Operands.XReg(0);
+						checkArg(current, x0);
+						current = setType(current, x0, EBITSTRING_TYPE);
+						continue next_insn;
+					}
+					
+					case bs_private_append: {
+						Insn.BSPrivateAppend insn = (Insn.BSPrivateAppend)insn_;
+						checkArg(current, insn.src2);
+						checkArg(current, insn.src4);
+						current = setType(current, insn.dest, EBITSTRING_TYPE);
+						continue next_insn;	
+					}
+					
 					case bs_append: {
 						// {bs_append,{f,0},{integer,32},0,3,8,{x,1},{field_flags,[]},{x,0}}.
 						Insn.BSAppend insn = (Insn.BSAppend)insn_;
