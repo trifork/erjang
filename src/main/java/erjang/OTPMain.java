@@ -44,6 +44,7 @@ public class OTPMain {
 	    new erjang.driver.ram_file.Driver(),
 	    new erjang.driver.tcp_inet.Driver(),
 	    new erjang.driver.inet_gethost.Driver(),
+	    new erjang.driver.zlib.Driver(),
 	    new erjang.driver.js.EJSDriver()
 	};
 
