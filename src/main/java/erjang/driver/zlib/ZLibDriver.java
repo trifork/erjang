@@ -26,8 +26,9 @@ import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectableChannel;
 import java.util.ArrayList;
-import java.util.zip.DataFormatException;
-import java.util.zip.Inflater;
+
+import com.jcraft.jzlib.ZStream;
+import com.jcraft.jzlib.ZStreamException;
 
 import kilim.Pausable;
 import kilim.Task;
@@ -43,6 +44,8 @@ import erjang.driver.IO;
 
 public class ZLibDriver extends EDriverInstance {
 
+	
+	
 	// flush argument encoding
 	public static final int Z_NO_FLUSH = 0;
 	public static final int Z_SYNC_FLUSH = 2;
@@ -125,7 +128,7 @@ public class ZLibDriver extends EDriverInstance {
 	public static final int CRC32_COMBINE = 23;
 	public static final int ADLER32_COMBINE = 24;
 
-	private Inflater inf;
+	private ZStream inf;
 
 	public ZLibDriver(EDriver driver, EString command) {
 		super(driver);
@@ -148,37 +151,53 @@ public class ZLibDriver extends EDriverInstance {
 	}
 	
 	void do_inflate(int flush_mode) throws Pausable {
+		int err = ZStream.Z_OK;
 		
-		for (int i = 0; i < inbuf.size(); i++) {
+		read_loop:
+		for (int i = 0; err==ZStream.Z_OK && i < inbuf.size(); i++) {
 			
 			ByteBuffer bb = inbuf.get(i);
-			inf.setInput(bb.array(), bb.arrayOffset()+bb.position(), bb.limit());
+			
+			inf.next_in = bb.array();
+			inf.next_in_index = bb.arrayOffset() + bb.position();
+			inf.avail_in = bb.limit();
+
+	//		inf.setInput(bb.array(), bb.arrayOffset()+bb.position(), bb.limit());
 			
 			int in_size = bb.remaining();
 			do {
 				ByteBuffer out = ByteBuffer.allocate(1024);				
 
-				long read_before = inf.getBytesRead();
-				int written;
-				try {
-					written = inf.inflate(out.array(), out.arrayOffset()+out.position(), out.capacity());
-				} catch (DataFormatException e) {
-					throw new NotImplemented("unhandled exception");
+				long read_before = inf.total_in;
+				long wrote_before = inf.total_out;
+
+				inf.next_out = out.array();
+				inf.next_out_index = out.arrayOffset() + out.position();
+				inf.avail_out = out.capacity();
+					
+				err = inf.inflate(flush_mode);
+
+				if (err == ZStream.Z_OK || err == ZStream.Z_STREAM_END) {
+				
+					long read_after = inf.total_in;
+					long wrote_after = inf.total_out;
+					
+					in_size -= (read_after-read_before);
+					
+					int written = (int) (wrote_after - wrote_before);
+					out.position(written);
+					
+					driver_output(out);
+				
 				}
-				long read_after = inf.getBytesRead();
-				
-				in_size -= (read_after-read_before);
-				
-				out.position(written);
-				
-				driver_output(out);
-			} while(in_size > 0);
+
+			} while(err==ZStream.Z_OK && in_size > 0);
 		}
 		
 		inbuf.clear();
 		
 		if (flush_mode == Z_FINISH) {
-			inf.end();
+			inf.free();
 		}
 	}
 	
@@ -189,14 +208,15 @@ public class ZLibDriver extends EDriverInstance {
 		switch (command) {
 		case INFLATE_INIT:
 		{
-			this.inf = new Inflater(false);
+			this.inf = new ZStream();
+			this.inf.inflateInit(true);
 			return reply_ok();
 		}
 		case INFLATE_INIT2:
 		{
-			int num = cmd.getInt();
-			System.err.println("ignoring window size "+num);
-			this.inf = new Inflater();
+			int ws = cmd.getInt();
+			this.inf = new ZStream();
+			this.inf.inflateInit(ws);
 			return reply_ok();
 		}
 		case INFLATE: {
