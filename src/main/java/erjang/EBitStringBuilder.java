@@ -98,9 +98,6 @@ public class EBitStringBuilder {
 	}
 
 	public void put_integer(EObject value, int bit_size, int flags) {
-		if (extra_bits != 0)
-			throw new NotImplemented("Unaligned");
-
 		boolean litteEndian = (flags & EBinMatchState.BSF_LITTLE) > 0;
 
 		EInteger ei = value.testInteger();
@@ -113,7 +110,7 @@ public class EBitStringBuilder {
 
 		ESmall sm = value.testSmall();
 
-		if ((bit_size % 8) == 0) {
+		if (extra_bits == 0 && (bit_size % 8) == 0) {
 			int nBytes = bit_size/8;
 
 			// We process the bytes little-endian:
@@ -151,9 +148,81 @@ public class EBitStringBuilder {
 					}
 				}
 			}
-		} else {
-			throw new NotImplemented();
+			
+			return;
 		}
+		
+		if (bit_size <= 32 && (bit_size % 8) != 0) {
+			int val = sm.value;
+			if (litteEndian) 
+				throw new NotImplemented();
+			
+			int bits_left_in_current_byte = 
+				(extra_bits == 0 
+						? 8 
+						: 8-extra_bits);
+
+			int msb_bits = Math.min(bits_left_in_current_byte, bit_size);
+			int lsb_bits = bit_size-msb_bits;
+			
+			while(lsb_bits + msb_bits > 0) {
+				int mask = ((1 << msb_bits) - 1);
+				int putval = (val >>> lsb_bits) & mask;
+				int getval = data[byte_pos] & ~mask;
+				
+				assert ((putval & getval) == 0);
+				
+				data[byte_pos] = (byte) (putval | getval);
+
+				extra_bits = (extra_bits + msb_bits) % 8;
+				if (extra_bits == 0) {
+					byte_pos += 1;
+				}
+								
+				lsb_bits -= msb_bits;
+				msb_bits = Math.min(8, lsb_bits);
+			};
+			
+			return;
+		}
+		
+		EBig bi = value.testBig();
+		if (bit_size <= 64 && (bit_size % 8) != 0) {
+			long val = bi.longValue();
+			if (litteEndian) 
+				throw new NotImplemented();
+			
+			int bits_left_in_current_byte = 
+				(extra_bits == 0 
+						? 8 
+						: 8-extra_bits);
+
+			int msb_bits = Math.min(bits_left_in_current_byte, bit_size);
+			int lsb_bits = bit_size-msb_bits;
+			
+			while(lsb_bits + msb_bits > 0) {
+				int mask = ((1 << msb_bits) - 1);
+				int putval = (int) ((val >>> lsb_bits) & mask);
+				int getval = data[byte_pos] & ~mask;
+				
+				assert ((putval & getval) == 0);
+				
+				data[byte_pos] = (byte) (putval | getval);
+
+				extra_bits = (extra_bits + msb_bits) % 8;
+				if (extra_bits == 0) {
+					byte_pos += 1;
+				}
+								
+				lsb_bits -= msb_bits;
+				msb_bits = Math.min(8, lsb_bits);
+			};
+			
+			return;
+		}
+		
+		throw new NotImplemented("put_integer value="+ value +"; bit_size="+  bit_size + "; flags=" + flags);
+		
 	}
 
 	protected void put_int64(long val, int flags) {
@@ -221,7 +290,12 @@ public class EBitStringBuilder {
 
 	public void put_string(EString str) {
 		if (extra_bits != 0)
-			throw new NotImplemented();
+		{
+			for (int i = 0; i < str.length(); i++) {
+				put_byte(str.data[str.off+i]);
+			}
+			return;
+		}
 		System.arraycopy(str.data, str.off, data, byte_pos, str.length());
 		byte_pos += str.length();
 	}
