@@ -29,14 +29,19 @@ public class NotImplemented extends ErlangError {
 	 */
 	public NotImplemented() {
 	 super(ETuple.make(am_not_implemented, ERT.NIL,
-			      ErlangException.decodeTrace(new Throwable().getStackTrace()) ));
+			 not_implemented_trace(new Throwable().getStackTrace()) ));
 	 this.message = "";
 	}
 	
 	public NotImplemented(String message) {
 		super(ETuple.make(am_not_implemented, EString.fromString(message),
-			      ErlangException.decodeTrace(new Throwable().getStackTrace()) ));
+				not_implemented_trace(new Throwable().getStackTrace()) ));
 		this.message = message;
+	}
+	
+	static ESeq not_implemented_trace (StackTraceElement[] elm) {
+		if (elm.length <= 1) return ERT.NIL;
+		return EString.fromString(elm[1].toString());
 	}
 	
 	
