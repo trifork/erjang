@@ -1242,7 +1242,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			public void visitDecrement(Arg src, Arg out) {
 				
 				push(src, src.type);
-				mv.visitMethodInsn(INVOKEVIRTUAL, EOBJECT_NAME, "dec", "()"+EOBJECT_DESC);
+				mv.visitMethodInsn(INVOKEVIRTUAL, EOBJECT_NAME, "dec", "()"+ENUMBER_TYPE.getDescriptor());
 				pop(out, EOBJECT_TYPE);
 				
 			};
@@ -1251,7 +1251,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			public void visitIncrement(Arg src, Arg out) {
 
 				push(src, src.type);
-				mv.visitMethodInsn(INVOKEVIRTUAL, EOBJECT_NAME, "inc", "()"+EOBJECT_DESC);
+				mv.visitMethodInsn(INVOKEVIRTUAL, EOBJECT_NAME, "inc", "()"+ENUMBER_TYPE.getDescriptor());
 				pop(out, EOBJECT_TYPE);
 				return;
 				

@@ -442,8 +442,8 @@ public abstract class EObject implements Comparable<EObject> {
 		return r;
 	}
 
-	public EObject inc() { return ESmall.ONE.add(this); }
-	public EObject dec() { return ESmall.MINUS_ONE.add(this); }	
+	public ENumber inc() { return ESmall.ONE.add(this); }
+	public ENumber dec() { return ESmall.MINUS_ONE.add(this); }	
 	public boolean is_zero() { return false; }
 	
 }
