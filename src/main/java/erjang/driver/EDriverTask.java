@@ -504,6 +504,10 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 		if (ERT.DEBUG_PORT) 
 			System.out.println("ctrl: cmd="+op+"; arg="+EBinary.make(cmd2));
 		
+		while (mbox.hasMessage()) {
+			Task.yield();
+		}		
+		
 		ByteBuffer bb = instance.control(caller.self_handle(), op, cmd2);
 
 		if (bb == null || bb.position() == 0) {
