@@ -38,6 +38,10 @@ public final class EBig extends EInteger {
 		assert (value.compareTo(BIG_MAX_INT) > 0 || value.compareTo(BIG_MIN_INT) < 0);
 	}
 
+	public EBig testBig() {
+		return this;
+	}
+
 	@Override
 	int compare_same(EObject rhs) {
 		return rhs.r_compare_same(this);

@@ -135,6 +135,10 @@ public abstract class EObject implements Comparable<EObject> {
 		return null;
 	}
 	
+	public EBig testBig() {
+		return null;
+	}
+	
 
 	/**
 	 * @return
