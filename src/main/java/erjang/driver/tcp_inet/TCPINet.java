@@ -2675,13 +2675,11 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 			out.flip();
 			data = EString.make(out);
 		} else {
+			// TODO: FIGURE OUT IF THIS IS RIGHT
 			out.position(hsz);
 			ByteBuffer tail = out.slice();
-
 			out.flip();
-			ByteBuffer header = out;
-
-			data = new EBinList(header, EBinary.make(tail));
+			data = EBinary.make(tail);
 		}
 
 		ETuple res = ETuple.make(am_inet_async, port(), ERT.box(op.id),
