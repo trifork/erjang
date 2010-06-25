@@ -145,6 +145,9 @@ public enum BeamOpcode {
 	bs_put_utf32		(0x94),
 	on_load				(0x95),
 	
+	recv_mark           (0x96),
+	recv_set            (0x97),
+	
 	// Opcode groups
 	
 	test,

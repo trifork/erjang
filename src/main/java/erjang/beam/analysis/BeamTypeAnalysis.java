@@ -648,6 +648,10 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					case fclearerror:
 					case fcheckerror:
 						break;
+						
+					case recv_mark:
+					case recv_set:
+						break;
 
 					case call_ext_last:
 					case call_ext_only:
@@ -1802,7 +1806,12 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					case fcheckerror:
 					case fclearerror:
 						continue next_insn;
+						
+					case recv_mark:
+					case recv_set:
+						continue next_insn;
 
+						
 					case put: {
 						Insn.S insn = (Insn.S) insn_;
 						checkArg(current, insn.src);

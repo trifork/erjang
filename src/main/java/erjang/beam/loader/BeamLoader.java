@@ -511,6 +511,8 @@ public class BeamLoader extends CodeTables {
 			case fclearerror:
 			case bs_init_writable:
 			case on_load:
+			case recv_mark:
+			case recv_set:
 				return new Insn(opcode); // TODO: use static set of objects
 
 				//---------- 1-ary ----------
