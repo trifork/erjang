@@ -19,7 +19,6 @@ exec java \
     -cp $EJC_DIR/erjang-0.1.jar erjang.console.ERLConsole \
     -root "$ERL_ROOT" \
     +e "$ERTS_VSN" \
-    -name erjang@`hostname` \
     -home "$HOME" \
     $*
 
