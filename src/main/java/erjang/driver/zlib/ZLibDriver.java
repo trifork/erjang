@@ -201,6 +201,57 @@ public class ZLibDriver extends EDriverInstance {
 		}
 	}
 	
+	void do_deflate(int flush_mode) throws Pausable {
+		int err = ZStream.Z_OK;
+		
+		read_loop:
+		for (int i = 0; err==ZStream.Z_OK && i < inbuf.size(); i++) {
+			
+			ByteBuffer bb = inbuf.get(i);
+			
+			inf.next_in = bb.array();
+			inf.next_in_index = bb.arrayOffset() + bb.position();
+			inf.avail_in = bb.limit();
+
+	//		inf.setInput(bb.array(), bb.arrayOffset()+bb.position(), bb.limit());
+			
+			int in_size = bb.remaining();
+			do {
+				ByteBuffer out = ByteBuffer.allocate(1024);				
+
+				long read_before = inf.total_in;
+				long wrote_before = inf.total_out;
+
+				inf.next_out = out.array();
+				inf.next_out_index = out.arrayOffset() + out.position();
+				inf.avail_out = out.capacity();
+					
+				err = inf.deflate(flush_mode);
+
+				if (err == ZStream.Z_OK || err == ZStream.Z_STREAM_END) {
+				
+					long read_after = inf.total_in;
+					long wrote_after = inf.total_out;
+					
+					in_size -= (read_after-read_before);
+					
+					int written = (int) (wrote_after - wrote_before);
+					out.position(written);
+					
+					driver_output(out);
+				
+				}
+
+			} while(err==ZStream.Z_OK && in_size > 0);
+		}
+		
+		inbuf.clear();
+		
+		if (flush_mode == Z_FINISH) {
+			inf.free();
+		}
+	}
+	
 	@Override
 	protected ByteBuffer control(EPID caller, int command, ByteBuffer cmd)
 			throws Pausable {
@@ -219,6 +270,17 @@ public class ZLibDriver extends EDriverInstance {
 			this.inf.inflateInit(ws);
 			return reply_ok();
 		}
+		case DEFLATE_INIT2:
+		{
+			int level = cmd.getInt();
+			int method = cmd.getInt();
+			int bits = cmd.getInt();
+			int memLevel = cmd.getInt();
+			int strategy = cmd.getInt();
+			this.inf = new ZStream();
+			this.inf.deflateInit(level,method,bits,memLevel,strategy);
+			return reply_ok();
+		}
 		case INFLATE: {
 			int flush_mode = cmd.getInt();
 			do_inflate(flush_mode);
@@ -226,6 +288,15 @@ public class ZLibDriver extends EDriverInstance {
 		}
 		case INFLATE_END: {
 			do_inflate(Z_FINISH);
+			return reply_ok();
+		}
+		case DEFLATE: {
+			int flush_mode = cmd.getInt();
+			do_deflate(flush_mode);
+			return reply_ok();
+		}
+		case DEFLATE_END: {
+			do_deflate(Z_FINISH);
 			return reply_ok();
 		}
 		}

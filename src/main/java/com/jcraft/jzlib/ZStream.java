@@ -123,9 +123,15 @@ final public class ZStream{
     return deflateInit(level, bits, false);
   }
   public int deflateInit(int level, int bits, boolean nowrap){
-    dstate=new Deflate();
-    return dstate.deflateInit(this, level, nowrap?-bits:bits);
-  }
+	    dstate=new Deflate();
+	    return dstate.deflateInit(this, level, nowrap?-bits:bits);
+	  }
+  public int deflateInit(int level, int method, int windowBits,
+		  int memLevel, int strategy){
+	    dstate=new Deflate();
+	    return dstate.deflateInit2(this, level, method, windowBits,
+	 		    memLevel, strategy);
+	  }
   public int deflate(int flush){
     if(dstate==null){
       return Z_STREAM_ERROR;
