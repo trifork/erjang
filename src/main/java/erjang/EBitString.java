@@ -48,6 +48,19 @@ public class EBitString extends EObject {
 	public EBitString(byte[] data) {
 		this(data.clone(), 0, data.length, 0);
 	}
+	
+	@Override
+	public int hashCode() {
+		int h = 0;
+		for (int i = 0; i < byte_size; i++) {
+			h = h * 31 + data[data_offset + i];
+		}
+		if (extra_bits != 0) {
+			int val = data[data_offset + byte_size] >>> (8-extra_bits);
+			h = h * 31 + val;
+		}
+		return h;
+	}
 
 	/**
 	 * @return the bits
