@@ -50,6 +50,27 @@ public class Native extends ENative {
 	}
 	
 	@BIF
+	public static EObject md5(EObject data) 
+	{
+		EBinary bin = data.testBinary();
+		if (bin == null) 
+			throw ERT.badarg(data);
+		
+		MessageDigest md5;
+		try {
+			md5 = MessageDigest.getInstance("MD5");
+		} catch (NoSuchAlgorithmException e) {
+			throw ERT.badarg(data);
+		}
+
+		md5.digest(bin.getByteArray());
+		
+		byte[] res = md5.digest();
+		
+		return EBinary.make(res);
+	}
+	
+	@BIF
 	public static EObject rand_uniform_nif(EObject from, EObject to)
 	{
 		EBinary fb = from.testBinary();
