@@ -511,8 +511,6 @@ public class BeamLoader extends CodeTables {
 			case fclearerror:
 			case bs_init_writable:
 			case on_load:
-			case recv_mark:
-			case recv_set:
 				return new Insn(opcode); // TODO: use static set of objects
 
 				//---------- 1-ary ----------
@@ -530,6 +528,8 @@ public class BeamLoader extends CodeTables {
 			case wait:
 			case jump:
 			case fcheckerror:
+			case recv_mark:
+			case recv_set:
 			{
 				Label lbl = readLabel();
 				return new Insn.L(opcode, lbl);
