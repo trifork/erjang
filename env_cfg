@@ -1,9 +1,9 @@
 # set the defaults if there is no environment variable
 
-if [[ ${ERTS_VSN-x} ]]; then
+if [[ -z ${ERTS_VSN} ]]; then
     ERTS_VSN=5.8
 fi
-if [[ ${ERL_ROOT-x} ]]; then
+if [[ -z ${ERL_ROOT} ]]; then
     ERL_ROOT=/Users/krab/Projects/otp-5.8
 fi
 
