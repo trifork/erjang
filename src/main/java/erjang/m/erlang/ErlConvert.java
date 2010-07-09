@@ -202,9 +202,17 @@ public class ErlConvert {
 		EString seq;
 		if ((seq = obj.testString()) == null)
 			throw ERT.badarg(obj);
+		
+		String string = seq.stringValue();
+		if (string.length() == 0 
+			|| string.charAt(0) == '.'
+			|| string.charAt(string.length()-1) == '.'
+			|| string.indexOf('.') == -1) {
+			throw ERT.badarg(obj);
+		}
 
 		try {
-			double val = Double.parseDouble(seq.stringValue());
+			double val = Double.parseDouble(string);
 			return ERT.box(val);
 		} catch (NumberFormatException e) {
 			throw ERT.badarg(obj);
