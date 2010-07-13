@@ -74,10 +74,10 @@ public class Compiler implements Opcodes {
 		ClassWriter cw = new ClassWriter(true);
 
 		// class checker, optional phase
-		CheckClassAdapter ca = new CheckClassAdapter(cw);
+		//CheckClassAdapter ca = new CheckClassAdapter(cw);
 
 		// the java bytecode generator, phase 3
-		CompilerVisitor cv = new CompilerVisitor(ca, repo);
+		CompilerVisitor cv = new CompilerVisitor(cw, repo);
 
 		// the type analysis, phase 2
 		BeamTypeAnalysis analysis = new BeamTypeAnalysis(cv);
