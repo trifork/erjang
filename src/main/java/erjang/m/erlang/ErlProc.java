@@ -47,8 +47,11 @@ import erjang.EString;
 import erjang.ETask;
 import erjang.ETuple;
 import erjang.ETuple2;
+import erjang.ErjangHibernateException;
 import erjang.ErlangException;
 import erjang.ErlangExit;
+import erjang.ErlangUndefined;
+import erjang.FunID;
 import erjang.Import;
 import erjang.Main;
 import erjang.NotImplemented;
@@ -668,5 +671,51 @@ public class ErlProc {
 
 		return ERT.TRUE;
 	}
+	
+	@BIF
+	public static EObject hibernate(EProc self, EObject a1, EObject a2, EObject a3) {
+		
+		EAtom m = a1.testAtom();
+		EAtom f = a2.testAtom();
+		ESeq  a = a3.testSeq();
+		
+		if (m == null || f == null || a == null) {
+			throw ERT.badarith(a1, a2, a3);
+		}
+		
+		int arity = a.length();
+		
+		EFun target = EModuleManager.resolve(new FunID(m,f,arity));
+		
+		if (target == null) {
+			throw new ErlangUndefined(m, f, new ESmall(arity));
+		}
+		
+		self.tail = target;
+		a = a.reverse();
+		switch (arity) {
+		default:
+			throw new NotImplemented();
+		case 7: 
+			self.arg6 = a.head(); a = a.tail();
+		case 6: 
+			self.arg5 = a.head(); a = a.tail();
+		case 5: 
+			self.arg4 = a.head(); a = a.tail();
+		case 4: 
+			self.arg3 = a.head(); a = a.tail();
+		case 3: 
+			self.arg2 = a.head(); a = a.tail();
+		case 2: 
+			self.arg1 = a.head(); a = a.tail();
+		case 1: 
+			self.arg0 = a.head(); a = a.tail();
+		case 0:
+		}		
+		
+		throw ErjangHibernateException.INSTANCE;
+		
+	}
+	
 	
 }

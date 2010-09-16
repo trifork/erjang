@@ -473,6 +473,8 @@ public final class EProc extends ETask<EInternalPID> {
 
 	@Override
 	public void execute() throws Pausable {
+		execute_again:
+		do {
 		try {
 
 			Throwable death = null;
@@ -491,6 +493,12 @@ public final class EProc extends ETask<EInternalPID> {
 				
 				result = am_normal;
 
+			} catch (ErjangHibernateException e) {
+				
+				mbox_wait();
+				
+				continue execute_again;
+				
 			} catch (NotImplemented e) {
 				System.err.print("exiting "+self_handle()+" with: ");
 				log.log(Level.SEVERE, "[fail] exiting "+self_handle(), e);
@@ -554,7 +562,7 @@ public final class EProc extends ETask<EInternalPID> {
 		} catch (Throwable e) {
 			e.printStackTrace();
 		}
-
+		} while (false);
 	}
 
 	/**
