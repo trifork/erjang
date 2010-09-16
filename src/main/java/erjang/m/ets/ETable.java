@@ -168,7 +168,6 @@ abstract class ETable implements ExitHook {
 	}
 
 	
-	@Override
 	public void on_exit(EInternalPID dyingPID) 
 		throws Pausable 
 	{
@@ -430,5 +429,7 @@ abstract class ETable implements ExitHook {
 		
 		throw ERT.badarg(tid, head);
 	}
+
+	protected abstract EAtom member(EObject key);
 	
 }

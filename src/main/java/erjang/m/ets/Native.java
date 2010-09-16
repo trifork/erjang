@@ -447,7 +447,14 @@ public class Native extends ENative {
 		if ((spec.testAtom()==null && spec.testTuple()==null) || table == null) 
 			throw ERT.badarg(nameOrTid, spec);
 		
-		EPattern matcher = new EPattern(table.keypos1, spec);
+		EPattern matcher;
+		try {
+			matcher = new EPattern(table.keypos1, spec);
+		} catch (ErlangException e) {
+			System.err.println("bad match spec: "+spec);
+			e.printStackTrace();
+			throw ERT.badarg(nameOrTid, spec);
+		}
 		
 		return table.match_object(matcher);
 	}
@@ -670,8 +677,15 @@ public class Native extends ENative {
 	}
 
 	/** this is not documented anywhere, but referenced from the module global */
-	@BIF static public EObject member(EObject obj1, EObject obj2) {
-		throw new NotImplemented(); 
+	@BIF static public EObject member(EProc proc, EObject tab, EObject key) {
+		
+		// test arguments
+		ETable table = resolve(proc, tab, true);
+		if (table == null) {
+			throw ERT.badarg(tab);
+		}
+
+		return table.member(key);
 	}
 
 	/** this is not documented anywhere, but referenced from the module global */

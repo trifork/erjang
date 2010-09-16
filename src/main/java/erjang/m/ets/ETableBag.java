@@ -162,6 +162,18 @@ public class ETableBag extends ETable {
 		return res.reverse();
 	}
 
+	@Override
+	protected EAtom member(EObject key) {
+		IPersistentMap ipm = deref();
+		IPersistentCollection set = (IPersistentCollection) ipm.valAt(key);
+		if (set != null && set.count() != 0) {
+			return ERT.TRUE;
+		} else {
+			return ERT.FALSE;
+		}
+	}
+	
+
 	
 	@Override
 	protected EObject first() {

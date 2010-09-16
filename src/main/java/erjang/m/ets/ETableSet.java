@@ -105,6 +105,17 @@ public class ETableSet extends ETable {
 	}
 	
 	@Override
+	protected EAtom member(EObject key) {
+		// no need to run in_tx if we're only reading
+		EObject val = (EObject) deref().valAt(key);
+		if (val != null) {
+			return ERT.TRUE;
+		} else {
+			return ERT.FALSE;
+		}
+	}
+	
+	@Override
 	public ESeq slot() {
 		IPersistentMap map = deref();
 		if (map.count() == 0) return ERT.NIL;
