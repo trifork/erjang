@@ -21,12 +21,14 @@ package erjang;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
+import java.util.Set;
 
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
 import erjang.m.ets.EMatchContext;
+import erjang.m.ets.EPattern;
 import erjang.m.ets.ETermPattern;
 
 /**
@@ -582,5 +584,11 @@ public class EBitString extends EObject {
 	public void encode(EOutputStream eos) {
 		eos.write_bitstr(toByteArray(), extra_bits==0 ? 0 : 8-extra_bits);
 	}
+
+	@Override
+	public ETermPattern compileMatch(Set<Integer> out) {
+		return EPattern.compilePattern(this, out);
+	}
+
 
 }
