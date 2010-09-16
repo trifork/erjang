@@ -4,11 +4,16 @@ import erjang.BIF;
 import erjang.ENative;
 import erjang.EObject;
 import erjang.ERT;
+import erjang.EAtom;
 import erjang.ETuple2;
 import erjang.NotImplemented;
 import erjang.driver.Drivers;
 
 public class Native extends ENative {
+
+    static EAtom am_crypto_drv = EAtom.intern("crypto_drv");
+    static EAtom am_ok = EAtom.intern("ok");
+    static EAtom am_loaded = EAtom.intern("loaded");
 
 	@BIF public static 
 	ETuple2 loaded_drivers() {
@@ -23,8 +28,9 @@ public class Native extends ENative {
 	
 	@BIF public static 
 	EObject try_load(EObject path, EObject driver, EObject options) {
-		// TODO: implement
-		throw new NotImplemented();
+
+	    System.err.println("hack try_load: "+driver);
+	    return new ETuple2(am_ok, am_loaded);
 	}
 	
 	@BIF public static 
