@@ -9,9 +9,12 @@ EJC_DIR=`dirname "$EJC_CMD"`
 
 source $EJC_DIR/env_cfg
 
-exec java -server -da \
-    -Derj.threads=1 \
+##     -Derjang.debug.port=true 
+
+exec java \
+    -Derj.threads=50 \
     -Xmx1g -Xss1m \
+    -XX:PermSize=128m \
     -jar $EJC_DIR/erjang-0.1.jar \
     -home $HOME \
     -root $ERL_ROOT \
