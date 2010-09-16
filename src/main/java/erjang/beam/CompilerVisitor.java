@@ -2216,6 +2216,24 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					} else {
 						throw new Error("test with no fail label?");
 					}
+					
+					//
+					
+					if (test == BeamOpcode.is_eq_exact && !Type.VOID_TYPE.equals(outType)) {
+						
+						if (args[0].type.equals(EOBJECT_TYPE) && args[0].kind.isReg()) {
+							push(args[1], outType);
+							args[0].type = outType;
+							pop(args[0], outType);
+						} else if (args[1].type.equals(EOBJECT_TYPE) && args[1].kind.isReg()) {
+							push(args[0], outType);
+							args[1].type = outType;
+							pop(args[1], outType);
+						}
+						
+						
+					}
+					
 	
 					return;
 					}

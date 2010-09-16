@@ -30,6 +30,10 @@ public class Arg {
 
 	public enum Kind {
 		X, Y, F, IMMEDIATE, EXT_FUNC;
+
+		public boolean isReg() {
+			return this == X || this == Y || this == F;			
+		}
 	}
 
 	public static final Arg[] NO_ARGS = new Arg[0];

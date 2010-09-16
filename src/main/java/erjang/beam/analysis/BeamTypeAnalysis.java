@@ -1085,7 +1085,8 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 			private void accept_2_test(BlockVisitor2 vis, Insn.L insn_, int insn_idx) {
 
-				int failLabel = decode_labelref(insn_.label, this.map[insn_idx].exh);
+				TypeMap typeMap = this.map[insn_idx];
+				int failLabel = decode_labelref(insn_.label, typeMap.exh);
 				BeamOpcode test = insn_.opcode();
 
 				if (insn_ instanceof Insn.LD) { // Handle simple type tests:
@@ -1110,9 +1111,11 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					break;
 				}
 
+				case is_eq_exact:
+					/* hack to convert types ... */
+
 				case is_lt:
 				case is_ge:
-				case is_eq_exact:
 				case is_ne_exact:
 				case is_ne:
 				case is_eq: {
@@ -1120,7 +1123,21 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					Arg[] args = new Arg[] {
 						src_arg(insn_idx, insn.src1),
 						src_arg(insn_idx, insn.src2) };
-					vis.visitTest(test, failLabel, args, Type.VOID_TYPE);
+
+					Type outType = Type.VOID_TYPE;
+					Type t1 = getType(typeMap, insn.src1);
+					Type t2 = getType(typeMap, insn.src2);
+
+					if (t1.equals(EOBJECT_TYPE) && !t2.equals(EOBJECT_TYPE)) {
+						outType = t2;
+					}
+					
+					if (t2.equals(EOBJECT_TYPE) && !t1.equals(EOBJECT_TYPE)) {
+						outType = t1;
+					}
+					
+					vis.visitTest(test, failLabel, args, outType);
+										
 					break;
 				}
 
@@ -1450,7 +1467,8 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 								current = setType(current, dst, EDOUBLE_TYPE);
 								boxed = true;
 							} else {
-								throw new Error("why?" + insn.toSymbolic());
+								throw new Error("why?" + insn.toSymbolic() 
+										+ "; srcType="+getType(current,src));
 							}
 						}
 
