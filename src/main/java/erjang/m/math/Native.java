@@ -169,5 +169,21 @@ public class Native extends ENative {
 		return new EDouble(Math.PI);
 	}
 
-		
+	@BIF
+	public static EDouble sqrt(EDouble val)
+	{
+		return new EDouble(Math.sqrt(val.value));
+	}
+
+	@BIF
+	public static EDouble sqrt(EObject val)
+	{
+		ENumber num;
+		if ((num = val.testNumber()) != null) {
+			return new EDouble(Math.sqrt(num.doubleValue()));
+		}
+		throw ERT.badarg(val);
+	}
+
+
 }
