@@ -151,9 +151,14 @@ public final class EProc extends ETask<EInternalPID> {
 		case 0:
 		}
 		
-		all_tasks.put(this.id, this);
+		all_tasks.put(key(), this);
 	}
 
+	private int key() {
+		int key = (self.serial() << 15) | (self.id() & 0x7fff);
+		return key;
+	}
+	
 	/**
 	 * @return
 	 */
@@ -207,7 +212,7 @@ public final class EProc extends ETask<EInternalPID> {
 
 		self.done();
 		
-		all_tasks.remove(this.id);
+		all_tasks.remove(this.key());
 	}
 	
 	protected void process_incoming_exit(EHandle from, EObject reason, boolean is_erlang_exit2) throws Pausable
