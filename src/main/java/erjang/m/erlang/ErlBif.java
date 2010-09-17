@@ -1240,7 +1240,7 @@ public class ErlBif {
 
 	@BIF(name = "<")
 	public static final EAtom is_lt(EObject a1, ESmall a2) {
-		return ERT.box( a2.compareTo(a1) >= 0 );
+		return ERT.box( a2.compareTo(a1) > 0 );
 	}
 
 	@BIF(name = "<")
