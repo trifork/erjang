@@ -584,6 +584,8 @@ public final class EProc extends ETask<EInternalPID> {
 		res = res.cons(process_info(am_group_leader));
 		res = res.cons(process_info(am_links));
 		res = res.cons(process_info(am_heap_size));
+		res = res.cons(process_info(am_initial_call));
+		res = res.cons(process_info(am_reductions));
 
 		EObject reg_name = self_handle().name;
 		if (reg_name != null)
