@@ -337,6 +337,8 @@ abstract class ETable implements ExitHook {
 			else return heirPID;
 		} else if (item == Native.am_size) {
 			return ERT.box(size());
+		} else if (item == Native.am_memory) {
+			return ERT.box(10*size());
 		} else if (item == Native.am_node) {
 			return ERT.getLocalNode().node();
 		} else if (item == Native.am_type) {

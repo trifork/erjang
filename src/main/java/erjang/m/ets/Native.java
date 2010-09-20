@@ -66,6 +66,7 @@ public class Native extends ENative {
 	public static final EAtom am_keypos = EAtom.intern("keypos");
 	public static final EAtom am_name = EAtom.intern("name");
 	public static final EAtom am_size = EAtom.intern("size");
+	public static final EAtom am_memory = EAtom.intern("memory");
 	public static final EAtom am_node = EAtom.intern("node");
 	public static final EAtom am_named_table = EAtom.intern("named_table");
 	public static final EAtom am_write_concurrency = EAtom
