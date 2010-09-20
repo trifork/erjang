@@ -18,6 +18,10 @@
 
 package erjang.beam;
 
+import java.util.Set;
+
+import clojure.lang.IPersistentCollection;
+
 
 public interface BeamFunction {
 
@@ -29,7 +33,7 @@ public interface BeamFunction {
 
 	int getArity();
 
-	int getXregCount();
+	Set<Integer> getXRegisters();
 
 	int getYregCount();
 

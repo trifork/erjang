@@ -17,7 +17,14 @@
  **/
 package erjang.beam.analysis;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+
 import org.objectweb.asm.Type;
+
+import clojure.lang.IPersistentMap;
+import clojure.lang.PersistentHashMap;
 
 import erjang.EObject;
 import erjang.ETuple;
@@ -28,14 +35,17 @@ class TypeMap {
 	private static String ETUPLE_NAME = TYPE_ETUPLE.getInternalName();
 
 	private static Type[] NO_TYPES = new Type[0];
-	private Type[] xregs, yregs, fregs;
+	private static IPersistentMap NO_XTYPES = PersistentHashMap.EMPTY;
+	
+	private IPersistentMap xregs;
+	private Type[] yregs, fregs;
 	final int stacksize; // number of y-regs
 
 	final BasicBlock bb;
 	final ExceptionHandler exh;
 
 	public TypeMap(BasicBlock bb) {
-		xregs = NO_TYPES;
+		xregs = NO_XTYPES;
 		yregs = NO_TYPES;
 		fregs = NO_TYPES;
 		stacksize = 0;
@@ -48,9 +58,9 @@ class TypeMap {
 
 		boolean first = true;
 
-		Type[] xregs = this.xregs;
+		IPersistentMap xregs = this.xregs;
 
-		first = printRegs(sb, first, xregs, 'x');
+		first = printRegs(sb, first, (Map<Integer,Type>)xregs, 'x');
 		first = printRegs(sb, first, fregs, 'f');
 		first = printYRegs(sb, first);
 
@@ -72,6 +82,22 @@ class TypeMap {
 				}
 				sb.append(reg).append(i).append(':');
 				sb.append(shortName(regs[i]));
+			}
+		}
+		return first;
+	}
+
+	private boolean printRegs(StringBuilder sb, boolean first, Map<Integer,Type> regs,
+			char reg) {
+		for (int i : regs.keySet()) {
+			if (regs.get(i) != null) {
+				if (first == false) {
+					sb.append(", ");
+				} else {
+					first = false;
+				}
+				sb.append(reg).append(i).append(':');
+				sb.append(shortName(regs.get(i)));
 			}
 		}
 		return first;
@@ -114,7 +140,7 @@ class TypeMap {
 		}
 	}
 
-	private TypeMap(Type[] xregs, Type[] yregs, Type[] fregs, int stacksize,
+	private TypeMap(IPersistentMap xregs, Type[] yregs, Type[] fregs, int stacksize,
 			BasicBlock bb, ExceptionHandler exh) {
 		super();
 		this.xregs = xregs;
@@ -123,13 +149,18 @@ class TypeMap {
 		this.stacksize = stacksize;
 		this.bb = bb;
 		this.exh = exh;
+		
+		if (stacksize > 1023) {
+			System.err.println("stacksize > 1023!");
+		}
+		
 	}
 
 	public boolean equals(Object obj) {
 		if (obj instanceof TypeMap) {
 			TypeMap other = (TypeMap) obj;
 
-			return eq(xregs, other.xregs) && eqy(this, other)
+			return eq((Map)xregs, (Map)other.xregs) && eqy(this, other)
 					&& eq(fregs, other.fregs)
 					&& eq(exh, other.exh);
 		}
@@ -151,6 +182,8 @@ class TypeMap {
 		return true;
 	}
 
+	private boolean eq(Map m1, Map m2) { return m1.equals(m2); }
+	
 	private boolean eq(Type[] r1, Type[] r2) {
 		int max = Math.max(r1.length, r2.length);
 		for (int i = 0; i < max; i++) {
@@ -173,7 +206,7 @@ class TypeMap {
 	}
 
 	public TypeMap mergeFrom(TypeMap other) {
-		Type[] new_x = eq(xregs, other.xregs) ? xregs : merge_regs(xregs,
+		IPersistentMap new_x = eq((Map)xregs, (Map)other.xregs) ? xregs : merge_regs(xregs,
 				other.xregs);
 		Type[] new_f = eq(fregs, other.fregs) ? fregs : merge_regs(fregs,
 				other.fregs);
@@ -224,6 +257,21 @@ class TypeMap {
 		return differs_from_r1 ? res : r1;
 	}
 
+	private IPersistentMap merge_regs(IPersistentMap r1, IPersistentMap r2) {
+		IPersistentMap out = r1;
+		for (Integer r : ((Map<Integer,Type>)r1).keySet()) {
+			Type t1 = (Type) r1.valAt(r);
+			Type t2 = (Type) r2.valAt(r);
+			
+			Type m = merge(t1,t2);
+			if (m != null) {
+				out = out.assoc(r, m);
+			}
+		}
+
+		return out;
+	}
+
 	private Type merge(Type t1, Type t2) {
 		if (t1 == null || t2 == null)
 			return null;
@@ -253,13 +301,7 @@ class TypeMap {
 		if (eq(getx(reg), t))
 			return this;
 
-		Type[] new_xregs;
-		if (xregs.length <= reg) {
-			new_xregs = grow(xregs, reg);
-		} else {
-			new_xregs = copy(xregs);
-		}
-		new_xregs[reg] = t;
+		IPersistentMap new_xregs = xregs.assoc(reg, t);
 		return new TypeMap(new_xregs, yregs, fregs, stacksize, bb, exh);
 	}
 
@@ -297,11 +339,7 @@ class TypeMap {
 	public Type getx(int reg) {
 		bb.use_x(reg);
 
-		if (reg >= xregs.length) {
-			return null;
-		} else {
-			return xregs[reg];
-		}
+		return (Type) xregs.valAt(reg, null);
 	}
 
 	public Type getf(int reg) {
@@ -384,13 +422,8 @@ class TypeMap {
 		}
 	}
 
-	public int max_xreg() {
-		int max = 0;
-		for (int i = 0; i < xregs.length; i++) {
-			if (xregs[i] != null)
-				max = i;
-		}
-		return max + 1;
+	public Set<Integer> allXregs() {
+		return ((Map)xregs).keySet();
 	}
 
 	public int max_freg() {

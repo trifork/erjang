@@ -25,6 +25,7 @@ import static erjang.beam.CodeAtoms.TRUE_ATOM;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -46,6 +47,8 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
+
+import clojure.lang.IPersistentCollection;
 
 import erjang.EAtom;
 import erjang.EBinMatchState;
@@ -499,7 +502,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 		}
 
 		@Override
-		public void visitMaxs(int x_count, int y_count, int fp_count,
+		public void visitMaxs(Collection<Integer> x_regs, int y_count, int fp_count,
 				boolean isTailRecursive) {
 
 			FunID me = new FunID(module_name, fun_name, arity);
@@ -518,7 +521,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			this.end = new Label();
 
 			mv.visitCode();
-			allocate_regs_to_locals(x_count, y_count, fp_count);
+			allocate_regs_to_locals(x_regs, y_count, fp_count);
 
 			mv.visitLabel(start);
 
@@ -761,23 +764,27 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 		 * @param yCount
 		 * @param fpCount
 		 */
-		private void allocate_regs_to_locals(int xCount, int yCount, int fpCount) {
+		private void allocate_regs_to_locals(Collection<Integer> xRegs, int yCount, int fpCount) {
 
-			int max_x = xCount;
 			int max_y = yCount;
 			int max_f = fpCount;
 
 			int local = 1;
 
-			xregs = new int[max_x];
-			for (int i = 0; i < max_x; i++) {
-				// mv.visitLocalVariable("X" + i, EOBJECT_DESCRIPTOR,
-				// null, start, end, local);
-				xregs[i] = local;
-				local += 1;
-
+			Integer[] xxregs = xRegs.toArray(new Integer[xRegs.size()]);
+			
+			if (xxregs.length > 0) {
+				Arrays.sort(xxregs);
+				
+				Integer biggest_used = xxregs[ xxregs.length - 1 ];
+				xregs = new int[biggest_used+1];
+				for (int i = 0; i < xxregs.length; i++) {
+					xregs[xxregs[i]] = i+local;	
+				}
+	
+				local += xxregs.length;
 			}
-
+			
 			yregs = new int[max_y];
 			for (int i = 0; i < max_y; i++) {
 				// mv.visitLocalVariable("Y" + i, EOBJECT_DESCRIPTOR,

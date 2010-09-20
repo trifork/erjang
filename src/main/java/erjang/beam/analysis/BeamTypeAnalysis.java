@@ -20,6 +20,7 @@ package erjang.beam.analysis;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -30,6 +31,11 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 import org.objectweb.asm.Type;
+
+import clojure.lang.IPersistentCollection;
+import clojure.lang.IPersistentSet;
+import clojure.lang.PersistentHashSet;
+import clojure.lang.PersistentTreeSet;
 
 import erjang.EAtom;
 import erjang.EBig;
@@ -217,7 +223,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 		public int max_stack;
 
-		public int max_xreg;
+		public Set<Integer> all_xregs = PersistentHashSet.EMPTY;
 
 		public int max_freg;
 
@@ -295,7 +301,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 		private void function_visit_end() {
 
 			if (fv instanceof FunctionVisitor2) {
-				((FunctionVisitor2) fv).visitMaxs(this.max_xreg,
+				((FunctionVisitor2) fv).visitMaxs((Collection<Integer>) this.all_xregs  ,
 						this.max_stack, this.max_freg, this.is_tail_recursive);
 			}
 
@@ -2044,7 +2050,13 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 			private void update_max_regs(TypeMap current) {
 				max_stack = Math.max(max_stack, current.stacksize);
-				max_xreg = Math.max(max_xreg, current.max_xreg());
+				
+				IPersistentCollection xregs = (IPersistentCollection) all_xregs;
+				for (Integer i : current.allXregs()) {
+					xregs = xregs.cons(i);
+				}
+				
+				all_xregs = (Set<Integer>) xregs;
 				max_freg = Math.max(max_freg, current.max_freg());
 			}
 
@@ -2571,8 +2583,8 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 		}
 
 		@Override
-		public int getXregCount() {
-			return max_xreg;
+		public Set<Integer> getXRegisters() {
+			return all_xregs;
 		}
 
 		@Override

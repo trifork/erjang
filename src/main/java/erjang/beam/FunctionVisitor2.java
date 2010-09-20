@@ -19,12 +19,14 @@
 
 package erjang.beam;
 
+import java.util.Collection;
+
 /**
  * 
  */
 public interface FunctionVisitor2 extends FunctionVisitor {
 
-	public void visitMaxs(int x_count, int y_count, int fp_count,
+	public void visitMaxs(Collection<Integer> maxXreg, int y_count, int fp_count,
 			boolean isTailRecursive);
 	
 }
