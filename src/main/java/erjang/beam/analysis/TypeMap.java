@@ -258,7 +258,7 @@ class TypeMap {
 	}
 
 	private IPersistentMap merge_regs(IPersistentMap r1, IPersistentMap r2) {
-		IPersistentMap out = r1;
+		IPersistentMap out = PersistentHashMap.EMPTY;
 		for (Integer r : ((Map<Integer,Type>)r1).keySet()) {
 			Type t1 = (Type) r1.valAt(r);
 			Type t2 = (Type) r2.valAt(r);
