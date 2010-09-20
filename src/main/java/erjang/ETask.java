@@ -102,6 +102,7 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 	protected void do_proc_termination(EObject exit_reason) throws Pausable {
 		this.exit_reason = exit_reason;
 		H me = self_handle();
+		EAtom name = me.name;
 		for (EHandle handle : links) {
 			handle.exit_signal(me, exit_reason, false);
 		}
@@ -110,6 +111,9 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 			ERef ref = ent.getKey();
 
 			pid.send_monitor_exit((EHandle)me, ref, exit_reason);
+		}
+		if (name != null) {
+			ERT.unregister(name);
 		}
 	}
 	
