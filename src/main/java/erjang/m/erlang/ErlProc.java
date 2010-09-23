@@ -449,7 +449,7 @@ public class ErlProc {
 		
 //		System.err.println(proc.self_handle() + ":: erlang:exit(" + p + ", " + reason + ")");
 		
-		EPID pid = p.testPID();
+		EHandle pid = p.testHandle();
 		
 		if (pid == null) 
 			throw ERT.badarg(p, reason);
