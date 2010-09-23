@@ -80,6 +80,11 @@ public class GetHostDriver extends EDriverInstance {
 			break;
 		}
 
+		case OP_GETHOSTBYADDR: {
+			eas = gethostbyaddr(buf, seq);
+			break;
+		}
+
 		default:
 			throw new NotImplemented("inet_gethost seq="+seq+"; op="+op);
 
@@ -184,6 +189,127 @@ public class GetHostDriver extends EDriverInstance {
 						
 						rep.putInt(1);
 						rep.put(host.getBytes(IO.ISO_LATIN_1));
+						rep.put((byte)0);
+						
+						// dump_write(new ByteBuffer[] {rep});
+						driver_output(rep);
+						return;
+					}
+				}
+					
+				String message = "unknown";
+				
+				if (err != null) {
+					message = err.getMessage();
+				}
+					
+					
+				byte[] msg = message.getBytes(IO.ISO_LATIN_1);
+				int len = 4 + 1 + msg.length;
+				
+				ByteBuffer rep = ByteBuffer.allocate(len);
+				rep.putInt(seq);
+				rep.put(UNIT_ERROR);
+				rep.put(msg);
+				
+				dump_write(new ByteBuffer[] {rep});
+				
+				driver_output(rep);
+			}
+			
+		};
+	}
+
+
+	private EAsync gethostbyaddr(ByteBuffer buf, final int seq) {
+		final byte proto = buf.get();
+		final byte[] host = new byte[ proto == PROTO_IPV4 ? 4 : 16 ];
+		buf.get(host);
+		
+		// System.err.println(" gethostbyaddr["+seq+"][call] "+host);
+
+		return new EAsync() {
+			
+			String name;
+			private UnknownHostException err;
+			InetAddress primary;
+			InetAddress[] addr;
+			
+			@Override
+			public void async() {
+				
+				// System.err.println(" gethostbyaddr["+seq+"][async] "+host);
+				try {
+					primary = InetAddress.getByAddress(host);
+					name = primary.getCanonicalHostName();
+					addr = InetAddress.getAllByName(name);
+				} catch (UnknownHostException e) {
+					this.err = e;
+				}
+			}
+
+			@Override
+			public void ready() throws Pausable {
+				
+				// System.err.println(" gethostsbyname["+seq+"][ready] "+host);
+				if (addr != null) {
+					// we're ok
+					byte[][] bytes = new byte[addr.length][];
+					
+					int size = 4 + 1 + 4;
+					
+					int first = -1;
+					int acount = 0;
+					for (int i = 0; i < addr.length; i++) {
+						//System.err.println("gethostbyname["+i+"]="+addr[i]+" / "+names[i]);
+						if ((proto==PROTO_IPV4 && (addr[i] instanceof Inet4Address))
+								|| (proto==PROTO_IPV6 && (addr[i] instanceof Inet6Address))) {
+							bytes[i] = addr[i].getAddress();
+							size += bytes[i].length;		
+							acount += 1;
+							if (first == -1) first = i;
+						}
+					}
+					
+					size += 4;
+					size += name.length() + 1;
+					
+					ByteBuffer rep = ByteBuffer.allocate(size);
+					
+					rep.putInt(seq);
+					
+					if (proto == PROTO_IPV4) {
+						rep.put(UNIT_IPV4);
+						rep.putInt(acount);
+						if (acount > 0) {
+							rep.put(bytes[first]);
+							for (int i = 0; i < addr.length; i++) {
+								if (i != first && bytes[i] != null) {
+									rep.put(bytes[i]);
+								}
+							}
+						}						
+						rep.putInt(1);
+						rep.put(name.getBytes(IO.ISO_LATIN_1));
+						rep.put((byte)0);
+						
+						// dump_write(new ByteBuffer[] {rep});
+						
+						driver_output(rep);
+						
+						return;
+						
+					} else if (proto == PROTO_IPV6) {
+						rep.put(UNIT_IPV6);
+						rep.putInt(acount);
+						for (int i = 0; i < addr.length; i++) {
+							if (bytes[i] != null) {
+								rep.put(bytes[i]);
+							}
+						}
+						
+						rep.putInt(1);
+						rep.put(name.getBytes(IO.ISO_LATIN_1));
 						rep.put((byte)0);
 						
 						// dump_write(new ByteBuffer[] {rep});
