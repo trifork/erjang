@@ -92,6 +92,12 @@ public class EModuleManager {
 				ref.bind(h);
 			}
 		}
+		
+		synchronized void unbind() throws Exception {
+			for (FunctionBinder f : resolve_points) {
+				f.bind(getFunErrorHandler());
+			}
+		}
 
 		private EFun getFunction() {
 			if (resolved_value != null) {
@@ -274,6 +280,16 @@ public class EModuleManager {
 		 */
 		public boolean is_loaded() {
 			return resident != null;
+		}
+		
+		public void unload() throws Exception {
+			resident = null;
+			for (FunctionInfo fi : this.binding_points.values()) {
+				fi.unbind();
+			}
+			binding_points.clear(); // ?
+			this.resident = null;
+			this.module_md5 = empty_md5;
 		}
 
 		/**
@@ -489,6 +505,18 @@ public class EModuleManager {
 			out = out.cons(mods[i]);
 		}
 		return out;
+	}
+
+	public static EAtom delete_module(EAtom module) {
+		ModuleInfo mi = get_module_info(module);
+		try {
+			mi.unload();
+		} catch (ErlangException e) {
+			throw e;
+		} catch (Exception e) {
+			throw new ErlangError(e);
+		}
+		return ERT.am_ok;
 	}
 
 }

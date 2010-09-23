@@ -1425,6 +1425,13 @@ public class ErlBif {
 		return EModuleManager.loaded_modules();
 	}
 	
+	@BIF
+	public static EAtom delete_module(EObject m) {
+		EAtom mod = m.testAtom();
+		if (mod == null) throw ERT.badarg(m);
+		return EModuleManager.delete_module(mod);
+	}
+	
 	@BIF	
 	public static ETuple2 load_module(EProc proc, EObject mod, EObject bin) throws Pausable {
 		EAtom name = mod.testAtom();
