@@ -28,6 +28,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import kilim.Pausable;
+import erjang.m.erlang.ErlFun;
 import erjang.m.erlang.ErlProc;
 
 /**
@@ -213,6 +214,8 @@ public final class EProc extends ETask<EInternalPID> {
 		self.done();
 		
 		all_tasks.remove(this.key());
+		
+		
 	}
 	
 	protected void process_incoming_exit(EHandle from, EObject reason, boolean is_erlang_exit2) throws Pausable
@@ -478,32 +481,39 @@ public final class EProc extends ETask<EInternalPID> {
 
 	@Override
 	public void execute() throws Pausable {
-		execute_again:
-		do {
+		Throwable death = null;
+		EObject result = null;
 		try {
 
-			Throwable death = null;
-			EObject result = null;
 			try {
 				this.check_exit();
-				synchronized(this) {
-					this.pstate = STATE_RUNNING;
-				}
+				
+					synchronized(this) {
+						this.pstate = STATE_RUNNING;
+					}
+				
+					boolean live = true;
+					while (live) {
+						try {
+							while(this.tail.go(this) == TAIL_MARKER) {
+								/* skip */
+							}
+						live = false;
+					} catch (ErjangHibernateException e) {
+						// noop, live = true //
+					}
+					
+					if (live == true) {
 
-				while(this.tail.go(this) == TAIL_MARKER) {
-					/* skip */
+						mbox_wait();
+
+					}
 				}
 				 
 				//System.out.println("proc "+this+" exited "+tmp);
 				
 				result = am_normal;
 
-			} catch (ErjangHibernateException e) {
-				
-				mbox_wait();
-				
-				continue execute_again;
-				
 			} catch (NotImplemented e) {
 				System.err.print("exiting "+self_handle()+" with: ");
 				log.log(Level.SEVERE, "[fail] exiting "+self_handle(), e);
@@ -567,7 +577,6 @@ public final class EProc extends ETask<EInternalPID> {
 		} catch (Throwable e) {
 			e.printStackTrace();
 		}
-		} while (false);
 	}
 
 	/**

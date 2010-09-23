@@ -680,7 +680,7 @@ public class ErlProc {
 		ESeq  a = a3.testSeq();
 		
 		if (m == null || f == null || a == null) {
-			throw ERT.badarith(a1, a2, a3);
+			throw ERT.badarg(a1, a2, a3);
 		}
 		
 		int arity = a.length();
@@ -695,7 +695,7 @@ public class ErlProc {
 		a = a.reverse();
 		switch (arity) {
 		default:
-			throw new NotImplemented();
+			throw new NotImplemented("hibernate w/" + arity + " args");
 		case 7: 
 			self.arg6 = a.head(); a = a.tail();
 		case 6: 
