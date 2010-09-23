@@ -479,4 +479,16 @@ public class EModuleManager {
 		public abstract FunID getFunID();
 	}
 
+	public static ESeq loaded_modules() {
+		EAtom[] mods;
+		synchronized (infos) {
+			mods = infos.keySet().toArray(new EAtom[0]);
+		}
+		ESeq out = ERT.NIL;
+		for (int i = 0; i < mods.length; i++) {
+			out = out.cons(mods[i]);
+		}
+		return out;
+	}
+
 }

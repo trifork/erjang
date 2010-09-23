@@ -1420,6 +1420,11 @@ public class ErlBif {
 		return ERT.guard(obj.testPort() != null);
 	}
 	
+	@BIF
+	public static ESeq loaded() {
+		return EModuleManager.loaded_modules();
+	}
+	
 	@BIF	
 	public static ETuple2 load_module(EProc proc, EObject mod, EObject bin) throws Pausable {
 		EAtom name = mod.testAtom();
