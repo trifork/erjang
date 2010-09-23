@@ -349,7 +349,7 @@ public class EBitStringBuilder {
 		if (extra_bits != 0)
 			throw new NotImplemented();
 		
-		if (size != -1) {
+		if (size != -1 && size != ebs.bitSize()) {
 			throw new NotImplemented();
 		}
 		
