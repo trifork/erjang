@@ -32,6 +32,7 @@ import erjang.ECons;
 import erjang.EInteger;
 import erjang.EInternalPID;
 import erjang.EList;
+import erjang.ENumber;
 import erjang.EObject;
 import erjang.EPID;
 import erjang.EProc;
@@ -451,8 +452,25 @@ public class ETableSet extends ETable {
 						set(map);
 						return rec.elm(idx);
 
+					} else if (one.arity() == 4){
+						
+						ESmall eidx = one.elm(1).testSmall();
+						incr = one.elm(2).testInteger();
+						EInteger threshold = one.elm(3).testInteger();
+						EInteger setvalue = one.elm(4).testInteger();
+						if (eidx == null || eidx.value > rec.arity() || incr == null
+								|| threshold == null || setvalue == null) return null;
+						int idx = eidx.value;
+						
+						rec = update(rec, idx, incr, threshold, setvalue);
+						if (rec == null) return null;
+						map = map.assoc(get_key(rec), rec);
+						
+						set(map);
+						return rec.elm(idx);
+
 					} else {
-						throw new NotImplemented();
+						return null;
 					}
 					
 				} else {
@@ -466,10 +484,37 @@ public class ETableSet extends ETable {
 				EInteger old = rec.elm(idx).testInteger();
 				if (old == null) return null;
 				EObject val = old.add(incr);
-				rec = ErlBif.setelement(keypos1+1, rec, val);
+				rec = ErlBif.setelement(idx, rec, val);
 
 				return rec;
-			}});
+			}
+			
+			private ETuple update(ETuple rec, int idx, EInteger incr, EInteger threshold, EInteger setvalue) {
+
+				EInteger old = rec.elm(idx).testInteger();
+				if (old == null) return null;
+				ENumber val = old.add(incr);
+				
+				if (incr.is_ge(ESmall.ZERO)) {
+
+					if (threshold.is_lt(val)) {
+						val = setvalue;
+					}
+					
+				} else {
+					
+					if (val.is_lt(threshold)) {
+						val = setvalue;
+					}
+				}
+
+				
+				rec = ErlBif.setelement(idx, rec, val);
+
+				return rec;
+			}
+			
+		});
 	}
 	
 
