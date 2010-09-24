@@ -20,7 +20,12 @@ package erjang.m.re;
 
 import java.util.regex.Pattern;
 
+import erjang.EAtom;
+import erjang.EBinary;
+import erjang.EBitString;
 import erjang.EPseudoTerm;
+import erjang.ETuple;
+import erjang.ETuple2;
 import erjang.m.re.Native.Options;
 
 /**
@@ -35,5 +40,20 @@ public class ECompiledRE extends EPseudoTerm {
 	ECompiledRE(Options options, Pattern patt) {
 		this.options = options;
 		this.patt = patt;
+	}
+	
+	@Override
+	public ETuple testTuple() {
+		return new ETuple2(EAtom.intern("re_pattern"), EBinary.EMPTY);
+	}
+	
+	@Override
+	public EBinary testBinary() {
+		return null;
+	}
+	
+	@Override
+	public EBitString testBitString() {
+		return null;
 	}
 }

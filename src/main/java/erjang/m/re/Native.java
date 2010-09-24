@@ -483,13 +483,15 @@ public class Native extends ENative {
 
 		try {
 			Pattern c = Pattern.compile(pattern, o.flags);
-			return new ECompiledRE(o, c);
+			return new ETuple2(ERT.am_ok,
+					new ECompiledRE(o, c)
+			);
 
 		} catch (PatternSyntaxException e) {
 			return new ETuple2(ERT.am_error, new ETuple2(EString.fromString(e
 					.getDescription()), ERT.box(e.getIndex())));
 		}
 	}
-
+	
 
 }

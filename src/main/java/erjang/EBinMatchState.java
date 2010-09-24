@@ -132,9 +132,6 @@ public class EBinMatchState extends EPseudoTerm {
 	}
 	
 	public static EBinMatchState bs_start_match2(EObject obj, int slots) {
-		EBitString bs;
-		if ((bs = obj.testBitString()) != null)
-			return new EBinMatchState(bs, slots);
 		EBinMatchState ms;
 		if ((ms=obj.testBinMatchState()) != null) {
 			int actual_slots = ms.slots();
@@ -149,6 +146,9 @@ public class EBinMatchState extends EPseudoTerm {
 			}
 			return ms;
 		}
+		EBitString bs;
+		if ((bs = obj.testBitString()) != null)
+			return new EBinMatchState(bs, slots);
 		return null;
 	}
 

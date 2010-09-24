@@ -34,5 +34,10 @@ public abstract class EPseudoTerm extends EObject {
 	public EBinary testBinary() {
 		return EBinary.fromString("");
 	}
+	
+	@Override
+	public EBitString testBitString() {
+		return testBinary();
+	}
 
 }
