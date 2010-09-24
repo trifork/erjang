@@ -471,4 +471,49 @@ public class ETableSet extends ETable {
 				return rec;
 			}});
 	}
+	
+
+	public EObject update_element(final EObject key, final ESeq upd) {
+		return in_tx(new WithMap<EObject>() {
+
+			@Override
+			protected EObject run(IPersistentMap map) {
+				ETuple rec = (ETuple) map.valAt(key);
+				if (rec == null)
+					return ERT.FALSE; 
+				
+				// TODO: figure out match/equals semantics
+				if (type == Native.am_set) {
+					if (!key.equalsExactly( get_key(rec) )) {
+						return ERT.FALSE;
+					}
+				}
+
+				ETuple rep = null;
+				
+				for (ESeq next = upd ; !next.isNil() ; next = next.tail()) {
+					ETuple2 update = ETuple2.cast(next.head());
+					if (update == null) return null;
+					ESmall idx1 = update.elem1.testSmall();
+					if (idx1 == null 
+							|| idx1.value < 1 
+							|| idx1.value > rec.arity()
+							|| idx1.value == keypos1) return null;
+					
+					if (rep == null) {
+						rep = rec.setelement(idx1.value, update.elem2);
+					} else {
+						rep.set(idx1.value, update.elem2);
+					}
+				}
+				
+				if (rep != null) {
+					map = map.assoc(get_key(rec), rep);
+					set(map);
+				}
+				
+				return ERT.TRUE;				
+			}
+		});
+	}
 }

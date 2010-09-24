@@ -723,5 +723,33 @@ public class Native extends ENative {
 		return res;
 	}
 
+	@BIF static public EObject update_element(EProc proc, EObject tab, EObject key, EObject upd) {
+		ETable table = resolve(proc, tab, true);
+		
+		ETuple2 t_upd = ETuple2.cast(upd);
+		ESeq   s_upd = upd.testSeq();
+		
+		if (table == null 
+				|| (t_upd == null && s_upd == null)  
+				|| !(table.type==am_set || table.type==am_ordered_set)) {
+			throw ERT.badarg(tab,key,upd);
+		}
+		
+		// always turn it into a list of updates
+		if (s_upd == null) {
+			s_upd = ERT.NIL.cons(t_upd);
+		}
+		
+		ETableSet ets = (ETableSet) table;
+		
+		EObject res = ets.update_element(key, s_upd);
+		
+		if (res == null) {
+			throw ERT.badarg(tab,key,upd);			
+		}
+		
+		return res;
+	}
+
 
 }
