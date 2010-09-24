@@ -171,6 +171,11 @@ public class EUtil {
 				+ getJavaName(efun.fun, efun.arity);
 	}
 
+	public static String getFunClassName(Type self_type, ExtFun efun, int freevars) {
+		return self_type.getInternalName() + "$FN_"
+				+ getJavaName(efun.fun, efun.arity-freevars);
+	}
+
 	/**
 	 * @param arity
 	 * @param proc

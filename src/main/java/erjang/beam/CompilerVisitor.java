@@ -375,7 +375,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			cv.visitField(ACC_STATIC, anon_fun_name(l), Type.getDescriptor(LocalFunID.class), null, null).visitEnd();
 			mv.visitFieldInsn(PUTSTATIC, self_type.getInternalName(), anon_fun_name(l), Type.getDescriptor(LocalFunID.class));
 			
-			String mname = EUtil.getJavaName(l.fun, l.arity);
+			String mname = EUtil.getJavaName(l.fun, l.arity-l.freevars);
 			String outer_name = self_type.getInternalName();
 			String inner_name = "FN_" + mname;
 			String full_inner_name = outer_name + "$" + inner_name;
@@ -435,7 +435,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 		return new ASMFunctionAdapter(name, arity, startLabel);
 	}
 
-	Map<String, Lambda> lambdas_xx = new TreeMap<String, Lambda>();
+	Map<FunID, Lambda> lambdas_xx = new TreeMap<FunID, Lambda>();
 	Map<String, String> funs = new HashMap<String, String>();
 	Map<String, String> funt = new HashMap<String, String>();
 	Set<String> non_pausable_methods = new HashSet<String>();
@@ -508,7 +508,16 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			FunID me = new FunID(module_name, fun_name, arity);
 			this.funInfo = funInfos.get(me);
 			this.isTailRecursive = isTailRecursive;
-			String javaName = EUtil.getJavaName(fun_name, arity);
+			
+			Lambda lambda = get_lambda_freevars(fun_name, arity);
+			final int freevars = 
+					lambda == null 
+					? 0
+					: lambda.freevars;
+			
+			int real_arity = arity-freevars;
+
+			String javaName = EUtil.getJavaName(fun_name, real_arity);
 			String signature = EUtil.getSignature(arity, true);
 			mv = cv.visitMethod(ACC_STATIC | ACC_PUBLIC, javaName, signature,
 					null, funInfo.is_pausable ? PAUSABLE_EX : null);
@@ -548,20 +557,25 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			mv.visitMaxs(20, scratch_reg + 3);
 			mv.visitEnd();
 
-			String mname = EUtil.getJavaName(fun_name, arity);
+			int arity_plus = arity;
+			Lambda lambda = get_lambda_freevars(fun_name, arity_plus);
+			final int freevars = 
+					lambda == null 
+					? 0
+					: lambda.freevars;
+			
+			int real_arity = arity_plus-freevars;
+			
+			String mname = EUtil.getJavaName(fun_name, real_arity);
 			String outer_name = self_type.getInternalName();
 			String inner_name = "FN_" + mname;
 			String full_inner_name = outer_name + "$" + inner_name;
 
-			int freevars = 0;
-			Lambda lambda = get_lambda_freevars(fun_name, arity);
 			boolean make_fun = false;
 			if (lambda != null) {
-				freevars = lambda.freevars;
 				CompilerVisitor.this.module_md5 = lambda.uniq;
 				make_fun = true;
 			} else {
-				freevars = 0;
 
 				if (funInfo.is_called_locally_in_nontail_position)
 					generate_invoke_call_self();
@@ -570,28 +584,28 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					generate_tail_call_self(full_inner_name);
 
 				if (funInfo.mustHaveFun()) {
-				FieldVisitor fv = cv.visitField(ACC_STATIC | ACC_FINAL, mname,
-						"L" + full_inner_name + ";", null, null);
-				EFun.ensure(arity);
-
-				if (isExported(fun_name, arity)) {
-					if (ERT.DEBUG2)
-						System.err.println("export " + module_name + ":"
-								+ fun_name + "/" + arity);
-					AnnotationVisitor an = fv.visitAnnotation(EXPORT_ANN_TYPE
-							.getDescriptor(), true);
-					an.visit("module", module_name.getName());
-					an.visit("fun", fun_name.getName());
-					an.visit("arity", new Integer(arity));
-					an.visitEnd();
-				}
-
-				fv.visitEnd();
-
-				funs.put(mname, full_inner_name);
-				funt.put(mname, full_inner_name);
-				EFun.ensure(arity);
-				make_fun = true;
+					FieldVisitor fv = cv.visitField(ACC_STATIC | ACC_FINAL, mname,
+							"L" + full_inner_name + ";", null, null);
+					EFun.ensure(arity);
+	
+					if (isExported(fun_name, arity)) {
+						if (ERT.DEBUG2)
+							System.err.println("export " + module_name + ":"
+									+ fun_name + "/" + arity);
+						AnnotationVisitor an = fv.visitAnnotation(EXPORT_ANN_TYPE
+								.getDescriptor(), true);
+						an.visit("module", module_name.getName());
+						an.visit("fun", fun_name.getName());
+						an.visit("arity", new Integer(arity));
+						an.visitEnd();
+					}
+	
+					fv.visitEnd();
+	
+					funs.put(mname, full_inner_name);
+					funt.put(mname, full_inner_name);
+					EFun.ensure(arity);
+					make_fun = true;
 				}
 			}
 
@@ -601,7 +615,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					ACC_STATIC);
 
 			byte[] data = CompilerVisitor.make_invoker(module_name.getName(), self_type, mname, mname,
-					arity, true, lambda, EOBJECT_TYPE, funInfo.may_return_tail_marker, funInfo.is_pausable || funInfo.call_is_pausable);
+					arity, true, lambda, EOBJECT_TYPE, funInfo.may_return_tail_marker, funInfo.is_pausable|funInfo.call_is_pausable);
 
 			ClassWeaver w = new ClassWeaver(data, new Compiler.ErjangDetector(
 					self_type.getInternalName(), non_pausable_methods));
@@ -2458,7 +2472,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					CompilerVisitor.this.register_lambda(efun.fun, efun.arity,
 							freevars.length, index, old_index, uniq, old_uniq);
 
-					String inner = EUtil.getFunClassName(self_type, efun);
+					String inner = EUtil.getFunClassName(self_type, efun, freevars.length);
 
 					mv.visitTypeInsn(NEW, inner);
 					mv.visitInsn(DUP);
@@ -2958,25 +2972,26 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 	
 	/**
 	 * @param fun
-	 * @param arity
+	 * @param arity_plus
 	 * @param length
 	 * @param index TODO
 	 * @param old_index TODO
 	 * @param uniq TODO
 	 * @param old_uniq 
 	 */
-	public void register_lambda(EAtom fun, int arity, int freevars, int index, int old_index, EBinary uniq, int old_uniq) {
+	public void register_lambda(EAtom fun, int arity_plus, int freevars, int index, int old_index, EBinary uniq, int old_uniq) {
 		
-		lambdas_xx.put(EUtil.getJavaName(fun, arity), new Lambda(fun, arity, freevars, index, old_index, uniq, old_uniq));
+		lambdas_xx.put(new FunID(module_name, fun, arity_plus), 
+				       new Lambda(fun, arity_plus, freevars, index, old_index, uniq, old_uniq));
 	}
 
-	public Lambda get_lambda_freevars(EAtom fun, int arity) {
-		return lambdas_xx.get(EUtil.getJavaName(fun, arity));
+	public Lambda get_lambda_freevars(EAtom fun, int arity_plus) {
+		return lambdas_xx.get(new FunID(module_name, fun, arity_plus));
 	}
 
 	static public byte[] make_invoker(String module, Type self_type, String mname,
 			String fname, int arity, boolean proc, Lambda lambda,
-			Type return_type, boolean is_tail_call, boolean is_pausable) {
+			Type return_type, boolean is_tail_call, final boolean is_pausable) {
 
 		int freevars = lambda==null ? 0 : lambda.freevars;
 		
@@ -3053,6 +3068,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 		
 		make_go_method(cw, outer_name, fname, full_inner_name, arity, proc,
 				freevars, return_type, is_tail_call, is_pausable);
+
 		make_go2_method(cw, outer_name, fname, full_inner_name, arity, proc,
 				freevars, return_type, is_tail_call, is_pausable);
 
