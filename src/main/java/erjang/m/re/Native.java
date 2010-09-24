@@ -115,8 +115,9 @@ public class Native extends ENative {
 			regex = (ECompiledRE) re;
 
 		} else {
-			EObject val = compile(re, opts);
-			if (val instanceof ECompiledRE) {
+			ETuple2 res = compile(re, opts);
+			EObject val = res.elem2;
+			if (res.elem1 == ERT.am_ok && ( val instanceof ECompiledRE)) {
 				regex = (ECompiledRE) val;
 			} else {
 				return val;
@@ -470,7 +471,7 @@ public class Native extends ENative {
 	}
 
 	@BIF
-	static public EObject compile(EObject obj1, EObject obj2) {
+	static public ETuple2 compile(EObject obj1, EObject obj2) {
 
 		ESeq opts = obj2.testSeq();
 
