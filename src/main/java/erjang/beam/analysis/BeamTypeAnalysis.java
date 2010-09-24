@@ -2066,6 +2066,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 				case if_end:
 				case badmatch:
 				case case_end:
+				case try_case_end:
 				case call_last:
 				case call_only:
 				case call_ext_last:
