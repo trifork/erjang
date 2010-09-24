@@ -245,7 +245,10 @@ public class ErlConvert {
 			throw ERT.badarg(obj,start,stop);
 
 		int idx0start = s.value-1;
-		int len = e.value-s.value;
+		int len = e.value-s.value+1;
+		
+		if (idx0start < 0 || len < 0 || (idx0start + len) > bin.byteSize())
+			throw ERT.badarg(obj, start, stop);
 		
 		// TODO: use raw data, here we're copying
 		return EString.make(bin.getByteArray(), idx0start, len);
