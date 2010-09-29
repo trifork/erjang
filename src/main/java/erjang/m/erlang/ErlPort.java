@@ -364,7 +364,7 @@ public class ErlPort {
 		EAtom spec = a2.testAtom();
 		if (p==null || spec==null) throw ERT.badarg();
 		EObject info = p.port_info(spec);
-		System.err.println(""+proc.self_handle()+"::port_info ("+a1+") => "+info);
+		//System.err.println(""+proc.self_handle()+"::port_info ("+a1+") => "+info);
 		return info;
 	}
 	
