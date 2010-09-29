@@ -27,6 +27,8 @@ import java.nio.channels.Selector;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import erjang.driver.NIOChannelInfo.Interest;
@@ -53,45 +55,54 @@ public class NIOSelector extends Thread {
 		return ch.keyFor(INSTANCE.selector);
 	}
 	
-	ConcurrentLinkedQueue<NIOChannelInfo.Interest> setting = new ConcurrentLinkedQueue<NIOChannelInfo.Interest>();
-	ConcurrentLinkedQueue<NIOChannelInfo.Interest> clearing = new ConcurrentLinkedQueue<NIOChannelInfo.Interest>();
+	static enum SetOrClear {
+		SET, CLEAR;
+	}
+	
+	static class SelectMsg {
+		SetOrClear set;
+		NIOChannelInfo.Interest interest;		
+	}
+	
+	ArrayBlockingQueue<SelectMsg> mbox = new ArrayBlockingQueue<SelectMsg>(2);
 
 	@Override
 	public void run() {
-		List<NIOChannelInfo> cancellations = new ArrayList<NIOChannelInfo>();
+		try {
+			run0();
+		} catch (Throwable e) {
+			System.err.println("unhandled exception in Select loop");
+			e.printStackTrace(System.err);
+		}
+	}
+
+	public void run0() {
+		// List<NIOChannelInfo> cancellations = new ArrayList<NIOChannelInfo>();
 
 		select_loop: while (true) {
 
-			while (!setting.isEmpty()) {
-				process_add_interest_request(setting.remove());
+			SelectMsg msg;
+			msg_loop: while ((msg = mbox.poll()) != null) {
+				
+				// System.err.println("SELECT_MSG: "+msg.set+" >> "+msg.interest);
+				
+				if (msg.set == SetOrClear.SET) {
+					process_add_interest_request(msg.interest);
+				} else {
+					process_clear_interest_request(msg.interest);
+					
+					try {
+						selector.selectNow();
+					} catch (IOException e) {
+						e.printStackTrace();
+						// xx //
+					}
+				}
+				
 			}
 			
-			while(!clearing.isEmpty()) {
-				process_clear_interest_request(clearing.remove(), cancellations);
-			}
-
+			
 			int num;
-			if (!cancellations.isEmpty()) {
-
-				try {
-					num = selector.selectNow();
-				} catch (ClosedSelectorException e) {
-					// we're doomed!
-					e.printStackTrace();
-					return;
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-
-				for (NIOChannelInfo info : cancellations) {
-					info.cancelled();
-				}
-
-				cancellations.clear();
-
-				continue select_loop;
-
-			} else {
 
 				if (false) {
 					System.err.println("select loop");
@@ -101,8 +112,7 @@ public class NIOSelector extends Thread {
 							
 							SelectableChannel ch = key.channel();
 							int interst = key.interestOps();
-							System.err.println(Integer.toBinaryString(interst) + ":" 
-									+ ch);
+							System.err.println(Integer.toBinaryString(interst) + ":"  + ch);
 							
 						}
 					}
@@ -110,7 +120,7 @@ public class NIOSelector extends Thread {
 				
 				
 				try {
-					num = selector.select();
+					num = selector.select(10000);
 				} catch (ClosedSelectorException e) {
 					e.printStackTrace();
 					return;
@@ -118,7 +128,6 @@ public class NIOSelector extends Thread {
 					e.printStackTrace();
 				}
 
-			}
 
 			// now, process the readyset
 
@@ -139,8 +148,7 @@ public class NIOSelector extends Thread {
 	 * @param remove
 	 * @param cancellations
 	 */
-	private void process_clear_interest_request(Interest interest, 
-			List<NIOChannelInfo> cancellations) {
+	private void process_clear_interest_request(Interest interest) {
 
 		SelectableChannel ch = interest.ch;
 		SelectionKey key = ch.keyFor(selector);
@@ -172,8 +180,6 @@ public class NIOSelector extends Thread {
 				// cancel the key
 				key.cancel();
 				
-				// make sure we get a callback after the selectNow call
-				cancellations.add(info);
 			}
 		}
 		
@@ -219,7 +225,16 @@ public class NIOSelector extends Thread {
 
 	void _addInterest(SelectableChannel ch, int op, 
 			NIOHandler handler) {
-		setting.add(new NIOChannelInfo.Interest(ch, handler, op, false));
+		SelectMsg msg = new SelectMsg();
+		msg.set = SetOrClear.SET;
+		msg.interest = new NIOChannelInfo.Interest(ch, handler, op, false);
+		try {
+			// System.err.println("SELECT_MSG: "+msg.set+" ++>> "+msg.interest);
+
+			mbox.put(msg);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 		selector.wakeup();
 	}
 	
@@ -230,7 +245,16 @@ public class NIOSelector extends Thread {
 
 	void _removeInterest(SelectableChannel ch, int op, boolean releaseNotify,
 			NIOHandler handler) {
-		clearing.add(new NIOChannelInfo.Interest(ch, handler, op, releaseNotify));
+		SelectMsg msg = new SelectMsg();
+		msg.set = SetOrClear.CLEAR;
+		msg.interest = new NIOChannelInfo.Interest(ch, handler, op, releaseNotify);
+		try {
+			// System.err.println("SELECT_MSG: "+msg.set+" ++>> "+msg.interest);
+
+			mbox.put(msg);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 		selector.wakeup();
 	}
 
