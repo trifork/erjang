@@ -645,7 +645,8 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 			long n;
 
 			if ((tcp_add_flags & TCP_ADDF_DELAY_SEND) != 0) {
-				System.err.println("tcp_delay_send!");
+				if (ERT.DEBUG_INET)
+					System.err.println("tcp_delay_send!");
 				n = 0;
 			} else {
 				GatheringByteChannel gbc = (GatheringByteChannel) fd.channel();
@@ -705,7 +706,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 	
 	public static void dump_write(ByteBuffer[] ev) {
 
-		//if (!ERT.DEBUG_INET) return;
+		if (!ERT.DEBUG_INET) return;
 		
 		System.err.println(" vec[" + ev.length + "]:: ");
 
@@ -883,10 +884,14 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 	}
 
 	private int tcp_recv(int request_len) throws Pausable {
-
+		if (ERT.DEBUG_INET)
+		System.err.println("tcp_recv len="+request_len);
+		
 		int n, len, nread;
 
 		if (i_buf == null) {
+			if (ERT.DEBUG_INET)
+				System.err.println("tcp_recv no ibuf");
 			/* allocate a read buffer */
 			int sz = (request_len > 0) ? request_len : this.bufsz;
 
@@ -906,6 +911,8 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 
 		} else if (request_len > 0) {
 			n = i_buf.position() - i_ptr_start;
+			if (ERT.DEBUG_INET)
+				System.err.println("tcp_recv has "+n+" bytes");
 			if (n >= request_len) {
 				return tcp_deliver(request_len);
 			} else if (tcp_expand_buffer(request_len) < 0) {
@@ -915,6 +922,8 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 			}
 
 		} else if (i_remain == 0) {
+			if (ERT.DEBUG_INET)
+				System.err.println("tcp_recv i_remain == 0");
 			int[] lenp = new int[1];
 			if ((nread = tcp_remain(lenp)) < 0) {
 				return tcp_recv_error(Posix.EMSGSIZE);
@@ -925,6 +934,8 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 			}
 
 		} else {
+			if (ERT.DEBUG_INET)
+				System.err.println("tcp_recv i_remain == "+i_remain);
 			nread = i_remain;
 		}
 
@@ -939,10 +950,13 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 			} else {
 				System.err.println("NOT A SOCKET! "+rbc);
 			}
+
+			// only read up to nread bytes
+			i_buf.limit( Math.min (nread, i_buf.capacity() - i_buf.position() ) );
 			
 			n = rbc.read(i_buf);
 			if (ERT.DEBUG_INET)
-				System.err.println("did read " + n + " bytes");
+				System.err.println("did read " + n + " bytes (ibuf.size="+i_buf.remaining()+")");
 			if (n == 0)
 				return 0;
 		} catch (ClosedChannelException e) {
@@ -1516,6 +1530,19 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 	@Override
 	protected void stopSelect(SelectableChannel ch) throws Pausable {
 		sock_close(ch);
+	}
+	
+	@Override
+	protected void stop(EObject reason) throws Pausable {
+		super.stop(reason);
+		tcp_close_check();
+		InetSocket ff = fd;
+		if (ff != null) {
+			SelectableChannel ch = ff.channel();
+			if (ch != null) {
+			sock_close(ch);
+			}
+		}
 	}
 
 	private void sock_close(SelectableChannel ch) {
@@ -2216,6 +2243,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 				continue;
 
 			case INET_LOPT_EXITONCLOSE:
+				System.err.println("setting exitf="+(ival != 0)+" on "+this);
 				this.exitf = (ival == 0) ? false : true;
 				continue;
 
@@ -2463,8 +2491,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 	}
 
 	private void desc_close_read() {
-		throw new erjang.NotImplemented();
-
+		sock_select(ERL_DRV_READ|ERL_DRV_USE, SelectMode.CLEAR);
 	}
 
 	private void tcp_closed_message() throws Pausable {
@@ -2498,8 +2525,15 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 			n = tcp_remain(lenp);
 			len = lenp[0];
 			if (n != 0) {
-				if (n < 0) /* packet error */
+				if (n < 0) {
+
+					if (ERT.DEBUG_INET)
+						System.err.println("tcp_deliver::packet_error " + n);
+
+					
+					/* packet error */
 					return n;
+				}
 				if (len > 0) /* more data pending */
 					i_remain = len;
 				return count;
@@ -2507,16 +2541,19 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 		}
 
 		while (len > 0) {
+			if (ERT.DEBUG_INET)
+				System.err.println("deliver.2");
 			int code = 0;
 
 			if (len * 4 >= i_buf.capacity() * 3) { /* >=75% */
-				//System.err.println("deliver.2.1");
+				if (ERT.DEBUG_INET)
+						System.err.println("deliver.2.1");
 				/* something after? */
 				if (i_ptr_start + len == i_buf.position()) { /* no */
 					code = tcp_reply_data(i_buf.array(), i_buf
 							.arrayOffset()
 							+ i_ptr_start, len);
-					tcp_clear_input();
+					if (code >= 0) tcp_clear_input();
 				} else { /* move trail to beginning of a new buffer */
 					ByteBuffer bin = ByteBuffer.allocate(i_buf.capacity());
 					bin.put(i_buf.array(), i_buf.arrayOffset() + i_ptr_start
@@ -2525,31 +2562,41 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 					code = tcp_reply_data(i_buf.array(), i_buf
 							.arrayOffset()
 							+ i_ptr_start, len);
+					if (code >= 0) {
 					i_buf = bin;
 					i_ptr_start = 0;
 					i_remain = 0;
+					}
 				}
 			} else {
-				//System.err.println("deliver.2.2");
+				if (ERT.DEBUG_INET)
+					System.err.println("deliver.2.2");
 				// are we sending all we've got?
 				boolean share_ok = i_ptr_start + len == i_buf.position();
 				if (share_ok) {
 					code = tcp_reply_data(i_buf.array(), i_buf.arrayOffset()
 							+ i_ptr_start, len);
+					if (code >= 0)
 					tcp_clear_input();
 				} else {
 					byte[] data = new byte[len];
 					System.arraycopy(i_buf.array(), i_buf.arrayOffset()
 							+ i_ptr_start, data, 0, len);
 					code = tcp_reply_data(data, 0, len);
+					if (code >= 0) {
 					i_ptr_start += len;
 					i_remain = 0;
+					}
 				}
 			}
 
-			if (code < 0)
-				return code;
+			if (code < 0) {
+				if (ERT.DEBUG_INET)
+					System.err.println("tcp_deliver::error(code) " + code);
 
+			return code;
+			}
+			
 			count++;
 			len = 0;
 
@@ -2595,6 +2642,9 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 
 	private int tcp_reply_data(byte[] ib, int start, int len) throws Pausable {
 
+		if (ERT.DEBUG_INET)
+			System.err.println("tcp_reply_data len="+len);
+		
 		ByteBuffer out = ByteBuffer.wrap(ib, start, len);
 		Packet.get_body(htype, out);
 		start = out.position();
@@ -3267,6 +3317,17 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 		return ctl_reply(INET_REP_ERROR, id);
 	}
 
+	void state(StringBuffer sb) {
+		if ((state & TCP_STATE_ACCEPTING) != 0) sb.append("Ac");
+		if ((state & TCP_STATE_BOUND) != 0) sb.append("Bo");
+		if ((state & TCP_STATE_CLOSED) != 0) sb.append("Clo");
+		if ((state & TCP_STATE_CONNECTED) != 0) sb.append("Con");
+		if ((state & TCP_STATE_CONNECTING) != 0) sb.append("Cog");
+		if ((state & TCP_STATE_LISTEN) != 0) sb.append("Li");
+		if ((state & TCP_STATE_MULTI_ACCEPTING) != 0) sb.append("Mu");
+		if ((state & TCP_STATE_OPEN) != 0) sb.append("Op");
+	}
+	
 	@Override
 	public String toString() {
 		StringBuffer sb = new StringBuffer("TCPIP@");
@@ -3275,6 +3336,8 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 
 		sb.append("sock=").append(fd);
 
+		sb.append("; state="); state(sb);
+		
 		sb.append("; active=").append(active);
 
 		sb.append("; deliver=").append(deliver);
