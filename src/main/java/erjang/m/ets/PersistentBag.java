@@ -18,13 +18,13 @@
 
 package erjang.m.ets;
 
-import clojure.lang.IMapEntry;
-import clojure.lang.IPersistentCollection;
-import clojure.lang.IPersistentMap;
-import clojure.lang.ISeq;
-import clojure.lang.PersistentHashMap;
-import clojure.lang.PersistentList;
-import clojure.lang.PersistentTreeMap;
+import com.trifork.clj_ds.IMapEntry;
+import com.trifork.clj_ds.IPersistentCollection;
+import com.trifork.clj_ds.IPersistentMap;
+import com.trifork.clj_ds.ISeq;
+import com.trifork.clj_ds.PersistentHashMap;
+import com.trifork.clj_ds.PersistentList;
+import com.trifork.clj_ds.PersistentTreeMap;
 
 /**
  * 
@@ -141,7 +141,7 @@ public class PersistentBag extends Object implements IPersistentBag {
 		/*
 		 * (non-Javadoc)
 		 * 
-		 * @see clojure.lang.Seqable#seq()
+		 * @see com.trifork.clj_ds.Seqable#seq()
 		 */
 		@Override
 		public ISeq seq() {
@@ -159,7 +159,7 @@ public class PersistentBag extends Object implements IPersistentBag {
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see clojure.lang.Seqable#seq()
+	 * @see com.trifork.clj_ds.Seqable#seq()
 	 */
 	@Override
 	public ISeq seq() {

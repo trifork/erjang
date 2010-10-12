@@ -26,7 +26,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 
-import clojure.lang.ISeq;
+import com.trifork.clj_ds.ISeq;
 
 import erjang.EAtom;
 import erjang.EBitString;

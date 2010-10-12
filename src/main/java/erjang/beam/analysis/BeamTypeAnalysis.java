@@ -32,10 +32,10 @@ import java.util.TreeSet;
 
 import org.objectweb.asm.Type;
 
-import clojure.lang.IPersistentCollection;
-import clojure.lang.IPersistentSet;
-import clojure.lang.PersistentHashSet;
-import clojure.lang.PersistentTreeSet;
+import com.trifork.clj_ds.IPersistentCollection;
+import com.trifork.clj_ds.IPersistentSet;
+import com.trifork.clj_ds.PersistentHashSet;
+import com.trifork.clj_ds.PersistentTreeSet;
 
 import erjang.EAtom;
 import erjang.EBig;

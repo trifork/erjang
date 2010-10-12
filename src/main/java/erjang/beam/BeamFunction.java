@@ -20,7 +20,7 @@ package erjang.beam;
 
 import java.util.Set;
 
-import clojure.lang.IPersistentCollection;
+import com.trifork.clj_ds.IPersistentCollection;
 
 
 public interface BeamFunction {

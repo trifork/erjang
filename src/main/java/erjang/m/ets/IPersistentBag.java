@@ -19,7 +19,7 @@
 
 package erjang.m.ets;
 
-import clojure.lang.IPersistentCollection;
+import com.trifork.clj_ds.IPersistentCollection;
 
 /**
  * 
