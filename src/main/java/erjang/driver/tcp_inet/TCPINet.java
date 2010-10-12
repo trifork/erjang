@@ -3140,7 +3140,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 	private short enq_async_w_tmo(EPID caller, ByteBuffer reply, int req,
 			int timeout, ERef monitor) {
 
-		short id = (short) (aid.incrementAndGet() & 0xffff);
+		short id = (short) (aid.incrementAndGet() & 0x7fff);
 		AsyncOp op = new AsyncOp(id, caller, req, timeout, monitor);
 
 		if (reply != null) {

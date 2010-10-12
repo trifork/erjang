@@ -38,7 +38,6 @@ import erjang.ETask;
 import erjang.ETuple;
 import erjang.ETuple2;
 import erjang.ETuple3;
-import erjang.NotImplemented;
 import erjang.driver.EDriver;
 import erjang.driver.EDriverTask;
 import erjang.driver.EExecDriverTask;

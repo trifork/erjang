@@ -196,16 +196,6 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 			// + " completed in " + iter + " iterations.");
 		}
 
-		public TypeMap getTypeMap(int i) {
-			int label = i >> 16;
-			int insn = i & 0xffff;
-
-			LabeledBlock lbb = lbs.get(label);
-			TypeMap res = lbb.map[i];
-
-			return res;
-
-		}
 
 		Map<Integer, LabeledBlock> lbs = new TreeMap<Integer, LabeledBlock>();
 

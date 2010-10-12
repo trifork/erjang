@@ -34,6 +34,7 @@ import erjang.EAtom;
 import erjang.ECons;
 import erjang.EFun;
 import erjang.EHandle;
+import erjang.EInternalPID;
 import erjang.EModuleManager;
 import erjang.EObject;
 import erjang.EPID;
@@ -709,7 +710,7 @@ public class ErlProc {
 		case 2: 
 			self.arg1 = a.head(); a = a.tail();
 		case 1: 
-			self.arg0 = a.head(); a = a.tail();
+			self.arg0 = a.head(); // a = a.tail();
 		case 0:
 		}		
 		

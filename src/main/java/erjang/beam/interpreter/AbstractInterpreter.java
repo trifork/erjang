@@ -319,7 +319,7 @@ public class AbstractInterpreter {
 		@Override
 		public boolean equals(Object other) {
 			return (other instanceof FunIDWithGuardedness) &&
-				((FunIDWithGuardedness) other).fun.equals(this.is_guard) &&
+				((FunIDWithGuardedness) other).fun.equals(this.fun) &&
 				((FunIDWithGuardedness) other).is_guard == this.is_guard;
 		}
 	}

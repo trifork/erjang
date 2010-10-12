@@ -148,7 +148,7 @@ public class ExecDriverInstance extends EDriverInstance {
 			public void execute0() throws Pausable {
 				System.err.println("start: "+name+" "+(is_stdin?"in":"err"));
 				try {
-					execute0();
+					// execute0();
 				} finally {
 					System.err.println("  end: "+name+" "+(is_stdin?"in":"err"));
 				}

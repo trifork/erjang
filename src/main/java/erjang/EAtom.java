@@ -222,6 +222,10 @@ public final class EAtom extends EObject implements CharSequence {
 		return value.compareTo(other.value);
 	}
 	
+	public int compareTo(EObject other) {
+		return super.compareTo(other);
+	}
+	
 	/* (non-Javadoc)
 	 * @see erjang.EObject#equalsExactly(erjang.EObject)
 	 */

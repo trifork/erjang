@@ -200,7 +200,7 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 
 
 	static final int MAX_MAILBOX_SIZE = 1000;
-	protected Mailbox<EObject> mbox = new Mailbox<EObject>(10, MAX_MAILBOX_SIZE);
+	protected final Mailbox<EObject> mbox = new Mailbox<EObject>(10, MAX_MAILBOX_SIZE);
 
 	public static final int STATE_INIT = 0; // has not started yet
 	public static final int STATE_RUNNING = 1; // is live
