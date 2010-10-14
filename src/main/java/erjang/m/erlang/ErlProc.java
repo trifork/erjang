@@ -508,6 +508,10 @@ public class ErlProc {
 			return ERT.TRUE;
 		} else if (type == am_schedulers) {
 			return ERT.box(ERT.threadPoolSize());
+		} else if (type == am_threads) {
+			return ERT.box(true);
+		} else if (type == am_thread_pool_size) {
+			return ERT.box(ERT.asyncThreadPoolSize());
 		} else if (type == am_break_ignored) {
 			return ERT.box(false);
 		}

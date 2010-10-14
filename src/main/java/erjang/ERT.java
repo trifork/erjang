@@ -784,6 +784,7 @@ public class ERT {
 	}
 
 	static kilim.Scheduler scheduler = new kilim.Scheduler(threadPoolSize());
+	static kilim.Scheduler async_scheduler = new kilim.Scheduler(asyncThreadPoolSize());
 	public static EAtom am_io = EAtom.intern("io");
 	public static EAtom am_attributes = EAtom.intern("attributes");
 	public static EAtom am_exports = EAtom.intern("exports");
@@ -806,6 +807,11 @@ public class ERT {
 
 	public static void run(Task task) {
 		task.setScheduler(scheduler);
+		task.start();
+	}
+	
+	public static void run_async(Task task) {
+		task.setScheduler(async_scheduler);
 		task.start();
 	}
 	
@@ -992,7 +998,7 @@ public class ERT {
 	 * @param job
 	 */
 	public static void run_async(final EAsync job, final EDriverTask dt) {
-		run(new Task() {
+		run_async(new Task() {
 			@Override
 			public void execute() throws Pausable, Exception {
 				job.async();
@@ -1013,11 +1019,19 @@ public class ERT {
 	 * @return
 	 */
 	public static int threadPoolSize() {
-		String threads = System.getProperty("erj.threads");
+		String threads = System.getProperty("erjang.beam.option.S");
 		if (threads != null)
 			return Integer.parseInt(threads);
 		else
 			return Runtime.getRuntime().availableProcessors();
+	}
+
+	public static int asyncThreadPoolSize() {
+		String threads = System.getProperty("erjang.beam.option.A");
+		if (threads != null)
+			return Integer.parseInt(threads);
+		else
+			return 20;
 	}
 
 	public static ESeq registered() {
