@@ -54,20 +54,21 @@ sub process_instruction {
     $current_insname = $insname;
     my $code_acc = "";
     my $varmap = {};
+    my $encoder_code_after_prefetch = "";
 
     # Process directives:
     while ($directives ne '') {
 	if ($directives =~ /^\s+/) {}
 	elsif ($directives =~ /^encode\(([^()]*)\)\((\w+)\)/) {
 	    my ($encode_exp,$arg) = ($1,$2);
-	    $encoder_code .= "emit($encode_exp);\n";
+	    $encoder_code_after_prefetch .= "emit($encode_exp);\n";
 	    my $decl = "int _$arg = code[pc++];\n\t\t";
 	    $code_acc .= $decl;
 	    $varmap->{$arg} = "_$arg";
 
 	} elsif ($directives =~ /^encoder_side_effect\(([^()]*)\)/) {
 	    my ($encoder_stm) = ($1);
-	    $encoder_code .= "{$encoder_stm}\n";
+	    $encoder_code_after_prefetch .= "{$encoder_stm}\n";
 	} else {die "Invalid directive: $directives";}
 	$directives = $'; #'
     }
@@ -76,16 +77,17 @@ sub process_instruction {
 	find_and_order_macro_calls($action, $varmap, $ins_arg_map, $ins_arg_types);
 
     $encoder_code .= process_instruction_prefetching($fetch_args, $ins_arg_map, $ins_arg_names);
+    $encoder_code .= $encoder_code_after_prefetch;
     {my $i=0; foreach (@{$fetch_args}) {
 	my $fetch_arg_name = $_->[0];
 	$encoder_code .= "// DB| fetch_arg: $fetch_arg_name\n";
 	$varmap->{$fetch_arg_name} = "prefetched".++$i;
      }}
 
-    return process_instruction_rec($insname, $directives,
- 				   $ins_arg_map, $ins_arg_names, $ins_arg_types,
- 				   $action,
- 				   $code_acc, $varmap);
+    process_instruction_rec($insname, $directives,
+			    $ins_arg_map, $ins_arg_names, $ins_arg_types,
+			    $action,
+			    $code_acc, $varmap);
 }
 
 
