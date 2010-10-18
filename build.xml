@@ -29,7 +29,7 @@
 		<echo message="generating interpreter code" />
 		<exec dir="src/main/java/erjang/beam/interpreter" executable="perl" input="src/main/java/erjang/beam/interpreter/ops.spec" failonerror="yes">
 		    <arg value="-W"/>
-		    <arg value="gen_interpreter.pl"/>
+		    <arg value="ErjIG_Main.pl"/>
 		</exec>
 	</target>
 
