@@ -143,18 +143,11 @@ public class ExecDriverInstance extends EDriverInstance {
 
 	private void start_input_reader(final DataInputStream stream,
 			final boolean is_stdin) {
-		ERT.run(new Task() {
-
-			public void execute0() throws Pausable {
-				System.err.println("start: "+name+" "+(is_stdin?"in":"err"));
-				try {
-					execute0();
-				} finally {
-					System.err.println("  end: "+name+" "+(is_stdin?"in":"err"));
-				}
-			}
-				
-			public void execute() throws Pausable {
+		new Thread() {
+			
+			{ setDaemon(true); start(); }
+			
+			public void run() {
 
 				
 				if (is_stdin) {
@@ -177,7 +170,7 @@ public class ExecDriverInstance extends EDriverInstance {
 						stdin_thread = null;
 						
 						if (task.send_eof) {
-							task.eof_from_driver();
+							task.eof_from_driver_b();
 						}
 						
 						if (task.send_exit_status) {
@@ -190,7 +183,7 @@ public class ExecDriverInstance extends EDriverInstance {
 									continue;
 								}
 							}
-							task.exit_status_from_driver(code);
+							task.exit_status_from_driver_b(code);
 						}
 					}
 
@@ -217,7 +210,7 @@ public class ExecDriverInstance extends EDriverInstance {
 				}
 			}
 
-			private boolean do_read() throws Pausable, IOException {
+			private boolean do_read() throws IOException {
 
 				byte[] data;
 
@@ -264,15 +257,15 @@ public class ExecDriverInstance extends EDriverInstance {
 				}
 
 				if (task.send_binary_data) {
-					task.output_from_driver(new EBinary(data, 0, nbytes));
+					task.output_from_driver_b(new EBinary(data, 0, nbytes));
 				} else {
-					task.output_from_driver(EString.make(data, 0, nbytes));
+					task.output_from_driver_b(EString.make(data, 0, nbytes));
 				}
 
 				return true;
 			}
 
-		});
+		};
 	}
 
 	/*

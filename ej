@@ -10,13 +10,18 @@ EJC_DIR=`dirname "$EJC_CMD"`
 source $EJC_DIR/env_cfg
 
 ##     -Derjang.debug.port=true 
+##     -Derjang.debug.inet=true 
+##      -Xdebug -Xnoagent -Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=n 
+
 
 exec java \
-    -Derj.threads=50 \
+    -server \
     -Xmx1g -Xss1m \
     -XX:PermSize=128m \
     -jar $EJC_DIR/erjang-0.1.jar \
     -home $HOME \
     -root $ERL_ROOT \
+    +A 10 \
+    +S 1 \
     +e $ERTS_VSN \
     $*

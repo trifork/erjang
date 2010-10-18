@@ -34,6 +34,7 @@ import erjang.EAtom;
 import erjang.ECons;
 import erjang.EFun;
 import erjang.EHandle;
+import erjang.EInternalPID;
 import erjang.EModuleManager;
 import erjang.EObject;
 import erjang.EPID;
@@ -507,6 +508,10 @@ public class ErlProc {
 			return ERT.TRUE;
 		} else if (type == am_schedulers) {
 			return ERT.box(ERT.threadPoolSize());
+		} else if (type == am_threads) {
+			return ERT.box(true);
+		} else if (type == am_thread_pool_size) {
+			return ERT.box(ERT.asyncThreadPoolSize());
 		} else if (type == am_break_ignored) {
 			return ERT.box(false);
 		}
@@ -709,7 +714,7 @@ public class ErlProc {
 		case 2: 
 			self.arg1 = a.head(); a = a.tail();
 		case 1: 
-			self.arg0 = a.head(); a = a.tail();
+			self.arg0 = a.head(); // a = a.tail();
 		case 0:
 		}		
 		

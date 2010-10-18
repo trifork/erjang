@@ -20,16 +20,15 @@ package erjang.m.ets;
 
 import java.lang.ref.WeakReference;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicReference;
 
 import kilim.Pausable;
-import clojure.lang.APersistentMap;
-import clojure.lang.IMapEntry;
-import clojure.lang.IPersistentMap;
-import clojure.lang.ISeq;
-import clojure.lang.LockingTransaction;
-import clojure.lang.PersistentTreeMap;
-import clojure.lang.RT;
-import clojure.lang.Ref;
+import com.trifork.clj_ds.APersistentMap;
+import com.trifork.clj_ds.IMapEntry;
+import com.trifork.clj_ds.IPersistentMap;
+import com.trifork.clj_ds.ISeq;
+import com.trifork.clj_ds.PersistentTreeMap;
+import com.trifork.clj_ds.RT;
 import erjang.EAtom;
 import erjang.EInteger;
 import erjang.EInternalPID;
@@ -56,10 +55,6 @@ import erjang.NotImplemented;
  */
 abstract class ETable implements ExitHook {
 
-	static {
-		Object o = RT.IN;
-	}
-	
 
 	public static final EAtom am_stm = EAtom.intern("stm");
 	
@@ -73,7 +68,7 @@ abstract class ETable implements ExitHook {
 	protected final boolean is_named;
 	protected final EAtom type;
 	protected final APersistentMap empty;
-	private Ref mapRef;
+	private AtomicReference<IPersistentMap<EObject, Object>> mapRef;
 	private boolean is_fixed;
 
 	ETable(EProc owner, EAtom type, EInteger tid, EAtom aname, EAtom access, int keypos,
@@ -88,7 +83,7 @@ abstract class ETable implements ExitHook {
 		this.heirPID = heir_pid;
 		this.heirData = heir_data;
 		try {
-			this.mapRef = new Ref(map);
+			this.mapRef = new AtomicReference<IPersistentMap<EObject,Object>>(map);
 		} catch (Exception e) {
 			throw new ErlangError(am_stm);
 		}
@@ -221,29 +216,33 @@ abstract class ETable implements ExitHook {
 	}
 	
 	IPersistentMap deref() {
-		return (IPersistentMap) mapRef.deref();
+		return (IPersistentMap) mapRef.get();
 	}
 	
 
 	abstract class WithMap<T> implements Callable<T> {
 		
+		private IPersistentMap orig;
+		
 		@Override
-		public final T call() throws Exception {
-			return run((IPersistentMap)mapRef.deref());
+		public final T call() {
+			return run(orig = (IPersistentMap)mapRef.get());
 		}
 
 		protected abstract T run(IPersistentMap map);
 
 		protected void set(IPersistentMap map) {
-			mapRef.set(map);
+			mapRef.compareAndSet(orig, map);
 		}
 		
 	}
 	
 	@SuppressWarnings("unchecked")
-	<X> X in_tx(Callable<X> run) {
+	<X> X in_tx(WithMap<X> run) {
 		try {
-			return (X) LockingTransaction.runInTransaction(run);
+			synchronized (ETable.this) {
+				return run.call();
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
 			// STM Failure

@@ -21,7 +21,6 @@ package erjang.m.ets;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -29,10 +28,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
-import javax.swing.event.ListSelectionEvent;
-
-import clojure.lang.IPersistentCollection;
-import clojure.lang.ISeq;
+import com.trifork.clj_ds.IPersistentCollection;
+import com.trifork.clj_ds.ISeq;
 
 import erjang.EAtom;
 import erjang.EBitString;

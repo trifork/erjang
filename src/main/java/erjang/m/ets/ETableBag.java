@@ -19,25 +19,22 @@
 package erjang.m.ets;
 
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
-import clojure.lang.IMapEntry;
-import clojure.lang.IPersistentCollection;
-import clojure.lang.IPersistentMap;
-import clojure.lang.IPersistentSet;
-import clojure.lang.ISeq;
-import clojure.lang.PersistentHashSet;
-import clojure.lang.PersistentTreeMap;
-import clojure.lang.RT;
-import clojure.lang.Ref;
-import clojure.lang.Seqable;
-import clojure.lang.Var;
+import com.trifork.clj_ds.IMapEntry;
+import com.trifork.clj_ds.IPersistentCollection;
+import com.trifork.clj_ds.IPersistentMap;
+import com.trifork.clj_ds.IPersistentSet;
+import com.trifork.clj_ds.ISeq;
+import com.trifork.clj_ds.PersistentHashSet;
+import com.trifork.clj_ds.PersistentTreeMap;
+import com.trifork.clj_ds.Seqable;
 import erjang.EAtom;
 import erjang.ECons;
 import erjang.EInteger;
 import erjang.EInternalPID;
 import erjang.EList;
 import erjang.EObject;
-import erjang.EPID;
 import erjang.EProc;
 import erjang.EPseudoTerm;
 import erjang.ERT;
@@ -45,20 +42,14 @@ import erjang.ESeq;
 import erjang.ETuple;
 import erjang.ETuple2;
 import erjang.NotImplemented;
-import erjang.m.ets.ETableSet.ESetCont;
 
 /**
  * 
  */
 public class ETableBag extends ETable {
 
-	static {
-		// force loading of the Clojure runtime
-		Var in = RT.IN;
-	}
-	
 	/** holds an Integer with the bag size */
-	Ref sizeRef;
+	AtomicInteger sizeRef;
 	
 	ETableBag(EProc owner, 
 			  EAtom type, 
@@ -74,7 +65,7 @@ public class ETableBag extends ETable {
 		super(owner, type, tid, aname, access, keypos, isNamed, heirPid,
 				heirData, PersistentTreeMap.EMPTY);
 		try {
-			sizeRef = new Ref(new Integer(0));
+			sizeRef = new AtomicInteger(0);
 		} catch (Exception e) {
 			throw new Error(e);
 		}
@@ -114,7 +105,7 @@ public class ETableBag extends ETable {
 					map = map.assoc(key, c.cons(value));
 					count += 1;
 				}
-				sizeRef.set(count + (Integer)sizeRef.deref());
+				sizeRef.set(count + (Integer)sizeRef.get());
 				set(map);
 				return null;
 			}
@@ -142,7 +133,7 @@ public class ETableBag extends ETable {
 					(IPersistentCollection) map.valAt(key, empty);
 				map = map.assoc(key, c.cons(value));
 				set(map);
-				sizeRef.set(1 + (Integer)sizeRef.deref());
+				sizeRef.set(1 + (Integer)sizeRef.get());
 				return null;
 			}
 		});
@@ -191,7 +182,7 @@ public class ETableBag extends ETable {
 	
 	@Override
 	int size() {
-		return (Integer)sizeRef.deref();
+		return sizeRef.get();
 	}
 
 	@Override
@@ -268,7 +259,7 @@ public class ETableBag extends ETable {
 				    throw new Error(e);
 				}
 				set(map);
-				sizeRef.set((Integer)sizeRef.deref() - c.count());
+				sizeRef.addAndGet(- c.count());
 				return null;
 			}
 		});
@@ -312,7 +303,7 @@ public class ETableBag extends ETable {
 				}
 				
 				set(map);
-				sizeRef.set((Integer)sizeRef.deref() - deleted);
+				sizeRef.addAndGet(-deleted);
 				return null;
 			}
 		});
@@ -410,7 +401,7 @@ public class ETableBag extends ETable {
 			@Override
 			protected Integer run(IPersistentMap map) {
 				ESeq vals = ERT.NIL;
-				int initial_count = (Integer) sizeRef.deref();
+				int initial_count = sizeRef.get();
 				
 				EObject key = matcher.getTupleKey(keypos1);
 				
@@ -461,7 +452,7 @@ public class ETableBag extends ETable {
 				}
 				
 				set(map);
-				sizeRef.set(new Integer(initial_count-count));
+				sizeRef.set(initial_count-count);
 				return count;
 			}});
 		
@@ -474,7 +465,7 @@ public class ETableBag extends ETable {
 			@Override
 			protected Object run(IPersistentMap map) {
 				set(empty);
-				sizeRef.set(new Integer(0));
+				sizeRef.set(0);
 				return null;
 			}
 		});

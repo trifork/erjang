@@ -19,11 +19,13 @@
 package erjang.driver.efile;
 
 import java.io.File;
+import java.io.FileDescriptor;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
@@ -53,6 +55,17 @@ import erjang.driver.IO;
  */
 public class EFile extends EDriverInstance {
 
+	private static Field FileDescriptor_FD;
+	
+	static {
+		try {
+			FileDescriptor_FD = FileDescriptor.class.getDeclaredField("fd");
+			FileDescriptor_FD.setAccessible(true);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
 	/**
 	 * 
 	 */
@@ -1348,31 +1361,39 @@ public class EFile extends EDriverInstance {
 			final String file_name = IO.strcpy(buf);
 
 			d = new SimpleFileAsync(cmd, file_name) {
+				
+				int res_fd = 1234;
+				
 				public void run() {
 					boolean compressed = (mode & EFILE_COMPRESSED) > 0;
 					if (compressed && ERT.DEBUG_EFILE) {
 						System.err.println("EFile.open_compressed "+file_name);
 					}
 					boolean append = (mode & EFILE_MODE_APPEND) > 0;
-					if ((mode & ~(EFILE_MODE_APPEND | EFILE_MODE_READ_WRITE)) > 0)
+					if ((mode & ~(EFILE_MODE_APPEND | EFILE_MODE_READ_WRITE)) > 0) {
+						System.err.println("APPEND NOT IMPLEMENTED!");
 						throw new NotImplemented();
+					}
 					try {
+						RandomAccessFile rafff = null;
+						
 						if (compressed) {
 							if ((mode & EFILE_MODE_READ_WRITE) == EFILE_MODE_READ_WRITE && append) {
 								posix_errno = Posix.EINVAL;
 								return;
 							}
+							System.err.println("COMPRESSED NOT IMPLEMENTED!");
 							throw new NotImplemented();
 						} else {
 							switch (mode & EFILE_MODE_READ_WRITE) {
 							case EFILE_MODE_READ:
-								fd = new RandomAccessFile(file,"r").getChannel();
+								fd = (rafff=new RandomAccessFile(file,"r")).getChannel();
 								break;
 							case EFILE_MODE_WRITE:
-								fd = new RandomAccessFile(file,"rw").getChannel();
+								fd = (rafff=new RandomAccessFile(file,"rw")).getChannel();
 								break;
 							case EFILE_MODE_READ_WRITE:
-								fd = new RandomAccessFile(file,"rw").getChannel();
+								fd = (rafff=new RandomAccessFile(file,"rw")).getChannel();
 								break;
 							default:
 								throw new NotImplemented();
@@ -1380,10 +1401,19 @@ public class EFile extends EDriverInstance {
 
 							EFile.this.name = file;
 							
+							res_fd = FileDescriptor_FD.getInt(rafff.getFD());
+							
 							result_ok = true;
 						}
+						
 					} catch (FileNotFoundException fnfe) {
 						posix_errno = fileNotFound_to_posixErrno(file, mode);
+					} catch (IOException e) {
+						e.printStackTrace(System.err);
+						posix_errno = fileNotFound_to_posixErrno(file, mode);						
+					} catch (IllegalAccessException e) {
+						e.printStackTrace(System.err);
+						posix_errno = fileNotFound_to_posixErrno(file, mode);						
 					}
 				}
 
@@ -1391,7 +1421,7 @@ public class EFile extends EDriverInstance {
 				public void ready() throws Pausable {
 					if (result_ok) {
 						EFile.this.fd = fd;
-						reply_Uint(1234); /* TODO: fd */
+						reply_Uint(res_fd); /* TODO: fd */
 					} else {
 						reply_posix_error(posix_errno);
 					}
@@ -1594,8 +1624,16 @@ public class EFile extends EDriverInstance {
 			break;
 		}
 		
+		case FILE_SETOPT: {
+			reply_ok();
+			return;			
+		}
+
 		
 		default:
+			System.err.println ("file_output cmd:" + ((int) cmd) + " "
+			+ EBinary.make(buf));
+			
 			throw new NotImplemented("file_output cmd:" + ((int) cmd) + " "
 					+ EBinary.make(buf));
 			/** ignore everything else - let the caller hang */

@@ -32,10 +32,10 @@ import java.util.TreeSet;
 
 import org.objectweb.asm.Type;
 
-import clojure.lang.IPersistentCollection;
-import clojure.lang.IPersistentSet;
-import clojure.lang.PersistentHashSet;
-import clojure.lang.PersistentTreeSet;
+import com.trifork.clj_ds.IPersistentCollection;
+import com.trifork.clj_ds.IPersistentSet;
+import com.trifork.clj_ds.PersistentHashSet;
+import com.trifork.clj_ds.PersistentTreeSet;
 
 import erjang.EAtom;
 import erjang.EBig;
@@ -196,16 +196,6 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 			// + " completed in " + iter + " iterations.");
 		}
 
-		public TypeMap getTypeMap(int i) {
-			int label = i >> 16;
-			int insn = i & 0xffff;
-
-			LabeledBlock lbb = lbs.get(label);
-			TypeMap res = lbb.map[i];
-
-			return res;
-
-		}
 
 		Map<Integer, LabeledBlock> lbs = new TreeMap<Integer, LabeledBlock>();
 

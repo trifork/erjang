@@ -132,4 +132,9 @@ public class ENil extends ESeq {
 			return false;
 		}
 	}
+	
+	@Override
+	public int hashCode() {
+		return 0;
+	}
 }

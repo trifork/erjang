@@ -23,8 +23,8 @@ import java.util.Set;
 
 import org.objectweb.asm.Type;
 
-import clojure.lang.IPersistentMap;
-import clojure.lang.PersistentHashMap;
+import com.trifork.clj_ds.IPersistentMap;
+import com.trifork.clj_ds.PersistentHashMap;
 
 import erjang.EObject;
 import erjang.ETuple;

@@ -108,6 +108,7 @@ public abstract class EPID extends EHandle {
 			EPID res = EProc.find(id, serial);
 			if (res != null) return res;
 
+			System.err.println("deadpid <"+id+"."+serial+"."+creation+">");
 			// return DEADPID?
 		}
 		EAbstractNode peer = EPeer.get(node);
