@@ -263,9 +263,7 @@ sub find_and_order_macro_calls($$$$) {
     }
 
     my @pretty = map {join(",",@{$_})} @macro_calls;
-    print STDERR ("DB| Macro order for $current_insname: @pretty\n");
     my @pretty2 = map {join(",",@{$_})} @fetch_args;
-    print STDERR ("DB|   with fetch: @pretty2\n");
 
     @macro_calls = (@predef, @macro_calls);
     return (\@fetch_args, \@predef,\@macro_calls, );

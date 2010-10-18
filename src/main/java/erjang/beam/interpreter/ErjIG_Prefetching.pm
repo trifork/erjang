@@ -95,15 +95,10 @@ sub ensureGenerated_encodePrefetch {
     #==== Decoder code:
     my @base_type_lists =
 	map {[ErjIG_Operands::base_types($_, 'GET')]} @arg_class_seq;
-    print STDERR ("DB| base_type_lists: ".join(':',@base_type_lists)."\n");
     my @base_type_combinations =
 	ErjIG_Util::cartesian_product(@base_type_lists);
-    print STDERR ("DB| |base_type_combinations|: ".(scalar @base_type_combinations)."\n");
-    print STDERR ("DB| Combinations for ".join(':',@arg_class_seq).": ".(scalar @base_type_combinations)."\n");
-    print STDERR ("DB| Combinations: ".join(':',@base_type_combinations)."\n");
-    for my $combination (@base_type_combinations) {
-	print STDERR ("DB| - Combination: <".join(';',@{$combination}).">\n");
 
+    for my $combination (@base_type_combinations) {
 	my $opc_exp = "0";
 	my @code1 = ();
 	my @code2 = ();
