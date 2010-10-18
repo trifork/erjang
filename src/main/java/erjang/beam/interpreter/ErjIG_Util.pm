@@ -4,6 +4,7 @@ package ErjIG_Util;
 our %EXPORT_TAGS = ( 'all' => [ qw(
 indent
 reverse_map
+cartesian_product
 subst
 multi_subst
 ) ] );
@@ -17,6 +18,15 @@ sub reverse_map {
     my %res = ();
     for (my $i=0; $i<=$#a; $i++) {$res{$a[$i]} = $i;}
     return %res;
+}
+
+sub cartesian_product {
+    my @lists = @_;
+    my @res = ([]);
+    foreach my $list (@lists) {
+	@res = map {my $elm=$_; map {[@{$_}, $elm]} @res} @{$list};
+    }
+    return @res;
 }
 
 sub subst {

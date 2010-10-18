@@ -149,6 +149,11 @@ public class AbstractInterpreter {
 			if (val!=intval) throw new Error("Value too large to be encoded: "+intval);
 			code.set(pos, val);
 		}
+		protected int emitPlaceholder() {
+			int pos = codePos();
+			code.add((short)-12345);
+			return pos;
+		}
 
 		protected int encodeLiteral(Operands.Literal lit) {
 			EObject value = lit.literalValue();
