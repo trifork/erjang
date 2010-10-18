@@ -1147,6 +1147,7 @@ public class EInputStream extends ByteArrayInputStream {
 		final java.util.zip.Inflater inflater = new java.util.zip.Inflater();
 		final java.util.zip.InflaterInputStream is = new java.util.zip.InflaterInputStream(this, inflater);
 
+		try {
 		int pos = 0;
 		while (pos<size) { // Inflate fully
 			final int dsize = is.read(buf, pos, size-pos);
@@ -1161,7 +1162,10 @@ public class EInputStream extends ByteArrayInputStream {
 		// Back up if the inflater read ahead:
 		int read_ahead = inflater.getRemaining();
 		setPos(getPos() - read_ahead);
-
+		} finally {
+			is.close();
+		}
+		
 		return buf;
 	}
 

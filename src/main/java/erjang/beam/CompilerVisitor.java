@@ -48,7 +48,7 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
-import clojure.lang.IPersistentCollection;
+import com.trifork.clj_ds.IPersistentCollection;
 
 import erjang.EAtom;
 import erjang.EBinMatchState;

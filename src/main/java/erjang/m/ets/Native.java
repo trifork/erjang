@@ -479,6 +479,11 @@ public class Native extends ENative {
 		
 		return ERT.TRUE;
 	}
+	
+	@BIF static public EObject repair_continuation(EObject cont, EObject ms) {
+		System.err.println("repair cont="+cont+"; ms="+ms);
+		return cont;
+	}
 
 	@BIF static public EObject select(EObject obj1) {
 		

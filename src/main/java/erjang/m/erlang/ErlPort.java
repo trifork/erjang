@@ -38,7 +38,6 @@ import erjang.ETask;
 import erjang.ETuple;
 import erjang.ETuple2;
 import erjang.ETuple3;
-import erjang.NotImplemented;
 import erjang.driver.EDriver;
 import erjang.driver.EDriverTask;
 import erjang.driver.EExecDriverTask;
@@ -320,7 +319,7 @@ public class ErlPort {
 
 		if (task != null) {
 			// link this proc and the driver task
-			// task.link_to(proc);
+			task.link_to(proc);
 			ERT.run(task);
 
 			return task.self_handle();
@@ -364,7 +363,7 @@ public class ErlPort {
 		EAtom spec = a2.testAtom();
 		if (p==null || spec==null) throw ERT.badarg();
 		EObject info = p.port_info(spec);
-		System.err.println(""+proc.self_handle()+"::port_info ("+a1+") => "+info);
+		//System.err.println(""+proc.self_handle()+"::port_info ("+a1+") => "+info);
 		return info;
 	}
 	

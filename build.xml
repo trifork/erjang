@@ -7,7 +7,7 @@
 		<pathelement location="lib/kilim-0.6-krab.jar" />
 		<pathelement location="lib/OtpErlang.jar" />
 		<pathelement location="lib/junit.jar" />
-		<pathelement location="lib/clojure-slim.jar" />
+		<pathelement location="lib/clj-ds.jar" />
 		<pathelement location="lib/antlr-3.2.jar" />
 		<pathelement path="${java.class.path}" />
 	</path>
@@ -16,7 +16,7 @@
 		<pathelement location="target/test-classes/" />
 		<pathelement location="lib/kilim-0.6-krab.jar" />
 		<pathelement location="lib/OtpErlang.jar" />
-		<pathelement location="lib/clojure-slim.jar" />
+		<pathelement location="lib/clj-ds.jar" />
 		<pathelement location="lib/junit.jar" />
 		<pathelement location="lib/antlr-3.2.jar" />
 		<pathelement path="${java.class.path}" />

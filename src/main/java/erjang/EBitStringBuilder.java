@@ -188,7 +188,9 @@ public class EBitStringBuilder {
 		
 		EBig bi = value.testBig();
 		if (bit_size <= 64 && (bit_size % 8) != 0) {
-			long val = bi.longValue();
+			long val = bi == null 
+				? sm.longValue()
+				: bi.longValue();
 			if (litteEndian) 
 				throw new NotImplemented();
 			

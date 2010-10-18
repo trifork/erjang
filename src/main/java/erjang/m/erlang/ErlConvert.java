@@ -329,7 +329,8 @@ public class ErlConvert {
 
 		ESeq res = ERT.NIL;
 		for (int i = t.arity(); i > 0; i--) {
-			res = res.cons(t.elm(i));
+			EObject e = t.elm(i);
+			res = res.cons(e==null?ERT.NIL:e);
 		}
 		
 		return res;

@@ -743,12 +743,20 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 	 * @throws Pausable 
 	 * 
 	 */
+	public void eof_from_driver_b() {
+		output_term_from_driver_b(new ETuple2(port, am_eof));
+	}
+
 	public void eof_from_driver() throws Pausable {
 		output_term_from_driver(new ETuple2(port, am_eof));
 	}
 
 	public void exit_status_from_driver(int code) throws Pausable {
 		output_term_from_driver(new ETuple2(port, ERT.box(code)));
+	}
+
+	public void exit_status_from_driver_b(int code) {
+		output_term_from_driver_b(new ETuple2(port, ERT.box(code)));
 	}
 
 	public static ESeq all_ports() {

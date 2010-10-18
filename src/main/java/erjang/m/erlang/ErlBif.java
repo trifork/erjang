@@ -1156,14 +1156,24 @@ public class ErlBif {
 	@BIF(type = Type.GUARD, name = "size")
 	public static final ESmall size$g(EObject o) {
 		ETuple t;
-		if ((t = o.testTuple()) == null)
-			return null;
-		return ERT.box(t.arity());
+		if ((t = o.testTuple()) != null)
+			return ERT.box(t.arity());
+
+		EBinary b;
+		if ((b = o.testBinary()) != null)
+			return ERT.box(b.byteSize());
+		
+		return null;
 	}
 
 	@BIF(type = Type.GUARD, name = "size")
 	public static final ESmall size$g(ETuple t) {
 		return ERT.box(t.arity());
+	}
+
+	@BIF(type = Type.GUARD, name = "size")
+	public static final ESmall size$g(EBinary b) {
+		return ERT.box(b.byteSize());
 	}
 
 	@BIF(name = "=:=", type = Type.GUARD)

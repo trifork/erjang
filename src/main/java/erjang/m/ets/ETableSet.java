@@ -22,11 +22,11 @@ package erjang.m.ets;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import clojure.lang.IMapEntry;
-import clojure.lang.IPersistentMap;
-import clojure.lang.ISeq;
-import clojure.lang.PersistentHashMap;
-import clojure.lang.PersistentTreeMap;
+import com.trifork.clj_ds.IMapEntry;
+import com.trifork.clj_ds.IPersistentMap;
+import com.trifork.clj_ds.ISeq;
+import com.trifork.clj_ds.PersistentHashMap;
+import com.trifork.clj_ds.PersistentTreeMap;
 import erjang.EAtom;
 import erjang.ECons;
 import erjang.EInteger;
