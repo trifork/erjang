@@ -166,6 +166,10 @@ is_lt lbl a b:
 is_ge lbl a b:
 	if (GET(a).compareTo(GET(b)) < 0) GOTO(lbl);
 
+%class LDS(label:L, dest:D, src:S)
+is_function2 lbl subject arity:
+	if (GET(subject).testFunction2(GET(arity).asInt()) == null) GOTO(lbl);
+
 %class Select(src:S jumpTable:JV defaultLabel:L)
 select_val src table lbl:
 	TABLEJUMP(table, GET(src), GET_PC(lbl));
@@ -222,7 +226,7 @@ make_fun2 total_arity free_vars label:
 bif0 bif dest onFail:
 	{EObject tmp = GET(bif).invoke(proc, new EObject[]{}); if (IS_GUARD(bif) && tmp==null) GOTO(onFail); SET(dest, tmp);}
 
-%class Bif(ext_fun:E args[0]:S dest:D label:L0)
+%class Bif(ext_fun:EG args[0]:S dest:D label:L0)
 bif1 bif arg1 dest onFail:
 	{EObject tmp = GET(bif).invoke(proc, new EObject[]{GET(arg1)}); if (IS_GUARD(bif) && tmp==null) GOTO(onFail); SET(dest, tmp);}
 
