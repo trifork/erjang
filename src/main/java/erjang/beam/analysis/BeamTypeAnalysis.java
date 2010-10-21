@@ -929,11 +929,10 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					// {bs_add,{f,0},[{x,3},{x,4},1],{x,3}}
 					case bs_add: {
 						Insn.LSSID insn = (Insn.LSSID) insn_;
-						Arg[] in = {src_arg(insn_idx, insn.src1),
-									src_arg(insn_idx, insn.src2),
-									new Arg(new ESmall(insn.i3))};
-						Arg out = dest_arg(insn_idx, insn.dest);
-						vis.visitBSAdd(in, out);
+						vis.visitBSAdd(src_arg(insn_idx, insn.src1),
+									   src_arg(insn_idx, insn.src2),
+									   insn.i3,
+									   dest_arg(insn_idx, insn.dest));
 						break;
 					}
 

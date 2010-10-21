@@ -857,9 +857,9 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			 * erjang.beam.Arg)
 			 */
 			@Override
-			public void visitBSAdd(Arg[] in, Arg out) {
-				push(in[0], Type.INT_TYPE);
-				push(in[1], Type.INT_TYPE);
+			public void visitBSAdd(Arg in1, Arg in2, int scale, Arg out) {
+				push(in1, Type.INT_TYPE);
+				push_scaled(in2, scale);
 				mv.visitInsn(IADD);
 				pop(out, Type.INT_TYPE);
 			}
