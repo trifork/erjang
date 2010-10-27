@@ -10,7 +10,6 @@ send:
 remove_message:
 	ERT.remove_message(proc);
 
-
 int_code_end:
  	{}
 
@@ -77,12 +76,6 @@ trim amount remaining:
 move src dst:
 	SET(dst, GET(src));
 #	src.equals(dst) => {}
-
-fmove src dst:
-	SET(dst, GET(src));
-
-fconv src dst:
-	SET(dst, ERT.box(ERT.unboxToDouble(GET(src))));
 
 %class SSD(src1:S src2:S dest:D)
 put_list h t dst:
@@ -232,20 +225,20 @@ make_fun2 total_arity free_vars label:
 bif0 bif dest onFail:
 	{EObject tmp = GET(bif).invoke(proc, new EObject[]{}); if (IS_GUARD(bif) && tmp==null) GOTO(onFail); SET(dest, tmp);}
 
-%class Bif(ext_fun:EG args[0]:S dest:D label:L0)
+%class Bif(ext_fun:EG args[0]:S dest:D label:L)
 bif1 bif arg1 dest onFail:
 	{EObject tmp = GET(bif).invoke(proc, new EObject[]{GET(arg1)}); if (IS_GUARD(bif) && tmp==null) GOTO(onFail); SET(dest, tmp);}
 
-%class Bif(ext_fun:EG args[0]:S args[1]:S dest:D label:L0)
+%class Bif(ext_fun:EG args[0]:S args[1]:S dest:D label:L)
 bif2 bif arg1 arg2 dest onFail:
 	{EObject tmp = GET(bif).invoke(proc, new EObject[]{GET(arg1), GET(arg2)}); if (IS_GUARD(bif) && tmp==null) GOTO(onFail); SET(dest, tmp);}
 
-%class GcBif(ext_fun:E args[0]:S dest:D label:L)
+%class GcBif(ext_fun:EG args[0]:S dest:D label:L)
 
 gc_bif1 bif arg1 dest onFail:
 	{EObject tmp = GET(bif).invoke(proc, new EObject[]{GET(arg1)}); if (tmp==null) GOTO(onFail); SET(dest, tmp);}
 
-%class GcBif(ext_fun:E args[0]:S args[1]:S dest:D label:L)
+%class GcBif(ext_fun:EG args[0]:S args[1]:S dest:D label:L)
 
 gc_bif2 bif arg1 arg2 dest onFail:
 	{EObject tmp = GET(bif).invoke(proc, new EObject[]{GET(arg1), GET(arg2)}); if (tmp==null) GOTO(onFail); SET(dest, tmp);}
@@ -343,6 +336,14 @@ bs_put_binary onFail size unit flags value:
 bs_add onFail x y yunit dest:
 	try {int xval = ERT.unboxToInt(GET(x)), yval = ERT.unboxToInt(GET(y)); SET(dest, ERT.box(xval + yval * GET(yunit)));} catch (Exception e) {GOTO(onFail);}
 
+%class BSAppend(label:L src2:S i3:I i4:I i5:I src6:S i7:I dest8:D)
+bs_append onFail extra_size dummy3 dummy4 unit src flags dest:
+	SET(dest, EBitStringBuilder.bs_append(GET(src), ERT.unboxToInt(GET(extra_size)), GET(unit), GET(flags)).bitstring());
+
+%class D(dest:D)
+bs_context_to_binary srcdest:
+	SET(srcdest, EBinMatchState.bs_context_to_binary(GET(srcdest)));
+
 ##########==========      EXCEPTION HANDLING	  ==========##########
 
 %class YL(y:y, label:L)
@@ -367,3 +368,35 @@ raise value trace:
 	reg[0] = ERT.raise(reg[0], GET(value), GET(trace));
 
 ##########==========       FLOATING-POINT    	  ==========##########
+# TODO: Room for improvement in this section - by not boxing the fregs.
+
+%class Insn()
+fclearerror:
+	{}
+
+%class L(label:L)
+#fcheckerror: TODO - actually do something?
+fcheckerror lbl:
+	{}
+
+%class SD(src:SF dest:DF)
+fmove src dst:
+	SET(dst, ErlBif.float$n((EObject)GET(src)));
+
+fconv src dst:
+	SET(dst, ErlBif.float$n((EObject)GET(src)));
+
+
+%class LSSD(label:L, src1:f, src2:f, dest:f)
+fadd lbl a b dst:
+	SET(dst, ERT.box(ErlBif.fadd(GET(a), GET(b))));
+
+fsub lbl a b dst:
+	SET(dst, ERT.box(ErlBif.fsub(GET(a), GET(b))));
+
+fmul lbl a b dst:
+	SET(dst, ERT.box(ErlBif.fmul(GET(a), GET(b))));
+
+fdiv lbl a b dst:
+	SET(dst, ERT.box(ErlBif.fdiv(GET(a), GET(b))));
+

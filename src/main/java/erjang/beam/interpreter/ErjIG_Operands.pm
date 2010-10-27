@@ -16,6 +16,8 @@ our %TYPES_SUBTYPES =
     (
      'S' => ['c', 'x', 'y'],
      'D' => ['x', 'y'],
+     'SF' => ['c', 'x', 'y', 'f'],
+     'DF' => ['x', 'y', 'f'],
      'A' => ['c'],
      'L0' => ['L', 'nolabel'], # Label, possibly nofail
      'EG' => ['G', 'E']        # Ext. fun, possibly a guard
@@ -28,11 +30,12 @@ our %TYPES_OPERAND_CLASS =
      # Concrete:
      'x' => "Operands.XReg",
      'y' => "Operands.YReg",
+     'f' => "Operands.FReg",
      'c' => "Operands.Literal",
      'I' => "int",
      'IL' => "int", # Integer-as-label
      'L' => "Operands.Label",
-     'nolabel' => ["Operands.Label", "# == null"],
+     'nolabel' => ["Operands.Label", "(# == null || #.nr == 0)"],
      'E' => "ExtFun",
      'G' => ["ExtFun", "# instanceof ExtFun && \$onFail != null"],
      'JV' => "Operands.SelectList",
@@ -43,6 +46,7 @@ our %TYPES_DECODE =
      'c' => "consts[#]",
      'x' => "reg[#]",
      'y' => "stack[sp - (#)]",
+     'f' => "freg[#]",
      'I' => "(#)",
      'IL' => "(#)",
      'L' => "(#)",
@@ -57,6 +61,7 @@ our %TYPES_ENCODE =
  'c' => "encodeLiteral(#)",
  'x' => "#.nr",
  'y' => "#.nr",
+ 'f' => "#.nr",
  'I' => "#",
  'IL' => "encodeLabel(#)",
  'L' => "encodeLabel(#.nr)",
@@ -72,6 +77,7 @@ our %TYPES_ALLOWED_OPS =
     (
      'x' => {'GET'=>1, 'SET'=>1},
      'y' => {'GET'=>1, 'SET'=>1},
+     'f' => {'GET'=>1, 'SET'=>1, 'FGET'=>1, 'FSET'=>1},
      'c' => {'GET'=>1},
      'I' => {'GET'=>1},
      'IL' => {'GOTO'=>1, 'GET_PC'=>1},

@@ -38,7 +38,7 @@ public final class EProc extends ETask<EInternalPID> {
 	
 	static Logger log = Logger.getLogger(EProc.class.getName());
 	
-	public static final EObject TAIL_MARKER = null;
+	public static final EObject TAIL_MARKER = new ETailMarker();
 
 	public static final int ERTS_NODES_MON_OPT_TYPE_VISIBLE = 1<<0;
 	public static final int ERTS_NODES_MON_OPT_TYPE_HIDDEN = 1<<1;
@@ -108,6 +108,8 @@ public final class EProc extends ETask<EInternalPID> {
 	// For interpreter use:
 	public EObject[] stack = new EObject[10];
 	public int sp = 0;
+// 	double[] fregs = new double[16];
+	public EDouble[] fregs = new EDouble[16];
 
 	/**
 	 * @param m
