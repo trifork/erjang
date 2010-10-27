@@ -18,6 +18,7 @@ import kilim.Mailbox;
 import kilim.Pausable;
 import erjang.EAtom;
 import erjang.EBinary;
+import erjang.EBitString;
 import erjang.ECons;
 import erjang.EDouble;
 import erjang.EFun;
@@ -57,6 +58,10 @@ public class JavaObject extends EPseudoTerm {
 
 	final Object real_object;
 	final EProc owner;
+	
+	public Object realObject() {
+		return real_object;
+	}
 
 	@Override
 	public EBinary testBinary() {
@@ -69,6 +74,25 @@ public class JavaObject extends EPseudoTerm {
 		return null;
 	}
 
+	@Override
+	public EBitString testBitString() {
+		EBinary bi;
+		if ((bi=testBinary()) != null) {
+			return bi;
+		}
+		
+		if (testCons() == null
+				&& testNumber() == null
+				&& testTuple() == null
+				&& testAtom() == null
+				&& testHandle() == null
+				)
+			return EBinary.EMPTY;
+		
+		return null;
+		
+	}
+	
 	@Override
 	public ENil testNil() {
 		if (real_object == null)
