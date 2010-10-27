@@ -212,6 +212,10 @@ abstract class ETable implements ExitHook {
 
 	/** utility for subclasses */
 	EObject get_key(ETuple value) {
+		if (keypos1 > value.arity()) {
+			// TODO: return full list of args
+			throw ERT.badarg(ERT.NIL.cons(value));
+		}
 		return value.elm(keypos1);
 	}
 	
