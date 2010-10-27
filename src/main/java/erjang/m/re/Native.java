@@ -245,7 +245,7 @@ public class Native extends ENative {
 
 		public EObject capture_type = am_index;
 
-		public EObject capture_spec = am_none;
+		public EObject capture_spec = am_all;
 
 		public boolean global;
 
