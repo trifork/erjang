@@ -1284,6 +1284,27 @@ public class EFile extends EDriverInstance {
 			};
 			break;
 		}
+		
+		case FILE_CHDIR: {
+			d = new SimpleFileAsync(cmd, IO.strcpy(buf)) {
+				public void run() {
+					result_ok = file.isDirectory();
+					if (!result_ok) {
+						if (!file.exists()) {
+							posix_errno = Posix.ENOENT;
+						} else if (!file.isDirectory()) {
+							posix_errno = Posix.EEXIST;
+						} else {
+							posix_errno = Posix.EUNKNOWN;
+						}
+					} else {
+						System.setProperty("user.dir", this.name);
+					}
+				}
+			};
+			
+			break;
+		}
 
 		case FILE_DELETE: {
 			d = new SimpleFileAsync(cmd, IO.strcpy(buf)) {
@@ -1538,7 +1559,8 @@ public class EFile extends EDriverInstance {
 		case FILE_READDIR: {
 			
 			final String dir_name = IO.strcpy(buf);
-			final File dir = new File(dir_name);
+			//final File cwd = new File(System.getProperty("user.dir")).getAbsoluteFile();
+			final File dir = new File(/*cwd, */dir_name);
 			
 			
 			d = new FileAsync() {
