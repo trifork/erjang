@@ -201,7 +201,7 @@ public interface BlockVisitor2 extends BlockVisitor {
 	 * @param in
 	 * @param out
 	 */
-	void visitBSAdd(Arg[] in, Arg out);
+	void visitBSAdd(Arg in1, Arg in2, int scale, Arg out);
 
 
 	void visitUnreachablePoint();

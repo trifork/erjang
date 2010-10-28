@@ -6,3 +6,4 @@ erjang-*.jar
 classes
 target
 *.beam
+src/main/java/erjang/beam/interpreter/Interpreter.java

@@ -78,6 +78,12 @@ move src dst:
 	SET(dst, GET(src));
 #	src.equals(dst) => {}
 
+fmove src dst:
+	SET(dst, GET(src));
+
+fconv src dst:
+	SET(dst, ERT.box(ERT.unboxToDouble(GET(src))));
+
 %class SSD(src1:S src2:S dest:D)
 put_list h t dst:
 	SET(dst, ERT.cons(GET(h), GET(t)));
@@ -166,6 +172,10 @@ is_lt lbl a b:
 is_ge lbl a b:
 	if (GET(a).compareTo(GET(b)) < 0) GOTO(lbl);
 
+%class LDS(label:L, dest:D, src:S)
+is_function2 lbl subject arity:
+	if (GET(subject).testFunction2(GET(arity).asInt()) == null) GOTO(lbl);
+
 %class Select(src:S jumpTable:JV defaultLabel:L)
 select_val src table lbl:
 	TABLEJUMP(table, GET(src), GET_PC(lbl));
@@ -222,11 +232,11 @@ make_fun2 total_arity free_vars label:
 bif0 bif dest onFail:
 	{EObject tmp = GET(bif).invoke(proc, new EObject[]{}); if (IS_GUARD(bif) && tmp==null) GOTO(onFail); SET(dest, tmp);}
 
-%class Bif(ext_fun:E args[0]:S dest:D label:L0)
+%class Bif(ext_fun:EG args[0]:S dest:D label:L0)
 bif1 bif arg1 dest onFail:
 	{EObject tmp = GET(bif).invoke(proc, new EObject[]{GET(arg1)}); if (IS_GUARD(bif) && tmp==null) GOTO(onFail); SET(dest, tmp);}
 
-%class Bif(ext_fun:E args[0]:S args[1]:S dest:D label:L0)
+%class Bif(ext_fun:EG args[0]:S args[1]:S dest:D label:L0)
 bif2 bif arg1 arg2 dest onFail:
 	{EObject tmp = GET(bif).invoke(proc, new EObject[]{GET(arg1), GET(arg2)}); if (IS_GUARD(bif) && tmp==null) GOTO(onFail); SET(dest, tmp);}
 
@@ -280,13 +290,36 @@ bs_get_integer2 failLabel src _keep bits unit flags dest:
 	EObject tmp = ((EBinMatchState)(GET(src))).bs_get_integer2(((ESmall)GET(bits)).intValue(), GET(unit), GET(flags)); if (tmp == null) GOTO(failLabel); else SET(dest, tmp);
 
 #bs_get_float2:
-#bs_get_binary2:
+
+bs_get_binary2 failLabel ms _keep bits unit flags dest:
+	EObject tmp = ((EBinMatchState)(GET(ms))).bs_get_binary2(GET(bits), GET(flags)); if (tmp==null) GOTO(failLabel); else SET(dest, tmp);
 
 %class LDI(label:L, dest:D, i:I)
-bs_test_tail2 failLabel src bits_left:
-	if (! ((EBinMatchState)(GET(src))).bs_test_tail2(GET(bits_left))) GOTO(failLabel);
+bs_test_tail2 failLabel ms bits_left:
+	if (! ((EBinMatchState)(GET(ms))).bs_test_tail2(GET(bits_left))) GOTO(failLabel);
 
-#bs_test_unit:
+bs_test_unit failLabel ms unit:
+	if (! ((EBinMatchState)(GET(ms))).bs_test_unit(GET(unit))) GOTO(failLabel);
+
+%class LDII(label:L dest:D i3:I i4:I)
+bs_skip_utf8 failLabel ms _dummy flags:
+	if (! ((EBinMatchState)(GET(ms))).bs_skip_utf8(GET(flags))) GOTO(failLabel);
+bs_skip_utf16 failLabel ms _dummy flags:
+	if (! ((EBinMatchState)(GET(ms))).bs_skip_utf16(GET(flags))) GOTO(failLabel);
+bs_skip_utf32 failLabel ms _dummy flags:
+	if (! ((EBinMatchState)(GET(ms))).bs_skip_utf32(GET(flags))) GOTO(failLabel);
+
+%class LDSII(label:L dest:D src3:S i4:I i5:I)
+bs_skip_bits2 failLabel ms bits unit flags:
+	EObject tmp = ((EBinMatchState)(GET(ms))).bs_skip_bits2(((EInteger)GET(bits)), GET(unit), GET(flags)); if (tmp==null) GOTO(failLabel);
+
+
+%class DI(dest:D i2:I)
+bs_save2 ms pos:
+	EObject ms = GET(ms); int pos = GET(pos); if (pos==-1) EBinMatchState.bs_save2_start(ms); else EBinMatchState.bs_save2(ms, pos);
+
+bs_restore2 ms pos:
+	EObject ms = GET(ms); int pos = GET(pos); if (pos==-1) EBinMatchState.bs_restore2_start(ms); else EBinMatchState.bs_restore2(ms, pos);
 
 ##########==========    CONSTRUCTION OF BINARIES  ==========##########
 
@@ -302,6 +335,13 @@ bs_put_string value:
 %class LSIIS(label:L src2:S i3:I i4:I src5:S)
 bs_put_integer onFail size unit flags value:
 	bit_string_builder.put_integer(GET(value), GET(unit) * ((ESmall)GET(size)).intValue(), GET(flags));
+
+bs_put_binary onFail size unit flags value:
+	EInteger size = GET(size).testInteger(); int actualSize = (size==null)? -1 : size.intValue() * GET(unit); bit_string_builder.put_bitstring(GET(value), actualSize, GET(flags));
+
+%class LSSID(label:L0 src1:S src2:S i3:I dest:D)
+bs_add onFail x y yunit dest:
+	try {int xval = ERT.unboxToInt(GET(x)), yval = ERT.unboxToInt(GET(y)); SET(dest, ERT.box(xval + yval * GET(yunit)));} catch (Exception e) {GOTO(onFail);}
 
 ##########==========      EXCEPTION HANDLING	  ==========##########
 

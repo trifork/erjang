@@ -31,6 +31,7 @@ import erjang.EProc;
 
 import erjang.EObject;
 import erjang.EAtom;
+import erjang.EInteger;
 import erjang.ESmall;
 import erjang.ESeq;
 import erjang.ECons;
@@ -105,8 +106,7 @@ public class Interpreter extends AbstractInterpreter {
 			}
 
 			public void visitInsn(Insn insn) {
-				int opcode_pos = codePos();
-				emit(-12345); // Place holder.
+				int opcode_pos = emitPlaceholder();
 				insn_start.put(opcode_pos, insn);
 
 				//System.err.println("@ "+opcode_pos+": "+insn.toSymbolic());
@@ -115,6 +115,8 @@ public class Interpreter extends AbstractInterpreter {
 				} // switch
 			}
 		}
+
+#ENCODER_HELPERS#
 	}
 
     public static class Module extends AbstractInterpreter.Module {
@@ -190,7 +192,7 @@ public class Interpreter extends AbstractInterpreter {
 				int argCnt = args.length;
 				EObject[] reg = new EObject[1024]; //??
 				for (int i=0; i<argCnt; i++) {reg[i] = args[i];} //??
-				for (int i=0; i<argCnt; i++) System.err.println("INT| arg#"+i+"="+args[i]);
+				//for (int i=0; i<argCnt; i++) System.err.println("INT| arg#"+i+"="+args[i]);
 				return interpret(proc, start_pc, reg);
 			}
 
@@ -214,11 +216,14 @@ public class Interpreter extends AbstractInterpreter {
 				// For bitstring construction:
 				EBitStringBuilder bit_string_builder = null;
 
+				EObject prefetched1 = null, prefetched2 = null;
+
 				while (true) try {
 						while (true) {
+// 							System.err.print('¤');
 							final int opcode = code[pc++];
 							//System.err.print("STACK| "); for (int i=0; i<=sp; i++) {System.err.print("  "+i+":"+stack[i]);} System.err.println();
-							//System.err.println("INTP|"+proc.self_handle()+" (pc="+(pc-1)+"; sp="+sp+")"+opcode+"   "+reg[0]);
+// 							System.err.println("INTP|"+proc.self_handle()+" (pc="+(pc-1)+"; sp="+sp+")"+opcode+"   "+reg[0]);
 							switch (opcode) {
 							case ENSURE_REG_CAPACITY: {
 								int max_x = code[pc++];
@@ -273,7 +278,7 @@ public class Interpreter extends AbstractInterpreter {
 				EObject[] reg = new EObject[1024]; //??
 				for (int i=0; i<argCnt; i++) {reg[i] = args[i];} //??
 				for (int i=0; i<envCnt; i++) {reg[argCnt+i] = env[i];}
-				for (int i=0; i<argCnt+envCnt; i++) System.err.println("INT| reg#"+i+"="+reg[i]);
+				//for (int i=0; i<argCnt+envCnt; i++) System.err.println("INT| reg#"+i+"="+reg[i]);
 				return interpret(proc, start_pc, reg);
 			}
 		}
