@@ -55,7 +55,7 @@ public class Packet {
 	}
 
 	public static <T> int parse(PacketParseType htype, byte[] data, int buf,
-			int len, IntCell statep, PacketCallbacks<T> pcb, T arg) throws Pausable {
+			int len, IntCell statep, PacketCallbacks<T> pcb, T arg) {
 
 		switch (htype) {
 		case TCP_PB_HTTP:
@@ -74,7 +74,7 @@ public class Packet {
 	}
 
 	public static <T> int parse_http(byte[] data, int buf, int len,
-			IntCell statep, PacketCallbacks<T> pcb, T arg) throws Pausable {
+			IntCell statep, PacketCallbacks<T> pcb, T arg) {
 
 		int ptr = buf;
 		int p0;

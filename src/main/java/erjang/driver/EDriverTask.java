@@ -41,6 +41,7 @@ import java.nio.channels.SelectableChannel;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -92,6 +93,7 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 	private static final EAtom am_data = EAtom.intern("data");
 	private static final EAtom am_connected = EAtom.intern("connected");
 	private static final EAtom am_closed = EAtom.intern("closed");
+	private static final EAtom am_ioerr = EAtom.intern("ioerr");
 	private final EInternalPort port;
 	protected EPID owner;
 	private final EDriverControl instance;
@@ -317,15 +319,33 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 	
 	@Override
 	public void execute() throws Pausable {
+
+	}
+
+	List<ByteBuffer> out = new ArrayList<ByteBuffer>();
+	private TimerTask timeout_task;
+
+	@Override
+	public synchronized void 
+	mbox_send(EObject msg) throws Pausable {
+		mbox_sendb(msg);
+	}
+	
+	static enum PORT_ALIVE {
+			ALIVE, DEAD
+	}
+	
+	public synchronized void 
+	mbox_sendb(EObject msg) {
+
 		try {
 
 			EObject result = null;
 			try {
 
 				// driver main loop
-				main_loop();
-
-				result = am_normal;
+				process_one(msg);
+				return;
 
 			} catch (NotImplemented e) {
 				log.log(Level.SEVERE, "exiting "+self_handle(), e);
@@ -354,10 +374,9 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 					System.exit(1);
 				}
 
-			} finally {
-				// this.runner = null;
-				this.pstate = STATE_DONE;
 			}
+
+			this.pstate = STATE_DONE;
 
 			// System.err.println("task "+this+" exited with "+result);
 			do_proc_termination(result);
@@ -370,117 +389,98 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 		}
 
 	}
+	
+	PORT_ALIVE process_one(EObject msg) {
+		do {
+		
+		ETuple2 t2;
+		EPortControl ctrl;
+		ETuple3 t3;
+		ETuple tup;
+		if ((t2 = ETuple2.cast(msg)) != null) {
 
-	/**
-	 * @throws Pausable
-	 * 
-	 */
-	protected void main_loop() throws Exception, Pausable {
+			EObject sender = t2.elem1;
 
-		List<ByteBuffer> out = new ArrayList<ByteBuffer>();
-		EObject msg;
+			ETuple2 cmd;
+			if ((cmd = ETuple2.cast(t2.elem2)) != null) {
+				// cmd must be one of
+				// {command, iodata()}
+				// {connect, PID}
 
-		next_message: while (true) {
-
-			/** if the driver has a registered timeout ... handle that */
-			if (abs_timeout == 0) {
-				msg = mbox.get();
-			} else {
-				msg = null;
-				long timeout = abs_timeout - System.currentTimeMillis();
-				if (timeout > 0) {
-					msg = mbox.get(timeout);
-				} 
-				if (msg == null) {
-					abs_timeout = 0;
-					this.instance.timeout();
-					continue next_message;
-				}
-			}
-
-			ETuple2 t2;
-			EPortControl ctrl;
-			ETuple3 t3;
-			ETuple4 t4;
-			ETuple tup;
-			if ((t2 = ETuple2.cast(msg)) != null) {
-
-				EObject sender = t2.elem1;
-
-				ETuple2 cmd;
-				if ((cmd = ETuple2.cast(t2.elem2)) != null) {
-					// cmd must be one of
-					// {command, iodata()}
-					// {connect, PID}
-
-					if (cmd.elem1 == EPort.am_command) {
-						if (cmd.elem2.collectIOList(out)) {
-							EHandle caller = sender.testHandle();
-							
-							if (caller == null) {
-								System.err.println("*** sender is null? "+sender);
-							}
-							
+				if (cmd.elem1 == EPort.am_command) {
+					if (cmd.elem2.collectIOList(out)) {
+						EHandle caller = sender.testHandle();
+						
+						if (caller == null) {
+							System.err.println("*** sender is null? "+sender);
+						}
+						
+						try {
 							if (out.size() == 0) {
 								instance.outputv(caller, ERT.EMPTY_BYTEBUFFER_ARR);
 							} else {
 								instance.outputv(caller, out.toArray(new ByteBuffer[out
 										.size()]));
 							}
-							// if collectIOList fails, do the port task die?
-							// and how?
+						} catch (IOException e) {
+							return PORT_ALIVE.DEAD;
 						}
-						
+
 						out.clear();
-
-						continue next_message;
-
-					} else if (cmd.elem1 == EPort.am_connect) {
-						EPID new_owner;
-						if ((new_owner = cmd.elem2.testPID()) == null)
-							break;
-
-						EPID old_owner = this.owner;
-						this.owner = new_owner;
-
-						old_owner.send(this.port, ETuple.make(this.self_handle(),
-										EPort.am_connected));
-
-						continue next_message;
-
+						return PORT_ALIVE.ALIVE;
 					}
+					
+					// if collectIOList fails, do the port task die?
+					// and how?
+					
+					return PORT_ALIVE.ALIVE;
 
-				} else if (t2.elem2 == am_close) {
-					this.reply_closed_to = t2.elem1.testPID();
-					// will call instance.stop()
-					return;
+				} else if (cmd.elem1 == EPort.am_connect) {
+					EPID new_owner;
+					if ((new_owner = cmd.elem2.testPID()) == null)
+						break;
+
+					EPID old_owner = this.owner;
+					this.owner = new_owner;
+
+					old_owner.sendb(ETuple.make(this.self_handle(),
+									EPort.am_connected));
+
+					return PORT_ALIVE.ALIVE;
+
 				}
 
-			} else if ((ctrl = msg.testPortControl()) != null) {
-
-				// port control messages are simply run
-				ctrl.execute();
-				continue next_message;
-
-			} else if ((t3 = ETuple3.cast(msg)) != null) {
-
-				// {'EXIT', From, Reason} comes in this way
-				if (t3.elem1 == ERT.am_EXIT) {
-					// close is handled by exception handling code
-					return;
-				}
-			} else if ((tup = msg.testTuple()) != null && tup.arity() == 5) {
-				// {'DOWN', ref, process, pid, reason}
-				if (tup.elm(1) == ERT.am_DOWN) {
-					ERef ref = tup.elm(2).testReference();
-					instance.processExit(ref);
-				}
-
+			} else if (t2.elem2 == am_close) {
+				this.reply_closed_to = t2.elem1.testPID();
+				// will call instance.stop()
+				return PORT_ALIVE.DEAD;
 			}
 
-			break;
-		}
+		} else if ((ctrl = msg.testPortControl()) != null) {
 
+			// port control messages are simply run
+			ctrl.execute();
+			return PORT_ALIVE.ALIVE;
+
+		} else if ((t3 = ETuple3.cast(msg)) != null) {
+
+			// {'EXIT', From, Reason} comes in this way
+			if (t3.elem1 == ERT.am_EXIT) {
+				// close is handled by exception handling code
+				return PORT_ALIVE.DEAD;
+			}
+		} else if ((tup = msg.testTuple()) != null && tup.arity() == 5) {
+			// {'DOWN', ref, process, pid, reason}
+			if (tup.elm(1) == ERT.am_DOWN) {
+				ERef ref = tup.elm(2).testReference();
+				instance.processExit(ref);
+			}
+
+		} 
+
+		return PORT_ALIVE.DEAD;
+		} while (false);
+		
 		throw new ErlangError(ERT.am_badsig, msg);
 	}
 
@@ -492,7 +492,7 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 	 * @param cmd2
 	 * @throws Pausable 
 	 */
-	public EObject control(EProc caller, int op, ByteBuffer cmd2) throws Pausable {
+	public synchronized EObject control(EProc caller, int op, ByteBuffer cmd2) throws Pausable {
 
 		if (pstate == STATE_RUNNING || pstate == STATE_INIT) {
 			// ok
@@ -503,10 +503,6 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 
 		if (ERT.DEBUG_PORT) 
 			System.out.println("ctrl: cmd="+op+"; arg="+EBinary.make(cmd2));
-		
-		while (mbox.hasMessage()) {
-			Task.yield();
-		}		
 		
 		ByteBuffer bb = instance.control(caller.self_handle(), op, cmd2);
 
@@ -552,7 +548,7 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 	 * @return
 	 * @throws Pausable 
 	 */
-	public EObject call(EProc caller, int op, EObject data) throws Pausable {
+	public synchronized EObject call(EProc caller, int op, EObject data) throws Pausable {
 		if (pstate != STATE_RUNNING) {
 			throw ERT.badarg();
 		}
@@ -574,20 +570,31 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 	 * @return
 	 * @throws Pausable
 	 */
-	public void command(final EHandle caller, final ByteBuffer[] out) throws Pausable {
-		mbox.put(new EPortControl() {
+	public synchronized void command(final EHandle caller, final ByteBuffer[] out) {
+		if (pstate != STATE_RUNNING) {
+			throw ERT.badarg();
+		}
+
+		mbox_sendb(new EPortControl() {
+			
 			@Override
-			public void execute() throws Pausable, IOException {
-				instance.outputv(caller, out);
+			public void execute() {
+				try {
+					instance.outputv(caller, out);
+				} catch (IOException e) {
+					throw new ErlangExitSignal(am_ioerr);
+				}
 			}
+			
 		});
+
 	}
 	
 	public void close() throws Pausable {
-		mbox.put(new EPortControl() {
+		mbox_sendb(new EPortControl() {
 			
 			@Override
-			public void execute() throws Exception, Pausable {
+			public void execute() {
 				throw new ErlangExitSignal(am_normal);
 			}
 			
@@ -596,28 +603,28 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 
 	/** our owner died, do something! */
 	@Override
-	protected void process_incoming_exit(EHandle from, EObject reason, boolean exitToSender) throws Pausable
+	protected void process_incoming_exit(EHandle from, EObject reason, boolean exitToSender) 
 			 {
 		
 		// TODO: do special things for reason=kill ?
 		
 		// System.err.println("sending exit msg to self "+this);
-		mbox.put(ETuple.make(ERT.am_EXIT, from, reason));
+		mbox_sendb(ETuple.make(ERT.am_EXIT, from, reason));
 	}
 
 	/* (non-Javadoc)
 	 * @see erjang.ETask#send_exit_to_all_linked(erjang.EObject)
 	 */
 	@Override
-	protected void do_proc_termination(EObject result) throws Pausable {
+	protected void do_proc_termination(EObject result) {
 		
 		if (this.reply_closed_to != null) {
-			this.reply_closed_to.send(self_handle(), ETuple.make(self_handle(), am_closed));
+			this.reply_closed_to.sendb(self_handle(), ETuple.make(self_handle(), am_closed));
 		}
 		
 		super.do_proc_termination(result);
 		if (result != am_normal) {
-			owner.send(self_handle(), ETuple.make(ERT.am_EXIT, self_handle(), result));
+			owner.sendb(self_handle(), ETuple.make(ERT.am_EXIT, self_handle(), result));
 		}
 		//this.port.done();
 		all_ports.remove(this.id);
@@ -636,9 +643,9 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 	 */
 	@Override
 	public void ready(final SelectableChannel ch, final int readyOps) {
-		mbox.putb(new EPortControl() {
+		mbox_sendb(new EPortControl() {
 			@Override
-			public void execute() throws Pausable {
+			public void execute() {
 				if ((readyOps & EDriverInstance.ERL_DRV_READ) == EDriverInstance.ERL_DRV_READ) {
 					instance.readyInput(ch);
 				}
@@ -663,9 +670,9 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 	 */
 	@Override
 	public void released(final SelectableChannel ch) {
-		mbox.putb(new EPortControl() {
+		mbox_sendb(new EPortControl() {
 			@Override
-			public void execute() throws Pausable {
+			public void execute() {
 				instance.stopSelect(ch);
 			}
 		});
@@ -689,6 +696,23 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 	 */
 	public void set_timer(long howlong) {
 		this.abs_timeout = System.currentTimeMillis() + howlong;
+		TimerTask tt = this.timeout_task;
+		if (tt != null) {
+			tt.cancel();
+		}
+		this.timeout_task = new TimerTask() {
+			@Override
+			public void run() {
+				mbox_sendb(new EPortControl() {
+					@Override
+					public void execute() {
+						instance.timeout();
+					}
+				});
+			}
+		};
+		
+		timer.schedule(this.timeout_task, howlong);
 	}
 	
 	public long read_timer() {
@@ -701,6 +725,11 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 	public void cancel_timer(EPort port2) {
 		assert port2 == this.port : "can only cancel timer on self" ;
 		this.abs_timeout = 0;
+		TimerTask tt = this.timeout_task;
+		this.timeout_task = null;
+		if (tt != null) {
+			tt.cancel();
+		}
 	}
 
 
@@ -709,9 +738,9 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 	 */
 	public void async_done(final EAsync job) {
 
-		mbox.putb(new EPortControl() {
+		mbox_sendb(new EPortControl() {
 			@Override
-			public void execute() throws Pausable {
+			public void execute() {
 				instance.readyAsync(job);
 			}
 		});
@@ -721,8 +750,8 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 	 * @param out
 	 * @throws Pausable 
 	 */
-	public void output_from_driver(EObject out) throws Pausable {
-		output_term_from_driver(new ETuple2(port, new ETuple2(am_data, out)));
+	public void output_from_driver(EObject out) {
+		output_term_from_driver_b(new ETuple2(port, new ETuple2(am_data, out)));
 	}
 
 	public void output_from_driver_b(EObject out) {
@@ -747,8 +776,8 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 		output_term_from_driver_b(new ETuple2(port, am_eof));
 	}
 
-	public void eof_from_driver() throws Pausable {
-		output_term_from_driver(new ETuple2(port, am_eof));
+	public void eof_from_driver()  {
+		output_term_from_driver_b(new ETuple2(port, am_eof));
 	}
 
 	public void exit_status_from_driver(int code) throws Pausable {
@@ -785,9 +814,9 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 	}
 
 	public void exit(final EObject reason) {
-		mbox.putb(new EPortControl() {
+		mbox_sendb(new EPortControl() {
 			@Override
-			public void execute() throws Pausable, IOException {
+			public void execute() {
 				throw new ErlangExit(reason);
 			}
 		});
@@ -803,7 +832,7 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 	}
 
 	/** magic direct call ! */
-	public void outputv(EHandle sender, ByteBuffer[] ev) throws IOException, Pausable {
+	public void outputv(EHandle sender, ByteBuffer[] ev) {
 		this.command(sender, ev);
 	}
 

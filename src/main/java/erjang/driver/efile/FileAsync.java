@@ -43,7 +43,7 @@ public abstract class FileAsync implements EAsync {
 	public abstract void async();
 	
 	@Override
-	public abstract void ready() throws Pausable;
+	public abstract void ready();
 
 	/**
 	 * Used by WriteAsync and PWriteVAsync to deque output buffer
@@ -51,7 +51,7 @@ public abstract class FileAsync implements EAsync {
 	public void deq_free_size() {
 	}
 	
-	protected void reply(EFile efile) throws Pausable {
+	protected void reply(EFile efile) {
 		if (result_ok) { 
 			efile.reply_ok();
 		} else {

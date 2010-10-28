@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import erjang.driver.EDriverTask;
 import erjang.m.erlang.ErlDist;
 
 import kilim.Pausable;
@@ -264,7 +265,7 @@ public abstract class EAbstractNode {
 	
 	/** network driver exited! 
 	 * @throws Pausable */
-	public void node_going_down(EHandle sender, EObject reason) throws Pausable {
+	public void node_going_down(EHandle sender, EObject reason)  {
 		
 		for (Map.Entry<EHandle,AtomicInteger> ent : node_monitors.entrySet()) {
 			EHandle handle = ent.getKey();
@@ -272,7 +273,7 @@ public abstract class EAbstractNode {
 			
 			ETuple nd = ETuple.make(am_nodedown, this.node());
 			while (howmany.decrementAndGet() >= 0) {			
-				handle.send(sender, nd);
+				handle.sendb(sender, nd);
 			}
 		}
 		
@@ -281,20 +282,25 @@ public abstract class EAbstractNode {
 	}
 
 	public abstract EObject dsig_reg_send(EInternalPID caller, EAtom name,
-			EObject msg) throws Pausable;
+			EObject msg) ;
 
 	public abstract void dsig_demonitor(EHandle sender, ERef ref,
-			EObject to_pid_or_name) throws Pausable;
+			EObject to_pid_or_name);
 
 	
 	
-	public static EAbstractNode get_or_connect(ETask proc, EAtom n) throws Pausable {
+	public static EAbstractNode get_or_connect(EProc proc, EAtom n) throws Pausable {
 		EAbstractNode res = EPeer.get(n);
 		if (res == null && (proc instanceof EProc)) {			
 			if (ErlDist.net_kernel__connect__1.invoke((EProc) proc, new EObject[] { n }) == ERT.TRUE) {
 				return EPeer.get(n);
 			} 
 		}
+		return res;
+	}
+
+	public static EAbstractNode get_or_connect(EDriverTask proc, EAtom n) {
+		EAbstractNode res = EPeer.get(n);
 		return res;
 	}
 }

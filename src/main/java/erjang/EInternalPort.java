@@ -65,28 +65,28 @@ public class EInternalPort extends EPort implements ELocalHandle {
 	 * @see erjang.EHandle#link_oneway(erjang.EHandle)
 	 */
 	@Override
-	public boolean link_oneway(EHandle other) throws Pausable {
+	public boolean link_oneway(EHandle other) {
 		return task.link_oneway(other);
 	}
 	
 	@Override
-	public void unlink_oneway(EHandle other) throws Pausable {
+	public void unlink_oneway(EHandle other) {
 		task.unlink_oneway(other);
 	}
 	
-	public boolean add_monitor(EHandle target, ERef ref) throws Pausable {
+	public boolean add_monitor(EHandle target, ERef ref)  {
 		// TODO: check if task is alive!
 		return task.add_monitor(target, ref);
 	}
 
 	@Override
-	public void remove_monitor(EHandle sender, ERef r, boolean flush) throws Pausable {
+	public void remove_monitor(EHandle sender, ERef r, boolean flush)  {
 		task.remove_monitor(r, flush);
 	}
 
 	@Override
 	public void send_monitor_exit(EHandle from, ERef ref, EObject reason)
-			throws Pausable {
+			 {
 		EDriverTask task = this.task;
 		if (task != null) {
 			task.send_monitor_exit(from, ref, reason);

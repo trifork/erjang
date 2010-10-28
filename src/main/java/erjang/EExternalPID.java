@@ -78,29 +78,29 @@ public class EExternalPID extends EPID {
 	}
 
 	@Override
-	public void exit_signal(EHandle from_pid, EObject reason, boolean exitToSender) throws Pausable  {
+	public void exit_signal(EHandle from_pid, EObject reason, boolean exitToSender)  {
 		peer().dsig_exit(from_pid, this, reason);
 	}
 	
 	@Override
-	public boolean add_monitor(EHandle from_pid, ERef ref) throws Pausable {
+	public boolean add_monitor(EHandle from_pid, ERef ref) {
 		peer().dsig_monitor(from_pid, this, ref);
 		return true;
 	}
 
 	@Override
-	public boolean link_oneway(EHandle other) throws Pausable  {
+	public boolean link_oneway(EHandle other)  {
 		peer().dsig_link(other, this);
 		return true;
 	}
 
 	@Override
-	public void unlink_oneway(EHandle other) throws Pausable {
+	public void unlink_oneway(EHandle other) {
 		peer().dsig_unlink(other, this);
 	}
 	
 	@Override
-	public void remove_monitor(EHandle sender, ERef ref, boolean flush) throws Pausable {
+	public void remove_monitor(EHandle sender, ERef ref, boolean flush) {
 		peer().dsig_demonitor(sender, ref, this);
 	}
 	
@@ -110,7 +110,12 @@ public class EExternalPID extends EPID {
 	}
 	
 	@Override
-	public void send_monitor_exit(EHandle from, ERef ref, EObject reason) throws Pausable {
+	public int sendb(EHandle sender, EObject msg) {
+		return peer().dsig_send(sender, this, msg);
+	}
+	
+	@Override
+	public void send_monitor_exit(EHandle from, ERef ref, EObject reason) {
 		peer().dsig_send_monitor_exit(from, this, ref, reason);
 	}
 	

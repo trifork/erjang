@@ -76,7 +76,7 @@ public class FDDriverInstance extends EDriverInstance {
 	}
 
 	@Override
-	protected void readyAsync(EAsync data) throws Pausable {
+	protected void readyAsync(EAsync data)  {
 		data.ready();
 	}
 
@@ -92,7 +92,7 @@ public class FDDriverInstance extends EDriverInstance {
 					ERT.run_async(new EAsync() {
 						
 						@Override
-						public void ready() throws Pausable {
+						public void ready() {
 
 							if (howmany < 0) {
 								if (task.send_eof) {
@@ -154,7 +154,7 @@ public class FDDriverInstance extends EDriverInstance {
 	}
 
 	@Override
-	protected ByteBuffer control(EPID caller, int command, ByteBuffer out) throws Pausable {
+	protected ByteBuffer control(EPID caller, int command, ByteBuffer out)  {
 		if (command == CTRL_OP_GET_WINSIZE) {
 			// TODO: hmm, how do we do that?
 			// for now, we always respond 80x25.
@@ -169,18 +169,7 @@ public class FDDriverInstance extends EDriverInstance {
 	}
 	
 	@Override
-	protected EObject call(EPID caller, int command, EObject data) throws Pausable {
-		// allways return null
-		return null;
-	}
-
-
-	@Override
-	protected void flush() throws Pausable {
-	}
-
-	@Override
-	protected void output(EHandle caller, ByteBuffer data) throws IOException, Pausable {
+	protected void output(EHandle caller, ByteBuffer data) throws IOException  {
 		if (outs != null) {
 			if (data.hasArray()) {
 				outs.write(data.array(), data.arrayOffset(), data.remaining());
@@ -190,26 +179,5 @@ public class FDDriverInstance extends EDriverInstance {
 		}
 	}
 
-	@Override
-	public void processExit(ERef monitor) throws Pausable {
-		// TODO Auto-generated method stub
-
-	}
-
-
-	@Override
-	protected void readyInput(SelectableChannel ch) throws Pausable {
-
-	}
-
-	@Override
-	protected void readyOutput(SelectableChannel evt) throws Pausable {
-
-	}
-
-	@Override
-	protected void timeout() throws Pausable {
-
-	}
 
 }

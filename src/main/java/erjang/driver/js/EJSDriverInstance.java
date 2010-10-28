@@ -59,22 +59,22 @@ public class EJSDriverInstance extends EDriverInstance {
 		super(driver);
 	}
 
-	void send_ok_response(EBinary call_id) throws Pausable {
+	void send_ok_response(EBinary call_id) {
 		driver_output_term(ETuple.make(call_id, am_ok));
 	}
 
 	void send_error_string_response(EBinary call_id, String msg)
-			throws Pausable {
+			 {
 		driver_output_term(ETuple.make(call_id, am_error, EBinary
 				.fromString(msg)));
 	}
 
-	void send_string_response(EBinary call_id, String result) throws Pausable {
+	void send_string_response(EBinary call_id, String result)  {
 		driver_output_term(ETuple.make(call_id, am_ok, EBinary
 				.fromString(result)));
 	}
 
-	void unknown_command(EBinary call_id) throws Pausable {
+	void unknown_command(EBinary call_id)  {
 		driver_output_term(ETuple.make(call_id, am_error, am_unknown_command));
 	}
 
@@ -86,14 +86,13 @@ public class EJSDriverInstance extends EDriverInstance {
 	private VM vm; 
 	
 	@Override
-	protected void readyAsync(EAsync data) throws Pausable {
+	protected void readyAsync(EAsync data) {
 		data.ready();
 	}
 
 
 	@Override
-	protected void output(EHandle caller, final ByteBuffer buf) throws IOException,
-			Pausable {
+	protected void output(EHandle caller, final ByteBuffer buf)  {
 
 		final int cmd = buf.getShort();
 		final EBinary call_id = read_binary(buf);
@@ -144,7 +143,7 @@ public class EJSDriverInstance extends EDriverInstance {
 				
 				// called when done
 				@Override
-				public void ready() throws Pausable {
+				public void ready() {
 
 					if (err != null) {
 						send_error_string_response(call_id, err);

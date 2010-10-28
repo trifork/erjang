@@ -137,20 +137,18 @@ public class ZLibDriver extends EDriverInstance {
 	ArrayList<ByteBuffer> inbuf = new ArrayList<ByteBuffer>();
 
 	@Override
-	protected void output(EHandle caller, ByteBuffer buf) throws IOException,
-			Pausable {
+	protected void output(EHandle caller, ByteBuffer buf)  {
 		inbuf.add(buf);
 	}
 	
 	@Override
-	protected void outputv(EHandle caller, ByteBuffer[] buf) throws IOException,
-			Pausable {
+	protected void outputv(EHandle caller, ByteBuffer[] buf)  {
 		for (int i = 0; i < buf.length; i++) {
 			inbuf.add(buf[i]);
 		}
 	}
 	
-	void do_inflate(int flush_mode) throws Pausable {
+	void do_inflate(int flush_mode) {
 		int err = ZStream.Z_OK;
 		
 		read_loop:
@@ -201,7 +199,7 @@ public class ZLibDriver extends EDriverInstance {
 		}
 	}
 	
-	void do_deflate(int flush_mode) throws Pausable {
+	void do_deflate(int flush_mode) {
 		int err = ZStream.Z_OK;
 		
 		read_loop:
@@ -254,7 +252,7 @@ public class ZLibDriver extends EDriverInstance {
 	
 	@Override
 	protected ByteBuffer control(EPID caller, int command, ByteBuffer cmd)
-			throws Pausable {
+			 {
 
 		switch (command) {
 		case INFLATE_INIT:
@@ -313,7 +311,7 @@ public class ZLibDriver extends EDriverInstance {
 	}
 
 	@Override
-	protected void readyAsync(EAsync data) throws Pausable {
+	protected void readyAsync(EAsync data) {
 		data.ready();
 	}
 

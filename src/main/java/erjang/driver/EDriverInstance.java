@@ -110,7 +110,7 @@ public abstract class EDriverInstance extends EDriverControl {
 		ERT.run_async(job, task);
 	}
 
-	protected void driver_outputv(ByteBuffer hdr, ByteBuffer[] ev) throws Pausable {
+	protected void driver_outputv(ByteBuffer hdr, ByteBuffer[] ev) {
 		
 		EObject resp = ERT.NIL;
 		
@@ -136,7 +136,7 @@ public abstract class EDriverInstance extends EDriverControl {
 		task.output_from_driver(res);
 	}
 	
-	protected void driver_output2(ByteBuffer header, ByteBuffer buf) throws Pausable {
+	protected void driver_output2(ByteBuffer header, ByteBuffer buf) {
 
 		int status = task.status;
 		
@@ -172,7 +172,7 @@ public abstract class EDriverInstance extends EDriverControl {
 		task.output_from_driver(out);
 	}
 	
-	protected void driver_output(ByteBuffer buf) throws Pausable {
+	protected void driver_output(ByteBuffer buf) {
 		
 		int status = task.status;
 		
@@ -205,13 +205,13 @@ public abstract class EDriverInstance extends EDriverControl {
 		task.output_from_driver(out);
 	}
 	
-	public void driver_output_term(EObject term) throws Pausable {
-		task.output_term_from_driver(term);
+	public void driver_output_term(EObject term)  {
+		task.output_term_from_driver_b(term);
 	}
 
-	public void driver_send_term(EHandle caller, ETuple msg) throws Pausable {
+	public void driver_send_term(EHandle caller, ETuple msg)  {
 		if (caller != null) {
-			caller.send(task.self_handle(), msg);
+			caller.sendb(task.self_handle(), msg);
 		}
 	}
 
@@ -221,7 +221,7 @@ public abstract class EDriverInstance extends EDriverControl {
 	 * @param binp
 	 * @throws Pausable 
 	 */
-	protected void driver_output_binary(byte[] header, ByteBuffer binp) throws Pausable {
+	protected void driver_output_binary(byte[] header, ByteBuffer binp) {
 		EObject out = EBinary.make(binp);
 		if (header.length > 0) {
 			out = new EBinList(header, out);
@@ -268,7 +268,7 @@ public abstract class EDriverInstance extends EDriverControl {
 		return this.caller;
 	}
 
-	protected boolean driver_demonitor_process(ERef monitor) throws Pausable {
+	protected boolean driver_demonitor_process(ERef monitor) {
 		try {
 			return ErlProc.demonitor(task, monitor, ERT.NIL) == ERT.TRUE;
 		} catch (ErlangException e) {
@@ -285,11 +285,11 @@ public abstract class EDriverInstance extends EDriverControl {
 	}
 
 	
-	protected ERef driver_monitor_process(EPID pid) throws Pausable {
+	protected ERef driver_monitor_process(EPID pid) {
 		ERef ref = ERT.getLocalNode().createRef();
 		
 		if (!task.monitor(pid, pid, ref)) {
-			port().send(port(), ETuple.make(ERT.am_DOWN, ref, ErlProc.am_process, pid, ERT.am_noproc));
+			port().sendb(port(), ETuple.make(ERT.am_DOWN, ref, ErlProc.am_process, pid, ERT.am_noproc));
 		}
 		
 		return ref;
@@ -363,7 +363,7 @@ public abstract class EDriverInstance extends EDriverControl {
 	 * Called on behalf of driver_select when it is safe to release 'event'. A
 	 * typical unix driver would call close(event)
 	 */
-	protected void stopSelect(SelectableChannel event) throws Pausable {
+	protected void stopSelect(SelectableChannel event)  {
 	}
 
 	/**
@@ -379,7 +379,7 @@ public abstract class EDriverInstance extends EDriverControl {
 	 * behavior is to do nothing.
 	 */
 
-	protected void stop(EObject reason) throws Pausable {
+	protected void stop(EObject reason) {
 		if ((task.status & EDriverTask.ERTS_PORT_SFLG_DISTRIBUTION) != 0) {
 			
 			EPeer node = task.node();
@@ -395,50 +395,50 @@ public abstract class EDriverInstance extends EDriverControl {
 	/*
 	 * called when we have output from erlang to the port
 	 */
-	protected abstract void output(EHandle caller, ByteBuffer buf) throws IOException, Pausable;
+	protected abstract void output(EHandle caller, ByteBuffer buf) throws IOException ;
 
 	/*
 	 * called when we have output from erlang to the port, and the iodata()
 	 * passed in contains multiple fragments. Default behavior is to flatten the
 	 * input vector, and call EDriverInstance#output(ByteBuffer).
 	 */
-	protected void outputv(EHandle caller, ByteBuffer[] ev) throws IOException, Pausable {
+	protected void outputv(EHandle caller, ByteBuffer[] ev) throws IOException {
 		output(caller, flatten(ev));
 	}
 
 	/*
 	 * called when we have input from one of the driver's handles)
 	 */
-	protected void readyInput(SelectableChannel ch) throws Pausable {};
+	protected void readyInput(SelectableChannel ch)  {};
 
 	/*
 	 * called when output is possible to one of the driver's handles
 	 */
-	protected void readyOutput(SelectableChannel evt) throws Pausable {};
+	protected void readyOutput(SelectableChannel evt)  {};
 
 	/* called when "action" is possible, async job done */
-	protected void readyAsync(EAsync data) throws Pausable {}
+	protected void readyAsync(EAsync data)  {}
 
 	/*
 	 * "ioctl" for drivers - invoked by port_control/3)
 	 */
-	protected ByteBuffer control(EPID pid, int command, ByteBuffer cmd) throws Pausable {
+	protected ByteBuffer control(EPID pid, int command, ByteBuffer cmd) {
 		throw ERT.badarg();
 	}
 
 	/* Handling of timeout in driver */
-	protected void timeout() throws Pausable {};
+	protected void timeout() {};
 
 	/*
 	 * called when the port is about to be closed, and there is data in the
 	 * driver queue that needs to be flushed before 'stop' can be called
 	 */
-	protected void flush() throws Pausable {};
+	protected void flush() {};
 
 	/*
 	 * Works mostly like 'control', a syncronous call into the driver.
 	 */
-	protected EObject call(EPID caller, int command, EObject data) throws Pausable {
+	protected EObject call(EPID caller, int command, EObject data)  {
 		throw ERT.badarg();
 	}
 
@@ -447,7 +447,7 @@ public abstract class EDriverInstance extends EDriverControl {
 	 * @param ch
 	 * @throws Pausable 
 	 */
-	public void readyConnect(SelectableChannel evt) throws Pausable {
+	public void readyConnect(SelectableChannel evt)  {
 		// TODO Auto-generated method stub
 
 	}
@@ -456,7 +456,7 @@ public abstract class EDriverInstance extends EDriverControl {
 	 * @param ch
 	 * @throws Pausable 
 	 */
-	public void readyAccept(SelectableChannel ch) throws Pausable {
+	public void readyAccept(SelectableChannel ch)  {
 
 	}
 

@@ -25,5 +25,5 @@ import kilim.Pausable;
  * 
  */
 public interface ExitHook {
-	void on_exit (EInternalPID pid) throws Pausable;
+	void on_exit (EInternalPID pid);
 }
