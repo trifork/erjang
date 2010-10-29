@@ -338,7 +338,7 @@ bs_add onFail x y yunit dest:
 
 %class BSAppend(label:L src2:S i3:I i4:I i5:I src6:S i7:I dest8:D)
 bs_append onFail extra_size dummy3 dummy4 unit src flags dest:
-	SET(dest, EBitStringBuilder.bs_append(GET(src), ERT.unboxToInt(GET(extra_size)), GET(unit), GET(flags)).bitstring());
+	bit_string_builder = EBitStringBuilder.bs_append(GET(src), ERT.unboxToInt(GET(extra_size)), GET(unit), GET(flags)); SET(dest, bit_string_builder.bitstring());
 
 %class D(dest:D)
 bs_context_to_binary srcdest:
