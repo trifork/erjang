@@ -726,6 +726,12 @@ public class ErlBif {
 	}
 
 	@BIF(type = Type.ARITHBIF)
+	static public double fdiv(EDouble v1, EDouble v2) {
+		test_zero(v1.value, v2.value);
+		return v1.value / v2.value;
+	}
+
+	@BIF(type = Type.ARITHBIF)
 	static public double fsub(double v1, double v2) {
 		return v1 - v2;
 	}

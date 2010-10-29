@@ -31,8 +31,10 @@ import erjang.EProc;
 
 import erjang.EObject;
 import erjang.EAtom;
+import erjang.ENumber;
 import erjang.EInteger;
 import erjang.ESmall;
+import erjang.EDouble;
 import erjang.ESeq;
 import erjang.ECons;
 import erjang.ETuple;
@@ -43,6 +45,7 @@ import erjang.EString;
 import erjang.EBinMatchState;
 import erjang.ErlangException;
 import erjang.EBitStringBuilder;
+import erjang.m.erlang.ErlBif;
 
 import erjang.beam.BeamFileData;
 import erjang.beam.FunctionVisitor;
@@ -206,6 +209,7 @@ public class Interpreter extends AbstractInterpreter {
 				final short[] code = Module.this.code;
 				EObject stack[] = proc.stack;
 				int sp = proc.sp;
+				EDouble[] freg = proc.fregs;
 
 				// For exception handling:
 				ExceptionHandlerStackElement exh = null;
