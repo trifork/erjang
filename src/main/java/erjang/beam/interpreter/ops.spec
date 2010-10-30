@@ -269,9 +269,14 @@ timeout:
 %class LDIID(label:L dest:D i3:I i4:I dest5:D)
 bs_start_match2 failLabel src _ slots dest:
 	EObject tmp = EBinMatchState.bs_start_match2(GET(src), GET(slots)); if (tmp==null) GOTO(failLabel); else SET(dest, tmp);
-#bs_get_utf8:
-#bs_get_utf16:
-#bs_get_utf32:
+
+bs_get_utf8 failLabel src _ flags dest:
+	int chr = ((EBinMatchState)(GET(src))).bs_get_utf8(GET(flags)); if (chr < 0) GOTO(failLabel); else SET(dest, ERT.box(chr));
+bs_get_utf16 failLabel src _ flags dest:
+	int chr = ((EBinMatchState)(GET(src))).bs_get_utf16(GET(flags)); if (chr < 0) GOTO(failLabel); else SET(dest, ERT.box(chr));
+bs_get_utf32 failLabel src _ flags dest:
+	int chr = ((EBinMatchState)(GET(src))).bs_get_utf32(GET(flags)); if (chr < 0) GOTO(failLabel); else SET(dest, ERT.box(chr));
+
 
 %class LDBi(label:L dest:D bin:c)
 bs_match_string failLabel src string:
@@ -306,6 +311,12 @@ bs_skip_utf32 failLabel ms _dummy flags:
 bs_skip_bits2 failLabel ms bits unit flags:
 	EObject tmp = ((EBinMatchState)(GET(ms))).bs_skip_bits2(((EInteger)GET(bits)), GET(unit), GET(flags)); if (tmp==null) GOTO(failLabel);
 
+%class LSD(label:L src:S dest:D)
+bs_utf8_size failLabel value dest:
+	SET(dest, EBitStringBuilder.bs_utf8_size(GET(value))); // Label unused??
+bs_utf16_size failLabel value dest:
+	SET(dest, EBitStringBuilder.bs_utf16_size(GET(value))); // Label unused??
+
 
 %class DI(dest:D i2:I)
 bs_save2 ms pos:
@@ -320,6 +331,8 @@ bs_restore2 ms pos:
 bs_init2 onFail size _unit _keep flags dest:
 	bit_string_builder = ERT.bs_init(((ESmall)GET(size)).intValue(), GET(flags)); SET(dest, bit_string_builder.bitstring());
 # TODO: use unit (is it i3 or i4, btw?)
+bs_init_bits onFail size _unit _keep flags dest:
+	bit_string_builder = ERT.bs_initBits(((ESmall)GET(size)).intValue(), GET(flags)); SET(dest, bit_string_builder.bitstring());
 
 %class By(bin:c)
 bs_put_string value:
@@ -331,6 +344,17 @@ bs_put_integer onFail size unit flags value:
 
 bs_put_binary onFail size unit flags value:
 	EInteger size = GET(size).testInteger(); int actualSize = (size==null)? -1 : size.intValue() * GET(unit); bit_string_builder.put_bitstring(GET(value), actualSize, GET(flags));
+
+bs_put_float onFail size unit flags value:
+	bit_string_builder.put_float(GET(value), GET(unit) * ((ESmall)GET(size)).intValue(), GET(flags));
+
+%class LIS(label:L i2:I src:S)
+bs_put_utf8 onFail flags value:
+	bit_string_builder.put_utf8(GET(value), GET(flags));
+bs_put_utf16 onFail flags value:
+	bit_string_builder.put_utf16(GET(value), GET(flags));
+bs_put_utf32 onFail flags value:
+	bit_string_builder.put_utf32(GET(value), GET(flags));
 
 %class LSSID(label:L0 src1:S src2:S i3:I dest:D)
 bs_add onFail x y yunit dest:
