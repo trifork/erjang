@@ -72,7 +72,6 @@ sub split_into_args {
     my ($s) = @_;
     my @res = ();
     pos($s) = undef;
-print STDERR "DB| split_into_args: '$s'\n";
     while ($s =~ /\G($BALANCED_NO_TOPLEVEL_COMMA_RE)(,|$|(?=\)))/g) {push(@res,$1);}
     return @res;
 }
