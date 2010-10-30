@@ -72,7 +72,7 @@ public class Interpreter extends AbstractInterpreter {
 	public static class Encoder extends AbstractInterpreter.Encoder {
 
 		protected EModule makeModule(String name,
-									 short[] code, EObject[] consts,
+									 char[] code, EObject[] consts,
 									 ValueJumpTable[] value_jump_tables,
 									 ArityJumpTable[] arity_jump_tables,
 									 List<FunIDWithEntry> exports, List<FunIDWithGuardedness> imports)
@@ -115,6 +115,7 @@ public class Interpreter extends AbstractInterpreter {
 				//System.err.println("@ "+opcode_pos+": "+insn.toSymbolic());
 				switch (insn.opcode()) {
 #ENCODE#
+				default: throw new ErlangException("Unknown opcode: "+insn);
 				} // switch
 			}
 		}
@@ -123,7 +124,7 @@ public class Interpreter extends AbstractInterpreter {
 	}
 
     public static class Module extends AbstractInterpreter.Module {
-		final private short[] code;
+		final private char[] code;
 		final private EObject[] consts;
 		final private ValueJumpTable[] value_jump_tables;
 		final private ArityJumpTable[] arity_jump_tables;
@@ -132,7 +133,7 @@ public class Interpreter extends AbstractInterpreter {
 		final private EFun[] ext_funs;
 
 		Module(String name,
-			   short[] code, EObject[] consts,
+			   char[] code, EObject[] consts,
 			   ValueJumpTable[] value_jump_tables,
 			   ArityJumpTable[] arity_jump_tables,
 			   List<FunIDWithEntry> exports, List<FunIDWithGuardedness> imports)
@@ -145,7 +146,7 @@ public class Interpreter extends AbstractInterpreter {
 			this.exports = exports;
 			this.imports = imports;
 			ext_funs = new EFun[imports.size()];
-			System.err.println("INT| Constructed module for "+this.name);
+			if (DEBUG) System.err.println("INT| Constructed module for "+this.name);
 			setup();
 		}
 
@@ -157,7 +158,7 @@ public class Interpreter extends AbstractInterpreter {
 				FunIDWithGuardedness imp_wg = imports.get(i);
 				FunID imp = imp_wg.fun;
 				boolean is_guard = imp_wg.is_guard;
-				System.err.println("INT| Import #"+i+": "+imp+" / "+is_guard);
+// 				System.err.println("INT| Import #"+i+": "+imp+" / "+is_guard);
 
 				// If this is a BIF, resolve it right away:
 				BuiltInFunction bif =
@@ -201,12 +202,12 @@ public class Interpreter extends AbstractInterpreter {
 
 			/** Local call - with given PC and register array */
 			public EObject invoke_local(final EProc proc, final EObject[] reg, int argCnt, int pc) throws Pausable {
-				System.err.println("INT| invoking "+name+"@"+pc+"...");
+// 				System.err.println("INT| invoking "+name+"@"+pc+"...");
 				return interpret(proc, pc, reg);
 			}
 
 			public EObject interpret(final EProc proc, int pc, EObject[] reg) throws Pausable {
-				final short[] code = Module.this.code;
+				final char[] code = Module.this.code;
 				EObject stack[] = proc.stack;
 				int sp = proc.sp;
 				EDouble[] freg = proc.fregs;
@@ -276,7 +277,7 @@ public class Interpreter extends AbstractInterpreter {
 			}
 
 			public EObject invoke(final EProc proc, final EObject[] args) throws Pausable {
-				System.err.println("INT| Closure invoked @ "+start_pc);
+// 				System.err.println("INT| Closure invoked @ "+start_pc);
 				int argCnt = args.length;
 				int envCnt = env.length;
 				EObject[] reg = new EObject[1024]; //??

@@ -4,8 +4,6 @@ use ErjIG_Util;
 use ErjIG_Operands;
 use ErjIG_Prefetching;
 
-my @MACROS = ('GET', 'SET', 'GOTO', 'TABLEJUMP', 'GET_PC', 'IS_GUARD');
-
 my $enum_code  = "";
 my $interp_code = "";
 my $encoder_code = "";

@@ -44,8 +44,8 @@ sub multi_subst {
     return $template;
 }
 
-my $BALANCED_RE = '(?:(?(DEFINE)(?<BALANCED>[^()]+|\((?&BALANCED)\)))([^()]+|\((?&BALANCED)\))+)';
-my $BALANCED_NO_TOPLEVEL_COMMA_RE = '(?:(?(DEFINE)(?<BALANCED>[^()]+|\((?&BALANCED)\)))([^(),]+|\((?&BALANCED)\))+)';
+my $BALANCED_RE = '(?:(?(DEFINE)(?<BALANCED>([^()]+|\((?&BALANCED)\))*))([^()]+|\((?&BALANCED)\))+)';
+my $BALANCED_NO_TOPLEVEL_COMMA_RE = '(?:(?(DEFINE)(?<BALANCED>([^()]+|\((?&BALANCED)\))*))([^(),]+|\((?&BALANCED)\))+)';
 sub back_subst {
     my ($subject, $subst_map) = @_;
     foreach my $macro (keys %{$subst_map}) {
@@ -59,7 +59,7 @@ sub back_subst {
 	    # Substitute macro "$macro":
 	    $subject =~ s/\b$macro\b\(($BALANCED_RE?)\)/{
 my @actuals = split_into_args($1);
-die "Wrong number of arguments to macro '$macro' (expected ".scalar @formals.", found ".scalar @actuals.")" unless ($#actuals==$#formals);
+die "Wrong number of arguments to macro '$macro' (expected ".scalar @formals.", found ".scalar @actuals.": ".join(',',@actuals).")" unless ($#actuals==$#formals);
 my $arg_map = make_map(\@formals, \@actuals);
 back_subst($body, $arg_map)
             }/ge; # /
@@ -71,7 +71,9 @@ back_subst($body, $arg_map)
 sub split_into_args {
     my ($s) = @_;
     my @res = ();
-    while ($s =~ /($BALANCED_NO_TOPLEVEL_COMMA_RE),?/g) {push(@res,$1);}
+    pos($s) = undef;
+print STDERR "DB| split_into_args: '$s'\n";
+    while ($s =~ /\G($BALANCED_NO_TOPLEVEL_COMMA_RE)(,|$|(?=\)))/g) {push(@res,$1);}
     return @res;
 }
 
