@@ -115,7 +115,7 @@ public class Interpreter extends AbstractInterpreter {
 				//System.err.println("@ "+opcode_pos+": "+insn.toSymbolic());
 				switch (insn.opcode()) {
 #ENCODE#
-				default: throw new ErlangException("Unknown opcode: "+insn);
+				default: throw new Error("Unknown opcode: "+insn);
 				} // switch
 			}
 		}
