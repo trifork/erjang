@@ -13,11 +13,6 @@ remove_message:
 int_code_end:
  	{}
 
-# fclearerror:
-# 	//TODO
-# bs_init_writable:
-# 	//TODO
-
 ##########==========     ERROR REPORTING    	  ==========##########
 
 %class Insn()
@@ -265,6 +260,14 @@ wait_timeout label millis:
 timeout:
 	ERT.timeout(proc);
 
+%class L(label:L)
+#NOPs for now:
+recv_mark lbl:
+	{}
+recv_set lbl:
+	{}
+
+
 ##########==========       MATCHING OF BINARIES    ==========##########
 %class LDIID(label:L dest:D i3:I i4:I dest5:D)
 bs_start_match2 failLabel src _ slots dest:
@@ -287,7 +290,8 @@ bs_match_string failLabel src string:
 bs_get_integer2 failLabel src _keep bits unit flags dest:
 	EObject tmp = ((EBinMatchState)(GET(src))).bs_get_integer2(((ESmall)GET(bits)).intValue(), GET(unit), GET(flags)); if (tmp == null) GOTO(failLabel); else SET(dest, tmp);
 
-#bs_get_float2:
+bs_get_float2 failLabel src _keep bits unit flags dest:
+	EObject tmp = ((EBinMatchState)(GET(src))).bs_get_float2(((ESmall)GET(bits)).intValue(), GET(unit), GET(flags)); if (tmp == null) GOTO(failLabel); else SET(dest, tmp);
 
 bs_get_binary2 failLabel ms _keep bits unit flags dest:
 	EObject tmp = ((EBinMatchState)(GET(ms))).bs_get_binary2(GET(bits), GET(flags)); if (tmp==null) GOTO(failLabel); else SET(dest, tmp);
@@ -327,6 +331,10 @@ bs_restore2 ms pos:
 
 ##########==========    CONSTRUCTION OF BINARIES  ==========##########
 
+%class Insn()
+bs_init_writable:
+	bit_string_builder = EBitStringBuilder.bs_init_writable(reg[0]); reg[0] = bit_string_builder.bitstring();
+
 %class LSIIID(label:L src2:S i3:I i4:I i5:I dest:D)
 bs_init2 onFail size _unit _keep flags dest:
 	bit_string_builder = ERT.bs_init(((ESmall)GET(size)).intValue(), GET(flags)); SET(dest, bit_string_builder.bitstring());
@@ -362,6 +370,10 @@ bs_add onFail x y yunit dest:
 
 %class BSAppend(label:L src2:S i3:I i4:I i5:I src6:S i7:I dest8:D)
 bs_append onFail extra_size dummy3 dummy4 unit src flags dest:
+	bit_string_builder = EBitStringBuilder.bs_append(GET(src), ERT.unboxToInt(GET(extra_size)), GET(unit), GET(flags)); SET(dest, bit_string_builder.bitstring());
+
+%class BSPrivateAppend(label:L src2:S i3:I src4:S i5:I dest:D)
+bs_private_append onFail extra_size unit src flags dest:
 	bit_string_builder = EBitStringBuilder.bs_append(GET(src), ERT.unboxToInt(GET(extra_size)), GET(unit), GET(flags)); SET(dest, bit_string_builder.bitstring());
 
 %class D(dest:D)
