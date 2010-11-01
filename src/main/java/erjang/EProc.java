@@ -730,6 +730,8 @@ public final class EProc extends ETask<EInternalPID> {
 	public long timeout_start;
 
 	public boolean in_receive;
+
+	public EObject[] regs;
 	
 	/**
 	 * @param hook

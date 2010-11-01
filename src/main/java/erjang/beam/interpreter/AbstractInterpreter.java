@@ -267,6 +267,13 @@ public class AbstractInterpreter {
 
 	//---------- Utility functions for interpreter: --------------------
 
+    protected static EObject[] getRegs(erjang.EProc proc) {
+    	if (proc.regs == null) {
+    		proc.regs = new EObject[1024];
+    	}
+    	return proc.regs;
+    }
+    
 	protected static EObject[] ensureCapacity(EObject[] array, int atLeast) {
 		if (atLeast >= array.length) {
 			EObject[] tmp = new EObject[(atLeast)*3/2];
