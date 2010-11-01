@@ -70,17 +70,17 @@ public class BeamLoader extends CodeTables {
     static final boolean DEBUG = false;
     static final boolean DEBUG_ON_ERROR = true;
 
+	/** For testing purposes. */
     public static void main(String[] args) throws IOException {
 		for (String filename : args) read(filename);
     }
-
 
     public static ModuleRepr read(String filename) throws IOException {
 		long file_size = new File(filename).length();
 		DataInputStream in = null;
 		try {
 			in = new DataInputStream(new FileInputStream(filename));
-			BeamLoader bl = new BeamLoader(in, file_size);
+			BeamLoader bl = new BeamLoader(in, file_size, false);
 			bl.read();
 			return bl.toModuleRepr();
 		} finally {
@@ -90,13 +90,14 @@ public class BeamLoader extends CodeTables {
 
     public static ModuleRepr parse(byte[] data) throws IOException {
 		ByteArrayInputStream in = new ByteArrayInputStream(data);
-		BeamLoader bl = new BeamLoader(new DataInputStream(in), data.length);
+		BeamLoader bl = new BeamLoader(new DataInputStream(in), data.length, false);
 		bl.read();
 		return bl.toModuleRepr();
     }
 
     //======================================================================
     private EInputStream in;
+	private boolean include_debug_info;
     private EObject attributes, compilation_info, abstract_tree;
     private FunctionInfo[] exports, localFunctions;
     private ArrayList<Insn> code;
@@ -139,7 +140,8 @@ public class BeamLoader extends CodeTables {
 	};
 
     // TODO: Take an InputStream instead of a DataInputStream (to avoid overhead when we start out with a ByteArrayInputStream).
-    public BeamLoader(DataInputStream in, long actual_file_size) throws IOException {
+    public BeamLoader(DataInputStream in, long actual_file_size, boolean include_debug_info) throws IOException {
+		this.include_debug_info = include_debug_info;
 		if (in.readInt() != FOR1) throw new IOException("Bad header. Not an IFF1 file.");
 		int stated_length = in.readInt();
 		if (in.readInt() != BEAM) throw new IOException("Bad header. Not a BEAM code file.");
@@ -454,6 +456,7 @@ public class BeamLoader extends CodeTables {
 
     public void readASTSection() throws IOException {
 		if (DEBUG) System.err.println("readASTSection");
+		if (!include_debug_info) return;
 		abstract_tree = in.read_any();
 // 	if (DEBUG) System.err.println("AST: "+abstract_tree);
     }

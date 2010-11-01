@@ -49,10 +49,12 @@ import erjang.beam.repr.FunctionInfo;
 import kilim.Pausable;
 
 public class AbstractInterpreter {
+	static final boolean DEBUG = false;
+
 	public static abstract class Encoder implements ModuleVisitor {
 		private EAtom moduleName;
 		final HashMap<Integer,Insn> insn_start = new HashMap<Integer,Insn>();
-		final ArrayList<Short>     code      = new ArrayList<Short>();
+		final ArrayList<Character>/*uint16*/ code   = new ArrayList<Character>();
 		final ArrayList<EObject>   consts    = new ArrayList<EObject>();
 		final ArrayList<ValueJumpTable> value_jump_tables = new ArrayList<ValueJumpTable>();
 		final ArrayList<ArityJumpTable> arity_jump_tables = new ArrayList<ArityJumpTable>();
@@ -64,7 +66,6 @@ public class AbstractInterpreter {
 		final ArrayList<FunctionInfo>	raw_exports = new ArrayList<FunctionInfo>();
 
 		public void visitModule(EAtom name) {
-			System.err.println("Interpreter.Encoder| doing module "+name);
 			this.moduleName = name;
 		}
 
@@ -75,27 +76,29 @@ public class AbstractInterpreter {
 		public void visitAttribute(EAtom att, EObject value) {}
 
 		public void visitEnd() {
-			System.err.println("Interpreter code for module '"+moduleName+"':");
+ 			if (DEBUG) System.err.println("Interpreter code for module '"+moduleName+"':");
 
 			for (Backpatch bp : backpatches) {
 				bp.patch(label_map.get(bp.label));
 			}
 
-			for (int i=0; i<code.size(); i++) {
-				Insn insn = insn_start.get(i);
-				System.err.println((insn!=null? "*" : " ") + i +
-								   ": " + code.get(i) +
-								   (insn!=null ? ("\t"+insn.toSymbolic().toString()) : ""));
+			if (DEBUG) {
+				for (int i=0; i<code.size(); i++) {
+					Insn insn = insn_start.get(i);
+					System.err.println((insn!=null? "*" : " ") + i +
+									   ": " + code.get(i) +
+									   (insn!=null ? ("\t"+insn.toSymbolic().toString()) : ""));
+				}
 			}
 		}
 
 		public EModule toEModule() {
-			short[] codeArray = toShortArray(code);
+			char[] codeArray = toArray(code);
 			EObject[] constArray = consts.toArray(new EObject[consts.size()]);
 			ValueJumpTable[] valueJumpTableArray = value_jump_tables.toArray(new ValueJumpTable[value_jump_tables.size()]);
 			ArityJumpTable[] arityJumpTableArray = arity_jump_tables.toArray(new ArityJumpTable[arity_jump_tables.size()]);
 			List<FunIDWithEntry> exports = convertExports(raw_exports);
-			System.err.println("INT| Constructing module for "+moduleName.getName());
+			if (DEBUG) System.err.println("INT| Constructing module for "+moduleName.getName());
 			return makeModule(moduleName.getName(),
 							  codeArray, constArray,
 							  valueJumpTableArray, arityJumpTableArray,
@@ -103,14 +106,14 @@ public class AbstractInterpreter {
 		}
 
 		protected abstract EModule makeModule(String name,
-											  short[] code, EObject[] consts,
+											  char[] code, EObject[] consts,
 											  ValueJumpTable[] value_jump_tables,
 											  ArityJumpTable[] arity_jump_tables,
 											  List<FunIDWithEntry> exports, List<FunIDWithGuardedness> imports);
 
-		static short[] toShortArray(List<Short> org) {
+		static char[] toArray(List<Character> org) {
 			int len = org.size();
-			short[] res = new short[len];
+			char[] res = new char[len];
 			for (int i=0; i<len; i++) res[i] = org.get(i);
 			return res;
 		}
@@ -132,26 +135,26 @@ public class AbstractInterpreter {
 
 		protected int codePos() {return code.size();}
 
-		protected void emit(short val) {code.add(val);}
-		protected void emitAt(int pos, short val) {code.set(pos,val);}
+		protected void emit(char val) {code.add(val);}
+		protected void emitAt(int pos, char val) {code.set(pos,val);}
 		protected void nop(int code_pos) {
 			code.remove(code_pos);
 			code.subList(code_pos, code.size()).clear();
 		}
 
 		protected void emit(int intval) {
-			short val = (short) intval;
+			char val = (char) intval;
 			if (val!=intval) throw new Error("Value too large to be encoded: "+intval);
 			code.add(val);
 		}
 		protected void emitAt(int pos, int intval) {
-			short val = (short) intval;
+			char val = (char) intval;
 			if (val!=intval) throw new Error("Value too large to be encoded: "+intval);
 			code.set(pos, val);
 		}
 		protected int emitPlaceholder() {
 			int pos = codePos();
-			code.add((short)-12345);
+			code.add((char)0xFFFF);
 			return pos;
 		}
 
@@ -222,17 +225,17 @@ public class AbstractInterpreter {
 
 		protected int encodeLabel(int label) {
 			if (label_map.containsKey(label)) {
-				return label_map.get(label);
+				return (char)label_map.get(label).intValue();
 			} else {
 				if (label!=0) {
 					final int codePos = codePos();
 					backpatches.add(new Backpatch(label) {
 						public String toString() {return "Backpatch<encoded label "+label+" @ "+codePos+">";}
 						public void patch(int labelOffset) {
-							emitAt(codePos, labelOffset);
+							emitAt(codePos, (char)labelOffset);
 						}});
 				}
-				return -12348;
+				return (char)-1;
 			}
 		}
 
