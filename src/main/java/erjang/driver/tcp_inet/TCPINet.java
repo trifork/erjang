@@ -952,7 +952,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 			}
 
 			// only read up to nread bytes
-			i_buf.limit( Math.min (nread, i_buf.capacity() - i_buf.position() ) );
+			i_buf.limit( Math.min (i_buf.position() + nread, i_buf.capacity()) );
 			
 			n = rbc.read(i_buf);
 			if (ERT.DEBUG_INET)

@@ -240,6 +240,10 @@ public class ExecDriverInstance extends EDriverInstance {
 						throw new InternalError();
 					}
 
+					if (nbytes <= 0) {
+						return false;
+					}
+
 					data = new byte[nbytes];
 
 					try {
