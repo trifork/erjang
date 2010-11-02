@@ -140,11 +140,11 @@ public class Main {
 				case 't':
 				case 'T':
 				case 'W':
-					System.setProperty("erjang.beam.option."+arg, args[i+1]);
+					System.setProperty("erjang.beam.option."+arg.substring(1), args[i+1]);
 					i += 1;
 					continue arg_loop;
 				default:
-					System.setProperty("erjang.beam.option."+arg, "true");
+					System.setProperty("erjang.beam.option."+arg.substring(1), "true");
 					continue arg_loop;
 				}
 			}
