@@ -313,7 +313,7 @@ bs_skip_utf32 failLabel ms _dummy flags:
 
 %class LDSII(label:L dest:D src3:S i4:I i5:I)
 bs_skip_bits2 failLabel ms bits unit flags:
-	EObject tmp = ((EBinMatchState)(GET(ms))).bs_skip_bits2(((EInteger)GET(bits)), GET(unit), GET(flags)); if (tmp==null) GOTO(failLabel);
+	EObject tmp = ((EBinMatchState)(GET(ms))).bs_skip_bits2((GET(bits)), GET(unit), GET(flags)); if (tmp==null) GOTO(failLabel);
 
 %class LSD(label:L src:S dest:D)
 bs_utf8_size failLabel value dest:
