@@ -165,7 +165,8 @@ public class EMatchSpec extends EPseudoTerm {
 
 	static final boolean is_match_var(EAtom am) {
 		String name = am.getName();
-		return name.charAt(0) == '$' && MATCH_VAR.matcher(name).matches();
+		return name.length() > 0 && name.charAt(0) == '$' &&
+			MATCH_VAR.matcher(name).matches();
 	}
 
 	static final boolean is_expr_match_var(EAtom am) {

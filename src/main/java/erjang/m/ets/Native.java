@@ -81,7 +81,7 @@ public class Native extends ENative {
 	static AtomicLong next_tid = new AtomicLong(1);
 
 	/** maps a table name to the corresponding TID */
-	static Map<EAtom, EInteger> name_to_tid = new ConcurrentHashMap<EAtom, EInteger>();
+	static ConcurrentHashMap<EAtom, EInteger> name_to_tid = new ConcurrentHashMap<EAtom, EInteger>();
 
 	/** maps a TID to the corresponding table */
 	static Map<EInteger, ETable> tid_to_table = new ConcurrentHashMap<EInteger, ETable>();
@@ -186,7 +186,8 @@ public class Native extends ENative {
 		tid_to_table.put(tid, table);
 
 		if (is_named) {
-			name_to_tid.put(aname, tid);
+			Object existing = name_to_tid.putIfAbsent(aname, tid);
+			if (existing != null) throw ERT.badarg(name, options);
 			return aname;
 		} else {
 			return tid;
