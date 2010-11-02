@@ -26,4 +26,4 @@ exec java \
     +A 10 \
     +S 1 \
     +e $ERTS_VSN \
-    $*
+    "$@"

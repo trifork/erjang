@@ -124,7 +124,7 @@ public class Main {
 				break;
 			}
 			
-			if (arg.charAt(0) == '+') {
+			if (arg.startsWith("+")) {
 				switch (arg.charAt(1)) {
 				case 'a':
 				case 'e': // strip erts version too

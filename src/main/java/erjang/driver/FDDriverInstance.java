@@ -134,7 +134,8 @@ public class FDDriverInstance extends EDriverInstance {
 								howmany = ins.read(buffer);
 								finish(howmany, buffer);
 							} catch (EOFException e) {
-								finish(-1, buffer);								
+								finish(-1, buffer);
+								return;
 							}
 							
 						} catch (IOException e) {
