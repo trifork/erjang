@@ -68,7 +68,7 @@ class EModuleLoader {
 	static long acc_load = 0;
 	public static EModule load_module(String moduleName, EBinary beamBin) throws IOException {
 		// This is where the module creation mode is selected.
-		boolean use_interpreter = false;
+		boolean use_interpreter = Boolean.getBoolean("erjang.beam.option.i");
 
 		long before = System.currentTimeMillis();
 		long after;
