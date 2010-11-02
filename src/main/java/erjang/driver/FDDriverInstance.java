@@ -85,7 +85,7 @@ public class FDDriverInstance extends EDriverInstance {
 		
 		if (ins != null) {
 			new Thread() {
-				{ setDaemon(true); start(); }
+				{ setDaemon(true); start(); setName("FD in="+in); }
 
 				void finish(final int howmany, final byte[] buffer) {
 					final EDriverTask dt = FDDriverInstance.this.task;
