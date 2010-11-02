@@ -96,8 +96,10 @@ public class ErlProc {
 	private static final EAtom am_system_version = EAtom.intern("system_version");
 	public static final EAtom am_flush = EAtom.intern("flush");
 	public static final EAtom am_shutdown = EAtom.intern("shutdown");
-
 	private static final EAtom am_ets_alloc = EAtom.intern("ets_alloc");
+	private static final EAtom am_error_checker = EAtom.intern("error_checker");
+	private static final EAtom am_debug_compiled = EAtom.intern("debug_compiled");
+	private static final EAtom am_lock_checking = EAtom.intern("lock_checking");
 
 	@BIF
 	public static EObject process_info(EObject pid, EObject what) {
@@ -609,7 +611,10 @@ public class ErlProc {
 			
 		} else if (type == am_wordsize) {
 			return new ESmall(4);
-			
+			 
+		} else if (type == am_debug_compiled || type == am_lock_checking) {
+			 throw ERT.badarg(type);
+			 
 		} else if (type == am_hipe_architecture) {
 			return am_undefined;
 			
@@ -622,6 +627,8 @@ public class ErlProc {
 				if (tup.elem2 == am_ets_alloc) {
 					return ERT.FALSE;
 				}
+			} else if (tup.elem1 == am_error_checker) {
+				throw ERT.badarg(type);
 			}
 
 			return am_undefined;

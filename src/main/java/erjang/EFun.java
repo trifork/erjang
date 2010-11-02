@@ -92,6 +92,15 @@ public abstract class EFun extends EObject implements Opcodes {
 	/** generic invoke, used only for apply */
 	public abstract EObject invoke(EProc proc, EObject[] args) throws Pausable;
 
+	/** pass-thru handler for interpreter */
+	public EObject invoke(EProc proc, EObject[] args, int off, int len) 
+		throws Pausable 
+	{
+		EObject[] new_args = new EObject[len];
+		System.arraycopy(args, off, new_args, 0, len);
+		return invoke(proc, new_args);
+	}
+
 	private static final Type EFUN_TYPE = Type.getType(EFun.class);
 	private static final String EFUN_NAME = EFUN_TYPE.getInternalName();
 	private static final Type EFUNHANDLER_TYPE = Type

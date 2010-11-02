@@ -16,9 +16,11 @@ source $EJC_DIR/env_cfg
 
 exec java \
     -server \
-    -Xmx1g -Xss1m \
+    -Xmx1g -Xss50m \
     -XX:PermSize=128m \
     -jar $EJC_DIR/erjang-0.1.jar \
+\
+    -progname ej \
     -home $HOME \
     -root $ERL_ROOT \
     +A 10 \

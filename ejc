@@ -15,9 +15,10 @@ exec java \
     -Xmx2g \
     $OSX_DOCK_ICON \
     $OSX_DOCK_NAME \
-    -Derj.threads=1 \
     -cp $EJC_DIR/erjang-0.1.jar erjang.console.ERLConsole \
     -root "$ERL_ROOT" \
+    +A 10 \
+    +S 1 \
     +e "$ERTS_VSN" \
     -home "$HOME" \
     $*

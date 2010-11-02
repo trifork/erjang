@@ -1894,6 +1894,58 @@ public class ErlBif {
 			throw ERT.notsup();
 		}
 	}
+
+	@BIF
+	public static EObject md5_init(EProc self)
+	{
+		MessageDigest md;
+		 try {
+			 md = MessageDigest.getInstance("MD5");
+		} catch (NoSuchAlgorithmException e) {
+			throw new NotImplemented();
+		}
+		
+		return new JavaObject(self, md);
+	}
+	
+	@BIF
+	public static EObject md5_update(EProc self, EObject context, EObject iolist_arg)
+	{
+		List<ByteBuffer> buf = new ArrayList<ByteBuffer>();
+		if (!iolist_arg.collectIOList(buf)) {
+			throw ERT.badarg(context, iolist_arg);
+		}
+		
+		JavaObject jo;
+		if ((jo = context.testJavaObject()) != null && (jo.realObject() instanceof MessageDigest)) {
+			MessageDigest md = (MessageDigest) jo.realObject();
+			
+			for (int i = 0; i < buf.size(); i++) {
+				md.update(buf.get(i));
+			}	
+			
+			return new JavaObject(self, md);
+		}
+		
+		throw ERT.badarg(context, iolist_arg);
+	}
+	
+	
+	@BIF
+	public static EObject md5_finish(EProc self, EObject context)
+	{
+		JavaObject jo;
+		if ((jo = context.testJavaObject()) != null && (jo.realObject() instanceof MessageDigest)) {
+			MessageDigest md = (MessageDigest) jo.realObject();
+			
+			byte[] res = md.digest();
+			return EBinary.make(res, 0, res.length, 0);
+		}
+		
+		throw ERT.badarg(context);
+	}
+	
+	
 	
 	@BIF
 	public static EObject md5(EObject iolist_arg)

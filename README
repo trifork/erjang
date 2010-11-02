@@ -14,7 +14,7 @@ like this:
 
   prompt% ant jar
   ...
-  prompt% ./erl.sh -pa ./src/main/erl -noshell -s ring main
+  prompt% ./ej -pa ./src/main/erl -noshell -s ring main
   ....
   {1267,799627,843000} Starting message, cycles=10000
   {1267,799638,52000} Around ring 10000 times 

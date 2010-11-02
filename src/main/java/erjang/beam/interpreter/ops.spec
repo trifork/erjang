@@ -183,22 +183,22 @@ call keep lbl:
 
 %class IE(i1:I ext_fun:E)
 call_ext _ extfun:
-	PRE_CALL(); reg[0] = GET(extfun).invoke(proc, xregsArray(reg, GET(extfun).arity())); POST_CALL();
+	PRE_CALL(); reg[0] = GET(extfun).invoke(proc, reg, 0, GET(extfun).arity()); POST_CALL();
 
 call_ext_only _ extfun:
-	PRE_CALL(); return GET(extfun).invoke(proc, xregsArray(reg, GET(extfun).arity()));
+	PRE_CALL(); return GET(extfun).invoke(proc, reg, 0, GET(extfun).arity());
 
 
 %class IEI(i1:I ext_fun:E i3:I)
 call_ext_last arity extfun dealloc:
-	STACK_DEALLOC(GET(dealloc)); PRE_CALL(); return GET(extfun).invoke(proc, xregsArray(reg, GET(extfun).arity()));
+	STACK_DEALLOC(GET(dealloc)); PRE_CALL(); return GET(extfun).invoke(proc, reg, 0, GET(extfun).arity());
 
 %class I(i1:I)
 apply arity:
-	PRE_CALL(); int ary=GET(arity); reg[0] = ERT.resolve_fun(reg[ary], reg[ary+1], ary).invoke(proc, REGS_AS_ARRAY(ary)); POST_CALL();
+	PRE_CALL(); int ary=GET(arity); reg[0] = ERT.resolve_fun(reg[ary], reg[ary+1], ary).invoke(proc, reg, 0, ary); POST_CALL();
 
 call_fun arity:
-	PRE_CALL(); int ary=GET(arity); reg[0] = ((EFun)reg[ary]).invoke(proc, REGS_AS_ARRAY(ary)); POST_CALL();
+	PRE_CALL(); int ary=GET(arity); reg[0] = ((EFun)reg[ary]).invoke(proc, reg, 0, ary); POST_CALL();
 
 %class II(i1:I i2:I)
 apply_last arity dealloc:
