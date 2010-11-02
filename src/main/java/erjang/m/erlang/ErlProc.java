@@ -57,6 +57,7 @@ import erjang.Import;
 import erjang.Main;
 import erjang.NotImplemented;
 import erjang.OTPMain;
+import erjang.driver.EDriverTask;
 
 /**
  * 
@@ -403,10 +404,6 @@ public class ErlProc {
 	 */
 	@BIF
 	static public EObject demonitor(EProc self, EObject ref, EObject options) throws Pausable {
-		return demonitor((ETask)self, ref, options);
-	}
-
-	static public EObject demonitor(ETask self, EObject ref, EObject options) throws Pausable {
 		ERef r = ref.testReference();
 		
 		ESeq o = options.testSeq();
@@ -440,9 +437,47 @@ public class ErlProc {
 		}
 
 		
-		if (flush && (self instanceof EProc)) {
-			flush_monitor_message.invoke((EProc) self, new EObject[] {ref, ERT.am_ok});
+		if (flush) {
+			flush_monitor_message.invoke(self, new EObject[] {ref, ERT.am_ok});
 		}
+		
+		return ERT.TRUE;
+	}
+
+	@BIF
+	static public EObject demonitor(EDriverTask self, EObject ref, EObject options)  {
+		ERef r = ref.testReference();
+		
+		ESeq o = options.testSeq();
+		
+		if (r==null||o==null)
+			throw ERT.badarg(ref, options);
+
+		boolean flush = (!o.isNil() && o.head()==am_flush);
+
+		EObject found = self.demonitor(r);
+
+		if (found == null) {
+			return ERT.FALSE;
+		}
+		
+		EHandle h;
+		ETuple tup;
+		EAtom name;
+		EAtom node;
+		if ((h=found.testHandle()) != null) {
+			h.remove_monitor(self.self_handle(), r, flush);
+		} else if ((tup=found.testTuple()) != null 
+					&& tup.arity()==2
+					&& (name=tup.elm(1).testAtom()) != null
+					&& (node=tup.elm(2).testAtom()) != null) {
+			
+			EAbstractNode n = EAbstractNode.get_or_connect(self, node);
+			if (n != null) {
+				n.dsig_demonitor(self.self_handle(), r, name);
+			}
+		}
+
 		
 		return ERT.TRUE;
 	}

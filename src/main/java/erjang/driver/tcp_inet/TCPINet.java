@@ -520,7 +520,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 	}
 
 	@Override
-	protected void flush() throws Pausable {
+	protected void flush() {
 		throw new erjang.NotImplemented();
 
 	}
@@ -535,7 +535,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 	*/
 
 	@Override
-	protected void output(EHandle caller, ByteBuffer buf) throws IOException, Pausable {
+	protected void output(EHandle caller, ByteBuffer buf) {
 		
 		this.caller = caller;
 		if (!is_connected()) {
@@ -551,7 +551,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 
 	@Override
 	protected void outputv(EHandle caller, ByteBuffer[] ev)
-			throws IOException, Pausable {
+			 {
 
 		this.caller = caller;
 
@@ -575,7 +575,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 
 	}
 
-	private int tcp_sendv(ByteBuffer[] ev) throws Pausable {
+	private int tcp_sendv(ByteBuffer[] ev) {
 		int sz;
 		EPort ix = port();
 		long len = remaining(ev);
@@ -779,7 +779,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 	}
 
 	@Override
-	public void processExit(ERef monitor) throws Pausable {
+	public void processExit(ERef monitor) {
 
 		EHandle who = driver_get_monitored_process(monitor);
 		int state = this.state;
@@ -851,13 +851,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 	}
 
 	@Override
-	protected void readyAsync(EAsync data) throws Pausable {
-		throw new erjang.NotImplemented();
-
-	}
-
-	@Override
-	protected void readyInput(SelectableChannel ch) throws Pausable {
+	protected void readyInput(SelectableChannel ch)  {
 
 		if (fd == null || fd.channel() == null)
 			return;
@@ -883,7 +877,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 
 	}
 
-	private int tcp_recv(int request_len) throws Pausable {
+	private int tcp_recv(int request_len) {
 		if (ERT.DEBUG_INET)
 		System.err.println("tcp_recv len="+request_len);
 		
@@ -999,7 +993,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 		return 0;
 	}
 
-	private int tcp_recv_closed() throws Pausable {
+	private int tcp_recv_closed() {
 		if (is_busy()) {
 			caller = busy_caller;
 			tcp_clear_output();
@@ -1033,7 +1027,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 		return -1;
 	}
 
-	private void tcp_clear_output() throws Pausable {
+	private void tcp_clear_output() {
 		int qsz = driver_sizeq();
 
 		// clear queue
@@ -1051,7 +1045,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 
 	}
 
-	private int tcp_recv_error(int err) throws Pausable {
+	private int tcp_recv_error(int err) {
 
 		if (err == Posix.EAGAIN) {
 			return 0;
@@ -1092,14 +1086,14 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 
 	}
 
-	private void tcp_error_message(int err) throws Pausable {
+	private void tcp_error_message(int err) {
 		ETuple spec = ETuple.make(am_tcp_error, port(), EAtom.intern(Posix
 				.errno_id(err)));
 		driver_output_term(spec);
 	}
 
 	@Override
-	protected void readyOutput(SelectableChannel evt)  throws Pausable {
+	protected void readyOutput(SelectableChannel evt)  {
 
 
 		EInternalPort ix = port();
@@ -1159,7 +1153,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 		}
 	}
 
-	private void inet_reply_ok(EHandle caller2) throws Pausable {
+	private void inet_reply_ok(EHandle caller2) {
 		ETuple msg = ETuple.make(am_inet_reply, port(), ERT.am_ok);
 		EHandle caller = this.caller;
 		this.caller = null;
@@ -1174,7 +1168,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 		driver_send_term(caller, msg);
 	}
 
-	private void tcp_send_error(int err) throws Pausable {
+	private void tcp_send_error(int err) {
 
 		if (is_busy()) {
 			caller = busy_caller;
@@ -1221,7 +1215,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 
 	}
 
-	private void tcp_close_check() throws Pausable {
+	private void tcp_close_check() {
 		if (state == TCP_STATE_ACCEPTING) {
 			AsyncOp op = opt.peek();
 			sock_select(ERL_DRV_ACCEPT, SelectMode.CLEAR);
@@ -1242,7 +1236,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 		}
 	}
 
-	private void async_error_all(EAtom reason) throws Pausable {
+	private void async_error_all(EAtom reason) {
 
 		for (AsyncOp op = deq_async(); op != null; op = deq_async()) {
 			send_async_error(op.id, op.caller, reason);
@@ -1250,19 +1244,19 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 
 	}
 
-	private void send_empty_out_q_msgs() throws Pausable {
+	private void send_empty_out_q_msgs() {
 
 		if (empty_out_q_subs.isEmpty())
 			return;
 
 		ETuple2 msg = new ETuple2(am_empty_out_q, port());
 		for (EHandle h : empty_out_q_subs) {
-			h.send(port(), msg);
+			h.sendb(port(), msg);
 		}
 	}
 
 	@Override
-	public void readyAccept(SelectableChannel ch) throws Pausable {
+	public void readyAccept(SelectableChannel ch) {
 		if (ERT.DEBUG_INET)
 			System.err.println("readyAccept " + this);
 
@@ -1366,7 +1360,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 	}
 
 	@Override
-	public void readyConnect(SelectableChannel evt) throws Pausable {
+	public void readyConnect(SelectableChannel evt) {
 
 		if (ERT.DEBUG_INET)
 			System.err.println("readyConnect " + this);
@@ -1405,14 +1399,14 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 
 	}
 
-	private boolean async_error(int eio) throws Pausable {
+	private boolean async_error(int eio) {
 
 		return async_error(EAtom.intern(Posix.errno_id(eio).toLowerCase()));
 	}
 
 	@Override
 	/* Handling of timeout in driver */
-	protected void timeout() throws Pausable {
+	protected void timeout() {
 
 		if ((state & INET_F_MULTI_CLIENT) != 0) {
 			fire_multi_timers();
@@ -1461,7 +1455,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 		return (state & INET_F_BUSY) == INET_F_BUSY;
 	}
 
-	private void fire_multi_timers() throws Pausable {
+	private void fire_multi_timers() {
 		long next_timeout = 0;
 		if (this.mtd_queue == null || this.mtd_queue.isEmpty()) {
 			throw new InternalError();
@@ -1480,7 +1474,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 		driver_set_timer(next_timeout);
 	}
 
-	private void tcp_inet_multi_timeout(EPID caller) throws Pausable {
+	private void tcp_inet_multi_timeout(EPID caller) {
 
 		AsyncMultiOp multi;
 		if ((multi = remove_multi_op(caller)) == null) {
@@ -1497,7 +1491,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 		send_async_error(multi.op.id, caller, am_timeout);
 	}
 
-	private boolean async_error(EAtom reason) throws Pausable {
+	private boolean async_error(EAtom reason) {
 		AsyncOp op = deq_async();
 		if (op == null) {
 			return false;
@@ -1528,12 +1522,12 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 	}
 
 	@Override
-	protected void stopSelect(SelectableChannel ch) throws Pausable {
+	protected void stopSelect(SelectableChannel ch) {
 		sock_close(ch);
 	}
 	
 	@Override
-	protected void stop(EObject reason) throws Pausable {
+	protected void stop(EObject reason) {
 		super.stop(reason);
 		tcp_close_check();
 		InetSocket ff = fd;
@@ -1560,7 +1554,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 
 	@Override
 	protected ByteBuffer control(EPID caller, int command,
-			ByteBuffer buf) throws Pausable {
+			ByteBuffer buf) {
 
 		switch (command) {
 		case INET_REQ_OPEN:
@@ -1697,7 +1691,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 
 	}
 
-	private ByteBuffer tcp_recv(EPID caller2, ByteBuffer buf) throws Pausable {
+	private ByteBuffer tcp_recv(EPID caller2, ByteBuffer buf) {
 		/* INPUT: Timeout(4), Length(4) */
 
 		if (!is_connected()) {
@@ -1926,7 +1920,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 
 	}
 
-	private ByteBuffer tcp_accept(EPID caller, ByteBuffer buf) throws Pausable {
+	private ByteBuffer tcp_accept(EPID caller, ByteBuffer buf) {
 
 		if ((state != TCP_STATE_LISTEN && state != TCP_STATE_ACCEPTING && state != TCP_STATE_MULTI_ACCEPTING)
 				|| buf.remaining() != 4) {
@@ -2126,7 +2120,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 		multi_last = opp;
 	}
 
-	private boolean async_ok_port(EPID caller, EInternalPort port2) throws Pausable {
+	private boolean async_ok_port(EPID caller, EInternalPort port2) {
 		AsyncOp op = deq_async();
 		if (op == null) {
 			return false;
@@ -2181,7 +2175,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 	 * of queued data
 	 */
 
-	private int inet_set_opts(ByteBuffer buf) throws Pausable {
+	private int inet_set_opts(ByteBuffer buf) {
 
 		PacketParseType old_htype = this.htype;
 		ActiveType old_active = this.active;
@@ -2494,7 +2488,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 		sock_select(ERL_DRV_READ|ERL_DRV_USE, SelectMode.CLEAR);
 	}
 
-	private void tcp_closed_message() throws Pausable {
+	private void tcp_closed_message() {
 		if ((tcp_add_flags & TCP_ADDF_CLOSE_SENT) == 0) {
 			tcp_add_flags |= TCP_ADDF_CLOSE_SENT;
 			driver_output_term(new ETuple2(am_tcp_closed, port()));
@@ -2507,7 +2501,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 	 * @return number of packets delivered
 	 * @throws Pausable 
 	 */
-	private int tcp_deliver(int len) throws Pausable {
+	private int tcp_deliver(int len) {
 
 		if (ERT.DEBUG_INET)
 			System.err.println("tcp_deliver " + i_ptr_start + ":" + len);
@@ -2640,7 +2634,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 		}
 	}
 
-	private int tcp_reply_data(byte[] ib, int start, int len) throws Pausable {
+	private int tcp_reply_data(byte[] ib, int start, int len) {
 
 		if (ERT.DEBUG_INET)
 			System.err.println("tcp_reply_data len="+len);
@@ -2679,7 +2673,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 
 	/** data is at 0 .. out.position() 
 	 * @throws Pausable */
-	private int tcp_message(ByteBuffer out) throws Pausable {
+	private int tcp_message(ByteBuffer out) {
 		int hsz = this.hsz;
 
 		EObject msg;
@@ -2746,7 +2740,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 
 	/** out has data from 0..out.position() 
 	 * @throws Pausable */
-	private int inet_port_data(ByteBuffer out) throws Pausable {
+	private int inet_port_data(ByteBuffer out) {
 
 		int hsz = this.hsz;
 		if (mode == INET_MODE_LIST || (hsz > out.remaining())) {
@@ -2768,7 +2762,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 
 	}
 
-	private int tcp_reply_binary_data(byte[] ib, int start, int len) throws Pausable {
+	private int tcp_reply_binary_data(byte[] ib, int start, int len) {
 
 		ByteBuffer out = ByteBuffer.wrap(ib, start, len);
 		Packet.get_body(htype, out);
@@ -2974,7 +2968,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 		return ctl_error(Posix.EINVAL);
 	}
 
-	private ByteBuffer inet_connect(EPID caller, ByteBuffer cmd) throws Pausable {
+	private ByteBuffer inet_connect(EPID caller, ByteBuffer cmd) {
 		/* INPUT: Timeout(4), Port(2), Address(N) */
 
 		if (!is_open()) {
@@ -3060,7 +3054,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 		return reply;
 	}
 
-	private boolean async_ok() throws Pausable {
+	private boolean async_ok() {
 		AsyncOp op = deq_async();
 		if (op == null) {
 			return false;
@@ -3078,7 +3072,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 		return opt.get();
 	}
 
-	private boolean inet_reply_error(EObject reason) throws Pausable {
+	private boolean inet_reply_error(EObject reason) {
 		/*
 		 * send message:* {inet_reply, Port, Ref, {error,Reason}}
 		 */
@@ -3094,11 +3088,11 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 		return true;
 	}
 
-	private boolean inet_reply_error(int reason) throws Pausable {
+	private boolean inet_reply_error(int reason) {
 		return inet_reply_error(EAtom.intern(Posix.errno_id(reason)));
 	}
 
-	private boolean send_async_error(short id, EPID caller, EObject reason) throws Pausable {
+	private boolean send_async_error(short id, EPID caller, EObject reason) {
 		/*
 		 * send message:* {inet_async, Port, Ref, {error,Reason}}
 		 */
@@ -3108,26 +3102,26 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 		if (ERT.DEBUG_PORT) {
 			System.out.println("sending to " + caller + " ! " + msg);
 		}
-		caller.send(port(), msg);
+		caller.sendb(port(), msg);
 		return  true;
 	}
 
-	private boolean send_async_ok(int id, EPID caller) throws Pausable {
+	private boolean send_async_ok(int id, EPID caller) {
 		ETuple msg = ETuple.make(am_inet_async, port(), ERT.box(id), ERT.am_ok);
 		if (ERT.DEBUG_PORT) {
 			System.out.println("sending to " + caller + " ! " + msg);
 		}
-		caller.send(port(), msg);
+		caller.sendb(port(), msg);
 		return true;
 	}
 
-	private boolean send_async_ok_port(int id, EPID caller, EPort port2) throws Pausable {
+	private boolean send_async_ok_port(int id, EPID caller, EPort port2) {
 		ETuple msg = ETuple.make(am_inet_async, port(), ERT.box(id),
 				new ETuple2(ERT.am_ok, port2));
 		if (ERT.DEBUG_PORT) {
 			System.out.println("sending to " + caller + " ! " + msg);
 		}
-		caller.send(port(), msg);
+		caller.sendb(port(), msg);
 		return true;
 	}
 

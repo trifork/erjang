@@ -60,13 +60,7 @@ public class GetHostDriver extends EDriverInstance {
 	}
 
 	@Override
-	protected void flush() throws Pausable {
-
-	}
-
-	@Override
-	protected void output(EHandle caller, ByteBuffer buf) throws IOException,
-			Pausable {
+	protected void output(EHandle caller, ByteBuffer buf)  {
 
 		// System.err.println(EBinary.make(buf));
 		
@@ -124,7 +118,7 @@ public class GetHostDriver extends EDriverInstance {
 			}
 
 			@Override
-			public void ready() throws Pausable {
+			public void ready() {
 				
 				// System.err.println(" gethostsbyname["+seq+"][ready] "+host);
 				if (addr != null) {
@@ -249,7 +243,7 @@ public class GetHostDriver extends EDriverInstance {
 			}
 
 			@Override
-			public void ready() throws Pausable {
+			public void ready() {
 				
 				// System.err.println(" gethostsbyname["+seq+"][ready] "+host);
 				if (addr != null) {
@@ -342,26 +336,8 @@ public class GetHostDriver extends EDriverInstance {
 	}
 
 	@Override
-	protected void readyAsync(EAsync data) throws Pausable {
+	protected void readyAsync(EAsync data) {
 		data.ready();
-	}
-
-	@Override
-	protected void readyInput(SelectableChannel ch) throws Pausable {
-		throw new erjang.NotImplemented();
-
-	}
-
-	@Override
-	protected void readyOutput(SelectableChannel evt) throws Pausable {
-		throw new erjang.NotImplemented();
-
-	}
-
-	@Override
-	protected void timeout() throws Pausable {
-		throw new erjang.NotImplemented();
-
 	}
 
 	public static void dump_write(ByteBuffer[] ev) {

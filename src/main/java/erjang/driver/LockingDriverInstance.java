@@ -50,7 +50,7 @@ class LockingDriverInstance extends EDriverControl {
 	}
 
 	@Override
-	protected EObject call(EPID caller, int command, EObject data) throws Pausable {
+	protected EObject call(EPID caller, int command, EObject data) {
 		// System.err.println(Task.getCurrentTask() + ">>call");
 		lock.lock();
 		try {
@@ -62,7 +62,7 @@ class LockingDriverInstance extends EDriverControl {
 	}
 
 	@Override
-	protected ByteBuffer control(EPID pid, int command, ByteBuffer buf) throws Pausable {
+	protected ByteBuffer control(EPID pid, int command, ByteBuffer buf)  {
 		// System.err.println(Task.getCurrentTask() + ">>control");
 		lock.lock();
 		try {
@@ -75,7 +75,7 @@ class LockingDriverInstance extends EDriverControl {
 
 
 	@Override
-	protected void outputv(EHandle caller, ByteBuffer[] ev) throws IOException, Pausable {
+	protected void outputv(EHandle caller, ByteBuffer[] ev) throws IOException  {
 		// System.err.println(Task.getCurrentTask() + ">>outputv");
 		lock.lock();
 		try {
@@ -87,7 +87,7 @@ class LockingDriverInstance extends EDriverControl {
 	}
 
 	@Override
-	public void processExit(ERef monitor) throws Pausable {
+	public void processExit(ERef monitor) {
 		// System.err.println(Task.getCurrentTask() + ">>processExit");
 		lock.lock();
 		try {
@@ -99,7 +99,7 @@ class LockingDriverInstance extends EDriverControl {
 	}
 
 	@Override
-	protected void readyInput(SelectableChannel evt) throws Pausable {
+	protected void readyInput(SelectableChannel evt)  {
 		// System.err.println(Task.getCurrentTask() + ">>readyInput");
 		lock.lock();
 		try {
@@ -111,7 +111,7 @@ class LockingDriverInstance extends EDriverControl {
 	}
 
 	@Override
-	protected void readyOutput(SelectableChannel evt) throws Pausable {
+	protected void readyOutput(SelectableChannel evt)  {
 		// System.err.println(Task.getCurrentTask() + ">>readyOutput");
 		lock.lock();
 		try {
@@ -123,7 +123,7 @@ class LockingDriverInstance extends EDriverControl {
 	}
 
 	@Override
-	protected void stop(EObject reason) throws Pausable {
+	protected void stop(EObject reason)  {
 		// System.err.println(Task.getCurrentTask() + ">>stop");
 		lock.lock();
 		try {
@@ -135,7 +135,7 @@ class LockingDriverInstance extends EDriverControl {
 	}
 
 	@Override
-	protected void stopSelect(SelectableChannel ch) throws Pausable {
+	protected void stopSelect(SelectableChannel ch)  {
 		// System.err.println(Task.getCurrentTask() + ">>stopSelect");
 		lock.lock();
 		try {
@@ -147,7 +147,7 @@ class LockingDriverInstance extends EDriverControl {
 	}
 
 	@Override
-	protected void timeout() throws Pausable {
+	protected void timeout()  {
 		// System.err.println(Task.getCurrentTask() + ">>timeout");
 		lock.lock();
 		try {
@@ -162,7 +162,7 @@ class LockingDriverInstance extends EDriverControl {
 	 * @see erjang.driver.EDriverInstance#readyAsync(erjang.driver.EAsync)
 	 */
 	@Override
-	protected void readyAsync(EAsync data) throws Pausable {
+	protected void readyAsync(EAsync data)  {
 		// System.err.println(Task.getCurrentTask() + ">>readyAsync");
 		lock.lock();
 		try {
@@ -174,7 +174,7 @@ class LockingDriverInstance extends EDriverControl {
 	}
 
 	@Override
-	public void readyAccept(SelectableChannel ch) throws Pausable {
+	public void readyAccept(SelectableChannel ch)  {
 		// System.err.println(Task.getCurrentTask() + ">>readyAccept");
 
 		lock.lock();
@@ -187,7 +187,7 @@ class LockingDriverInstance extends EDriverControl {
 	}
 	
 	@Override
-	public void readyConnect(SelectableChannel evt) throws Pausable {
+	public void readyConnect(SelectableChannel evt)  {
 		// System.err.println(Task.getCurrentTask() + ">>readyConnect");
 		lock.lock();
 		try {

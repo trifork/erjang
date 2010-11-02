@@ -215,8 +215,7 @@ public class TTYTextAreaDriverControl extends EDriverInstance implements
 	}
 
 	@Override
-	protected void output(EHandle caller, ByteBuffer buf) throws IOException,
-			Pausable {
+	protected void output(EHandle caller, ByteBuffer buf) throws IOException {
 
 		// if (lpos > MAXSIZE)
 		// put_chars("\n");
@@ -463,7 +462,7 @@ public class TTYTextAreaDriverControl extends EDriverInstance implements
 
 	@Override
 	protected ByteBuffer control(EPID pid, int command, ByteBuffer cmd)
-			throws Pausable {
+			 {
 
 		if (command == CTRL_OP_GET_WINSIZE) {
 			ByteBuffer rep = ByteBuffer.allocate(8);

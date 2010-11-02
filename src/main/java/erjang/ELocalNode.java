@@ -95,12 +95,19 @@ public class ELocalNode extends EAbstractNode {
     }
     
 	public EObject dsig_reg_send(EInternalPID caller, EAtom name,
-			EObject msg) throws Pausable {
-		return ERT.send(caller.task(), name, msg);
+			EObject msg) {
+		
+		EObject rcv = ERT.whereis(name);
+		EHandle hdl;
+		if (rcv != null && (hdl = rcv.testHandle()) != null) {
+			hdl.sendb(caller, msg);
+		}
+
+		return msg;
 	}
 
 	public void dsig_demonitor(EHandle sender, ERef ref,
-			EObject to_pid_or_name) throws Pausable
+			EObject to_pid_or_name) 
 	{
 		EInternalPID pid;
 		EAtom name;

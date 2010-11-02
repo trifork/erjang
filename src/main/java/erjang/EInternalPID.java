@@ -88,7 +88,7 @@ public class EInternalPID extends EPID implements ELocalHandle {
 	 * @see erjang.EHandle#link_oneway(erjang.EHandle)
 	 */
 	@Override
-	public boolean link_oneway(EHandle other) throws Pausable {
+	public boolean link_oneway(EHandle other) {
 		EProc task = this.task;
 		if (task != null)
 			return task.link_oneway(other);
@@ -96,13 +96,13 @@ public class EInternalPID extends EPID implements ELocalHandle {
 	}
 	
 	@Override
-	public void unlink_oneway(EHandle other) throws Pausable {
+	public void unlink_oneway(EHandle other) {
 		EProc task = this.task;
 		if (task != null)
 			task.unlink_oneway(other);
 	}
 	
-	public synchronized boolean add_monitor(EHandle observer, ERef ref) throws Pausable {
+	public synchronized boolean add_monitor(EHandle observer, ERef ref) {
 		EProc task = this.task;
 		if (task != null) 
 			return task.add_monitor(observer, ref);
@@ -111,7 +111,7 @@ public class EInternalPID extends EPID implements ELocalHandle {
 	}
 	
 	@Override
-	public void send_monitor_exit(EHandle from, ERef ref, EObject reason) throws Pausable {
+	public void send_monitor_exit(EHandle from, ERef ref, EObject reason) {
 		EProc task = this.task;
 		if (task != null) {
 			task.send_monitor_exit(from, ref, reason);
@@ -120,7 +120,7 @@ public class EInternalPID extends EPID implements ELocalHandle {
 	}
 	
 	@Override
-	public void remove_monitor(EHandle sender, ERef r, boolean flush) throws Pausable {
+	public void remove_monitor(EHandle sender, ERef r, boolean flush) {
 		EProc task = this.task;
 		if (task != null) 
 			task.remove_monitor(r, flush);

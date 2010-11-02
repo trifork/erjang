@@ -27,6 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import kilim.Mailbox;
 import kilim.Pausable;
 import erjang.m.erlang.ErlFun;
 import erjang.m.erlang.ErlProc;
@@ -36,6 +37,10 @@ import erjang.m.erlang.ErlProc;
  */
 public final class EProc extends ETask<EInternalPID> {
 	
+	static final int MAX_MAILBOX_SIZE = 1000;
+	protected final Mailbox<EObject> mbox = new Mailbox<EObject>(10, MAX_MAILBOX_SIZE);
+
+
 	static Logger log = Logger.getLogger(EProc.class.getName());
 	
 	public static final EObject TAIL_MARKER = new ETailMarker();
@@ -196,7 +201,7 @@ public final class EProc extends ETask<EInternalPID> {
 	static ExitHook[] NO_HOOKS = new ExitHook[0];
 	
 	@Override
-	protected void do_proc_termination(EObject result) throws Pausable {
+	protected void do_proc_termination(EObject result) {
 		
 		ExitHook[] hooks = NO_HOOKS;
 		synchronized (exit_hooks) {
@@ -220,7 +225,7 @@ public final class EProc extends ETask<EInternalPID> {
 		
 	}
 	
-	protected void process_incoming_exit(EHandle from, EObject reason, boolean is_erlang_exit2) throws Pausable
+	protected void process_incoming_exit(EHandle from, EObject reason, boolean is_erlang_exit2) 
 	{
 		if (pstate == STATE_EXIT_SIG || pstate == STATE_SENDING_EXIT) {
 			if (log.isLoggable(Level.FINE)) {
@@ -242,7 +247,7 @@ public final class EProc extends ETask<EInternalPID> {
 				ETuple msg = ETuple.make(ERT.am_EXIT, from, reason);
 				// System.err.println("kill message to self: "+msg);
 				
-				mbox.put(msg);
+				mbox.putb(msg);
 				return;
 				
 			} else {
@@ -270,7 +275,7 @@ public final class EProc extends ETask<EInternalPID> {
 			ETuple msg = ETuple.make(ERT.am_EXIT, from, reason);
 			// System.err.println("kill message to self: "+msg);
 			
-			mbox.put(msg);
+			mbox.putb(msg);
 			
 		} else if (reason != am_normal) {
 			// System.err.println("kill signal: " +reason + " from "+from);
@@ -417,6 +422,56 @@ public final class EProc extends ETask<EInternalPID> {
 		
 		throw new NotImplemented("process_flag flag="+flag+", value="+value);
 	}
+	
+	/**
+	 * @throws Pausable
+	 * 
+	 */
+	public void mbox_wait() throws Pausable {
+		mbox.untilHasMessage();
+	}
+
+	/**
+	 * @param longValue
+	 */
+	public boolean mbox_wait(long timeoutMillis) throws Pausable {
+		return mbox.untilHasMessage(timeoutMillis);
+	}
+
+	/**
+	 * @param msg
+	 * @throws Pausable
+	 */
+	public void mbox_send(EObject msg) throws Pausable {
+		mbox.put(msg);
+	}
+	
+	public void mbox_sendb(EObject msg) {
+		mbox.putb(msg);
+	}
+	
+	public int mbox_size() {
+		return mbox.size();
+	}
+
+
+
+	/**
+	 * @return
+	 * @throws Pausable
+	 */
+	public void mbox_remove_one() throws Pausable {
+		mbox.get();
+	}
+
+	/**
+	 * @return
+	 */
+	public Mailbox<EObject> mbox() {
+		return mbox;
+	}
+
+
 
 	/**
 	 * @param opts_list

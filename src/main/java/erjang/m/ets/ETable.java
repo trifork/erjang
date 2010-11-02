@@ -164,7 +164,6 @@ abstract class ETable implements ExitHook {
 
 	
 	public void on_exit(EInternalPID dyingPID) 
-		throws Pausable 
 	{
 		if (dyingPID == owner_pid()) {
 			
@@ -186,7 +185,7 @@ abstract class ETable implements ExitHook {
 				this.owner = new WeakReference<EProc>(new_owner);
 				new_owner.add_exit_hook(this);
 				
-				heirPID.send(dyingPID, msg);
+				heirPID.sendb(dyingPID, msg);
 				
 			} else {				
 				//System.err.println("received exit from owner "+dyingPID+" => delete");

@@ -19,7 +19,6 @@
 
 package erjang.driver;
 
-import kilim.Pausable;
 import erjang.EObject;
 
 /**
@@ -34,7 +33,7 @@ public abstract class EPortControl extends EObject {
 	/**
 	 * 
 	 */
-	public abstract void execute() throws Exception, Pausable;
+	public abstract void execute();
 	
 	
 }

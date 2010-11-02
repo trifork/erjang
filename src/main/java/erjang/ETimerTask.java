@@ -103,7 +103,7 @@ public abstract class ETimerTask extends TimerTask implements ExitHook {
 		return -1;
 	}
 	
-	public synchronized final void on_exit(EInternalPID pid) throws Pausable {
+	public synchronized final void on_exit(EInternalPID pid) {
 		assert (pid == this.pid) : "received on_exit callback from inknown pid";
 		timer_refs.remove(ref);
 		this.cancel();

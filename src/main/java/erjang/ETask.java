@@ -99,7 +99,7 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 		throw new ErlangError(ERT.am_noproc);
 	}
 
-	protected void do_proc_termination(EObject exit_reason) throws Pausable {
+	protected void do_proc_termination(EObject exit_reason) {
 		this.exit_reason = exit_reason;
 		H me = self_handle();
 		EAtom name = me.name;
@@ -116,16 +116,16 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 			ERT.unregister(name);
 		}
 	}
-	
 
-	public void send_monitor_exit(EHandle from, ERef ref, EObject reason) throws Pausable {
+	public void send_monitor_exit(EHandle from, ERef ref, EObject reason) {
 		ETuple2 pair = is_monitoring.get(ref);
 		if (pair != null) {
-			mbox_send(ETuple.make(am_DOWN, ref, am_process, pair.elem2, reason));
+			mbox_sendb(ETuple.make(am_DOWN, ref, am_process, pair.elem2, reason));
 		}
 	}
 	
-	
+	public abstract void mbox_send(EObject value) throws Pausable;
+	public abstract void mbox_sendb(EObject value);
 
 	// this is not synchronized, as we only mess with it from this proc
 	Map<ERef,ETuple2> is_monitoring = new HashMap<ERef, ETuple2>();
@@ -137,7 +137,7 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 	 * @return
 	 * @throws Pausable 
 	 */
-	public boolean monitor(EHandle observed, EObject object, ERef ref) throws Pausable {
+	public boolean monitor(EHandle observed, EObject object, ERef ref) {
 		if (!observed.add_monitor(self_handle(), ref)) {
 		//	System.err.println("unable to add monitor to self="+self_handle()+" pid="+observed+" ref="+ref);
 			return false;
@@ -156,7 +156,7 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 	 * @return
 	 * @throws Pausable 
 	 */
-	public EObject demonitor(ERef r) throws Pausable {
+	public EObject demonitor(ERef r) {
 		ETuple2 pair = is_monitoring.remove(r);
 		if (pair == null) {
 			return null;
@@ -199,9 +199,6 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 
 
 
-	static final int MAX_MAILBOX_SIZE = 1000;
-	protected final Mailbox<EObject> mbox = new Mailbox<EObject>(10, MAX_MAILBOX_SIZE);
-
 	public static final int STATE_INIT = 0; // has not started yet
 	public static final int STATE_RUNNING = 1; // is live
 	public static final int STATE_EXIT_SIG = 2; // received exit signal
@@ -214,42 +211,11 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 	public int reds;
 
 	/**
-	 * @throws Pausable
-	 * 
-	 */
-	public void mbox_wait() throws Pausable {
-		mbox.untilHasMessage();
-	}
-
-	/**
-	 * @param longValue
-	 */
-	public boolean mbox_wait(long timeoutMillis) throws Pausable {
-		return mbox.untilHasMessage(timeoutMillis);
-	}
-
-	/**
-	 * @param msg
-	 * @throws Pausable
-	 */
-	public void mbox_send(EObject msg) throws Pausable {
-		mbox.put(msg);
-	}
-
-	/**
-	 * @return
-	 * @throws Pausable
-	 */
-	public void mbox_remove_one() throws Pausable {
-		mbox.get();
-	}
-
-	/**
 	 * @param from
 	 * @param reason
 	 * @param is_erlang_exit2 TODO
 	 */
-	public final void send_exit(EHandle from, EObject reason, boolean is_erlang_exit2) throws Pausable {
+	public final void send_exit(EHandle from, EObject reason, boolean is_erlang_exit2) {
 
 		if (log.isLoggable(Level.FINE)) {
 			log.log (Level.FINE, "exit " + from + " -> " + this + ", reason="+reason, new Throwable("trace"));
@@ -299,7 +265,7 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 
 	}
 
-	protected abstract void process_incoming_exit(EHandle from, EObject reason, boolean is_erlang_exit2) throws Pausable
+	protected abstract void process_incoming_exit(EHandle from, EObject reason, boolean is_erlang_exit2) 
 			;
 
 	/**
@@ -333,15 +299,12 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 	/**
 	 * @return
 	 */
-	public Mailbox<EObject> mbox() {
-		return mbox;
-	}
-
-	/**
-	 * @return
-	 */
 	public boolean exists() {
 		return pstate == STATE_INIT || pstate == STATE_RUNNING;
+	}
+
+	public int mbox_size() {
+		return 1;
 	}
 
 }

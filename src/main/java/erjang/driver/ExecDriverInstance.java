@@ -278,7 +278,7 @@ public class ExecDriverInstance extends EDriverInstance {
 	 * @see erjang.driver.EDriverInstance#call(int, erjang.EObject)
 	 */
 	@Override
-	protected EObject call(EPID pid, int command, EObject data) throws Pausable {
+	protected EObject call(EPID pid, int command, EObject data)  {
 		throw ERT.badarg(ERT.box(command), data);
 	}
 
@@ -288,13 +288,11 @@ public class ExecDriverInstance extends EDriverInstance {
 	 * @see erjang.driver.EDriverInstance#flush()
 	 */
 	@Override
-	protected void flush() throws Pausable {
-		// TODO Auto-generated method stub
-
+	protected void flush()  {
 	}
 
 	@Override
-	protected void stop(EObject reason) throws Pausable {
+	protected void stop(EObject reason) {
 
 		this.do_close();
 
@@ -306,8 +304,7 @@ public class ExecDriverInstance extends EDriverInstance {
 	 * @see erjang.driver.EDriverInstance#output(java.nio.ByteBuffer)
 	 */
 	@Override
-	protected void output(EHandle caller, ByteBuffer buf) throws IOException,
-			Pausable {
+	protected void output(EHandle caller, ByteBuffer buf) throws IOException {
 
 		byte[] data = buf.array();
 		int data_off = buf.position() + buf.arrayOffset();
@@ -360,63 +357,6 @@ public class ExecDriverInstance extends EDriverInstance {
 		this.out.flush();
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see erjang.driver.EDriverInstance#processExit(erjang.ERef)
-	 */
-	@Override
-	public void processExit(ERef monitor) throws Pausable {
-		// TODO Auto-generated method stub
 
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see erjang.driver.EDriverInstance#readyAsync(erjang.driver.EAsync)
-	 */
-	@Override
-	protected void readyAsync(EAsync data) throws Pausable {
-		// TODO Auto-generated method stub
-
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * erjang.driver.EDriverInstance#readyInput(java.nio.channels.SelectableChannel
-	 * )
-	 */
-	@Override
-	protected void readyInput(SelectableChannel ch) throws Pausable {
-		// TODO Auto-generated method stub
-
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * erjang.driver.EDriverInstance#readyOutput(java.nio.channels.SelectableChannel
-	 * )
-	 */
-	@Override
-	protected void readyOutput(SelectableChannel evt) throws Pausable {
-		// TODO Auto-generated method stub
-
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see erjang.driver.EDriverInstance#timeout()
-	 */
-	@Override
-	protected void timeout() throws Pausable {
-		// TODO Auto-generated method stub
-
-	}
 
 }

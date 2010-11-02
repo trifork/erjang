@@ -27,12 +27,12 @@ public class TCPINetCallbacks extends PacketCallbacks<TCPINet> {
 	private static final EAtom am_http_error = EAtom.intern("http_error");
 
 	@Override
-	int http_eoh(TCPINet desc) throws Pausable {
+	int http_eoh(TCPINet desc)  {
 		return send_http(desc, am_http_eoh);
 	}
 
 	@Override
-	int http_error(TCPINet desc, byte[] data, int pos, int len) throws Pausable {
+	int http_error(TCPINet desc, byte[] data, int pos, int len)  {
 
 		EObject line = load_string(desc, data, pos, len);
 
@@ -64,7 +64,7 @@ public class TCPINetCallbacks extends PacketCallbacks<TCPINet> {
 
 	@Override
 	int http_header(TCPINet desc, HTTPAtom name, byte[] nameBuf, int namePtr,
-			int nameLen, byte[] valBuf, int valPtr, int valLen) throws Pausable {
+			int nameLen, byte[] valBuf, int valPtr, int valLen) {
 
 		EObject bit = (name == null)
 					? ERT.box(0)
@@ -83,7 +83,7 @@ public class TCPINetCallbacks extends PacketCallbacks<TCPINet> {
 
 	@Override
 	int http_request(TCPINet desc, HTTPAtom method, byte[] data, int meth_ptr,
-			int meth_len, PacketHttpURI uri, int major, int minor) throws Pausable {
+			int meth_len, PacketHttpURI uri, int major, int minor)  {
 		
 		EObject meth = 
 				(method == null) 
@@ -97,7 +97,7 @@ public class TCPINetCallbacks extends PacketCallbacks<TCPINet> {
 
 	}
 
-	private int send_http(TCPINet desc, EObject req) throws Pausable {
+	private int send_http(TCPINet desc, EObject req)  {
 		if (desc.active == ActiveType.PASSIVE) {
 	        /* {inet_async, S, Ref, {ok,{http_request,Meth,Uri,Version}}} */
 

@@ -56,8 +56,8 @@ public abstract class EHandle extends EObject {
 	public int send(EHandle sender, EObject msg) throws Pausable {
 		ETask<?> task = task();
 		if (task != null) {
-			task.mbox.put(msg);
-			return task.mbox.size();
+			task.mbox_send(msg);
+			return task.mbox_size();
 		} else {
 			if (ERT.log.isLoggable(Level.FINE)) {
 				ERT.log.fine("sending message to dead process/port ignored "+this+" ! "+msg);
@@ -69,8 +69,17 @@ public abstract class EHandle extends EObject {
 	public void sendb(EObject msg) {
 		ETask<?> task = task();
 		if (task != null) {
-			task.mbox().putb(msg);
+			task.mbox_sendb(msg);
 		}
+	}
+
+	public int sendb(EHandle sender, EObject msg) {
+		ETask<?> task = task();
+		if (task != null) {
+			task.mbox_sendb(msg);
+			return task.mbox_size();
+		}
+		return 0;
 	}
 
 	/**
@@ -80,7 +89,7 @@ public abstract class EHandle extends EObject {
 	 * @throws Pausable 
 	 * @throws Pausable 
 	 */
-	public void exit_signal(EHandle from, EObject reason, boolean is_erlang_exit2) throws Pausable {
+	public void exit_signal(EHandle from, EObject reason, boolean is_erlang_exit2) {
 		ETask<?> task = task();
 		if (task != null) {
 			task.send_exit(from, reason, is_erlang_exit2);
@@ -94,16 +103,16 @@ public abstract class EHandle extends EObject {
 	 * @throws Pausable 
 	 * @throws Pausable 
 	 */
-	public abstract boolean link_oneway(EHandle other) throws Pausable;
+	public abstract boolean link_oneway(EHandle other);
 
-	public abstract void unlink_oneway(EHandle other) throws Pausable;
+	public abstract void unlink_oneway(EHandle other);
 	
 	/**
 	 * @param ref TODO
 	 * @param selfHandle
 	 * @throws Pausable 
 	 */
-	public abstract boolean add_monitor(EHandle observer, ERef ref) throws Pausable;
+	public abstract boolean add_monitor(EHandle observer, ERef ref);
 
 
 	/**
@@ -146,8 +155,8 @@ public abstract class EHandle extends EObject {
 	 * @param r
 	 * @throws Pausable 
 	 */
-	public abstract void remove_monitor(EHandle sender, ERef r, boolean flush) throws Pausable;
+	public abstract void remove_monitor(EHandle sender, ERef r, boolean flush);
 
-	public abstract void send_monitor_exit(EHandle from, ERef ref, EObject reason) throws Pausable;
+	public abstract void send_monitor_exit(EHandle from, ERef ref, EObject reason);
 	
 }
