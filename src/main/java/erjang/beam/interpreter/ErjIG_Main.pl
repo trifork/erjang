@@ -324,7 +324,6 @@ sub parse_and_build {
 				\%argmap, \@cls_arg_names, \@cls_arg_types,
 				$action);
 	    $encoder_code .= "\n} break;\n";
-	    $enum_count = int($enum_count/100+1)*100;# DEBUG
 	} else {
 	    die "Does not understand this line:\n\t$_\n";
 	}
