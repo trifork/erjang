@@ -27,6 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import erjang.kilim.EMailbox;
 import kilim.Mailbox;
 import kilim.Pausable;
 import erjang.m.erlang.ErlFun;
@@ -38,7 +39,7 @@ import erjang.m.erlang.ErlProc;
 public final class EProc extends ETask<EInternalPID> {
 	
 	static final int MAX_MAILBOX_SIZE = 1000;
-	protected final Mailbox<EObject> mbox = new Mailbox<EObject>(10, MAX_MAILBOX_SIZE);
+	protected final EMailbox<EObject> mbox = new EMailbox<EObject>(10, MAX_MAILBOX_SIZE);
 
 
 	static Logger log = Logger.getLogger(EProc.class.getName());
