@@ -21,7 +21,6 @@ package erjang.driver.ram_file;
 
 import java.util.concurrent.locks.ReentrantLock;
 
-import kilim.Lock;
 import erjang.EString;
 import erjang.driver.EDriver;
 import erjang.driver.EDriverControl;

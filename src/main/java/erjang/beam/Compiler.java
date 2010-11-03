@@ -101,7 +101,7 @@ public class Compiler implements Opcodes {
 		repo.store("raw/"+cv.getInternalClassName(), byteArray);
 
 		boolean written = false;
-		ClassWeaver cwe = new ClassWeaver(byteArray, new ErjangDetector(
+		ClassWeaver cwe =  new ClassWeaver(byteArray, new ErjangDetector(
 				cv.getInternalClassName(), cv.non_pausable_methods));
 		for (ClassInfo ci : cwe.getClassInfos()) {
 			String name = ci.className;

@@ -365,6 +365,18 @@ public final class EProc extends ETask<EInternalPID> {
 		EAtom.intern("low"),
 	};
 
+	int priority = 2;
+	
+	void setPriority(int priority) {
+		if (priority >= 0 && priority <= 3) {
+			this.priority = priority;
+		}
+	}
+	
+	public int getPriority() {
+		return priority;
+	}
+	
 	/**
 	 * @param testAtom
 	 * @param a2

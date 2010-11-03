@@ -28,6 +28,7 @@ import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import erjang.kilim.EMailbox;
 import erjang.m.erlang.ErlProc;
 
 import kilim.Mailbox;

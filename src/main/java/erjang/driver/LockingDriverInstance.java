@@ -23,12 +23,8 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectableChannel;
 import java.util.concurrent.locks.ReentrantLock;
 
-import kilim.Lock;
 import kilim.Pausable;
-import kilim.Task;
-
 import erjang.EHandle;
-import erjang.EInternalPort;
 import erjang.EObject;
 import erjang.EPID;
 import erjang.ERef;
