@@ -239,7 +239,7 @@ public class Interpreter extends AbstractInterpreter {
 				while (true) try {
 						while (true) {
 // 							System.err.print('¤');
-							if (pc+1 >= code.length) { 
+							if (pc >= code.length) {
 								throw new Error("Bad jump to: "+module_name()+"@"+pc+"; from_pc="+last_pc+"; op="+((int)code[last_pc]));
 							}
 							final int opcode = code[pc++];
@@ -281,6 +281,13 @@ public class Interpreter extends AbstractInterpreter {
 							pc = exh.pc;
 							continue;
 						} else throw(e);
+					} catch (RuntimeException e) {
+						if (ERT.DEBUG) {
+							System.err.println("DB| Error when interpreting "+module_name()+"@"+(pc-1)+"; opcode="+code[last_pc]+"; prefetched1="+prefetched1+"; prefetched2="+prefetched2+" : "+e);
+							System.err.println("Code:");
+							for (int i=Math.max(0,pc-15); i<Math.min(code.length,pc+5); i++) System.err.println("  "+i+": "+(int)code[i]);
+						}
+						throw e;
 					}
 			}
 		} // class Function
