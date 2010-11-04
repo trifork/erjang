@@ -130,14 +130,9 @@ public class FDDriverInstance extends EDriverInstance {
 						try {
 							int howmany;
 							
-							try {
-								howmany = ins.read(buffer);
-								finish(howmany, buffer);
-							} catch (EOFException e) {
-								finish(-1, buffer);
-								return;
-							}
-							
+							howmany = ins.read(buffer);
+							finish(howmany, buffer);
+							if (howmany < 0) return; //EOF
 						} catch (IOException e) {
 							
 							if (e.getMessage().equals("Interrupted system call")) {
