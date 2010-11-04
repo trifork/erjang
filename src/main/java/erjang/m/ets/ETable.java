@@ -247,6 +247,8 @@ abstract class ETable implements ExitHook {
 			synchronized (ETable.this) {
 				return run.call();
 			}
+		} catch (ErlangError e) {
+			throw e;
 		} catch (Exception e) {
 			e.printStackTrace();
 			// STM Failure

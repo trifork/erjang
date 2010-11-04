@@ -153,7 +153,8 @@ public class Native extends ENative {
 					heir_pid = null;
 					continue;
 				} else if (t2.elem1 == am_keypos
-						&& ((pos = t2.elem2.testSmall()) != null)) {
+						   && ((pos = t2.elem2.testSmall()) != null)
+						   && pos.value >= 1) {
 					keypos = pos.value;
 					continue;
 				} else if (t2.elem1 == am_write_concurrency) {

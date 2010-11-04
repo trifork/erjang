@@ -315,6 +315,7 @@ public class ETableSet extends ETable {
 			
 		} else {
 			ETuple candidate = (ETuple) map.valAt(key);
+			if (candidate == null) return Native.am_$end_of_table;
 			EObject res;
 			if ((res = matcher.match(candidate)) != null) {
 				return new ETuple2(ERT.NIL.cons(res), Native.am_$end_of_table);
