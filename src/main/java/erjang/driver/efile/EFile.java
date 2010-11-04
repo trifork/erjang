@@ -1393,7 +1393,7 @@ public class EFile extends EDriverInstance {
 					}
 					boolean append = (mode & EFILE_MODE_APPEND) > 0;
 					if ((mode & ~(EFILE_MODE_APPEND | EFILE_MODE_READ_WRITE)) > 0) {
-						System.err.println("APPEND NOT IMPLEMENTED!");
+						System.err.println("ONLY APPEND AND READ_WRITE OPTIONS ARE IMPLEMENTED!");
 						throw new NotImplemented();
 					}
 					try {

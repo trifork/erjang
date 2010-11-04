@@ -234,10 +234,15 @@ public class Interpreter extends AbstractInterpreter {
 				EBitStringBuilder bit_string_builder = null;
 
 				EObject prefetched1 = null, prefetched2 = null;
+				int last_pc = pc;
 
 				while (true) try {
 						while (true) {
 // 							System.err.print('¤');
+							if (pc >= code.length) {
+								throw new Error("Bad jump to: "+module_name()+"@"+pc+"; from_pc="+last_pc+"; op="+((int)code[last_pc]));
+							}
+							last_pc = pc;
 							final int opcode = code[pc++];
 							//System.err.print("STACK| "); for (int i=0; i<=sp; i++) {System.err.print("  "+i+":"+stack[i]);} System.err.println();
 // 							System.err.println("INTP|"+proc.self_handle()+" (pc="+(pc-1)+"; sp="+sp+")"+opcode+"   "+reg[0]);
@@ -276,6 +281,13 @@ public class Interpreter extends AbstractInterpreter {
 							pc = exh.pc;
 							continue;
 						} else throw(e);
+					} catch (RuntimeException e) {
+						if (ERT.DEBUG) {
+							System.err.println("DB| Error when interpreting "+module_name()+"@"+(pc-1)+"; opcode="+code[last_pc]+"; prefetched1="+prefetched1+"; prefetched2="+prefetched2+" : "+e);
+							System.err.println("Code:");
+							for (int i=Math.max(0,pc-15); i<Math.min(code.length,pc+5); i++) System.err.println("  "+i+": "+(int)code[i]);
+						}
+						throw e;
 					}
 			}
 		} // class Function

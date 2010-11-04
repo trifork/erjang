@@ -993,6 +993,8 @@ public class EMatchSpec extends EPseudoTerm {
 		return new EMatchSpec(funs.toArray(new MatchFunction[funs.size()]), full_spec);
 	}
 
+	static EObject KEY_ABSENT = new EKeyAbsent();
+
 	/**
 	 * If the match head is a tuple, and the element at keypos is a constant
 	 * term, then return that term. This is used if there is an index on that
@@ -1005,6 +1007,7 @@ public class EMatchSpec extends EPseudoTerm {
 		if (this.funs.length == 1) {
 			if (funs[0].head instanceof TuplePattern) {
 				TuplePattern tp = (TuplePattern) funs[0].head;
+				if (tp.elems.length < keypos1) return KEY_ABSENT;
 				if (tp.elems[keypos1 - 1] instanceof EqualsPattern) {
 					EqualsPattern ep = (EqualsPattern) tp.elems[keypos1 - 1];
 					return ep.value;
@@ -1091,4 +1094,13 @@ public class EMatchSpec extends EPseudoTerm {
 		return vals;
 	}
 
+}
+
+class EKeyAbsent extends EPseudoTerm {
+// 	@Override
+	int compare_same(EObject rhs) {
+		if (rhs == EMatchSpec.KEY_ABSENT)
+			return 0;
+		return -1;
+	}
 }
