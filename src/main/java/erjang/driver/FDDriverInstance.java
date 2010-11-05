@@ -89,6 +89,8 @@ public class FDDriverInstance extends EDriverInstance {
 
 				void finish(final int howmany, final byte[] buffer) {
 					final EDriverTask dt = FDDriverInstance.this.task;
+					final byte[] ob = new byte[howmany];
+					System.arraycopy(buffer, 0, ob, 0, howmany);
 					ERT.run_async(new EAsync() {
 						
 						@Override
@@ -100,9 +102,6 @@ public class FDDriverInstance extends EDriverInstance {
 									return;
 								}
 							}
-							
-							byte[] ob = new byte[howmany];
-							System.arraycopy(buffer, 0, ob, 0, howmany);
 							
 							if (task.send_binary_data) {
 								EBinary out = new EBinary(ob);
