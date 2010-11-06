@@ -86,7 +86,7 @@ public class AbstractInterpreter {
 				for (int i=0; i<code.size(); i++) {
 					Insn insn = insn_start.get(i);
 					System.err.println((insn!=null? "*" : " ") + i +
-									   ": " + code.get(i) +
+									   ": " + (int)code.get(i) +
 									   (insn!=null ? ("\t"+insn.toSymbolic().toString()) : ""));
 				}
 			}
