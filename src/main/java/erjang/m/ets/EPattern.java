@@ -316,7 +316,7 @@ public class EPattern {
 		}
 
 		public boolean match(ECons c, EMatchContext r) {
-			return c.head().match(head, r) && c.tail().match(tail, r);
+			return (!c.isNil()) && c.head().match(head, r) && c.tail().match(tail, r);
 		}
 	}
 
