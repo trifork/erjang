@@ -1456,20 +1456,20 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 						Type srcType = getType(current, src);
 
-						boolean boxed = false;
-						if (sizeof(current, src) > sizeof(current, dst)) {
-							if (getType(current, src).equals(Type.DOUBLE_TYPE)) {
-								current = setType(current, dst, EDOUBLE_TYPE);
-								boxed = true;
+						// Determine type after possible conversion:
+						Type dstType = srcType;
+						if (dst.testFReg() != null) {
+							dstType = Type.DOUBLE_TYPE; // FRegs are always unboxed
+						} else if (sizeof(current, src) > sizeof(current, dst)) { // Conversion needed
+							if (srcType.equals(Type.DOUBLE_TYPE)) {
+								dstType = EDOUBLE_TYPE; // Box
 							} else {
-								throw new Error("why?" + insn.toSymbolic() 
+								throw new Error("why?" + insn.toSymbolic()
 										+ "; srcType="+getType(current,src));
 							}
 						}
 
-						if (!boxed) {
-							current = setType(current, dst, srcType);
-						}
+						current = setType(current, dst, dstType);
 						continue next_insn;
 					}
 					case put_string: {
