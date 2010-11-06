@@ -97,8 +97,25 @@ ets_do({delete, Tab, Key}) -> ets:delete(Tab, Key);
 ets_do({match_object, Tab, Pattern}) -> ets:match_object(Tab, Pattern);
 ets_do({match_delete, Tab, Pattern}) -> ets:match_delete(Tab, Pattern);
 ets_do({info, Tab}) -> [{P,ets:info(Tab,P)}
-			|| P <- [name, type, size, named_table, keypos, protection]].
+			|| P <- [name, type, size, named_table, keypos, protection]];
+ets_do({key_walk, Tab, Dir}) -> sort_if_unordered(key_walk(Tab, Dir), Tab).
 
+
+sort_if_unordered(L, Tab) ->
+    case ets:info(Tab,type) of
+	ordered_set -> L;
+	_ -> lists:sort(L)
+    end.
+
+key_walk(Tab, forward) ->
+    key_walk(Tab, ets:first(Tab), fun ets:next/2, []);
+key_walk(Tab, backward) ->
+    key_walk(Tab, ets:last(Tab), fun ets:prev/2, []).
+
+key_walk(_Tab, '$end_of_table', _NextFun, Acc) ->
+    Acc;
+key_walk(Tab, Key, NextFun, Acc) ->
+    key_walk(Tab, NextFun(Tab,Key), NextFun, [Key | Acc]).
 
 %% ===========================================
 %% Run erlang:Fun(Args) here
@@ -124,10 +141,10 @@ table_name() ->
     oneof([table1, table2]).
 
 table_key() ->
-    ?SUCHTHAT(X,oneof([key1, "key2", 123, 123.0, smaller(?DELAY(any()))]), X/=[]). % Workaround "[] key in sorted_set" bug in erts<5.8.1 .
+    ?SUCHTHAT(X,oneof([key1, "key2", 123, 123.0, smaller(?DELAY(any2()))]), X/=[]). % Workaround "[] key in ordered_set" bug in erts<5.8.1 .
 
 table_tuple() ->
-    ?LET({K,L}, {table_key(), list(smaller(oneof([any(), pattern()])))},
+    ?LET({K,L}, {table_key(), list(smaller(oneof([any2(), pattern()])))},
 	 list_to_tuple([K | L])).
 
 table_tuple_pattern() ->
@@ -135,7 +152,7 @@ table_tuple_pattern() ->
 	 list_to_tuple([K | L])).
 
 pattern() ->
-    oneof([pattern_special(), list(smaller(?DELAY(pattern()))), tuple(smaller(?DELAY(pattern()))), any()]).
+    oneof([pattern_special(), list(smaller(?DELAY(pattern()))), tuple(smaller(?DELAY(pattern()))), any2()]).
 
 pattern_special() ->
     oneof(['_', '$1', '$2', '$3', '$10', '$01', '$$']).
@@ -155,32 +172,28 @@ ets_cmd() ->
 	   {delete, table_name(), table_key()},
 	   {match_object, table_name(), table_tuple_pattern()},
 	   {match_delete, table_name(), table_tuple_pattern()},
-	   {info, table_name()}
+	   {info, table_name()},
+	   {key_walk, table_name(), ?SUCHTHAT(X, oneof([forward, backward]), X/=backward)}  % Implementation of prev & last is missing yet
 	  ]).
 
-
-ets_program() ->
-    smaller(list(ets_cmd())).
-
-xany()  ->
-    oneof([int(), real(), bool(), atom(), 
-
-	   %% also test integers around +/- MIN_INT32 limits
-	   choose(?MIN_INT32-10, ?MIN_INT32+10),
-	   choose(?MAX_INT32-10, ?MAX_INT32+10),
-
-	   %% also test integers around +/- MIN_INT64 limits
-	   choose(?MIN_INT64-10, ?MIN_INT64+10),
-	   choose(?MAX_INT64-10, ?MAX_INT64+10),
+any2() ->
+    oneof([int(), real(), bool(), atom(),
 
 	   [smaller(?DELAY(any())) | smaller(?DELAY(any()))],
 
 	   %% list(any()), but with a size in the range 1..GenSize
 	   list(smaller(?DELAY(any()))),
 
-	   tuple(smaller(?DELAY(any())))
+	   tuple(smaller(?DELAY(any()))),
+
+	   ?LET(X, list(choose(0,255)), list_to_binary(X))
 
 	  ]).
+
+
+ets_program() ->
+    smaller(list(ets_cmd())).
+
 
 prop_same_ets_behaviour() ->
     ?FORALL(X, ets_program(),
