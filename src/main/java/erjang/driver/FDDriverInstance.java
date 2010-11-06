@@ -130,8 +130,14 @@ public class FDDriverInstance extends EDriverInstance {
 							int howmany;
 							
 							howmany = ins.read(buffer);
+							if (howmany < 0) {
+								if (task.send_eof) {
+									task.eof_from_driver_b();
+								}
+								return;
+							}
 							finish(howmany, buffer);
-							if (howmany < 0) return; //EOF
+							
 						} catch (IOException e) {
 							
 							if (e.getMessage().equals("Interrupted system call")) {

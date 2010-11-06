@@ -490,9 +490,9 @@ public final class EProc extends ETask<EInternalPID> {
 			try {
 				this.check_exit();
 				
-					synchronized(this) {
+//					synchronized(this) {
 						this.pstate = STATE_RUNNING;
-					}
+//					}
 				
 					boolean live = true;
 					while (live) {

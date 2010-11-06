@@ -287,8 +287,10 @@ public class ETableSet extends ETable {
 			
 				EObject key = get_key(obj);
 				
-				EObject candidate = (EObject)map.entryAt(key);
-				if (obj.equals(candidate)) {
+				IMapEntry candidateEntry = map.entryAt(key);
+				if (candidateEntry == null) return null;
+				EObject candidate = (EObject)candidateEntry.val();
+				if (candidate != null && obj.equals(candidate)) {
 					try {
 						map = map.without(key);
 						set(map);
