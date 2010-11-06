@@ -698,15 +698,7 @@ public class ErlBif {
 	}
 
 	// floats
-
-	@BIF(type = Type.ARITHBIF)
-	static public double fdiv(double v1, EObject v2) {
-		EDouble d2 = v2.testFloat();
-		if (d2 == null) { throw ERT.badarith(new EDouble(v1), v2); }
-		test_zero(v1, d2.value);
-		return v1 / d2.value;
-	}
-
+	/* These BIFs operate on floating point registers, which are not boxed. */
 
 	@BIF(type = Type.ARITHBIF)
 	static public double fdiv(double v1, double v2) {
@@ -720,33 +712,9 @@ public class ErlBif {
 	}
 
 	@BIF(type = Type.ARITHBIF)
-	static public double fdiv(EDouble v1, double v2) {
-		test_zero(v1.value, v2);
-		return v1.value / v2;
-	}
-
-	@BIF(type = Type.ARITHBIF)
-	static public double fdiv(EDouble v1, EDouble v2) {
-		test_zero(v1.value, v2.value);
-		return v1.value / v2.value;
-	}
-
-	@BIF(type = Type.ARITHBIF)
 	static public double fsub(double v1, double v2) {
 		return v1 - v2;
 	}
-
-	@BIF(type = Type.ARITHBIF)
-	static public double fsub(EObject v1, EObject v2) {
-		ENumber n1, n2;
-		if ((n1 = v1.testNumber()) != null &&
-		    (n2 = v2.testNumber()) != null)
-		{
-			return n1.doubleValue() - n2.doubleValue();
-		}
-		throw ERT.badarg();
-	}
-
 
 	@BIF(type = Type.ARITHBIF)
 	static public double fadd(double v1, double v2) {
@@ -754,46 +722,13 @@ public class ErlBif {
 	}
 
 	@BIF(type = Type.ARITHBIF)
-	static public double fmul(EDouble v1, EDouble v2) {
-		return (v1.value * v2.value);
-	}
-
-	@BIF(type = Type.ARITHBIF)
-	static public double fmul(EObject v1, EObject v2) {
-		EDouble d1 = v1.testFloat();
-		EDouble d2 = v2.testFloat();
-		
-		if (d1==null || d2==null) {
-			throw ERT.badarith(v1,v2);
-		}
-		
-		return (d1.value * d2.value);
-	}
-
-	
-	@BIF(type = Type.ARITHBIF)
-	static public double fadd(EDouble v1, double v2) {
-		return (v1.value + v2);
-	}
-
-
-	@BIF(type = Type.ARITHBIF)
-	static public double fadd(EDouble v1, EDouble v2) {
-		return (v1.value + v2.value);
-	}
-
-
-	@BIF(type = Type.ARITHBIF)
 	static public double fmul(double v1, double v2) {
 		return v1 * v2;
 	}
 
-	@BIF(type = Type.ARITHBIF)
-	static public double fmul(double v1, EObject v2) {
-		EDouble d2;
-		if ((d2=v2.testFloat()) == null) throw ERT.badarg(new EDouble(v1), v2);
-		return v1 * d2.value;
-	}
+	@BIF(type=Type.ARITHBIF)
+	public static double fnegate(double val) { return -val; }
+
 
 	// arithmetic
 
@@ -891,12 +826,6 @@ public class ErlBif {
 		return v1.divide(v2);
 	}
 
-	@BIF(type=Type.ARITHBIF)
-	public static double fnegate(double val) { return -val; }
-	
-	@BIF
-	public static EDouble fnegate(EDouble val) { return new EDouble(-val.value); }
-	
 	@BIF(name = "+", type = Type.GUARD)
 	static public ENumber plus$p(EObject v1, EObject v2) {
 		return v1.add(v2, true);

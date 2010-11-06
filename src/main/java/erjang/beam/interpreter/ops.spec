@@ -425,14 +425,14 @@ fconv src dst:
 
 %class LSSD(label:L, src1:f, src2:f, dest:f)
 fadd lbl a b dst:
-	SET(dst, ERT.box(ErlBif.fadd(GET(a), GET(b))));
+	SET(dst, ERT.box(ErlBif.fadd(GET(a).value, GET(b).value)));
 
 fsub lbl a b dst:
-	SET(dst, ERT.box(ErlBif.fsub(GET(a), GET(b))));
+	SET(dst, ERT.box(ErlBif.fsub(GET(a).value, GET(b).value)));
 
 fmul lbl a b dst:
-	SET(dst, ERT.box(ErlBif.fmul(GET(a), GET(b))));
+	SET(dst, ERT.box(ErlBif.fmul(GET(a).value, GET(b).value)));
 
 fdiv lbl a b dst:
-	SET(dst, ERT.box(ErlBif.fdiv(GET(a), GET(b))));
+	SET(dst, ERT.box(ErlBif.fdiv(GET(a).value, GET(b).value)));
 
