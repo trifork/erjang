@@ -600,6 +600,8 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 			}
 		}
 
+		inet_output_count(len+ (hbuf==null ? 0 : hbuf.limit()));
+		
 		if (hbuf != null) {
 			len += hbuf.remaining();
 			// insert hbuf ahead of ev
@@ -690,6 +692,15 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 		}
 		return 0;
 
+	}
+
+	private void inet_output_count(long len) {
+		this.send_oct += len;
+		this.send_cnt += 1;
+		if (len > send_max)
+			send_max = (int) len;
+		
+		// TODO: Implement avg and dvi 
 	}
 
 	static String hex2(int i) {
@@ -959,6 +970,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 				System.err.println("did read " + n + " bytes (ibuf.size="+i_buf.remaining()+")");
 			if (n == 0)
 				return 0;
+			
 		} catch (ClosedChannelException e) {
 			return tcp_recv_closed();
 		} catch (IOException e) {
@@ -1117,7 +1129,6 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 			try {
 				// dump_write(iov);
 				n = gbc.write(iov);
-				
 				
 				//System.err.println("delayed write!");
 				//dump_write(iov);
@@ -2545,6 +2556,8 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 				System.err.println("deliver.2");
 			int code = 0;
 
+			inet_input_count(len);
+			
 			if (len * 4 >= i_buf.capacity() * 3) { /* >=75% */
 				if (ERT.DEBUG_INET)
 						System.err.println("deliver.2.1");
@@ -2629,6 +2642,18 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 	 * [H1..Hsz | Data]}** active=FALSE:* {async, S, Ref, {ok,[H1,...Hsz |
 	 * Data]}}
 	 */
+
+	private void inet_input_count(int len) {
+		recv_cnt += 1;
+		recv_oct += len;
+		
+		double avg = recv_avg;
+		double dvi = recv_dvi;
+		
+		recv_avg = avg + (len - avg) / recv_cnt;
+		if (len > recv_max)
+			recv_max = len;
+	}
 
 	private void tcp_restart_input() {
 		if (i_ptr_start != 0) {
