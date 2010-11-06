@@ -21,6 +21,13 @@ package erjang;
 public class ETuple1 extends ETuple {
 	public EObject elem1;
 	
+	public ETuple1() {
+	}
+
+	public ETuple1(EObject elem1) {
+		this.elem1 = elem1;
+	}
+
 	static public ETuple1 cast(ETuple value) {
 		if (value.arity() == 1) return (ETuple1) value;
 		return null;
