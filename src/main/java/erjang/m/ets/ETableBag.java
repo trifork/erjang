@@ -285,7 +285,7 @@ public class ETableBag extends ETable {
 					EObject val = (EObject) s.first();
 					if (val == null) break;
 					
-					if (! obj.equals(val)) {
+					if (! obj.equalsExactly(val)) {
 						out = out.cons(val);
 					} else {
 						deleted += 1;
