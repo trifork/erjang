@@ -34,6 +34,7 @@
 -include("triq.hrl").
 
 -export([main/0, ets_behaviour/1, ets_behaviour_wrapper/1]).
+-export([here/3, other/3]).
 
 
 %% ===========================================
@@ -55,7 +56,7 @@ call(Node,Mod,Fun,Args) ->
 	{badrpc,{'EXIT',{Reason,[FirstTrace|_]}}} ->
 	    {badrpc, {'EXIT',{Reason,[FirstTrace]}}};
 	Value -> Value
-    end.    
+    end.
 
 %% ===========================================
 %% Run Mod:Fun(Args) on beam
@@ -91,12 +92,12 @@ ets_do({insert_new, Tab, Item}) ->
 	duplicate_bag -> not_implemented_yet;
 	_ -> ets:insert_new(Tab, Item)
     end;
-ets_do({lookup, Tab, Key}) -> ets:lookup(Tab, Key);
+ets_do({lookup, Tab, Key}) -> lists:sort(ets:lookup(Tab, Key));
 ets_do({lookup_element, Tab, Key, Pos}) -> ets:lookup_element(Tab, Key, Pos);
 ets_do({member, Tab, Key}) -> ets:member(Tab, Key);
 ets_do({delete, Tab}) -> ets:delete(Tab);
 ets_do({delete, Tab, Key}) -> ets:delete(Tab, Key);
-ets_do({match_object, Tab, Pattern}) -> ets:match_object(Tab, Pattern);
+ets_do({match_object, Tab, Pattern}) -> lists:sort(ets:match_object(Tab, Pattern));
 ets_do({match_delete, Tab, Pattern}) -> ets:match_delete(Tab, Pattern);
 ets_do({info, Tab}) -> [{P,ets:info(Tab,P)}
 			|| P <- [name, type, size, named_table, keypos, protection]];
@@ -164,16 +165,16 @@ table_type() ->
 ets_cmd() ->
     oneof([{new, ?DELAY(table_name()), [table_type(), ?LET(X, oneof([1,1,1,2,choose(1,100)]), {keypos, X})]},
 	   {insert, table_name(), table_tuple()},
-	   {insert, table_name(), list(table_tuple())},
+	   {insert, table_name(), much_smaller(list(table_tuple()))},
 	   {insert_new, table_name(), table_tuple()},
-	   {insert_new, table_name(), list(table_tuple())},
+	   {insert_new, table_name(), much_smaller(list(table_tuple()))},
 	   {lookup, table_name(), table_key()},
 	   {lookup_element, table_name(), table_key(), much_smaller(?DELAY(int()))},
 	   {member, table_name(), table_key()},
 	   {delete, table_name()},
 	   {delete, table_name(), table_key()},
-	   {match_object, table_name(), table_tuple_pattern()},
-	   {match_delete, table_name(), table_tuple_pattern()},
+	   {match_object, table_name(), much_smaller(table_tuple_pattern())},
+	   {match_delete, table_name(), much_smaller(table_tuple_pattern())},
 	   {info, table_name()},
 	   {key_walk, table_name(), ?SUCHTHAT(X, oneof([forward, backward]), X/=backward)}  % Implementation of prev & last is missing yet
 	  ]).
