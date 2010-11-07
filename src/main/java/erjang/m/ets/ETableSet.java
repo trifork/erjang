@@ -180,13 +180,19 @@ public class ETableSet extends ETable {
 
 
 	@Override
-	protected boolean insert_new_many(final ESeq values) {	
+	protected boolean insert_new_many(final ESeq values) {
+		// Input verification outside of transaction:
+		for (ESeq seq = values; !seq.isNil(); seq = seq.tail()) {
+			ETuple value = seq.head().testTuple();
+			if (value == null) throw ERT.badarg(values);
+			EObject key = get_key(value);
+		}
+
 		return in_tx(new WithMap<Boolean>() {
 			@Override
 			protected Boolean run(IPersistentMap map) {
 				for (ESeq seq = values; !seq.isNil(); seq = seq.tail()) {
 					ETuple value = seq.head().testTuple();
-					if (value == null) throw ERT.badarg(values);
 					EObject key = get_key(value);
 					if (map.containsKey(key)) {
 						return false;
