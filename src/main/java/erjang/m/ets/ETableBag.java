@@ -100,10 +100,17 @@ public class ETableBag extends ETable {
 					ETuple value = seq.head().testTuple();
 					if (value == null) throw ERT.badarg(values);
 					EObject key = get_key(value);
-					IPersistentCollection c = 
+					IPersistentCollection c =
 						(IPersistentCollection) map.valAt(key, empty());
-					map = map.assoc(key, c.cons(value));
-					count += 1;
+
+					// Insert element - noting whether the map grows
+					int sizeBefore = c.count();
+					c = c.cons(value);
+					int sizeAfter = c.count();
+					map = map.assoc(key, c);
+
+					// Update size - if the map grew
+					if (sizeAfter > sizeBefore) count += 1;
 				}
 				sizeRef.set(count + (Integer)sizeRef.get());
 				set(map);
@@ -129,11 +136,21 @@ public class ETableBag extends ETable {
 			protected Object run(IPersistentMap map) {
 				IPersistentCollection empty = empty();
 				EObject key = get_key(value);
-				IPersistentCollection c = 
+				IPersistentCollection c =
 					(IPersistentCollection) map.valAt(key, empty);
-				map = map.assoc(key, c.cons(value));
+
+				// Insert element - noting whether the map grows
+				int sizeBefore = c.count();
+				c = c.cons(value);
+				int sizeAfter = c.count();
+				map = map.assoc(key, c);
 				set(map);
-				sizeRef.set(1 + (Integer)sizeRef.get());
+
+				// Update size - if the map grew
+				Integer cnt0 = (Integer)sizeRef.get();
+				if (sizeAfter > sizeBefore)
+					sizeRef.set(1 + (Integer)sizeRef.get());
+
 				return null;
 			}
 		});
