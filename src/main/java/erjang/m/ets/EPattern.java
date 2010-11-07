@@ -332,36 +332,36 @@ public class EPattern {
 		}
 
 		public boolean match(EPID pid, EMatchContext r) {
-			return pid.compareTo(value) == 0;
+			return pid.equalsExactly(value);
 		}
 
 		public boolean match(ERef ref, EMatchContext r) {
-			return ref.compareTo(value) == 0;
+			return ref.equalsExactly(value);
 		}
 
 		public boolean match(EPort port, EMatchContext r) {
-			return port.compareTo(value) == 0;
+			return port.equalsExactly(value);
 		}
 
 		public boolean match(EAtom port, EMatchContext r) {
-			return port.compareTo(value) == 0;
+			return port.equalsExactly(value);
 		}
 
 		public boolean match(EBitString port, EMatchContext r) {
-			return port.compareTo(value) == 0;
+			return port.equalsExactly(value);
 		}
 
 		public boolean match(ENumber num, EMatchContext r) {
-			return num.compareTo(value) == 0;
+			return num.equalsExactly(value);
 		}
 
 		public boolean match(ETuple t, EMatchContext r) {
-			return t.compareTo(value) == 0;
+			return t.equalsExactly(value);
 		}
 
 		@Override
 		public boolean match(ECons c, EMatchContext r) {
-			return c.compareTo(value) == 0;
+			return c.equalsExactly(value);
 		}
 
 	}
