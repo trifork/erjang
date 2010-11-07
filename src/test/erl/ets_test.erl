@@ -93,7 +93,8 @@ ets_do({insert_new, Tab, Item}) ->
 	_ -> ets:insert_new(Tab, Item)
     end;
 ets_do({lookup, Tab, Key}) -> lists:sort(ets:lookup(Tab, Key));
-ets_do({lookup_element, Tab, Key, Pos}) -> ets:lookup_element(Tab, Key, Pos);
+ets_do({lookup_element, Tab, Key, Pos}) ->
+    sort_if_bag(ets:lookup_element(Tab, Key, Pos), Tab);
 ets_do({member, Tab, Key}) -> ets:member(Tab, Key);
 ets_do({delete, Tab}) -> ets:delete(Tab);
 ets_do({delete, Tab, Key}) -> ets:delete(Tab, Key);
@@ -108,6 +109,11 @@ sort_if_unordered(L, Tab) ->
     case ets:info(Tab,type) of
 	ordered_set -> L;
 	_ -> lists:sort(L)
+    end.
+sort_if_bag(L, Tab) ->
+    case ets:info(Tab,type) of
+	X when X==bag; X==duplicate_bag -> lists:sort(L);
+	_ -> L
     end.
 
 key_walk(Tab, forward) ->
