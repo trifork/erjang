@@ -1010,14 +1010,6 @@ public class ERT {
 	/**
 	 * @return
 	 */
-	public static ESeq getRemoteNodes() {
-		// TODO: implement
-		return ERT.NIL;
-	}
-
-	/**
-	 * @return
-	 */
 	public static int threadPoolSize() {
 		String threads = System.getProperty("erjang.beam.option.S");
 		if (threads != null)
