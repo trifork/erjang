@@ -27,7 +27,7 @@ import com.trifork.clj_ds.IPersistentMap;
 import com.trifork.clj_ds.IPersistentSet;
 import com.trifork.clj_ds.ISeq;
 import com.trifork.clj_ds.PersistentHashSet;
-import com.trifork.clj_ds.PersistentTreeMap;
+import com.trifork.clj_ds.PersistentHashMap;
 import com.trifork.clj_ds.Seqable;
 import erjang.EAtom;
 import erjang.ECons;
@@ -63,7 +63,7 @@ public class ETableBag extends ETable {
 			  EObject heirData)
 	{
 		super(owner, type, tid, aname, access, keypos, isNamed, heirPid,
-				heirData, PersistentTreeMap.EMPTY);
+			  heirData, PersistentHashMap.EMPTY);
 		try {
 			sizeRef = new AtomicInteger(0);
 		} catch (Exception e) {
