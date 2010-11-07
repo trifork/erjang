@@ -290,7 +290,7 @@ public class ETableSet extends ETable {
 				IMapEntry candidateEntry = map.entryAt(key);
 				if (candidateEntry == null) return null;
 				EObject candidate = (EObject)candidateEntry.val();
-				if (candidate != null && obj.equals(candidate)) {
+				if (candidate != null && obj.equalsExactly(candidate)) {
 					try {
 						map = map.without(key);
 						set(map);

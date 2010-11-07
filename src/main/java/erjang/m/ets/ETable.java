@@ -309,7 +309,7 @@ abstract class ETable implements ExitHook {
 				IMapEntry ent = (IMapEntry) seq.first(); 
 				if (ent == null) return Native.am_$end_of_table;
 				EObject key = (EObject) ent.getKey();
-				if (key.equals(from)) {
+				if (key.equalsExactly(from)) {
 					seq = seq.next();
 					if (seq == null) return Native.am_$end_of_table;
 					ent = (IMapEntry) seq.first(); 

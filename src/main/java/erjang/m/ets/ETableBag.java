@@ -27,7 +27,7 @@ import com.trifork.clj_ds.IPersistentMap;
 import com.trifork.clj_ds.IPersistentSet;
 import com.trifork.clj_ds.ISeq;
 import com.trifork.clj_ds.PersistentHashSet;
-import com.trifork.clj_ds.PersistentTreeMap;
+import com.trifork.clj_ds.PersistentHashMap;
 import com.trifork.clj_ds.Seqable;
 import erjang.EAtom;
 import erjang.ECons;
@@ -63,7 +63,7 @@ public class ETableBag extends ETable {
 			  EObject heirData)
 	{
 		super(owner, type, tid, aname, access, keypos, isNamed, heirPid,
-				heirData, PersistentTreeMap.EMPTY);
+			  heirData, PersistentHashMap.EMPTY);
 		try {
 			sizeRef = new AtomicInteger(0);
 		} catch (Exception e) {
@@ -100,10 +100,17 @@ public class ETableBag extends ETable {
 					ETuple value = seq.head().testTuple();
 					if (value == null) throw ERT.badarg(values);
 					EObject key = get_key(value);
-					IPersistentCollection c = 
+					IPersistentCollection c =
 						(IPersistentCollection) map.valAt(key, empty());
-					map = map.assoc(key, c.cons(value));
-					count += 1;
+
+					// Insert element - noting whether the map grows
+					int sizeBefore = c.count();
+					c = c.cons(value);
+					int sizeAfter = c.count();
+					map = map.assoc(key, c);
+
+					// Update size - if the map grew
+					if (sizeAfter > sizeBefore) count += 1;
 				}
 				sizeRef.set(count + (Integer)sizeRef.get());
 				set(map);
@@ -129,11 +136,21 @@ public class ETableBag extends ETable {
 			protected Object run(IPersistentMap map) {
 				IPersistentCollection empty = empty();
 				EObject key = get_key(value);
-				IPersistentCollection c = 
+				IPersistentCollection c =
 					(IPersistentCollection) map.valAt(key, empty);
-				map = map.assoc(key, c.cons(value));
+
+				// Insert element - noting whether the map grows
+				int sizeBefore = c.count();
+				c = c.cons(value);
+				int sizeAfter = c.count();
+				map = map.assoc(key, c);
 				set(map);
-				sizeRef.set(1 + (Integer)sizeRef.get());
+
+				// Update size - if the map grew
+				Integer cnt0 = (Integer)sizeRef.get();
+				if (sizeAfter > sizeBefore)
+					sizeRef.set(1 + (Integer)sizeRef.get());
+
 				return null;
 			}
 		});
@@ -285,7 +302,7 @@ public class ETableBag extends ETable {
 					EObject val = (EObject) s.first();
 					if (val == null) break;
 					
-					if (! obj.equals(val)) {
+					if (! obj.equalsExactly(val)) {
 						out = out.cons(val);
 					} else {
 						deleted += 1;

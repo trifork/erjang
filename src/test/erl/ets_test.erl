@@ -34,6 +34,7 @@
 -include("triq.hrl").
 
 -export([main/0, ets_behaviour/1, ets_behaviour_wrapper/1]).
+-export([here/3, other/3]).
 
 
 %% ===========================================
@@ -55,16 +56,13 @@ call(Node,Mod,Fun,Args) ->
 	{badrpc,{'EXIT',{Reason,[FirstTrace|_]}}} ->
 	    {badrpc, {'EXIT',{Reason,[FirstTrace]}}};
 	Value -> Value
-    end.    
+    end.
 
 %% ===========================================
 %% Run Mod:Fun(Args) on beam
 %% ===========================================
 other(Mod,Fun,Args) when is_atom(Mod), is_atom(Fun), is_list(Args) ->
     call(server(), Mod,Fun,Args).
-
-other(Fun,Args) when is_list(Args) ->
-    call(server(), erlang,Fun,Args).
 
 ets_behaviour_wrapper(Prg) ->
     process_flag(trap_exit, true),
@@ -88,13 +86,19 @@ scrub(X) -> X.
 
 ets_do({new, Name, Options}) -> ets:new(Name, [named_table | Options]);
 ets_do({insert, Tab, Item})  -> ets:insert(Tab, Item);
-ets_do({insert_new, Tab, Item}) -> ets:insert_new(Tab, Item);
-ets_do({lookup, Tab, Key}) -> ets:lookup(Tab, Key);
-ets_do({lookup_element, Tab, Key, Pos}) -> ets:lookup_element(Tab, Key, Pos);
+ets_do({insert_new, Tab, Item}) ->
+    case ets:info(Tab, type) of
+	bag -> not_implemented_yet;
+	duplicate_bag -> not_implemented_yet;
+	_ -> ets:insert_new(Tab, Item)
+    end;
+ets_do({lookup, Tab, Key}) -> lists:sort(ets:lookup(Tab, Key));
+ets_do({lookup_element, Tab, Key, Pos}) ->
+    sort_if_bag(ets:lookup_element(Tab, Key, Pos), Tab);
 ets_do({member, Tab, Key}) -> ets:member(Tab, Key);
 ets_do({delete, Tab}) -> ets:delete(Tab);
 ets_do({delete, Tab, Key}) -> ets:delete(Tab, Key);
-ets_do({match_object, Tab, Pattern}) -> ets:match_object(Tab, Pattern);
+ets_do({match_object, Tab, Pattern}) -> lists:sort(ets:match_object(Tab, Pattern));
 ets_do({match_delete, Tab, Pattern}) -> ets:match_delete(Tab, Pattern);
 ets_do({info, Tab}) -> [{P,ets:info(Tab,P)}
 			|| P <- [name, type, size, named_table, keypos, protection]];
@@ -105,6 +109,11 @@ sort_if_unordered(L, Tab) ->
     case ets:info(Tab,type) of
 	ordered_set -> L;
 	_ -> lists:sort(L)
+    end.
+sort_if_bag(L, Tab) ->
+    case ets:info(Tab,type) of
+	X when X==bag; X==duplicate_bag -> lists:sort(L);
+	_ -> L
     end.
 
 key_walk(Tab, forward) ->
@@ -122,13 +131,12 @@ key_walk(Tab, Key, NextFun, Acc) ->
 %% ===========================================
 here(Mod,Fun,Args) ->
     call(node(),Mod,Fun,Args).
-here(Fun,Args) ->
-    call(node(),erlang,Fun,Args).
-
 
 
 smaller(Domain) ->
-%    ?SIZED(SZ, triq_dom:resize(random:uniform((SZ div 2)+1), Domain)).
+    ?SIZED(SZ, triq_dom:resize(random:uniform((SZ div 2)+1), Domain)).
+
+much_smaller(Domain) ->
     ?SIZED(SZ, triq_dom:resize(random:uniform(round(math:sqrt(SZ)+1)), Domain)).
 
 -define(MIN_INT32, (-(1 bsl 31))).
@@ -141,10 +149,10 @@ table_name() ->
     oneof([table1, table2]).
 
 table_key() ->
-    ?SUCHTHAT(X,oneof([key1, "key2", 123, 123.0, smaller(?DELAY(any2()))]), X/=[]). % Workaround "[] key in ordered_set" bug in erts<5.8.1 .
+    ?SUCHTHAT(X,oneof([key1, "key2", 123, 123.0, much_smaller(?DELAY(any2()))]), X/=[]). % Workaround "[] key in ordered_set" bug in erts<5.8.1 .
 
 table_tuple() ->
-    ?LET({K,L}, {table_key(), list(smaller(oneof([any2(), pattern()])))},
+    ?LET({K,L}, {table_key(), list(much_smaller(oneof([any2(), pattern()])))},
 	 list_to_tuple([K | L])).
 
 table_tuple_pattern() ->
@@ -158,20 +166,21 @@ pattern_special() ->
     oneof(['_', '$1', '$2', '$3', '$10', '$01', '$$']).
 
 table_type() ->
-%%     oneof([set, bag, duplicate_bag, ordered_set]).
-    oneof([set, ordered_set]).
+    oneof([set, bag, duplicate_bag, ordered_set]).
 
 ets_cmd() ->
     oneof([{new, ?DELAY(table_name()), [table_type(), ?LET(X, oneof([1,1,1,2,choose(1,100)]), {keypos, X})]},
 	   {insert, table_name(), table_tuple()},
+	   {insert, table_name(), much_smaller(list(table_tuple()))},
 	   {insert_new, table_name(), table_tuple()},
+	   {insert_new, table_name(), much_smaller(list(table_tuple()))},
 	   {lookup, table_name(), table_key()},
-	   {lookup_element, table_name(), table_key(), smaller(?DELAY(int()))},
+	   {lookup_element, table_name(), table_key(), much_smaller(?DELAY(int()))},
 	   {member, table_name(), table_key()},
 	   {delete, table_name()},
 	   {delete, table_name(), table_key()},
-	   {match_object, table_name(), table_tuple_pattern()},
-	   {match_delete, table_name(), table_tuple_pattern()},
+	   {match_object, table_name(), much_smaller(table_tuple_pattern())},
+	   {match_delete, table_name(), much_smaller(table_tuple_pattern())},
 	   {info, table_name()},
 	   {key_walk, table_name(), ?SUCHTHAT(X, oneof([forward, backward]), X/=backward)}  % Implementation of prev & last is missing yet
 	  ]).
