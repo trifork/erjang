@@ -44,9 +44,11 @@ import erjang.EDouble;
 import erjang.EFun;
 import erjang.EInteger;
 import erjang.EModuleManager;
+import erjang.ENode;
 import erjang.ENumber;
 import erjang.EObject;
 import erjang.EPID;
+import erjang.EPeer;
 import erjang.EPort;
 import erjang.EProc;
 import erjang.ERT;
@@ -1252,7 +1254,8 @@ public class ErlBif {
 
 	@BIF
 	public static ESeq nodes() {
-		return ERT.getRemoteNodes();
+		return EPeer.getRemoteNodes();
+//		return ERT.getRemoteNodes();
 	}
 
 	@BIF(name = "is_atom", type = Type.GUARD)
@@ -1861,7 +1864,7 @@ public class ErlBif {
 	
 	
 	@BIF
-	public static EObject md5_finish(EProc self, EObject context)
+	public static EObject md5_final(EProc self, EObject context)
 	{
 		JavaObject jo;
 		if ((jo = context.testJavaObject()) != null && (jo.realObject() instanceof MessageDigest)) {

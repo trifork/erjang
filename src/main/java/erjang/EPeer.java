@@ -513,6 +513,16 @@ public class EPeer extends EAbstractNode {
 		return msg;
 	}
 
+	public static ESeq getRemoteNodes() {
+		EAtom[] nodes = peers.keySet().toArray(new EAtom[0]);
+
+		ESeq reply = ERT.NIL;
+		for (int i = 0; i < nodes.length; i++) {
+			reply = reply.cons(nodes[i]);
+		}
+		return reply;
+	}
+
 	
 
 }
