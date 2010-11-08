@@ -519,6 +519,21 @@ public abstract class ETuple extends EObject implements Cloneable /* , Indexed *
 	}
 
 	@Override
+	public boolean equalsExactly(EObject obj) {
+		if (obj instanceof ETuple) {
+			ETuple ot = (ETuple) obj;
+			if (arity() != ot.arity())
+				return false;
+			for (int i = 0; i < arity(); i++) {
+				if (!elm(i + 1).equalsExactly(ot.elm(i + 1)))
+					return false;
+			}
+			return true;
+		}
+		return false;
+	}
+
+	@Override
 	public Type emit_const(MethodVisitor fa) {
 
 		Type type = Type.getType(this.getClass());

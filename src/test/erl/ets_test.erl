@@ -102,7 +102,9 @@ ets_do({match_object, Tab, Pattern}) -> lists:sort(ets:match_object(Tab, Pattern
 ets_do({match_delete, Tab, Pattern}) -> ets:match_delete(Tab, Pattern);
 ets_do({info, Tab}) -> [{P,ets:info(Tab,P)}
 			|| P <- [name, type, size, named_table, keypos, protection]];
-ets_do({key_walk, Tab, Dir}) -> sort_if_unordered(key_walk(Tab, Dir), Tab).
+ets_do({key_walk, Tab, Dir}) -> sort_if_unordered(key_walk(Tab, Dir), Tab);
+ets_do({match_limit_walk, Tab, Pattern, Limit}) ->
+    sort_if_unordered(cont_walk(match(Tab, Pattern, Limit), fun match/1), Tab).
 
 
 sort_if_unordered(L, Tab) ->
@@ -125,6 +127,17 @@ key_walk(_Tab, '$end_of_table', _NextFun, Acc) ->
     Acc;
 key_walk(Tab, Key, NextFun, Acc) ->
     key_walk(Tab, NextFun(Tab,Key), NextFun, [Key | Acc]).
+
+cont_walk('$end_of_table', _MoreFun) -> [];
+cont_walk({Ms, Cont}, MoreFun) -> Ms ++ cont_walk(MoreFun(Cont), MoreFun).
+
+
+%% ===========================================
+%% As long as match/3 and match/1 aren't implemented...:
+match(Tab, Pattern, Limit) ->
+    ets:select(Tab,[{Pattern,[],['$_']}], Limit).
+match(Cont) ->
+    ets:select(Cont).
 
 %% ===========================================
 %% Run erlang:Fun(Args) here
@@ -175,14 +188,15 @@ ets_cmd() ->
 	   {insert_new, table_name(), table_tuple()},
 	   {insert_new, table_name(), much_smaller(list(table_tuple()))},
 	   {lookup, table_name(), table_key()},
-	   {lookup_element, table_name(), table_key(), much_smaller(?DELAY(int()))},
+	   {lookup_element, table_name(), table_key(), much_smaller(int())},
 	   {member, table_name(), table_key()},
 	   {delete, table_name()},
 	   {delete, table_name(), table_key()},
 	   {match_object, table_name(), much_smaller(table_tuple_pattern())},
 	   {match_delete, table_name(), much_smaller(table_tuple_pattern())},
 	   {info, table_name()},
-	   {key_walk, table_name(), ?SUCHTHAT(X, oneof([forward, backward]), X/=backward)}  % Implementation of prev & last is missing yet
+	   {key_walk, table_name(), ?SUCHTHAT(X, oneof([forward, backward]), X/=backward)},  % Implementation of prev & last is missing yet
+	   {match_limit_walk, table_name(), much_smaller(table_tuple_pattern()), much_smaller(int())}  % Implementation of prev & last is missing yet
 	  ]).
 
 any2() ->

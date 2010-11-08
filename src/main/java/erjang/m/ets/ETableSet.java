@@ -49,6 +49,7 @@ import erjang.m.erlang.ErlBif;
  * 
  */
 public class ETableSet extends ETable {
+	private boolean ordered;
 
 	ETableSet(EProc owner, EAtom type, EInteger tid, EAtom aname, EAtom access, int keypos,
 			boolean write_concurrency, boolean is_named, EInternalPID heirPID, EObject heirData) {
@@ -57,6 +58,7 @@ public class ETableSet extends ETable {
 				type == Native.am_set 
 						? PersistentHashMap.EMPTY 
 						: PersistentTreeMap.EMPTY);
+		this.ordered = type != Native.am_set;
 	}
 	
 	@Override
@@ -180,13 +182,19 @@ public class ETableSet extends ETable {
 
 
 	@Override
-	protected boolean insert_new_many(final ESeq values) {	
+	protected boolean insert_new_many(final ESeq values) {
+		// Input verification outside of transaction:
+		for (ESeq seq = values; !seq.isNil(); seq = seq.tail()) {
+			ETuple value = seq.head().testTuple();
+			if (value == null) throw ERT.badarg(values);
+			EObject key = get_key(value);
+		}
+
 		return in_tx(new WithMap<Boolean>() {
 			@Override
 			protected Boolean run(IPersistentMap map) {
 				for (ESeq seq = values; !seq.isNil(); seq = seq.tail()) {
 					ETuple value = seq.head().testTuple();
-					if (value == null) throw ERT.badarg(values);
 					EObject key = get_key(value);
 					if (map.containsKey(key)) {
 						return false;
@@ -232,6 +240,7 @@ public class ETableSet extends ETable {
 		EObject key = matcher.getKey(keypos1);
 		if (key == null) {
 			res = matcher.match(res, (Map<EObject, ETuple>) map);
+			if (ordered) res = res.reverse();
 		} else {
 			ETuple candidate = (ETuple) map.valAt(key);
 			if (candidate != null) {
@@ -250,6 +259,7 @@ public class ETableSet extends ETable {
 		EObject key = matcher.getKey(keypos1);
 		if (key == null) {
 			res = matcher.match_members(res, (Map<EObject, ETuple>) map);
+			if (ordered) res = res.reverse();
 		} else {
 			ETuple candidate = (ETuple) map.valAt(key);
 			if (candidate != null) {
@@ -312,7 +322,7 @@ public class ETableSet extends ETable {
 		EObject key = matcher.getTupleKey(keypos1);
 		
 		if (key == null) {
-			ESetCont cont0 = new ESetCont(matcher, map.seq(), limit);
+			ESetCont cont0 = new ESetCont(matcher, map.seq(), ordered, limit);
 			return cont0.select();
 			
 		} else {
@@ -331,11 +341,13 @@ public class ETableSet extends ETable {
 
 		private final ISeq ent;
 		private final EMatchSpec matcher;
+		private final boolean ordered;
 		private final int limit;
 
-		public ESetCont(EMatchSpec matcher, ISeq ent, int limit) {
+		public ESetCont(EMatchSpec matcher, ISeq ent, boolean ordered, int limit) {
 			this.matcher = matcher;
 			this.ent = ent;
+			this.ordered = ordered;
 			this.limit = limit;
 		}
 	
@@ -356,13 +368,14 @@ public class ETableSet extends ETable {
 					vals = vals.cons(res);
 				}
 			}
+			if (ordered) vals = vals.reverse();
 
 			if (vals == ERT.NIL) {
 				return Native.am_$end_of_table;
 			} else if (!seq_has_more(map_seq)) {
 				return new ETuple2(vals, Native.am_$end_of_table);
 			} else {
-				return new ETuple2(vals, new ESetCont(matcher, map_seq, limit));
+				return new ETuple2(vals, new ESetCont(matcher, map_seq, ordered, limit));
 			}
 		}
 
