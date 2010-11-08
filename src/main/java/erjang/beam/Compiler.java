@@ -296,7 +296,12 @@ public class Compiler implements Opcodes {
 	}
 
 	static File erjdir() throws IOException {
-		File dir = new File(".erj");
+		
+		String ERJ_CACHE_DIR = System.getenv("ERJ_CACHE_DIR");
+		
+		File home = new File(ERJ_CACHE_DIR == null ? System.getProperty("user.home") : ERJ_CACHE_DIR);
+		
+		File dir = new File(home, ".erjang");
 		if (!dir.exists()) {
 			if (!dir.mkdirs())
 				throw new IOException("cannot create " + dir);
