@@ -44,6 +44,11 @@ public class BuiltInFunction {
 		return method.toString();
 	}
 	
+	@Override
+	public int hashCode() {
+		return toString().hashCode();
+	}
+	
 	/**
 	 * @param m
 	 */

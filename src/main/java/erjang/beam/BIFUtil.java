@@ -212,6 +212,12 @@ public class BIFUtil {
 		private final String name;
 		private final String javaName;
 
+		@Override
+		public int hashCode() {
+			return name.hashCode() + javaName.hashCode()
+				+ found.values().hashCode();
+		}
+		
 		public BIFHandler(String name) {
 			this.name = name;
 			this.javaName = name;
@@ -428,6 +434,21 @@ public class BIFUtil {
 	public static BuiltInFunction getMethod(EAtom module, EAtom function,
 			int arity, boolean isGuard, boolean failWhenMissing) {
 		return getMethod(module.getName(), function.getName(), arity, isGuard, failWhenMissing);
+	}
+
+	static long all_bif_hash = 0;
+	public static long all_bif_hash() {
+		if (all_bif_hash == 0) {
+			for (BIFHandler b : bifs.values()) {
+				all_bif_hash += b.hashCode();
+			}
+
+			for (BIFHandler b : guard_bifs.values()) {
+				all_bif_hash += b.hashCode();
+			}
+		}
+		
+		return all_bif_hash;
 	}
 
 }

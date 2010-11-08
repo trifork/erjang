@@ -262,6 +262,8 @@ public class Compiler implements Opcodes {
 		Progress.activity("loading "+name+"...");
 		
 		long crc = beam_data.crc();
+		
+		crc ^= BIFUtil.all_bif_hash();
 
 		File jarFile = new File(erjdir(), name + "-" + Long.toHexString(crc)
 				+ ".jar");
