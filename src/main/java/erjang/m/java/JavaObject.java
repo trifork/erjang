@@ -14,6 +14,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import junit.extensions.TestDecorator;
+
 import kilim.Mailbox;
 import kilim.Pausable;
 import erjang.EAtom;
@@ -247,6 +249,20 @@ public class JavaObject extends EPseudoTerm {
 		if ((iv = testInteger()) != null) {
 			return iv.testSmall();
 		}
+
+		return null;
+	}
+	
+	@Override
+	public ENumber testNumber() {
+
+		EInteger i;
+		if ((i = testInteger()) != null)
+				return i;
+
+		EDouble d;
+		if ((d = testFloat()) != null)
+				return d;
 
 		return null;
 	}
