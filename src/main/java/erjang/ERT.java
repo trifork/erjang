@@ -346,6 +346,10 @@ public class ERT {
 		return sw.toString();
 	}
 
+	public static void test_fun(EObject orig, EFun fun) {
+		if (fun == null)
+			throw new ErlangError(am_badfun, orig);
+	}
 	
 	static EInteger max_send_time = ERT.box(4294967295L);
 	static ESmall zero = ERT.box(0);

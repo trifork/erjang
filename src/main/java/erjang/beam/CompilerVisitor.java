@@ -1775,11 +1775,16 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					
 					int nargs = in.length - 1;
 					push(in[nargs], EOBJECT_TYPE);
-
+					mv.visitInsn(DUP);
+					
 					String funtype = EFUN_NAME + nargs;
 
 					mv.visitMethodInsn(INVOKESTATIC, funtype, "cast", "("
 							+ EOBJECT_DESC + ")L" + funtype + ";");
+					
+					mv.visitInsn(DUP_X1);
+					
+					mv.visitMethodInsn(INVOKESTATIC, ERT_NAME, "test_fun", "(" + EOBJECT_DESC + EFUN_DESCRIPTOR + ")V");
 
 					mv.visitVarInsn(ALOAD, 0); // load proc
 					for (int i = 0; i < nargs; i++) {
