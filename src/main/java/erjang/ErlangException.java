@@ -148,6 +148,15 @@ public abstract class ErlangException extends RuntimeException {
 		return decodeTrace(getStackTrace());
 	}
 
+	public ESeq getLazyTrace() {
+		return new ELazySeq() {
+			@Override
+			protected ESeq initialValue() {
+				return getTrace();
+			}
+		};
+	}
+
 	public static ESeq decodeTrace(StackTraceElement[] st) {
 
 		ESeq trace = ERT.NIL;
@@ -339,14 +348,18 @@ public abstract class ErlangException extends RuntimeException {
 		ETuple3 result = new ETuple3();
 		result.elem1 = getExClass();
 		result.elem2 = reason;
-		result.elem3 = new ELazySeq() {
-			@Override
-			protected ESeq initialValue() {
-				return getTrace();
-			}
-		};
+		result.elem3 = wrapAsObject();
 		return result;
 	}
 
+	public ExceptionAsObject wrapAsObject() {
+		return new ExceptionAsObject();
+	}
 
+	/** Exception wrapper to be used in 'try_case' and 'raise' instructions. */
+	public class ExceptionAsObject extends EPseudoTerm {
+		public ErlangException getException() {
+			return ErlangException.this;
+		}
+	}
 }

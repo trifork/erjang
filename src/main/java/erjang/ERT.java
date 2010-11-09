@@ -48,25 +48,19 @@ public class ERT {
 	static Logger log = Logger.getLogger("erjang");
 	public static EAtom am_badsig = EAtom.intern("badsig");
 
-	public static EObject raise(EObject kind, EObject value,
-			EObject trace) throws ErlangException {
-
+	public static EObject raise(EObject trace, EObject value) throws ErlangException {
 		// System.err.println("raise "+trace);
-
-		EAtom clazz = kind.testAtom();
-		ESeq traz = trace.testSeq();
-
-		if (traz == null) {
-			System.err.println("bad argument to raise1: ("+kind+", "+value+", "+trace+")");
-			return am_badarg;
+		if (trace instanceof ErlangException.ExceptionAsObject) {
+			ErlangException etrace = ((ErlangException.ExceptionAsObject) trace).getException();
+			EAtom clazz = etrace.getExClass();
+			ESeq traz = etrace.getLazyTrace();
+			throw new ErlangRaise(clazz, value, traz);
+		} else if (trace==am_exit || trace==am_error || trace==am_throw) {
+			System.err.println("Pre-R10-1 exception style is not supported.");
 		}
 
-		if (clazz==am_exit || clazz==am_error || clazz==am_throw)
-			throw new ErlangRaise(clazz, value, traz);
-		
-		new Throwable("bad argument to raise2: ("+kind+", "+value+", "+trace+")").printStackTrace(System.err);
+		new Throwable("bad argument to raise2: ("+value+", "+trace+")").printStackTrace(System.err);
 		return am_badarg;
-		
 	}
 
 	public static final EAtom am_badarg = EAtom.intern("badarg");

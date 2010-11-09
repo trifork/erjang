@@ -1720,9 +1720,9 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						Insn.Y insn = (Insn.Y) insn_;
 						getType(current, insn.y);
 						current = current.popExceptionHandler();
-						current = current.setx(0, EATOM_TYPE); // reason
-						current = current.setx(1, EOBJECT_TYPE); // value
-						current = current.setx(2, EOBJECT_TYPE); // trace
+						current = current.setx(0, EATOM_TYPE); // exc.class
+						current = current.setx(1, EOBJECT_TYPE); // value/reason
+						current = current.setx(2, EOBJECT_TYPE); // exc.object
 						continue next_insn;
 					}
 
