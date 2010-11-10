@@ -34,10 +34,17 @@ krab$
 
 There are still things that doesn't work: a few BEAM instruction are missing some runtime support.  There are also BIFs missing, or only partially implemented; we're quite careful to throw @erjang.NotImplemented@ in BIFs (or branches thereof) which are not complete.  Many OTP modules need NIFs or linked-in drivers that are entirely missing or only partly implemented.
 
+### Warnings
 
-### Why are you doing this?
+When you run Erjang, you're likely to get warnings like this:
 
-Good question.  Well, I just wanted to learn Erlang, and so this felt like a good way to get through all the details.  Seems to be working -- I am learning erlang!
+<pre>Nov 10, 2010 5:15:56 PM erjang.EModuleManager$FunctionInfo$1 invoke
+INFO: MISSING mnesia_sup:prep_stop/1</pre>
+
+Such warnings are perfectly OK so long as you don't see a crash that you think is related to that.  It's a hint that perhaps there is a missing BIF somewhere around this.  But it may also just be some optional callback API which has not been implemented.
+
+Until Erjang is a little more complete, I'd like to keep these warnings in there.
+
 
 ### What will it feel like to be running Erlang on the JVM?
 
