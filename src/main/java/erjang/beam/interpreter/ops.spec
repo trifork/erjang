@@ -397,11 +397,11 @@ try_end y:
 	RESTORE_EXH(GET(y));
 
 try_case y:
-	 RESTORE_EXH(GET(y)); {/* Exception deconstruction done by TryExceptionHandler. */}
+	RESTORE_EXH(GET(y)); {/* Exception deconstruction done by TryExceptionHandler. */}
 
 %class SS(src1:S src2:S)
 raise value trace:
-	reg[0] = ERT.raise(reg[0], GET(value), GET(trace));
+	reg[0] = ERT.raise(GET(value), GET(trace));
 
 ##########==========       FLOATING-POINT    	  ==========##########
 # TODO: Room for improvement in this section - by not boxing the fregs.

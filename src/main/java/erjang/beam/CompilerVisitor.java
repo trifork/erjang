@@ -1231,14 +1231,12 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			public void visitInsn(BeamOpcode opcode, int failLabel, Arg[] in,
 					Arg ex) {
 				if (opcode == BeamOpcode.raise) {
-
-					mv.visitFieldInsn(GETSTATIC, ERT_NAME, "am_error", EATOM_DESC);
-					push(in[1], EATOM_TYPE);
 					push(in[0], EOBJECT_TYPE);
+					push(in[1], EOBJECT_TYPE);
 
-					// raise will actually throw
+					// raise will actually throw (if successful)
 					mv.visitMethodInsn(INVOKESTATIC, ERT_NAME, "raise", "("
-							+ EOBJECT_DESC + EOBJECT_DESC + EOBJECT_DESC + ")"
+							+ EOBJECT_DESC + EOBJECT_DESC + ")"
 							+ EOBJECT_DESC);
 					mv.visitInsn(ARETURN);
 
