@@ -1426,6 +1426,10 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 	/* Handling of timeout in driver */
 	protected void timeout() throws Pausable {
 
+		if (ERT.DEBUG_INET) {
+			System.err.println("timeout "+this);
+		}
+		
 		if ((state & INET_F_MULTI_CLIENT) != 0) {
 			fire_multi_timers();
 
@@ -1740,7 +1744,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 			return ctl_error(Posix.EALREADY);
 
 		if (ERT.DEBUG_INET)
-			System.err.println("enq " + caller2 + "::" + tbuf.getShort(0));
+			System.err.println("enq " + caller2 + "::" + tbuf.getShort(0) +"; timeout="+timeout);
 
 		int rep;
 		if ((rep = tcp_recv(n)) == 0) {

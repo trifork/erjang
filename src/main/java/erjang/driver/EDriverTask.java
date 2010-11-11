@@ -508,8 +508,19 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 			Task.yield();
 		}		
 		
+		long old_to = abs_timeout;
 		ByteBuffer bb = instance.control(caller.self_handle(), op, cmd2);
-
+		long new_to = abs_timeout;
+		
+		if (old_to != new_to) {
+			mbox.put(new EPortControl() {
+				@Override
+				public void execute() throws Pausable, IOException {
+					// do nothing, just trigger main loop
+				}
+			});
+		}
+		
 		if (bb == null || bb.position() == 0) {
 				return ERT.NIL;
 
