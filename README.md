@@ -61,7 +61,7 @@ Here is what to expect:
 ## Building
 
 
-You should be able to do `ant jar`.  You need Perl 
+You should be able to do `ant jar`.  You need Perl version 5.10 or later, or you'll be unable to build the interpreter.
 
 ## Running
 
@@ -87,7 +87,7 @@ I have only been testing this with Erlang/OTP R14B.
 If you run with a different erts (Erlang runtime system), then you can 
 use the +e <ErsVsn> flag, like this:
 
-   ./erl.sh +e 5.7.5
+   ./ej +e 5.7.5
 
 To run with erts-5.7.5.
 
