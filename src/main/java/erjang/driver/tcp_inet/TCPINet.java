@@ -1033,6 +1033,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 			} else {
 				desc_close_read();
 			}
+			async_error_all(am_closed);
 		} else {
 			tcp_clear_input();
 			tcp_closed_message();
