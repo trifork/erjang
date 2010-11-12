@@ -55,6 +55,7 @@ import erjang.EAtom;
 import erjang.EBinList;
 import erjang.EBinary;
 import erjang.EHandle;
+import erjang.EInternalPID;
 import erjang.EInternalPort;
 import erjang.EObject;
 import erjang.EPID;
@@ -514,6 +515,12 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 			}
 		};
 
+		// two-way link to new owner
+		EInternalPID caller_pid = caller.testInternalPID();
+		if (caller_pid != null) {
+			caller_pid.task().link_oneway(driver.self_handle());
+			driver.link_oneway(caller_pid);
+		}
 		ERT.run(driver);
 
 		return copy;
@@ -1243,13 +1250,13 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 			}
 			async_error(am_closed);
 
-		} else if (state == TCP_STATE_MULTI_ACCEPTING) {
+		} else if ((state&TCP_STATE_MULTI_ACCEPTING) == TCP_STATE_MULTI_ACCEPTING) {
 			throw new NotImplemented();
 
-		} else if (state == TCP_STATE_CONNECTING) {
+		} else if ((state&TCP_STATE_CONNECTED) == TCP_STATE_CONNECTING) {
 			async_error(am_closed);
 
-		} else if (state == TCP_STATE_CONNECTED) {
+		} else if ((state&TCP_STATE_CONNECTED) == TCP_STATE_CONNECTED) {
 			async_error_all(am_closed);
 		}
 	}
