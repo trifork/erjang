@@ -791,8 +791,20 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 			return new ETuple2(am_name, getName());
 		}
 		
+		if (spec == EProc.am_links) {
+			return new ETuple2(EProc.am_links, links());
+		}
+		
 		throw new NotImplemented("port_info(" + spec + ")");
 		
+	}
+
+	private ESeq links() {
+		ESeq res = ERT.NIL;
+		for (EHandle h : super.links) {
+			res = res.cons(h);
+		}
+		return res;
 	}
 
 	public void exit(final EObject reason) {
