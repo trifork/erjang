@@ -22,6 +22,8 @@ package erjang;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.WeakHashMap;
+import java.util.Collections;
+import java.util.Map;
 
 import kilim.Pausable;
 import kilim.Task;
@@ -34,8 +36,9 @@ public abstract class ETimerTask extends TimerTask implements ExitHook {
 	// for now, we will live with the risk of having a 
 	// blocking send in a timer...
 				
-
-	static WeakHashMap<ERef, ETimerTask> timer_refs = new WeakHashMap<ERef, ETimerTask>();
+	// TODO: consider using ConcurrentMap instead? (Or a weak equivalent)
+	static Map<ERef, ETimerTask> timer_refs =
+		Collections.synchronizedMap(new WeakHashMap<ERef, ETimerTask>());
 	static Timer send_timer = new Timer();
 	
 	final ERef ref;
@@ -45,6 +48,7 @@ public abstract class ETimerTask extends TimerTask implements ExitHook {
 	public ETimerTask() {
 		ref = ERT.getLocalNode().createRef();
 		pid = null;
+		timer_refs.put(ref, this);
 	}
 	
 	public ETimerTask(EInternalPID pid) {
@@ -55,6 +59,7 @@ public abstract class ETimerTask extends TimerTask implements ExitHook {
 		if (pid != null) {
 			pid.add_exit_hook(this);
 		}
+		timer_refs.put(ref, this);
 	}
 	
 	/** called when the timer fires */
@@ -104,7 +109,7 @@ public abstract class ETimerTask extends TimerTask implements ExitHook {
 	}
 	
 	public synchronized final void on_exit(EInternalPID pid) throws Pausable {
-		assert (pid == this.pid) : "received on_exit callback from inknown pid";
+		assert (pid == this.pid) : "received on_exit callback from unknown pid";
 		timer_refs.remove(ref);
 		this.cancel();
 	};

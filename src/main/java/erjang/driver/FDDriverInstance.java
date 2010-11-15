@@ -95,14 +95,6 @@ public class FDDriverInstance extends EDriverInstance {
 						
 						@Override
 						public void ready() throws Pausable {
-
-							if (howmany < 0) {
-								if (task.send_eof) {
-									task.eof_from_driver();
-									return;
-								}
-							}
-							
 							if (task.send_binary_data) {
 								EBinary out = new EBinary(ob);
 								task.output_from_driver(out);
@@ -110,7 +102,6 @@ public class FDDriverInstance extends EDriverInstance {
 								EString str = EString.make(ob);
 								task.output_from_driver(str);
 							}
-							
 						}
 						
 						@Override
