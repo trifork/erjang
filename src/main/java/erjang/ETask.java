@@ -104,7 +104,17 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 		H me = self_handle();
 		EAtom name = me.name;
 		for (EHandle handle : links) {
+			try {
 			handle.exit_signal(me, exit_reason, false);
+			} catch (Error e) {
+				System.err.println("EXCEPTION IN EXIT HANDLER");
+				e.printStackTrace();
+				throw e;
+			} catch (RuntimeException e) {
+				System.err.println("EXCEPTION IN EXIT HANDLER");
+				e.printStackTrace();
+				throw e;
+			}
 		}
 		for (Map.Entry<ERef, EHandle> ent : monitors.entrySet()) {
 			EHandle pid = ent.getValue();
