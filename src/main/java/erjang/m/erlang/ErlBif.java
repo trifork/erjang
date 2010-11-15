@@ -1926,4 +1926,9 @@ public class ErlBif {
 	public static ESeq registered() {
 		return ERT.registered();
 	}
+	
+	@BIF
+	public static EAtom breakpoint() {
+		return ERT.am_ok;
+	}
 }
