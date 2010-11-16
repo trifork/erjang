@@ -21,6 +21,9 @@ package erjang;
 
 import java.io.IOException;
 
+import erjang.m.ets.EMatchContext;
+import erjang.m.ets.ETermPattern;
+
 /**
  * 
  */
@@ -70,6 +73,11 @@ public final class ERef extends EObject {
         this.creation = creation & 0x03; // 2 bits
 	}
 
+	@Override
+	public boolean match(ETermPattern matcher, EMatchContext r) {
+		return matcher.match(this, r);
+	}
+	
 	@Override
 	int compare_same(EObject rhs) {
 

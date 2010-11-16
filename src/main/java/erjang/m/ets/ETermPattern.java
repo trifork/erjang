@@ -22,10 +22,12 @@ package erjang.m.ets;
 import erjang.EAtom;
 import erjang.EBitString;
 import erjang.ECons;
+import erjang.EFun;
 import erjang.ENumber;
 import erjang.EObject;
 import erjang.EPID;
 import erjang.EPort;
+import erjang.ERef;
 import erjang.ETuple;
 
 public abstract class ETermPattern {
@@ -54,6 +56,14 @@ public abstract class ETermPattern {
 	}
 
 	public boolean match(EBitString bs, EMatchContext r) {
+		return false;
+	}
+
+	public boolean match(EFun eFun, EMatchContext r) {
+		return false;
+	}
+
+	public boolean match(ERef eRef, EMatchContext r) {
 		return false;
 	}
 }

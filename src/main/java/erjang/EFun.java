@@ -41,6 +41,8 @@ import org.objectweb.asm.Type;
 import erjang.beam.Compiler;
 import erjang.beam.CompilerVisitor;
 import erjang.beam.EUtil;
+import erjang.m.ets.EMatchContext;
+import erjang.m.ets.ETermPattern;
 
 public abstract class EFun extends EObject implements Opcodes {
 
@@ -100,6 +102,11 @@ public abstract class EFun extends EObject implements Opcodes {
 		System.arraycopy(args, off, new_args, 0, len);
 		return invoke(proc, new_args);
 	}
+
+	public boolean match(ETermPattern matcher, EMatchContext r) {
+		return matcher.match(this, r);
+	}
+
 
 	private static final Type EFUN_TYPE = Type.getType(EFun.class);
 	private static final String EFUN_NAME = EFUN_TYPE.getInternalName();

@@ -34,6 +34,7 @@ import com.trifork.clj_ds.ISeq;
 import erjang.EAtom;
 import erjang.EBitString;
 import erjang.ECons;
+import erjang.EFun;
 import erjang.ENumber;
 import erjang.EObject;
 import erjang.EPID;
@@ -219,6 +220,10 @@ public class EMatchSpec extends EPseudoTerm {
 
 		public boolean match(EAtom am, EMatchContext r) {
 			return am.compareTo(value) == 0;
+		}
+
+		public boolean match(EFun fu, EMatchContext r) {
+			return fu.compareTo(value) == 0;
 		}
 
 		public boolean match(EBitString bits, EMatchContext r) {
@@ -855,6 +860,14 @@ public class EMatchSpec extends EPseudoTerm {
 			return true;
 		}
 
+		public boolean match(EFun a, EMatchContext r) {
+			return true;
+		}
+
+		public boolean match(ERef a, EMatchContext r) {
+			return true;
+		}
+
 		public boolean match(ECons c, EMatchContext r) {
 			return true;
 		}
@@ -921,6 +934,24 @@ public class EMatchSpec extends EPseudoTerm {
 				return true;
 			} else {
 				return t.equalsExactly(r.vars.get(var_name));
+			}
+		}
+
+		public boolean match(ERef ref, EMatchContext r) {
+			if (free) {
+				r.vars.put(var_name, ref);
+				return true;
+			} else {
+				return ref.equalsExactly(r.vars.get(var_name));
+			}
+		}
+
+		public boolean match(EFun fu, EMatchContext r) {
+			if (free) {
+				r.vars.put(var_name, fu);
+				return true;
+			} else {
+				return fu.equalsExactly(r.vars.get(var_name));
 			}
 		}
 

@@ -31,6 +31,7 @@ import com.trifork.clj_ds.ISeq;
 import erjang.EAtom;
 import erjang.EBitString;
 import erjang.ECons;
+import erjang.EFun;
 import erjang.EList;
 import erjang.ENumber;
 import erjang.EObject;
@@ -224,6 +225,24 @@ public class EPattern {
 			}
 		}
 
+		public boolean match(EFun fu, EMatchContext r) {
+			if (free) {
+				r.vars.put(name, fu);
+				return true;
+			} else {
+				return fu.equalsExactly(r.vars.get(name));
+			}
+		}
+
+		public boolean match(ERef fu, EMatchContext r) {
+			if (free) {
+				r.vars.put(name, fu);
+				return true;
+			} else {
+				return fu.equalsExactly(r.vars.get(name));
+			}
+		}
+
 		public boolean match(ECons t, EMatchContext r) {
 			if (free) {
 				r.vars.put(name, t);
@@ -345,6 +364,10 @@ public class EPattern {
 
 		public boolean match(EAtom port, EMatchContext r) {
 			return port.equalsExactly(value);
+		}
+
+		public boolean match(EFun fu, EMatchContext r) {
+			return fu.equalsExactly(value);
 		}
 
 		public boolean match(EBitString port, EMatchContext r) {
