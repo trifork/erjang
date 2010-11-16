@@ -2,9 +2,9 @@
 
 Erjang is a virtual machine for Erlang, which runs on Java(tm).  
 
-* For comments and questions please use the "Erjang Google Group":http://groups.google.com/group/erjang
+* For comments and questions please use the [Erjang Google Group](http://groups.google.com/group/erjang)
 * Check the [[README]] before you try to run this.
-* I am also posting updates at my blog, "Java Limit":http://javalimit.com
+* I am also posting updates at my blog, [Java Limit](http://javalimit.com)
 
 ### How does it work?
 
