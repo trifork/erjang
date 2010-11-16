@@ -37,6 +37,10 @@ public final class EBig extends EInteger {
 		
 		assert (value.compareTo(BIG_MAX_INT) > 0 || value.compareTo(BIG_MIN_INT) < 0);
 	}
+	
+	public EInteger dec() { 
+		return (EInteger) ESmall.MINUS_ONE.add(this); 
+	}	
 
 	public EBig testBig() {
 		return this;

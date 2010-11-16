@@ -23,6 +23,8 @@ import kilim.Pausable;
 import erjang.BIF;
 import erjang.EAtom;
 import erjang.EFun;
+import erjang.EInteger;
+import erjang.EList;
 import erjang.ENative;
 import erjang.EObject;
 import erjang.EProc;
@@ -160,6 +162,58 @@ public class Native extends ENative {
 		}
 
 		return reverse(rev, ERT.NIL);
+	}
+	
+	@BIF
+	public static ESeq seq(EObject start, EObject end)
+	{
+		ESmall sm_s = start.testSmall();
+		ESmall sm_e = end.testSmall();
+		
+		if (sm_s == null || sm_e == null) {
+			EInteger i_s;
+			EInteger i_e;
+			if ((i_s=start.testInteger()) == null 
+				|| (i_e=end.testInteger()) == null) {
+
+				throw ERT.badarg(start, end);
+				
+			}
+			
+			return seq_big(i_s, i_e);
+		}
+		
+		if ((sm_e.value+1) < sm_s.value)
+			throw ERT.badarg(start, end);
+		
+		ESeq l = ERT.NIL;
+		int val = sm_e.value;
+		int first = sm_s.value;
+		
+		while (val >= first) {
+			l = l.cons(val);
+			val -= 1;
+		}
+		
+		return l;
+	}
+	
+	static ESeq seq_big(EInteger start, EInteger end)
+	{
+		if ((end.inc()).is_lt(start))
+			throw ERT.badarg(start, end);
+		
+		ESeq l = ERT.NIL;
+		EInteger val = end;
+		EInteger first = start;
+		
+		while (val.is_ge(first)) {
+			l = l.cons(val);
+			val = val.dec();
+		}
+		
+		return l;
+		
 	}
 	
 }

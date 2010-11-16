@@ -38,6 +38,8 @@ public abstract class EInteger extends ENumber {
 		return this;
 	}
 
+	public abstract EInteger dec();
+	
 	/**
 	 * @return
 	 */
