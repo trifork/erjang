@@ -18,11 +18,12 @@ import erjang.beam.repr.Operands.SourceOperand;
 
 public class ModuleAnalyzer implements ModuleVisitor {
 
-	private static final boolean DEBUG_ANALYZE = false;
+	public static final boolean DEBUG_ANALYZE = false;
 	Map<Label, FunInfo> info = new HashMap<Label, FunInfo>();
 
 	static class FunInfo {
 		Set<FunInfo> callers = new HashSet<FunInfo>();
+		Set<FunInfo> tail_callers = new HashSet<FunInfo>();
 		FunID name;
 		boolean may_return_tail_marker, is_pausable, call_is_pausable;
 		public boolean exported;
@@ -45,6 +46,10 @@ public class ModuleAnalyzer implements ModuleVisitor {
 
 		void addCaller(FunInfo caller) {
 			callers.add(caller);
+		}
+
+		void addTailCaller(FunInfo caller) {
+			tail_callers.add(caller);
 		}
 
 		@Override
@@ -83,6 +88,18 @@ public class ModuleAnalyzer implements ModuleVisitor {
 						}
 					}
 				}
+
+				for (FunInfo caller : fun.tail_callers) {
+					
+					if (!caller.call_is_pausable) {
+						effect = caller.call_is_pausable = true;
+						
+						if (DEBUG_ANALYZE) {
+							System.err.println("propagate " +fun+ " -> " + caller);
+						}
+					}
+				}
+			
 			}
 		}
 
@@ -196,7 +213,7 @@ public class ModuleAnalyzer implements ModuleVisitor {
 									target.name.function, target.name.arity, false, false);
 
 							if (bif == null) {							
-								target.addCaller(self);
+								target.addTailCaller(self);
 								target.is_called_locally_in_tail_position |= !is_self_call;
 							}
 							break;
@@ -212,7 +229,7 @@ public class ModuleAnalyzer implements ModuleVisitor {
 									target.name.function, target.name.arity, false, false);
 
 							if (bif == null) {							
-								target.addCaller(self);
+								target.addTailCaller(self);
 								target.is_called_locally_in_tail_position |= !is_self_call;
 							}
 							break;

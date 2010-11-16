@@ -3275,7 +3275,13 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			String mname, String full_inner, int arity, boolean proc,
 			int freevars, Type returnType, boolean isTailCall, boolean isPausable) {
 		
-		if (isPausable) return;
+		if (isPausable) {
+			if (ModuleAnalyzer.DEBUG_ANALYZE) {
+				System.err.println
+					("not generating go2 (pausable) for "+full_inner);
+			}
+			return;
+		}
 		
 		MethodVisitor mv;
 		mv = cw.visitMethod(ACC_PUBLIC, "go2", GO_DESC, null, null);
