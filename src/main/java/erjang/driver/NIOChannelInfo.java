@@ -18,6 +18,7 @@
 
 package erjang.driver;
 
+import java.nio.channels.CancelledKeyException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.util.HashMap;
@@ -154,8 +155,17 @@ class NIOChannelInfo {
 	 */
 	public void ready(SelectionKey key) {
 		final SelectableChannel ch = key.channel();
-		final int readyOps = key.readyOps();
+		int readyOps;
+		
+		try {
+			readyOps = key.readyOps();
+		} catch (CancelledKeyException e) {
 
+			// TODO: releaseNotify ?
+
+			return; // just ignore this condition
+		}
+			
 		Interest[] ents = interest.values().toArray(
 				new Interest[interest.size()]);
 

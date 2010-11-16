@@ -19,6 +19,7 @@
 package erjang.driver;
 
 import java.io.IOException;
+import java.nio.channels.CancelledKeyException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.SelectableChannel;
@@ -121,6 +122,10 @@ public class NIOSelector extends Thread {
 				
 				try {
 					num = selector.select(10000);
+				} catch (CancelledKeyException e) {
+					// ignore this, as per
+					// http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4729342
+
 				} catch (ClosedSelectorException e) {
 					e.printStackTrace();
 					return;
@@ -137,7 +142,11 @@ public class NIOSelector extends Thread {
 				// System.err.println("READY: "+key.channel()+":"+Integer.toBinaryString(key.readyOps()));
 				
 				NIOChannelInfo req = (NIOChannelInfo) key.attachment();
-				req.ready(key);
+				if (req == null) {
+					System.err.println("Internal error, SelectionKey's attachement is null");
+				} else {
+					req.ready(key);
+				}
 			}
 
 		}
