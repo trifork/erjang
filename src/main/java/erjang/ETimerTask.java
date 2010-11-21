@@ -21,7 +21,7 @@ package erjang;
 
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Collections;
 import java.util.Map;
 
@@ -35,10 +35,8 @@ public abstract class ETimerTask extends TimerTask implements ExitHook {
 	// TODO: implement a Kilim timer, that allows Pausable in on_timeout.
 	// for now, we will live with the risk of having a 
 	// blocking send in a timer...
-				
-	// TODO: consider using ConcurrentMap instead? (Or a weak equivalent)
-	static Map<ERef, ETimerTask> timer_refs =
-		Collections.synchronizedMap(new WeakHashMap<ERef, ETimerTask>());
+
+	static ConcurrentHashMap<ERef, ETimerTask> timer_refs = new ConcurrentHashMap();
 	static Timer send_timer = new Timer();
 	
 	final ERef ref;
