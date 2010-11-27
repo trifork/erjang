@@ -24,10 +24,10 @@ import java.util.ArrayList;
 
 public class Main {
 	public static final String SYSTEM_ARCHITECTURE = "java";
-	public static final String OTP_VERSION = "R14A";
+	public static final String OTP_VERSION = ErjangConfig.getString("erjang.otp.version", "R14A");
 	public static final String DRIVER_VERSION = "1.5";
 
-	static String erts_version = "erts-5.7.3";
+	static String erts_version = "erts-"+ErjangConfig.getString("erjang.erts.version", "5.8");
 	static String erl_rootdir;
 	static String erl_bootstrap_ebindir;
 	
@@ -90,8 +90,8 @@ public class Main {
 	 * @throws InstantiationException 
 	 * @throws ClassNotFoundException 
 	 */
-	public static void main(String[] args) 
-		throws Exception {
+	public static void main(String[] args) throws Exception {
+		ErjangConfig.init();
 
 		ArrayList<String> ra = new ArrayList<String>();
 		
@@ -152,7 +152,7 @@ public class Main {
 			ra.add(arg);
 		}
 		
-		System.setProperty("erjpath", erl_bootstrap_ebindir);
+		System.setProperty("erjang.path", erl_bootstrap_ebindir);
 		
 		if (!(new File(erl_bootstrap_ebindir)).exists()) {
 			System.err.println("No bootstrap classes at: "+erl_bootstrap_ebindir);

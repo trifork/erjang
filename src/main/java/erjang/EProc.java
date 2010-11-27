@@ -765,7 +765,7 @@ public final class EProc extends ETask<EInternalPID> {
 
 	
 	static {
-		if (Boolean.getBoolean("erj.dump_on_exit"))
+		if (ErjangConfig.getBoolean("erjang.dump_on_exit"))
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 			@Override
 			public void run() {

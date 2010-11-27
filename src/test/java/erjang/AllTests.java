@@ -29,7 +29,7 @@ import junit.framework.TestSuite;
  */
 public class AllTests {
 
-	static final String OTP_HOME = "/Users/krab/Projects/otp";
+	static final String OTP_HOME = ErjangConfig.getString("erjang.otp.root");
 
 	public static Test suite() {
 		TestSuite suite = new TestSuite("Test for erjang");

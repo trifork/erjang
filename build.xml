@@ -87,13 +87,13 @@
 	<!-- This runs those tests depend on generated classes in testclasses-->
 	<target name="testwoven">
 		<echo message="Testing Tasks ======================" />
-		<java classname="junit.textui.TestRunner" fork="yes">
+		<junit fork="yes" showoutput="yes">
+			<formatter type="xml"/>
 			<classpath refid="erjang.testwovenclasspath" />
-			<assertions>
-				<enable />
-			</assertions>
-			<arg value="erjang.AllTests" />
-		</java>
+			<assertions><enable /></assertions>
+			<jvmarg value="-Derjang.configfile=env_cfg.properties" />
+			<test name="erjang.AllTests" />
+		</junit>
 	</target>
 
 	<target name="jar" description="generate the distribution" depends="clean,weave">

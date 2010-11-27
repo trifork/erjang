@@ -5,21 +5,33 @@
 
 EJC_CMD=`which "$0"`
 while LINK=`readlink "$EJC_CMD"`; do EJC_CMD=$LINK; done
-EJC_DIR=`dirname "$EJC_CMD"`
+ERJANG_DIR=`dirname "$EJC_CMD"`
 
-source $EJC_DIR/env_cfg
+source "$ERJANG_DIR/env_cfg"
 
+###########################################################
+# OS X - specific config
+if [[ $(uname) == "Darwin" ]]; then
+    OSX_DOCK_ICON="-Xdock:icon=$ERJANG_DIR/erjang_logo4.png"
+    OSX_DOCK_NAME="-Xdock:name=ErjangConsole"
+fi
+###########################################################
+
+# (TODO: OSX_DOCK variable expansions should expand into only one token - or zero, on non-OSX platforms.)
 exec java \
     -server \
     -Xss1m \
     -Xmx2g \
     $OSX_DOCK_ICON \
     $OSX_DOCK_NAME \
-    -cp $EJC_DIR/erjang-0.1.jar erjang.console.ERLConsole \
+    -Derjang.configfile="$PROP_FILE" \
+    -Derjang.erts.version="$ERTS_VSN" \
+    -Derjang.otp.version="$OTP_VSN" \
+    -cp "$ERJANG_DIR/erjang-0.1.jar" erjang.console.ERLConsole \
+\
     -root "$ERL_ROOT" \
     +A 10 \
     +S 1 \
     +e "$ERTS_VSN" \
     -home "$HOME" \
-    $*
-
+    "$@"

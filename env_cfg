@@ -1,16 +1,29 @@
-# set the defaults if there is no environment variable
+# Read and/or guess Erjang settings
+PROP_FILE="$ERJANG_DIR/erjang_cfg.properties"
+if [ -r "$PROP_FILE" ] ; then
+    shopt -s extglob # Used for trimming
+    # Parse properties file:
+    while s=""; read s || [ -n "$s" ] ; do
+	if [[ "$s" == "#"* ]]  ; then continue; fi # Comment line
+	if [[ "$s" != *"="* ]] ; then continue; fi # No '='
+	propname=${s%%=*} ; propname=${propname%%*([[:space:]])}
+	propvalue=${s#*=} ; propvalue=${propvalue##*([[:space:]])}
 
-if [[ -z ${ERTS_VSN} ]]; then
-    ERTS_VSN=5.8
-fi
-if [[ -z ${ERL_ROOT} ]]; then
-    ERL_ROOT=/Users/krab/Projects/otp-5.8
+	# Set variable if it has the right prefix:
+	if [[ "$propname" == "erjang."* ]] ; then
+	    varname=${propname//./_}
+	    declare "$varname"="$propvalue"
+	fi
+    done < "$PROP_FILE"
 fi
 
-###########################################################
+## For listing parsed property names:
+# echo "${!erjang*}"
 
-# OS X - specific config
-if [[ $(uname) == "Darwin" ]]; then
-    OSX_DOCK_ICON="-Xdock:icon=$EJC_DIR/erjang_logo4.png"
-    OSX_DOCK_NAME="-Xdock:name=ErjangConsole"
+ERL_ROOT=${erjang_otp_root:-/usr/lib/erlang}
+if [ -r "$ERL_ROOT/releases/start_erl.data" ] ; then
+    ERTS_VSN_GUESS=$(awk '{print $1}' "$ERL_ROOT/releases/start_erl.data")
+    OTP_VSN_GUESS=$(awk '{print $2}' "$ERL_ROOT/releases/start_erl.data")
 fi
+ERTS_VSN=${erjang_erts_version:-$ERTS_VSN_GUESS}
+OTP_VSN=${erjang_otp_version:-$OTP_VSN_GUESS}
