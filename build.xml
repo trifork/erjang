@@ -91,7 +91,7 @@
 			<formatter type="xml"/>
 			<classpath refid="erjang.testwovenclasspath" />
 			<assertions><enable /></assertions>
-			<jvmarg value="-Derjang.configfile=env_cfg.properties" />
+			<jvmarg value="-Derjang.configfile=erjang_cfg.properties" />
 			<test name="erjang.AllTests" />
 		</junit>
 	</target>
