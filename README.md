@@ -60,8 +60,14 @@ Here is what to expect:
 
 ## Building
 
-
 You should be able to do `ant jar`.  You need Perl version 5.10 or later, or you'll be unable to build the interpreter.
+
+## Configuring
+
+Adapt the file "erjang_cfg.properties" so that "erjang.otp.root"
+points to the location of OTP (it is assumed to be an installed OTP
+image, not just the source directory after running `make`; typical
+values are "/usr/lib/erlang" and "/usr/local/lib/erlang").
 
 ## Running
 
@@ -84,12 +90,15 @@ forcing Erjang to recompile next time it runs.
 
 I have only been testing this with Erlang/OTP R14B.
 
-If you run with a different erts (Erlang runtime system), then you can 
-use the +e <ErsVsn> flag, like this:
+If you run with a different erts (Erlang runtime system), then you can
+use the +e <ErtsVsn> flag, like this:
 
    ./ej +e 5.7.5
 
-To run with erts-5.7.5.
+to run with erts-5.7.5; alternatively, set the "erjang.erts.version"
+property in the erjang_cfg.properties file.
+Under normal circumstances, however, this should not be necessary;
+Erjang should infer the correct version.
 
 
 
