@@ -156,6 +156,7 @@ public class TestRunFile extends TestCase {
 		String moduleName = trimExtension(file.getName());
 		String[] cmd = new String[] {ERL_PRG, "-noinput",
 					     "-pa", BEAM_DIR,
+						 "-sasl", "sasl_error_logger", "false", // Prevent SASL from polluting stdout
 					     "-s", "run_wrapper", "run_wrapper", "erlang", moduleName,
 					     "-s", "erlang", "halt"};
 		byte[] bin = execGetBinaryOutput(cmd);
