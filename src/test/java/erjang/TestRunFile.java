@@ -48,6 +48,7 @@ import kilim.Mailbox;
 public class TestRunFile implements Test {
 
 	static final String OTP_HOME = ErjangConfig.getString("erjang.otp.root");
+	static final String ERTS_VSN = ErjangConfig.getString("erjang.erts.version");
 	static final String ERLC_PRG = OTP_HOME + File.separator + "bin" + File.separator + "erlc";
 	static final String ERL_PRG  = OTP_HOME + File.separator + "bin" + File.separator + "erl";
 
@@ -73,8 +74,13 @@ public class TestRunFile implements Test {
 		String path1 = OTP_HOME + File.separator + "erts" + File.separator
 				+ "preloaded" + File.separator + "ebin";
 		String path2 = OTP_HOME + File.separator + "lib" + File.separator
+				+ "erts-" + ERTS_VSN + File.separator + "ebin";
+		String path3 = OTP_HOME + File.separator + "lib" + File.separator
 				+ "stdlib" + File.separator + "ebin";
-		System.setProperty("erjang.path", path1 + File.pathSeparator + path2);
+		System.setProperty("erjang.path",
+						   path1 + File.pathSeparator +
+						   path2 + File.pathSeparator +
+						   path3);
 	}
 
 
