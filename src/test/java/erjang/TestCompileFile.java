@@ -23,13 +23,13 @@ import java.io.File;
 
 import erjang.beam.Compiler;
 
-import junit.framework.Test;
+import junit.framework.TestCase;
 import junit.framework.TestResult;
 
 /**
  * 
  */
-public class TestCompileFile implements Test {
+public class TestCompileFile extends TestCase {
 
 	private final File file;
 
@@ -37,6 +37,7 @@ public class TestCompileFile implements Test {
 	 * @param file
 	 */
 	public TestCompileFile(File file) {
+		super(file.getName());
 		this.file = file;
 	}
 

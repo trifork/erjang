@@ -35,7 +35,7 @@ import erjang.beam.loader.ErjangBeamDisLoader;
 
 import erjang.m.erlang.ErlConvert;
 
-import junit.framework.Test;
+import junit.framework.TestCase;
 import junit.framework.TestResult;
 import junit.framework.Assert;
 import junit.framework.AssertionFailedError;
@@ -45,7 +45,7 @@ import kilim.Mailbox;
 /**
  * 
  */
-public class TestRunFile implements Test {
+public class TestRunFile extends TestCase {
 
 	static final String OTP_HOME = ErjangConfig.getString("erjang.otp.root");
 	static final String ERTS_VSN = ErjangConfig.getString("erjang.erts.version");
@@ -69,6 +69,7 @@ public class TestRunFile implements Test {
 	 * @param file
 	 */
 	public TestRunFile(File file) {
+		super(file.getName());
 		this.file = file;
 		
 		String path1 = OTP_HOME + File.separator + "erts" + File.separator
