@@ -22,6 +22,7 @@ package erjang;
 import java.io.File;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.io.IOException;
 
 import erjang.beam.Compiler;
 import erjang.EObject;
@@ -124,10 +125,10 @@ public class TestRunFile extends TestCase {
 			EAtom module = EAtom.intern(moduleName);
 
 			EProc p = new EProc(null, RUN_WRAPPER_ATOM, RUN_WRAPPER_ATOM, EList.make(EList.make(ERJANG_ATOM, module)));
-			ERT.run(p);
-			
 	        Mailbox<ExitMsg> mb = new Mailbox<ExitMsg>();
 	        p.informOnExit(mb);
+			ERT.run(p);
+			
 	        ExitMsg exit = mb.getb(20*1000); // 20sec
 	        Assert.assertNotNull("process timed out?", exit);
 	        
@@ -176,38 +177,45 @@ public class TestRunFile extends TestCase {
 	private byte[] execGetBinaryOutput(String[] cmd) throws Exception {
 		Runtime rt = Runtime.getRuntime();
 		Process p = rt.exec(cmd);
-		ByteArrayOutputStream output = new ByteArrayOutputStream();
-		ByteArrayOutputStream err    = new ByteArrayOutputStream();
+		OutputCollectorThread outThread = new OutputCollectorThread(p.getInputStream());
+		OutputCollectorThread errThread = new OutputCollectorThread(p.getErrorStream());
+		outThread.start();
+		errThread.start();
+		outThread.join();
+		errThread.join();
+		int exitCode = p.waitFor();
+		if (exitCode != 0) {
+			System.err.println("Exitcode="+exitCode+" for "+cmd[0]);
+			System.err.println("Err//output="+new String(errThread.getResult())+"//"+new String(outThread.getResult()));
+		}
+		assert(exitCode == 0);
+
+		return outThread.getResult();
+	}
+
+	static class OutputCollectorThread extends Thread {
+		InputStream in;
+		ByteArrayOutputStream acc = new ByteArrayOutputStream();
 		byte[] buf = new byte[1024];
-		InputStream stdout = p.getInputStream();
-		InputStream stderr = p.getInputStream();
-		while (true) {
-			int len;
+		public OutputCollectorThread(InputStream in) {
+			this.in = in;
+		}
+
+		@Override public void run() {
 			try {
-				boolean change;
-				do {
-					change = false;
-					while ((len = stdout.read(buf)) > 0) {
-						output.write(buf, 0, len);
-						change = true;
-					}
-					while ((len = stderr.read(buf)) > 0) {
-						err.write(buf, 0, len);
-						change = true;
-					}
-				} while (change);
-				int exitCode = p.waitFor();
-				if (exitCode != 0) {
-					System.err.println("Exitcode="+exitCode+" for "+cmd[0]);
-					System.err.println("Err//output="+err+"//"+output);
+				int len;
+				while ((len = in.read(buf)) > 0) {
+					acc.write(buf, 0, len);
 				}
-				assert(exitCode == 0);
-				break;
-			} catch (InterruptedException ie) {
-				System.err.println("IE="+ie);
+			} catch (IOException ioe) {
+				System.err.println("I/O error: "+ioe);
+				try { in.close(); } catch (IOException ioe2) {}
 			}
 		}
-		return output.toByteArray();
+
+		public byte[] getResult() {
+			return acc.toByteArray();
+		}
 	}
 
 
