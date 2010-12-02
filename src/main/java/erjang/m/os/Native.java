@@ -22,6 +22,7 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.Map;
 
 import erjang.BIF;
 import erjang.EAtom;
@@ -30,6 +31,7 @@ import erjang.EObject;
 import erjang.ERT;
 import erjang.EString;
 import erjang.ETuple2;
+import erjang.ECons;
 import erjang.NotImplemented;
 
 /**
@@ -73,6 +75,19 @@ public class Native extends ENative {
 		} else {
 			return EString.fromString(value);
 		}
+	}
+
+	/** os:getenv() -> [string()] */
+	@BIF
+	public static EObject getenv() {
+		Map<String,String> env = System.getenv();
+
+		ECons res = ERT.NIL;
+		for (Map.Entry<String,String> entry : env.entrySet()) {
+			String s = entry.getKey() + "=" + entry.getValue();
+			res = res.cons(EString.fromString(s));
+		}
+		return res;
 	}
 
 	@BIF
