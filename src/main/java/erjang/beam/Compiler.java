@@ -228,9 +228,7 @@ public class Compiler implements Opcodes {
 				int idx0 = args[i].lastIndexOf(File.separator);
 
 				String shortName = args[i].substring(idx0 + 1, idx);
-
-				File out = new File(out_dir, shortName + "-"
-						+ Long.toHexString(crcFile(in)) + ".jar");
+				File out = new File(out_dir, moduleJarFileName(shortName, crcFile(in)));
 				JarClassRepo jcp = new JarClassRepo(out);
 
 				System.out.println("compiling " + in + " -> " + out + " ...");
@@ -265,13 +263,10 @@ public class Compiler implements Opcodes {
 		
 //		crc ^= BIFUtil.all_bif_hash();
 
-		File jarFile = new File(erjdir(), name + "-" + Long.toHexString(crc)
-				+ ".jar");
+		File jarFile = new File(erjdir(), moduleJarFileName(name, crc));
 
 		if (!jarFile.exists()) {
-			
-			File jarFile2 = new File(erjdir(), name + "-" + Long.toHexString(crc)
-					+ ".ja#");
+			File jarFile2 = new File(erjdir(), moduleJarBackupFileName(name, crc));
 
 			JarClassRepo repo = new JarClassRepo(jarFile2);
 
@@ -313,6 +308,35 @@ public class Compiler implements Opcodes {
 		}
 
 		return dir;
+	}
+
+	static String moduleJarFileName(String moduleName, long crc) {
+		return moduleFileName(moduleName, crc, "jar");
+	}
+	static String moduleJarBackupFileName(String moduleName, long crc) {
+		return moduleFileName(moduleName, crc, "ja#");
+	}
+
+	static String moduleFileName(String moduleName, long crc, String extension) {
+		return mangle(moduleName)
+			+ "-" + Long.toHexString(crc)
+			+ "." + extension;
+	}
+
+	/** Mangle string so that the result contains only [a-z0-9_$]. */
+	static String mangle(String s) {
+		// TODO: Faster handling of the normal case.
+		StringBuffer sb = new StringBuffer();
+		for (int i=0; i<s.length(); i++) {
+			char c = s.charAt(i);
+			if (('a' <= c && c <= 'z') ||
+				('0' <= c && c <= '9') ||
+				c == '_')
+				sb.append(c);
+			else
+				sb.append('$').append(Integer.toHexString(c)).append('$');
+		}
+		return sb.toString();
 	}
 
 }
