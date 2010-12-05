@@ -624,7 +624,7 @@ public class Native extends ENative {
 	
 	@BIF static public EObject setopts(EProc proc, EObject tab, EObject opts) {
 		// test arguments
-		ETable table = resolve(proc, tab, false);
+		ETable table = resolve(proc, tab, true);
 		if (table == null || table.owner_pid() != proc.self_handle()) {
 			throw ERT.badarg(tab, opts);
 		}
@@ -688,9 +688,9 @@ public class Native extends ENative {
 	@BIF static public EObject member(EProc proc, EObject tab, EObject key) {
 		
 		// test arguments
-		ETable table = resolve(proc, tab, true);
+		ETable table = resolve(proc, tab, false);
 		if (table == null) {
-			throw ERT.badarg(tab);
+			throw ERT.badarg(tab, key);
 		}
 
 		return table.member(key);
