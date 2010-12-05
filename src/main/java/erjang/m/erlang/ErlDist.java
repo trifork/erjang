@@ -180,7 +180,9 @@ public class ErlDist {
 
 	@BIF
 	public static EObject setnode(EObject arg_node, EObject arg_creation)
+		throws Pausable
 	{
+
 		int creation;
 		ESmall cr = arg_creation.testSmall();
 		EAtom node = arg_node.testAtom();
@@ -201,7 +203,10 @@ public class ErlDist {
 		
 		set_this_node(node, cr.value);
 		erts_is_alive = ERT.TRUE;
-		
+
+		EAbstractNode n = EPeer.get(node);
+		n.node_up(null/*??*/, ERT.NIL);
+
 		return ERT.TRUE;
 	}
 
@@ -235,6 +240,7 @@ public class ErlDist {
 
 	@BIF
 	public static EObject setnode(EObject node_arg, EObject cid_arg, EObject type_arg)
+		throws Pausable
 	{
 		//System.err.println("SETNODE("+node_arg+", "+cid_arg+", "+type_arg+")");
 		
@@ -279,6 +285,17 @@ public class ErlDist {
 		EDriverTask task = port.task();
 		if (task != null) { 
 			task.node(n);
+
+			/*TODO:
+    send_nodes_mon_msgs(BIF_P,
+                        am_nodeup,
+                        BIF_ARG_1,
+                        flags & DFLAG_PUBLISHED ? am_visible : am_hidden,
+                        NIL);
+			*/
+
+			n.node_up(null/*??*/, ERT.NIL);
+
 			return ERT.TRUE;
 		} else {
 			return ERT.FALSE;
