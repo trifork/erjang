@@ -100,6 +100,7 @@ public class ErlProc {
 	private static final EAtom am_error_checker = EAtom.intern("error_checker");
 	private static final EAtom am_debug_compiled = EAtom.intern("debug_compiled");
 	private static final EAtom am_lock_checking = EAtom.intern("lock_checking");
+	private static final EAtom am_compat_rel = EAtom.intern("compat_rel");
 
 	@BIF
 	public static EObject process_info(EObject pid, EObject what) {
@@ -516,6 +517,9 @@ public class ErlProc {
 			return ERT.box(ERT.asyncThreadPoolSize());
 		} else if (type == am_break_ignored) {
 			return ERT.box(false);
+		} else if (type == am_compat_rel) {
+		    // we return same value as R14
+		    return new ESmall(14);
 		}
 		
 		ETuple2 tup;
@@ -635,7 +639,7 @@ public class ErlProc {
 
 		} else {
 			log.info("erlang:system_info("+type+") unknown");
-			return am_undefined;
+			throw ERT.badarg(type);
 		}
 
 	}
