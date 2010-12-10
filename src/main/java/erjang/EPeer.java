@@ -473,7 +473,7 @@ public class EPeer extends EAbstractNode {
 			ERef ref, EObject reason) throws Pausable {
 
 		ETuple hdr = ETuple.make(ERT.box(MONITOR_P_EXIT), sender, to_pid,
-				reason);
+								 ref, reason);
 		dsig_cast(sender, hdr);
 	}
 
