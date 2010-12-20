@@ -377,6 +377,7 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 	 */
 	protected void main_loop() throws Exception, Pausable {
 
+		/** out is used locally later, but we allocate it once and for all. */
 		List<ByteBuffer> out = new ArrayList<ByteBuffer>();
 		EObject msg;
 

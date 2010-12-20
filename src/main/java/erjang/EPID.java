@@ -112,14 +112,14 @@ public abstract class EPID extends EHandle {
 			// return DEADPID?
 		}
 		EAbstractNode peer = EPeer.get(node);
-		
+
 		if (peer instanceof EPeer) {
 			return new EExternalPID((EPeer) peer, id, serial, creation);
 		} else {
 			System.err.println("localnode="+ERT.getLocalNode().node+"; asking="+node);
-			
-			// must be local with different name
-			return new  EExternalPID(EPeer.get_or_create(node, creation, null, 0, 0), id, serial, creation);
+			// Presumably another node
+			// might be local with different name
+			return new EExternalPID(EPeer.get_or_create(node, creation, 0, 0), id, serial, creation);
 		}
 	}
 
