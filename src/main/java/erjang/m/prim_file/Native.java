@@ -7,6 +7,7 @@ import erjang.EBinary;
 import erjang.ENative;
 import erjang.EObject;
 import erjang.ERT;
+import erjang.EString;
 
 public class Native extends ENative
 {
@@ -48,11 +49,18 @@ public class Native extends ENative
 	
 	@BIF
 	public static EObject internal_native2name(EObject arg) {
-		if (arg.testBinary() == null) {
+		EBinary bin = arg.testBinary();
+		byte[] binbytes;
+		byte[] outbytes;
+		
+		if (bin == null) {
 			throw ERT.badarg(arg);
 		}
-		System.err.println("native2name " + arg.getClass());
+		binbytes = bin.getByteArray();
+		outbytes = new byte[binbytes.length - 1];
+		System.arraycopy(binbytes, 0, outbytes, 0, binbytes.length - 1);
+		String out = new String(outbytes);
 		
-		return null;
+		return new EString(out);
 	}
 }
