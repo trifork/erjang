@@ -10,7 +10,7 @@ import erjang.ETuple;
 import erjang.NotImplemented;
 
 /**
- * The implementation of Erlang's binaries module
+ * The implementation of Erlang's binary module
  * 
  * @author Pavlo Baron (pb@pbit.org)
  * 
