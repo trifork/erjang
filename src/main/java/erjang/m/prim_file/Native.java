@@ -1,12 +1,14 @@
 package erjang.m.prim_file;
 
-import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.List;
 
 import erjang.BIF;
 import erjang.EBinary;
 import erjang.ENative;
 import erjang.EObject;
 import erjang.ERT;
+import erjang.ESeq;
 import erjang.EString;
 
 public class Native extends ENative
@@ -27,23 +29,22 @@ public class Native extends ENative
 			return new EBinary(outbytes);
 		}
 		else {
-			try
-			{
-				String in = arg.toString();
-				byte[] bytes;
-				byte[] outbytes;
-				
-				bytes = in.substring(1, in.length() - 1).getBytes(System.getProperty("file.encoding"));
-				outbytes = new byte[bytes.length + 1];
-				System.arraycopy(bytes, 0, outbytes, 0, bytes.length);
-				outbytes[outbytes.length - 1] = 0x0;
-				
-				return new EBinary(outbytes);
+			ESeq input = arg.testSeq();
+			List<Byte> bytes = new ArrayList<Byte>();
+			byte[] out;
+			
+			while (!input.isNil()) {
+				Integer el = input.head().testSmall().intValue();
+				bytes.add(el.byteValue());
+				input = input.tail();
 			}
-			catch (UnsupportedEncodingException e)
-			{
-				throw ERT.notsup();
+			out = new byte[bytes.size() + 1];
+			for (int i = 0; i < bytes.size(); ++i) {
+				out[i] = bytes.get(i);
 			}
+			out[out.length - 1] = 0x0;
+			
+			return new EBinary(out);
 		}
 	}
 	
