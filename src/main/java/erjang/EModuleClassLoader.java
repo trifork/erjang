@@ -28,7 +28,7 @@ import java.net.URLClassLoader;
  * Each module has it's own class loader.
  */
 public class EModuleClassLoader extends URLClassLoader {
-
+	
 	/**
 	 * @param urls
 	 */
@@ -50,7 +50,7 @@ public class EModuleClassLoader extends URLClassLoader {
 
 	String ETUPLE_NAME = ETuple.class.getName();
 	String EFUN_NAME = EFun.class.getName();
-
+	
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -58,7 +58,6 @@ public class EModuleClassLoader extends URLClassLoader {
 	 */
 	@Override
 	protected Class<?> findClass(String name) throws ClassNotFoundException {
-
 		if (name.startsWith(ETUPLE_NAME)) {
 			int arity = Integer.parseInt(name.substring(ETUPLE_NAME.length()));
 			return ETuple.get_tuple_class(arity);
@@ -74,7 +73,15 @@ public class EModuleClassLoader extends URLClassLoader {
 			InputStream resource = super.getResourceAsStream(classFileName);
 
 			if (resource == null) {
-				throw new ClassNotFoundException(name, new Error("while loading "+this.getURLs()[0]));
+				/* old problem - Java never knows we're on Cygwin so it thinks we're on Windows and uses
+				/* '\\' instead of '/' as file separator. Further, we can't reliably know we have been
+				 * executed from a Cygwin shell (too many ways to to this). So simply fall back to '/'
+				 * and try to get the resource stream again. Then, fail finally */
+				classFileName = classFileName.replace(File.separatorChar, '/');
+				resource = super.getResourceAsStream(classFileName);
+				if (resource == null) {
+					throw new ClassNotFoundException(name, new Error("while loading "+this.getURLs()[0]));
+				}
 			}
 			
 			try {
