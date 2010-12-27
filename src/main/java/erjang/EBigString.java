@@ -183,8 +183,7 @@ public class EBigString extends ESeq implements CharSequence {
 			return false;
 		}
 
-		return compareTo((EObject) obj) == 0;
-
+		return equalsExactly((EObject) obj);
 	}
 
 	@Override
@@ -357,7 +356,7 @@ public class EBigString extends ESeq implements CharSequence {
 					return -1; // I AM SHORTER
 				}
 
-				int cmp = (new ESmall(charAt(i++))).compareTo(seq.head());
+				int cmp = (new ESmall(charAt(i++))).erlangCompareTo(seq.head());
 				if (cmp != 0)
 					return cmp;
 
@@ -367,12 +366,12 @@ public class EBigString extends ESeq implements CharSequence {
 					continue;
 				}
 
-				return -res.compareTo(new EBigString(data, i));
+				return -res.erlangCompareTo(new EBigString(data, i));
 			}
 
 		}
 
-		return -rhs.compareTo(this);
+		return -rhs.erlangCompareTo(this);
 	}
 
 	/*

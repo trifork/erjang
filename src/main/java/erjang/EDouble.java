@@ -68,8 +68,7 @@ public class EDouble extends ENumber {
 	}
 	
 	@Override
-	public
-	boolean equalsExactly(EObject rhs) {
+	public boolean equalsExactly(EObject rhs) {
 		return rhs.r_equals_exactly(this);
 	}
 
