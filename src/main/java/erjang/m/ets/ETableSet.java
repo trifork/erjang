@@ -53,11 +53,11 @@ public class ETableSet extends ETable {
 
 	ETableSet(EProc owner, EAtom type, EInteger tid, EAtom aname, EAtom access, int keypos,
 			boolean write_concurrency, boolean is_named, EInternalPID heirPID, EObject heirData) {
-		super(owner, type, tid, aname, access, keypos, 
-				is_named, heirPID, heirData, 
-				type == Native.am_set 
-						? PersistentHashMap.EMPTY 
-						: PersistentTreeMap.EMPTY);
+		super(owner, type, tid, aname, access, keypos,
+				is_named, heirPID, heirData,
+				type == Native.am_set
+			  ? PersistentHashMap.EMPTY
+			  : new PersistentTreeMap(null, EObject.ERLANG_ORDERING));
 		this.ordered = type != Native.am_set;
 	}
 	

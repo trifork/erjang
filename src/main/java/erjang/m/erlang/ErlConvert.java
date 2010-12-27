@@ -178,7 +178,7 @@ public class ErlConvert {
 
 		// remove leading +
 		if (!seq.isNil()) {
-			if (seq.head().equals(PLUS_SIGN)) {
+			if (seq.head().equalsExactly(PLUS_SIGN)) {
 				seq = seq.tail().testString();
 				
 				if (seq == null) {

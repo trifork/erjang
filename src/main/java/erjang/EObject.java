@@ -23,6 +23,7 @@ import java.nio.ByteBuffer;
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;
+import java.util.Comparator;
 
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
@@ -32,7 +33,34 @@ import erjang.m.ets.EMatchContext;
 import erjang.m.ets.ETermPattern;
 import erjang.m.java.JavaObject;
 
-public abstract class EObject implements Comparable<EObject> {
+/** The base class for representing Erlang values.
+ * This class embodíes in particular (the base of) the following concerns:
+ * - Dynamic value kind testing;
+ * - Erlang value ordering (incl. "compare-same") and "exact equality"
+ *   (as used in matching).
+ * - The unary and binary operators built into the Erlang language
+ *
+ * Furthermore, the class contains helper methods concerned with:
+ * - building and flattening of lists;
+ * - counting up and down, and integer zero-testing. (TODO: consider these)
+ *
+ * Regarding EObjects and collections:
+ *
+ * Erjang will need to form both hash tables and ordered collections
+ * of EObjects.
+ * For hashing purposes, EObject implements equals() and hashCode().
+ * While EObjects have an ordering (the value ordering defined by Erlang),
+ * it is not total: an integer and its floating-point equivalent are
+ * considered equivalent as far as the ordering is concerned, though
+ * not by equals().
+ * EObject therefore <i>intentionally</i> does not implement Comparable;
+ * instead, use the explicit comparator EObject.ERLANG_ORDERING.
+ * (This is also the reason that its comparison method is called
+ * erlangCompareTo() rather than plain compareTo().)
+ */
+public abstract class EObject {
+	public static final ErlangOrderComparator ERLANG_ORDERING =
+		new ErlangOrderComparator();
 
 	public ECons cons(EObject h)
 	{
@@ -264,7 +292,7 @@ public abstract class EObject implements Comparable<EObject> {
 	public boolean equals(Object other) {
 		if (other == this) return true;
 		if (other instanceof EObject) {
-			return compareTo((EObject) other) == 0;
+			return equalsExactly((EObject) other);
 		} else {
 			return false;
 		}
@@ -272,10 +300,10 @@ public abstract class EObject implements Comparable<EObject> {
 	
 	public boolean equals(EObject other) {
 		if (other == this) return true;
-		return compareTo(other) == 0;
+		return equalsExactly(other);
 	}
-	
-	public int compareTo(EObject rhs) {
+
+	public final int erlangCompareTo(EObject rhs) {
 		if (rhs == this) return 0;
 		int cmp1 = cmp_order();
 		int cmp2 = rhs.cmp_order();
@@ -296,8 +324,16 @@ public abstract class EObject implements Comparable<EObject> {
 	int r_compare_same(EDouble lhs) { throw new NotImplemented(); }
 	int r_compare_same(EInternalPID lhs) { throw new NotImplemented(); }
 	
+	/** Erlang "equals exactly", also called "matches" (=:= operator).
+	 *  Is overridden by some subclasses, inclusing composites.
+	 */
 	public boolean equalsExactly(EObject rhs) {
-		return compareTo(rhs) == 0;
+		return erlangCompareTo(rhs) == 0;
+	}
+
+	/** Erlang "compares same" (== operator). */
+	public final boolean erlangEquals(EObject rhs) {
+		return erlangCompareTo(rhs) == 0;
 	}
 
 	boolean r_equals_exactly(ESmall lhs) { return false; }
@@ -335,7 +371,7 @@ public abstract class EObject implements Comparable<EObject> {
 	 * @return
 	 */
 	public EAtom ge(EObject o2) {
-		return ERT.box ( this.compareTo(o2) >= 0 );
+		return ERT.box ( this.erlangCompareTo(o2) >= 0 );
 	}
 
 
@@ -400,7 +436,7 @@ public abstract class EObject implements Comparable<EObject> {
 	}
 
 	final public boolean is_eq(EObject other) {
-		return equals(other);
+		return erlangEquals(other);
 	}
 	
 	final public boolean is_eq_exact(EObject other) {
@@ -408,7 +444,7 @@ public abstract class EObject implements Comparable<EObject> {
 	}
 	
 	final public boolean is_ne(EObject other) {
-		return !equals(other);
+		return !erlangEquals(other);
 	}
 	
 	final public boolean is_ne_exact(EObject other) {
@@ -416,11 +452,11 @@ public abstract class EObject implements Comparable<EObject> {
 	}
 	
 	final public boolean is_lt(EObject other) {
-		return this.compareTo(other) < 0;
+		return this.erlangCompareTo(other) < 0;
 	}
 	
 	final public boolean is_ge(EObject other) {
-		return this.compareTo(other) >= 0;
+		return this.erlangCompareTo(other) >= 0;
 	}
 	
 	/**
@@ -449,5 +485,18 @@ public abstract class EObject implements Comparable<EObject> {
 	public ENumber inc() { return ESmall.ONE.add(this); }
 	public ENumber dec() { return ESmall.MINUS_ONE.add(this); }	
 	public boolean is_zero() { return false; }
-	
+
+
+	public static abstract class ValueComparator implements Comparator<EObject> {
+		public abstract int compare(EObject a, EObject b);
+	}
+
+	/** Comparator which doesn't distibguish between integers and floats.
+	 * Note: this comparator imposes orderings that are inconsistent with equals.
+	 */
+	private static class ErlangOrderComparator extends ValueComparator {
+		public int compare(EObject a, EObject b) {
+			return a.erlangCompareTo(b);
+		}
+	}
 }

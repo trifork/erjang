@@ -55,7 +55,7 @@ public abstract class ECons extends EObject {
 				return ths.isNil() ? 0 : 1;
 			if (ths.isNil()) return -1;
 
-			int cmp1 = ths.head().compareTo(other.head());
+			int cmp1 = ths.head().erlangCompareTo(other.head());
 			if (cmp1 != 0)
 				return cmp1;
 
@@ -64,7 +64,7 @@ public abstract class ECons extends EObject {
 			EObject otherTail = other.tail();
 			if (! (thisTail instanceof ECons &&
 			       otherTail instanceof ECons))
-				return thisTail.compareTo(otherTail);
+				return thisTail.erlangCompareTo(otherTail);
 			else {
 				ths = thisTail.testCons();
 				other = otherTail.testCons();
