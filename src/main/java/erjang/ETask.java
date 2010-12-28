@@ -51,7 +51,7 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 	 */
 	public abstract H self_handle();
 
-	protected Set<EHandle> links = new ConcurrentSkipListSet<EHandle>();
+	protected Set<EHandle> links = new ConcurrentSkipListSet<EHandle>(EObject.ERLANG_ORDERING);
 	protected Map<ERef,EHandle> monitors = new ConcurrentHashMap<ERef, EHandle>();
 
 	public void unlink(EHandle other) throws Pausable {

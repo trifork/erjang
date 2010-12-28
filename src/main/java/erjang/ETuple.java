@@ -67,7 +67,7 @@ public abstract class ETuple extends EObject implements Cloneable /* , Indexed *
 			return 1;
 
 		for (int i = 1; i <= arity(); i++) {
-			int cmp = elm(i).compareTo(other.elm(i));
+			int cmp = elm(i).erlangCompareTo(other.elm(i));
 			if (cmp != 0)
 				return cmp;
 		}
@@ -496,26 +496,6 @@ public abstract class ETuple extends EObject implements Cloneable /* , Indexed *
 			result += elm(i + 1).hashCode();
 		}
 		return result;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see java.lang.Object#equals(java.lang.Object)
-	 */
-	@Override
-	public boolean equals(Object obj) {
-		if (obj instanceof ETuple) {
-			ETuple ot = (ETuple) obj;
-			if (arity() != ot.arity())
-				return false;
-			for (int i = 0; i < arity(); i++) {
-				if (!elm(i + 1).equals(ot.elm(i + 1)))
-					return false;
-			}
-			return true;
-		}
-		return false;
 	}
 
 	@Override

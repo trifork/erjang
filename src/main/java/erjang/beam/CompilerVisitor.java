@@ -2574,7 +2574,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 							return -1;
 						if (h > ho)
 							return 1;
-						return value().compareTo(o.value());
+						return value().erlangCompareTo(o.value());
 					}
 
 				}

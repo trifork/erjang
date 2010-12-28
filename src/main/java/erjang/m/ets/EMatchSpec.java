@@ -198,40 +198,40 @@ public class EMatchSpec extends EPseudoTerm {
 
 		@Override
 		public boolean match(ECons c, EMatchContext r) {
-			return c.compareTo(value) == 0;
+			return c.erlangEquals(value);
 		}
 
 		@Override
 		public boolean match(ETuple t, EMatchContext r) {
-			return t.compareTo(value) == 0;
+			return t.erlangEquals(value);
 		}
 
 		public boolean match(EPID pid, EMatchContext r) {
-			return pid.compareTo(value) == 0;
+			return pid.erlangEquals(value);
 		}
 
 		public boolean match(ERef ref, EMatchContext r) {
-			return ref.compareTo(value) == 0;
+			return ref.erlangEquals(value);
 		}
 
 		public boolean match(EPort port, EMatchContext r) {
-			return port.compareTo(value) == 0;
+			return port.erlangEquals(value);
 		}
 
 		public boolean match(EAtom am, EMatchContext r) {
-			return am.compareTo(value) == 0;
+			return am.erlangEquals(value);
 		}
 
 		public boolean match(EFun fu, EMatchContext r) {
-			return fu.compareTo(value) == 0;
+			return fu.erlangEquals(value);
 		}
 
 		public boolean match(EBitString bits, EMatchContext r) {
-			return bits.compareTo(value) == 0;
+			return bits.erlangEquals(value);
 		}
 
 		public boolean match(ENumber num, EMatchContext r) {
-			return num.compareTo(value) == 0;
+			return num.erlangEquals(value);
 		}
 
 	}

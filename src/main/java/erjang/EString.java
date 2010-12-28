@@ -184,7 +184,7 @@ public class EString extends ESeq implements CharSequence {
 			return false;
 		}
 
-		return compareTo((EObject) obj) == 0;
+		return equalsExactly((EObject) obj);
 
 	}
 
@@ -391,7 +391,7 @@ public class EString extends ESeq implements CharSequence {
 					return 1; // I AM LONGER
 				}
 
-				int cmp = (new ESmall(charAt(i++))).compareTo(rseq.head());
+				int cmp = (new ESmall(charAt(i++))).erlangCompareTo(rseq.head());
 				if (cmp != 0)
 					return cmp;
 
@@ -401,12 +401,12 @@ public class EString extends ESeq implements CharSequence {
 					continue;
 				}
 
-				return -res.compareTo(new EString(data, i));
+				return -res.erlangCompareTo(new EString(data, i));
 			}
 
 		}
 
-		return -rhs.compareTo(this);
+		return -rhs.erlangCompareTo(this);
 	}
 
 	/*

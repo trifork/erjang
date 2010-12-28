@@ -1,0 +1,74 @@
+<html>
+<body>
+<p>Central Erjang classes, including representation of data and processes.</p>
+
+<p><i>Developer's note: The contents of this package is rather diverse; it might be a good idea to move data representation classes to <tt>erjang.data</tt> and move some support classes to <tt>erjang.util</tt>.</i>
+
+<h2>Data representation</h2>
+<p>Erlang values are represented in Erjang through the class hierarchy rooted in EObject.
+<br>The class hierarchy is depicted below:
+</p>
+<pre>
+			      +-------+
+			      |EObject|
+			      +-------+
+                                  ^
+    ______________________________|____________________________
+   |    |    |    |   |       |         |          |           |
+   | +-----+ | +----+ | +-------------+ |     +----------+     |
+   | |EAtom| | |ERef| | |&laquo;EPseudoTerm&raquo;| |     |EBitstring|     |
+   | +-----+ | +----+ | +-------------+ |     +----------+     |
+   |         |        |                 |          ^           |
++------+ <span style="background: #cfc">+-------+</span> +--------+      <span style="background: #ccf">+---------+</span>     |      <span style="background: #fcc">+---------+</span>
+|&laquo;EFun&raquo;| <span style="background: #cfc">|&laquo;ECons&raquo;|</span> |&laquo;ETuple&raquo;|      <span style="background: #ccf">|&laquo;ENumber&raquo;|</span> +-------+  <span style="background: #fcc">|&laquo;EHandle&raquo;|</span>
++------+ <span style="background: #cfc">+-------+</span> +--------+      <span style="background: #ccf">+---------+</span> |EBinary|  <span style="background: #fcc">+---------+</span>
+   ^      <span style="background: #cfc">   ^   </span>       ^          <span style="background: #ccf">     ^     </span> +-------+  <span style="background: #fcc">     ^     </span>
+   |      <span style="background: #cfc">   |   </span>       |          <span style="background: #ccf">  ___|___  </span>            <span style="background: #fcc"> ____|___  </span>
++.......+ <span style="background: #cfc">   |   </span>  +.......+  <span style="background: #ccf">      |       |       </span>  <span style="background: #fcc">    |        |    </span>
+:one per: <span style="background: #cfc">   |   </span>  :one per:  <span style="background: #ccf">+----------+ +-------+</span>  <span style="background: #fcc">+-------+ +------+</span>
+: arity : <span style="background: #cfc">   |   </span>  : arity :  <span style="background: #ccf">|&laquo;EInteger&raquo;| |EDouble|</span>  <span style="background: #fcc">|&laquo;EPort&raquo;| |&laquo;EPID&raquo;|</span>
++.......+ <span style="background: #cfc">   |   </span>  +.......+  <span style="background: #ccf">+----------+ +-------+</span>  <span style="background: #fcc">+-------+ +------+</span>
+<span style="background: #cfc">     ________|________      </span>  <span style="background: #ccf">      ^        </span>         <span style="background: #fcc">    ^          ^  </span>
+<span style="background: #cfc">    |       |         |     </span>  <span style="background: #ccf">    __|____    </span>         <span style="background: #fcc">    |         _|____________ </span>
+<span style="background: #cfc"> +-----+ +------+ +--------+</span>  <span style="background: #ccf">   |       |   </span>   <span style="background: #fcc">+-------------+    |              |</span>
+<span style="background: #cfc"> |EPair| |&laquo;ESeq&raquo;| |EBinList|</span>  <span style="background: #ccf">+------+ +----+</span>   <span style="background: #fcc">|EInternalPort|  +------------+ +------------+</span>
+<span style="background: #cfc"> +-----+ +------+ +--------+</span>  <span style="background: #ccf">|ESmall| |EBig|</span>   <span style="background: #fcc">+-------------+  |EInternalPID| |EExternalPID|</span>
+<span style="background: #cfc">            ^               </span>  <span style="background: #ccf">+------+ +----+</span>   <span style="background: #fcc">                 +------------+ +------------+</span>
+<span style="background: #cfc">            |               </span>
+<span style="background: #cfc">    ________|____________________________________________       </span>
+<span style="background: #cfc">   |      |        |           |            |            |      </span>
+<span style="background: #cfc">+----+ +-----+ +-------+ +----------+ +-----------+ +----------+</span>
+<span style="background: #cfc">|ENil| |EList| |EString| |EBigString| |EStringList| |&laquo;ELazySeq&raquo;|</span>
+<span style="background: #cfc">+----+ +-----+ +-------+ +----------+ +-----------+ +----------+</span>
+
+</pre>
+
+<ul>
+  <li>{@link erjang.EAtom} and {@link erjang.ERef} represent Erlang atoms and references, respectively.
+  <li>{@link erjang.ETuple} and {@link erjang.EFun} represent Erlang tuples and function values, respectively; a concrete subclass exists for each arity.  Some of these subclasses are created at runtime, but in general, they are generated as needed at runtime.
+  <li>{@link erjang.EBitstring} represents Erlang bit strings. {@link erjang.EBinary} is a specialization for bitstrings ending on byte boundaries. (This subclass relation is just as in Erlang, cf. <tt>erlang:is_bitstring/1</tt> and <tt>erlang:is_binary/1</tt>.)
+  <li>{@link erjang.ECons} represents lists (the name is a bit of a misnomer). There are several list representation classes; see below for details.
+  <li>{@link erjang.ENumber} represents numbers (cf. <tt>erlang:is_number/1</tt>). Floats are represented by {@link erjang.EDouble}. Integers are represented by {@link erjang.ESmall} if they fit into 32 bits, and by {@link erjang.EBig} otherwise.
+  <li>{@link erjang.EHandle} represents handles to active objects (entities with inboxes): processes ({@link erjang.EPID}) and ports ({@link erjang.EPort}). PIDs are represented differently according to whether the process lives at this node ({@link erjang.EInternalPID}) or in a remote node ({@link erjang.EExternalPID}).
+  <li>Finally, {@link erjang.EPseudoTerm} represents an entity which is not an Erlang term but which nevertheless needs to have EObject type. Examples include {@link erjang.EBinMatchState} and {@link erjang.ETailMarker}.
+</ul>
+
+
+<h3>List representation</h3>
+<p>For performance reasons, Erjang has several different list representations.
+<br>The most general representation is using {@link erjang.ENil} and {@link erjang.EPair} &mdash; for the empty list and non-empty lists, respectively.
+
+<p>Furthermore, the following important special cases are accomodated:
+
+<ul>
+  <li>Lists which are known to be pure: {@link erjang.ESeq} and subclasses; {@link erjang.EList} handles the general case.
+  <li>Pure lists of integers in the range [0;2<sup>8</sup>-1] (Ascii/Latin-1 strings; list equivalent of binaries): {@link erjang.EString}
+  <li>Pure lists of integers in the range [0;2<sup>16</sup>-1] (Unicode strings): {@link erjang.EBigString}
+  <li>Lists with a prefix of integers in the range [0;2<sup>8</sup>-1] (I/O-lists): {@link erjang.EBinList}
+  <li>Pure lists with a prefix of integers in the range [0;2<sup>8</sup>-1] (I/O-lists): {@link erjang.EStringList}
+  <li>Internal lazily-generated lists (exception stack traces): {@link erjang.ELazySeq}
+</ul>
+
+
+</body>
+</html>

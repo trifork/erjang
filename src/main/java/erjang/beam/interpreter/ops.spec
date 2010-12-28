@@ -147,18 +147,18 @@ is_ne_exact lbl a b:
 	if (GET(a).equalsExactly(GET(b))) GOTO(lbl);
 
 is_eq lbl a b:
-	if (GET(a).compareTo(GET(b)) != 0) GOTO(lbl);
+	if (GET(a).erlangCompareTo(GET(b)) != 0) GOTO(lbl);
 
 is_ne lbl a b:
-	if (GET(a).compareTo(GET(b)) == 0) GOTO(lbl);
+	if (GET(a).erlangCompareTo(GET(b)) == 0) GOTO(lbl);
 #	src1.equals(src2) => GOTO(lbl);
 ##	(src1 instanceof Literal && src2 instanceof Literal && !src1.equals(src2)) => {}
 
 is_lt lbl a b:
-	if (GET(a).compareTo(GET(b)) >= 0) GOTO(lbl);
+	if (GET(a).erlangCompareTo(GET(b)) >= 0) GOTO(lbl);
 
 is_ge lbl a b:
-	if (GET(a).compareTo(GET(b)) < 0) GOTO(lbl);
+	if (GET(a).erlangCompareTo(GET(b)) < 0) GOTO(lbl);
 
 %class LDS(label:L, dest:D, src:S)
 is_function2 lbl subject arity:
