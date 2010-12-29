@@ -20,6 +20,10 @@
 package erjang;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
@@ -36,13 +40,17 @@ public class AllTests {
 
 		TestSuite otpCompileSuite = new TestSuite("Compiling OTP");
 		//$JUnit-BEGIN$
-		find_beam_files(otpCompileSuite, new File(OTP_HOME));
+		Map<File, List<File>> testsOTP = new HashMap<File, List<File>>();
+		find_beam_files(testsOTP, new File(OTP_HOME));
+		buildTestHiearchie(testsOTP, otpCompileSuite, TestCompileFile.class);
 		//$JUnit-END$
  		suite.addTest(otpCompileSuite);
 		
 		TestSuite coverageRunSuite = new TestSuite("Coverage run tests");
 		//$JUnit-BEGIN$
-		find_erl_files(coverageRunSuite, new File("src/test/erl"));
+		Map<File, List<File>> testsErl = new HashMap<File, List<File>>();
+		find_erl_files(testsErl, new File("src/test/erl"));
+		buildTestHiearchie(testsErl, coverageRunSuite, TestRunFile.class);
 		//$JUnit-END$
 
 		suite.addTest(coverageRunSuite);
@@ -50,46 +58,58 @@ public class AllTests {
 		return suite;
 	}
 
-
-	static void find_beam_files(TestSuite suite, File dir) {
-		if (! dir.isDirectory()) throw new IllegalArgumentException("not a directory: "+dir);
+	protected static void buildTestHiearchie(Map<File, List<File>> tests, TestSuite suite, Class<? extends AbstractErjangTestCase> clazz) {
 		TestSuite ts = null;
+		for (File key : tests.keySet()) {
+			ts = new TestSuite(key.getPath());
+			for (File sub : tests.get(key)) {
+				try {
+					AbstractErjangTestCase tc = clazz.newInstance();
+					tc.setFile(sub);
+					ts.addTest(tc);
+				}
+				catch(Exception e) {
+					throw new IllegalArgumentException("cannot create object of: " + clazz); 
+				}
+			}
+		}
+	}
 
+	static void find_beam_files(Map<File, List<File>> tests, File dir) {
+		List<File> ts = null;
+		if (! dir.isDirectory()) throw new IllegalArgumentException("not a directory: "+dir);
 		for (File file : dir.listFiles()) {
 			if (file.isDirectory()) {
-				find_beam_files(suite, file);
+				find_beam_files(tests, file);
 			} else if (file.getName().endsWith(".beam")) {
 				if (ts == null) {
 					System.err.println("added.. " + dir);
-
-					ts = new TestSuite(dir.getPath());
-					suite.addTest(ts);
+					
+					ts = new ArrayList<File>();
+					tests.put(dir, ts);
 				}
 
-				ts.addTest(new TestCompileFile(file));
-
-				// System.out.println("added: "+file);
+				ts.add(file);
 			}
 		}
 	}
 
-	static void find_erl_files(TestSuite suite, File dir) {
+	static void find_erl_files(Map<File, List<File>> tests, File dir) {
 		if (! dir.isDirectory()) throw new IllegalArgumentException("not a directory: "+dir);
-		TestSuite ts = null;
+		List<File> ts = null;
 
 		for (File file : dir.listFiles()) {
 			if (file.isDirectory()) {
-				find_erl_files(suite, file);
+				find_erl_files(tests, file);
 			} else if (file.getName().endsWith(".erl")) {
 				if (ts == null) {
 					System.err.println("added.. " + dir);
-					ts = new TestSuite(dir.getPath());
-					suite.addTest(ts);
+					ts = new ArrayList<File>();
+					tests.put(dir, ts);
 				}
 
-				ts.addTest(new TestRunFile(file));
+				ts.add(file);
 			}
 		}
 	}
-
 }

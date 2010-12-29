@@ -21,25 +21,13 @@ package erjang;
 
 import java.io.File;
 
-import erjang.beam.Compiler;
-
-import junit.framework.TestCase;
 import junit.framework.TestResult;
+import erjang.beam.Compiler;
 
 /**
  * 
  */
-public class TestCompileFile extends TestCase {
-
-	private final File file;
-
-	/**
-	 * @param file
-	 */
-	public TestCompileFile(File file) {
-		super(file.getName());
-		this.file = file;
-	}
+public class TestCompileFile extends AbstractErjangTestCase {
 
 	/* (non-Javadoc)
 	 * @see java.lang.Object#toString()

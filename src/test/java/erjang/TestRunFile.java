@@ -46,7 +46,7 @@ import kilim.Mailbox;
 /**
  * 
  */
-public class TestRunFile extends TestCase {
+public class TestRunFile extends AbstractErjangTestCase {
 
 	static final String OTP_HOME = ErjangConfig.getString("erjang.otp.root");
 	static final String ERTS_VSN = ErjangConfig.getString("erjang.erts.version");
@@ -59,8 +59,6 @@ public class TestRunFile extends TestCase {
 	static final String RUN_WRAPPER_HOME = "src/test/erl";
 	static final String BEAM_DIR = "target/test-beam";
 
-	private final File file;
-
 	final static File repoDir = new File("target/compiled");
 	final static DirClassRepo repo = new DirClassRepo(repoDir);
 
@@ -70,8 +68,7 @@ public class TestRunFile extends TestCase {
 	 * @param file
 	 */
 	public TestRunFile(File file) {
-		super(file.getName());
-		this.file = file;
+		super(file);
 		
 		String path1 = OTP_HOME + File.separator + "erts" + File.separator
 				+ "preloaded" + File.separator + "ebin";
