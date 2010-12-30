@@ -29,6 +29,10 @@ import erjang.beam.Compiler;
  */
 public class TestCompileFile extends AbstractErjangTestCase {
 
+    public TestCompileFile(String name) {
+        super(name);
+    }
+
 	/* (non-Javadoc)
 	 * @see java.lang.Object#toString()
 	 */

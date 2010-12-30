@@ -20,6 +20,7 @@
 package erjang;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -29,7 +30,10 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 
 /**
+ * when called using "main", this class generates test class files. Otherwise, it is a test suite
  *
+ * @author <unknown> (who wrote the original version?)
+ * @author Pavlo Baron <pb@pbit.org>
  */
 public class AllTests {
 
@@ -41,7 +45,7 @@ public class AllTests {
 		TestSuite otpCompileSuite = new TestSuite("Compiling OTP");
 		//$JUnit-BEGIN$
 		Map<File, List<File>> testsOTP = new HashMap<File, List<File>>();
-		find_beam_files(testsOTP, new File(OTP_HOME));
+		find_files(testsOTP, new File(OTP_HOME), ".beam");
 		buildTestHiearchie(testsOTP, otpCompileSuite, TestCompileFile.class);
 		//$JUnit-END$
  		suite.addTest(otpCompileSuite);
@@ -49,19 +53,20 @@ public class AllTests {
 		TestSuite coverageRunSuite = new TestSuite("Coverage run tests");
 		//$JUnit-BEGIN$
 		Map<File, List<File>> testsErl = new HashMap<File, List<File>>();
-		find_erl_files(testsErl, new File("src/test/erl"));
+		find_files(testsErl, new File("src/test/erl"), ".erl");
 		buildTestHiearchie(testsErl, coverageRunSuite, TestRunFile.class);
 		//$JUnit-END$
-
 		suite.addTest(coverageRunSuite);
 
 		return suite;
 	}
 
-	protected static void buildTestHiearchie(Map<File, List<File>> tests, TestSuite suite, Class<? extends AbstractErjangTestCase> clazz) {
+	protected static void buildTestHiearchie(Map<File, List<File>> tests, TestSuite suite,
+                                             Class<? extends AbstractErjangTestCase> clazz) {
 		TestSuite ts = null;
 		for (File key : tests.keySet()) {
 			ts = new TestSuite(key.getPath());
+            suite.addTest(ts);
 			for (File sub : tests.get(key)) {
 				try {
 					AbstractErjangTestCase tc = clazz.newInstance();
@@ -75,13 +80,13 @@ public class AllTests {
 		}
 	}
 
-	static void find_beam_files(Map<File, List<File>> tests, File dir) {
+	static void find_files(Map<File, List<File>> tests, File dir, String ext) {
 		List<File> ts = null;
 		if (! dir.isDirectory()) throw new IllegalArgumentException("not a directory: "+dir);
 		for (File file : dir.listFiles()) {
 			if (file.isDirectory()) {
-				find_beam_files(tests, file);
-			} else if (file.getName().endsWith(".beam")) {
+				find_files(tests, file, ext);
+			} else if (file.getName().endsWith(ext)) {
 				if (ts == null) {
 					System.err.println("added.. " + dir);
 					
@@ -94,22 +99,41 @@ public class AllTests {
 		}
 	}
 
-	static void find_erl_files(Map<File, List<File>> tests, File dir) {
-		if (! dir.isDirectory()) throw new IllegalArgumentException("not a directory: "+dir);
-		List<File> ts = null;
+    public static void main(String[] args) {
+        if (args.length == 0) {
+            throw new IllegalArgumentException("need at least one command line argument (path)");
+        }
 
-		for (File file : dir.listFiles()) {
-			if (file.isDirectory()) {
-				find_erl_files(tests, file);
-			} else if (file.getName().endsWith(".erl")) {
-				if (ts == null) {
-					System.err.println("added.. " + dir);
-					ts = new ArrayList<File>();
-					tests.put(dir, ts);
-				}
+        Map<File, List<File>> testsOTP = new HashMap<File, List<File>>();
+		find_files(testsOTP, new File(OTP_HOME), ".beam");
+        generateTestClasses(args[0], testsOTP, TestCompileFile.class);
 
-				ts.add(file);
+        Map<File, List<File>> testsErl = new HashMap<File, List<File>>();
+		find_files(testsErl, new File("src/test/erl"), ".erl");
+        generateTestClasses(args[0], testsErl, TestRunFile.class);
+    }
+
+    protected static void generateTestClasses(String path, Map<File, List<File>> tests,
+                                              Class<? extends AbstractErjangTestCase> clazz) {
+        for (File key : tests.keySet()) {
+			for (File sub : tests.get(key)) {
+                String name = AbstractErjangTestCase.getClassName(sub);
+                String content = AbstractErjangTestCase.getClassContent(clazz, sub);
+                try {
+                    File file = new File(path + "/" + name + ".java");
+
+                    System.out.println("generating test class: " + file.getName());
+
+                    file.createNewFile();
+                    FileOutputStream fop = new FileOutputStream(file);
+                    fop.write(content.getBytes());
+                    fop.flush();
+                    fop.close();
+                }
+                catch (Exception e) {
+                    throw new IllegalStateException(e);
+                }
 			}
 		}
-	}
+    }
 }

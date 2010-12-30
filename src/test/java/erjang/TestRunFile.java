@@ -64,6 +64,14 @@ public class TestRunFile extends AbstractErjangTestCase {
 
 	final static BeamLoader beamParser = new ErjangBeamDisLoader();
 
+    public TestRunFile() {
+        super();
+    }
+
+    public TestRunFile(String name) {
+        super(name);
+    }
+
 	/**
 	 * @param file
 	 */
@@ -157,6 +165,7 @@ public class TestRunFile extends AbstractErjangTestCase {
 						 "-sasl", "sasl_error_logger", "false", // Prevent SASL from polluting stdout
 					     "-s", "run_wrapper", "run_wrapper", "erlang", moduleName,
 					     "-s", "erlang", "halt"};
+
 		byte[] bin = execGetBinaryOutput(cmd);
 		return ErlConvert.binary_to_term(new EBinary(bin));
 	}
@@ -174,6 +183,7 @@ public class TestRunFile extends AbstractErjangTestCase {
 	private byte[] execGetBinaryOutput(String[] cmd) throws Exception {
 		Runtime rt = Runtime.getRuntime();
 		Process p = rt.exec(cmd);
+
 		OutputCollectorThread outThread = new OutputCollectorThread(p.getInputStream());
 		OutputCollectorThread errThread = new OutputCollectorThread(p.getErrorStream());
 		outThread.start();
