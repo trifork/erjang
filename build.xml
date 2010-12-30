@@ -23,7 +23,8 @@
 	</path>
 
 	<target name="all" depends="clean,weave,jar" />
-	<target name="test" depends="all,testwoven" />
+    <target name="all_with_test" depends="all,weavetest" />
+	<target name="test" depends="all_with_test,testwoven" />
 
 	<target name="gen-interpreter">
 		<echo message="generating interpreter code ===================" />
@@ -113,6 +114,9 @@
 		</delete>
 		<delete dir="./target" />
 		<delete dir="./.erj" />
+        <delete>
+            <fileset dir="src/test/java/erjang" includes="**/*_TEST.java" />
+        </delete>
 	</target>
 
 	<!-- This runs those tests depend on generated classes in testclasses-->
