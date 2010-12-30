@@ -26,31 +26,61 @@
 	<target name="test" depends="all,testwoven" />
 
 	<target name="gen-interpreter">
-		<echo message="generating interpreter code" />
+		<echo message="generating interpreter code ===================" />
 		<exec dir="src/main/java/erjang/beam/interpreter" executable="perl" input="src/main/java/erjang/beam/interpreter/ops.spec" failonerror="yes">
 		    <arg value="-W"/>
 		    <arg value="ErjIG_Main.pl"/>
 		</exec>
 	</target>
 
-	<target name="compile" depends="gen-interpreter">
-		<mkdir dir="target" />
+    <target name="create-dirs">
+        <mkdir dir="target" />
 		<mkdir dir="target/classes" />
 		<mkdir dir="target/test-classes" />
 		<mkdir dir="target/test-beam" />
 		<mkdir dir="target/compiled" />
+    </target>
 
+    <target name="gen-test-classes" description="generate test classes based on a generic one" depends="create-dirs">
+		<echo message="generating test classes ===================" />
+		<java classname="erjang.AllTests"
+              failonerror="true"
+              fork="true">
+            <jvmarg value="-Derjang.configfile=erjang_cfg.properties" />
+            <arg value="src/test/java/erjang/"/>
+            <classpath>
+                <pathelement location="target/test-classes" />
+            </classpath>
+            <classpath refid="erjang.classpath" />
+        </java>
+	</target>
+
+	<target name="compile" depends="gen-interpreter,create-dirs">
 		<echo message="Compiling src ===================" />
 		<javac debug="true" srcdir="src/main/java" destdir="target/classes" classpathref="erjang.classpath" deprecation="on" debuglevel="lines,vars,source"/>
 	</target>
 
 	<target name="testcompile" depends="compile">
 		<echo message="Compiling test ===================" />
-		<javac debug="true" srcdir="src/test/java" destdir="target/test-classes" classpathref="erjang.classpath"  debuglevel="lines,vars,source"/>
+		<javac debug="true" srcdir="src/test/java" destdir="target/test-classes" debuglevel="lines,vars,source">
+            <classpath>
+                <pathelement location="target/test-classes" />
+            </classpath>
+            <classpath refid="erjang.classpath" />
+        </javac>
 	</target>
 
+    <target name="gen-test-compile" depends="testcompile,gen-test-classes">
+		<echo message="Compiling generated test classes ===================" />
+		<javac debug="true" srcdir="src/test/java" destdir="target/test-classes" debuglevel="lines,vars,source">
+            <classpath>
+                <pathelement location="target/test-classes" />
+            </classpath>
+            <classpath refid="erjang.classpath" />
+        </javac>
+	</target>
 
-	<target name="weave" depends="testcompile">
+	<target name="weave" depends="compile">
 		<echo message="Weaving files ===================" />
 		<java classname="kilim.tools.Weaver" fork="yes">
 			<classpath refid="erjang.classpath" />
@@ -61,6 +91,9 @@
 			<arg value="./target/classes" />
 			<arg line="./target/classes" />
 		</java>
+    </target>
+
+    <target name="weavetest" depends="gen-test-compile">
 		<echo message="Weaving test classes ==============" />
 		<java classname="kilim.tools.Weaver" fork="yes">
 			<classpath refid="erjang.testwovenclasspath" />
@@ -71,11 +104,10 @@
 			<arg value="./target/test-classes" />
 			<arg line="./target/test-classes" />
 		</java>
-
 	</target>
 
 	<target name="clean">
-		<echo message="deleting files" />
+		<echo message="deleting files ===================" />
 		<delete>
 			<fileset defaultexcludes="no" dir="." includes="*~,#*,foo,bar,x,y" />
 		</delete>
@@ -83,20 +115,26 @@
 		<delete dir="./.erj" />
 	</target>
 
-
 	<!-- This runs those tests depend on generated classes in testclasses-->
-	<target name="testwoven">
+	<target name="testwoven" depends="weavetest">
 		<echo message="Testing Tasks ======================" />
 		<junit fork="yes" showoutput="yes">
-			<formatter type="xml"/>
-			<classpath refid="erjang.testwovenclasspath" />
+			<formatter type="brief" usefile="false"/>
+			<classpath>
+                <pathelement location="target/test-classes" />
+                <pathelement location="target/test-classes/generated/classes" />
+            </classpath>
+            <classpath refid="erjang.classpath" />
 			<assertions><enable /></assertions>
 			<jvmarg value="-Derjang.configfile=erjang_cfg.properties" />
-			<test name="erjang.AllTests" />
+			<batchtest>
+                <fileset dir="target/test-classes" includes="**/*_TEST.class" />
+            </batchtest>
 		</junit>
 	</target>
 
 	<target name="jar" description="generate the distribution" depends="clean,weave">
+        <echo message="Packaging ======================" />
 		<copy file="LICENSE" todir="classes/erjang" />
 		<copy file="NOTICE" todir="classes/erjang" />
 		<copy file="erjang_logo4.png" todir="classes/erjang" />
