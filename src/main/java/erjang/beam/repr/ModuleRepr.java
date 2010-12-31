@@ -98,7 +98,7 @@ public class ModuleRepr implements BeamFileData {
     public EObject symbolicAttributes() {
 		// Sort the attributes to make them comparable to beam_disasm's output:
 		EObject[] attrs = attributes.toArray();
-		Arrays.sort(attrs);
+		Arrays.sort(attrs, EObject.ERLANG_ORDERING);
 		return ESeq.fromArray(attrs);
     }
 
@@ -110,7 +110,7 @@ public class ModuleRepr implements BeamFileData {
 									   new ESmall(f.arity),
 									   new ESmall(f.label)));
 		}
-		Collections.sort(symExports);
+		Collections.sort(symExports, EObject.ERLANG_ORDERING);
 		return ESeq.fromList(symExports);
     }
 

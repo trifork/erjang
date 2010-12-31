@@ -49,7 +49,7 @@ public class ErlList {
 		for (ESeq cur = l2; !cur.isNil(); cur=cur.tail()) {
 			EObject elm = cur.head();
 			for (int i=tmp_start; i<tmp.length; i++) {
-				if (tmp[i] != null && tmp[i].equals(elm)) {
+				if (tmp[i] != null && tmp[i].equalsExactly(elm)) {
 					// Delete element
 					tmp[i] = null;
 

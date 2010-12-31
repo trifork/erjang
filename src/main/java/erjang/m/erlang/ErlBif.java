@@ -773,7 +773,7 @@ public class ErlBif {
 		if ((n1 = v1.testInteger()) != null &&
 		    (n2 = v2.testInteger()) != null)
 		{
-			if (n2.equals(ESmall.ZERO)) return null;
+			if (n2.erlangEquals(ESmall.ZERO)) return null;
 			return n1.idiv(n2);
 		}
 		return null;
@@ -987,7 +987,7 @@ public class ErlBif {
 
 	@BIF(name = "rem", type = Type.GUARD)
 	static public EInteger rem$p(EObject v1, EObject v2) {
-		if (v2.equals(ESmall.ZERO) || v1.testInteger()==null || v2.testInteger()==null) {
+		if (v2.erlangEquals(ESmall.ZERO) || v1.testInteger()==null || v2.testInteger()==null) {
 			return null;
 		} else {
 			return v1.irem(v2);
@@ -1046,7 +1046,7 @@ public class ErlBif {
 
 	@BIF(name = "==", type = Type.GUARD)
 	public static final EAtom is_eq$p(EObject a1, EObject a2) {
-		return ERT.guard(a1.equals(a2));
+		return ERT.guard(a1.erlangEquals(a2));
 	}
 
 	@BIF(name = "=/=", type = Type.GUARD)
@@ -1135,12 +1135,12 @@ public class ErlBif {
 
 	@BIF(name = "==", type = Type.GUARD)
 	public static final EAtom is_eq_op$g(EObject a1, EObject a2) {
-		return ERT.guard(a1.equals(a2));
+		return ERT.guard(a1.erlangEquals(a2));
 	}
 
 	@BIF(name = "==")
 	public static final EAtom is_eq_op(EObject a1, EObject a2) {
-		return a1.equals(a2) ? ERT.TRUE : ERT.FALSE;
+		return a1.erlangEquals(a2) ? ERT.TRUE : ERT.FALSE;
 	}
 
 	@BIF(name = "=/=", type = Type.GUARD)
@@ -1150,69 +1150,69 @@ public class ErlBif {
 
 	@BIF(name = ">=", type = Type.GUARD)
 	public static final EAtom is_ge$g2(EObject a1, EObject a2) {
-		return ERT.guard( a1.compareTo(a2) >= 0 );
+		return ERT.guard( a1.erlangCompareTo(a2) >= 0 );
 	}
 
 	@BIF(name = ">", type = Type.GUARD)
 	public static final EAtom is_gt$g(EObject a1, EObject a2) {
-		return ERT.guard( a1.compareTo(a2) > 0 );
+		return ERT.guard( a1.erlangCompareTo(a2) > 0 );
 	}
 
 	@BIF(name = "is_ge", type = Type.GUARD)
 	public static final EAtom is_ge$g(EObject a1, EObject a2) {
-		return ERT.guard(a1.compareTo(a2) >= 0);
+		return ERT.guard(a1.erlangCompareTo(a2) >= 0);
 	}
 
 	@BIF(name = "/=")
 	public static final EAtom is_ne(EObject a1, EObject a2) {
-		boolean eq = a1.equals(a2);
+		boolean eq = a1.erlangEquals(a2);
 		return ERT.box(!eq);
 	}
 
 	@BIF(name = "/=", type = Type.GUARD)
 	public static final EAtom is_ne$g(EObject a1, EObject a2) {
-		boolean eq = a1.equals(a2);
+		boolean eq = a1.erlangEquals(a2);
 		return ERT.guard(!eq);
 	}
 
 	@BIF(name = "<", type = Type.GUARD)
 	public static final EAtom is_lt$g(EObject a1, EObject a2) {
-		return ERT.guard(a1.compareTo(a2) < 0);
+		return ERT.guard(a1.erlangCompareTo(a2) < 0);
 	}
 
 	@BIF(name = "=<")
 	public static final EAtom is_le(EObject a1, EObject a2) {
-		return ERT.box(a1.compareTo(a2) <= 0);
+		return ERT.box(a1.erlangCompareTo(a2) <= 0);
 	}
 
 	@BIF(name = "<")
 	public static final EAtom is_lt(EObject a1, ESmall a2) {
-		return ERT.box( a2.compareTo(a1) > 0 );
+		return ERT.box( a2.erlangCompareTo(a1) > 0 );
 	}
 
 	@BIF(name = "<")
 	public static final EAtom is_lt(ESmall a1, EObject a2) {
-		return ERT.box( a1.compareTo(a2) < 0 );
+		return ERT.box( a1.erlangCompareTo(a2) < 0 );
 	}
 
 	@BIF(name = "=<", type = Type.GUARD)
 	public static final EAtom is_le$g(EObject a1, EObject a2) {
-		return ERT.guard(a1.compareTo(a2) <= 0);
+		return ERT.guard(a1.erlangCompareTo(a2) <= 0);
 	}
 
 	@BIF(name = "<")
 	public static final EAtom is_lt(EObject a1, EObject a2) {
-		return ERT.box(a1.compareTo(a2) < 0);
+		return ERT.box(a1.erlangCompareTo(a2) < 0);
 	}
 
 	@BIF(name = ">=")
 	public static final EAtom is_ge(EObject a1, EObject a2) {
-		return ERT.box(a1.compareTo(a2) >= 0);
+		return ERT.box(a1.erlangCompareTo(a2) >= 0);
 	}
 
 	@BIF
 	public static final EAtom is_eq(EObject a1, EObject a2) {
-		return ERT.box(a1.compareTo(a2) == 0);
+		return ERT.box(a1.erlangEquals(a2));
 	}
 
 	@BIF(name = "=:=")
@@ -1511,12 +1511,12 @@ public class ErlBif {
 
 	@BIF(name = "<")
 	public static EAtom lt(EObject v1, EObject v2) {
-		return ERT.box(v1.compareTo(v2) < 0);
+		return ERT.box(v1.erlangCompareTo(v2) < 0);
 	}
 
 	@BIF(name = ">")
 	public static EAtom gt(EObject v1, EObject v2) {
-		return ERT.box(v1.compareTo(v2) > 0);
+		return ERT.box(v1.erlangCompareTo(v2) > 0);
 	}
 
 	@BIF(type = Type.GUARD, name = "or")

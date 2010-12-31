@@ -155,4 +155,12 @@
 			</manifest>
 		</jar>
 	</target>
+
+
+	<target name="javadoc" description="generate Javadoc documentation">
+		<javadoc destdir="target/doc">
+			<fileset dir="src"><include name="**/*.java"/></fileset>
+		</javadoc>
+	</target>
+
 </project>

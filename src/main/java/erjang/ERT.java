@@ -348,17 +348,19 @@ public class ERT {
 	static EInteger max_send_time = ERT.box(4294967295L);
 	static ESmall zero = ERT.box(0);
 	
-	public static final <T> boolean gt(Comparable<T> v1, T v2) {
-		return v1.compareTo(v2) > 0;
+	public static final boolean gt(EInteger v1, EInteger v2) {
+		return v1.erlangCompareTo(v2) > 0;
 	}
 	
-	public static final <T> boolean lt(Comparable<T> v1, T v2) {
-		return v1.compareTo(v2) < 0;
+	public static final boolean lt(EInteger v1, EInteger v2) {
+		return v1.erlangCompareTo(v2) < 0;
 	}
 	
+/*
 	public static final <T> boolean le(Comparable<T> v1, T v2) {
-		return v1.compareTo(v2) <= 0;
+		return v1.erlangCompareTo(v2) <= 0;
 	}
+	*/
 	
 	@BIF
 	public static EObject cancel_timer(EObject ref)
