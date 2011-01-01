@@ -138,7 +138,10 @@ class EModuleLoader {
 
 	@SuppressWarnings("unchecked")
 	public static EModule load_compiled_module(String mod, URL jarUrl) {
-// 		System.err.println("EML| load_compiled_module: "+mod+" @ "+jarUrl);
+		if (DEBUG_MODULE_LOAD) {
+ 			System.err.println("EML| load_compiled_module: "+mod+" @ "+jarUrl);
+		}
+		
 		String internalName = erjang.beam.Compiler.moduleClassName(mod);
 		String java_name = internalName.replace('/', '.');
 		EModuleClassLoader loader = new EModuleClassLoader(jarUrl);
