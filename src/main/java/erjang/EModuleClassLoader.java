@@ -69,19 +69,12 @@ public class EModuleClassLoader extends URLClassLoader {
 		}
 		
 		if (name.startsWith("kilim.S_")) {
-			String classFileName = name.replace('.', File.separatorChar) + ".class";
-			InputStream resource = super.getResourceAsStream(classFileName);
+			/* Resource names are '/'-separated, no matter the platform. */
+			String classResourceName = name.replace('.', '/') + ".class";
+			InputStream resource = super.getResourceAsStream(classResourceName);
 
 			if (resource == null) {
-				/* old problem - Java never knows we're on Cygwin so it thinks we're on Windows and uses
-				/* '\\' instead of '/' as file separator. Further, we can't reliably know we have been
-				 * executed from a Cygwin shell (too many ways to to this). So simply fall back to '/'
-				 * and try to get the resource stream again. Then, fail finally */
-				classFileName = classFileName.replace(File.separatorChar, '/');
-				resource = super.getResourceAsStream(classFileName);
-				if (resource == null) {
-					throw new ClassNotFoundException(name, new Error("while loading "+this.getURLs()[0]));
-				}
+				throw new ClassNotFoundException(name, new Error("while loading "+this.getURLs()[0]));
 			}
 			
 			try {
