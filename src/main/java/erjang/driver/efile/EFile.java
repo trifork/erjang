@@ -66,7 +66,14 @@ public class EFile extends EDriverInstance {
 			throw new RuntimeException(e);
 		}
 	}
-	
+
+	private int getFDnumber(FileDescriptor fd) throws IllegalAccessException {
+		int res = FileDescriptor_FD.getInt(fd);
+		// Windows doesn't provide FD numbers - fallback to a usable dummy:
+		if (res == -1) res = 255;
+		return res;
+	}
+
 	/**
 	 * 
 	 */
@@ -1410,19 +1417,19 @@ public class EFile extends EDriverInstance {
 							case EFILE_MODE_READ: {
 								FileInputStream fo = new FileInputStream(file);
 								fd = fo.getChannel();
-								res_fd = FileDescriptor_FD.getInt(fo.getFD());
+								res_fd = getFDnumber(fo.getFD());
 								break;
 							}
 							case EFILE_MODE_WRITE: {
 								FileOutputStream fo = new FileOutputStream(file);
 								fd = fo.getChannel();
-								res_fd = FileDescriptor_FD.getInt(fo.getFD());
+								res_fd = getFDnumber(fo.getFD());
 								break;
 							}
 							case EFILE_MODE_READ_WRITE: {
 								RandomAccessFile rafff;
 								fd = (rafff=new RandomAccessFile(file,"rw")).getChannel();
-								res_fd = FileDescriptor_FD.getInt(rafff.getFD());
+								res_fd = getFDnumber(rafff.getFD());
 								break;
 							}
 							default:
