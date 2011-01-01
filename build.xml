@@ -127,6 +127,11 @@
 			<classpath>
                 <pathelement location="target/test-classes" />
                 <pathelement location="target/test-classes/generated/classes" />
+                <path id="beam-compiled">
+                   <fileset dir="${user.home}/.erjang">
+                      <include name="*.jar"/>
+                   </fileset>
+                </path>
             </classpath>
             <classpath refid="erjang.classpath" />
 			<assertions><enable /></assertions>
