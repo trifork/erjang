@@ -130,10 +130,14 @@
             </classpath>
             <classpath refid="erjang.classpath" />
 			<assertions><enable /></assertions>
-			<jvmarg value="-Derjang.configfile=erjang_cfg.properties" />
+			<jvmarg value="-Xmx1g"/>
+            <jvmarg value="-Xss50m"/>
+            <jvmarg value="-XX:PermSize=128m"/>
+            <jvmarg value="-XX:MaxPermSize=1024m"/>
+            <jvmarg value="-Derjang.configfile=erjang_cfg.properties" />
 			<batchtest>
-                <!--<fileset dir="target/test-classes" includes="**/*_TEST.class" />-->
-                <fileset dir="target/test-classes" includes="**/sizes_tests_erl_TEST.class" />
+                <fileset dir="target/test-classes" includes="**/*_TEST.class" />
+                <!--<fileset dir="target/test-classes" includes="**/sizes_tests_erl_TEST.class" />-->
             </batchtest>
 		</junit>
 	</target>
