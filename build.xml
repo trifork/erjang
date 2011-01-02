@@ -127,17 +127,13 @@
 			<classpath>
                 <pathelement location="target/test-classes" />
                 <pathelement location="target/test-classes/generated/classes" />
-                <path id="beam-compiled">
-                   <fileset dir="${user.home}/.erjang">
-                      <include name="*.jar"/>
-                   </fileset>
-                </path>
             </classpath>
             <classpath refid="erjang.classpath" />
 			<assertions><enable /></assertions>
 			<jvmarg value="-Derjang.configfile=erjang_cfg.properties" />
 			<batchtest>
-                <fileset dir="target/test-classes" includes="**/*_TEST.class" />
+                <!--<fileset dir="target/test-classes" includes="**/*_TEST.class" />-->
+                <fileset dir="target/test-classes" includes="**/sizes_tests_erl_TEST.class" />
             </batchtest>
 		</junit>
 	</target>

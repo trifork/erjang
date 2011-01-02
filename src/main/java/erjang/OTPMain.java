@@ -48,14 +48,8 @@ public class OTPMain {
 	    new erjang.driver.js.EJSDriver()
 	};
 
-	public static void main(String[] args) throws ClassNotFoundException, InstantiationException, IllegalAccessException, IOException {
-		
-	    Handler fh = new FileHandler("erjang.log");
-	    Logger.getLogger("").addHandler(fh);
-	   // Logger.getLogger("erjang").setLevel(Level.FINE);
-	    // Logger.getLogger("kilim.Task").setLevel(Level.FINEST);
-
-		for (String m : MODULES) {
+    public static void load_modules_and_drivers() throws ClassNotFoundException, InstantiationException, IllegalAccessException, IOException {
+        for (String m : MODULES) {
 			ERT.load_module(EAtom.intern(m));
 		}
 		for (EDriver d : DRIVERS) {
@@ -64,20 +58,33 @@ public class OTPMain {
 		for (EDriver d : extra_drivers) {
 			erjang.driver.Drivers.register(d);
 		}
+    }
 
-		EAtom am_otp_ring0 = EAtom.intern("otp_ring0");
+    public static void start_otp_ring0(String[] args) {
+        EAtom am_otp_ring0 = EAtom.intern("otp_ring0");
 		EAtom am_start = EAtom.intern("start");
 		ESeq env = ERT.NIL;
 		ESeq argv = ERT.NIL;
-		
+
 		for (int i = args.length-1; i >= 0; i--) {
 			argv = argv.cons(EBinary.fromString(args[i]));
 		}
-		
+
 		EProc proc = new EProc(null, am_otp_ring0, am_start, ERT.NIL.cons(argv).cons(env));
 
 		ERT.run(proc);
 		proc.joinb();
+    }
+
+	public static void main(String[] args) throws ClassNotFoundException, InstantiationException, IllegalAccessException, IOException {
+		
+	    Handler fh = new FileHandler("erjang.log");
+	    Logger.getLogger("").addHandler(fh);
+	   // Logger.getLogger("erjang").setLevel(Level.FINE);
+	    // Logger.getLogger("kilim.Task").setLevel(Level.FINEST);
+
+		load_modules_and_drivers();
+        start_otp_ring0(args);
 		
 		System.out.println("done.");
 	}

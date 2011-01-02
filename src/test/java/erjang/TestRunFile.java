@@ -23,28 +23,26 @@ import java.io.File;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.IOException;
+import java.util.*;
 
 import erjang.beam.Compiler;
-import erjang.EObject;
-import erjang.EAtom;
-import erjang.EList;
-import erjang.ETuple;
-import erjang.EBinary;
 import erjang.beam.DirClassRepo;
 import erjang.beam.BeamLoader;
 import erjang.beam.loader.ErjangBeamDisLoader;
 
 import erjang.m.erlang.ErlConvert;
 
-import junit.framework.TestCase;
 import junit.framework.TestResult;
 import junit.framework.Assert;
 import junit.framework.AssertionFailedError;
 import kilim.ExitMsg;
 import kilim.Mailbox;
 
+import erjang.OTPMain;
+
 /**
- * 
+ * @author <? who wrote the original version>
+ * @author Pavlo Baron <pb@pbit.org>
  */
 public class TestRunFile extends AbstractErjangTestCase {
 
@@ -107,6 +105,17 @@ public class TestRunFile extends AbstractErjangTestCase {
 		return 1;
 	}
 
+    static void find_files(List<File> otp, File dir) {
+		if (! dir.isDirectory()) throw new IllegalArgumentException("not a directory: " + dir);
+		for (File file : dir.listFiles()) {
+			if (file.isDirectory()) {
+				find_files(otp, file);
+			} else if (file.getName().endsWith(".beam")) {
+			    otp.add(file);
+            }
+		}
+	}
+
 	/* (non-Javadoc)
 	 * @see junit.framework.Test#run(junit.framework.TestResult)
 	 */
@@ -122,7 +131,51 @@ public class TestRunFile extends AbstractErjangTestCase {
 			File beamFile = new File(BEAM_DIR,
 						 trimExtension(file.getName())+".beam");
 
-			if (! EModuleManager.module_loaded(ERLANG_ATOM)) load("erlang");
+            /*
+            * This is how this method previously tried to load the modules. It is absolutely not sufficient since
+            * only "erlang" module gets loaded in this case. We need all further modules which the test depends on.
+            * The problem is that these modules need to be preloaded. If we put the compiled beam modules on the
+            * classpath for the test, they get loaded, but in the wrong class loader - they have to be loaded using
+            * EModuleLoader -> EModuleClassLoader
+            *
+            * ORIGINAL CODE:
+            *
+            * if (! EModuleManager.module_loaded(ERLANG_ATOM)) load("erlang");
+            *
+            * :ORIGINAL CODE END
+            *
+            * The following implementation solves the problem by loading (with compilation if necessary) _all_ modules
+            * it finds. First of all, the main modules get loaded including drivers. Then, all the rest gets loaded.
+            * This code simulates what happens in otp_ring0:start/2 / init/boot/1.
+            *
+            * It should be considered to replace all this code by the usage of the ej-shell taking -s arguments. One
+            * reason for this is that init:boot only loads a subset of modules which are really necessary. By
+            * deleting the .erjang cache one can see which modules these are. This subset is _much_ smaller than what is
+            * getting loaded here. The MaxPermSizes necessary to run one single test is > 512m! (have it @ 1024m to
+            * be sure) 
+            *
+            * This piece of code did just right but
+            * started the interactive shell (replace the placeholders with your local paths):
+            *
+            * String[] args = {"-root", "<ERL_ROOT>", "-home", "<USR_HOME>"};
+            * OTPMain.start_otp_ring0(args); 
+            *
+            */
+
+            OTPMain.load_modules_and_drivers();
+
+            List<File> otp = new ArrayList<File>();
+		    find_files(otp, new File(OTP_HOME));
+            for (File beam : otp) {
+                try {
+                    EModuleLoader.load_module(trimExtension(beam.getName()), beam);
+                }
+                catch (Throwable e) {
+                    //ignore and go on loading
+                }
+            }
+
+            //load run_wrapper
 			if (! EModuleManager.module_loaded(RUN_WRAPPER_ATOM)) load(wrapperBeamFile);
 			load(beamFile);
 
@@ -138,7 +191,14 @@ public class TestRunFile extends AbstractErjangTestCase {
 	        Assert.assertNotNull("process timed out?", exit);
 	        
 			EObject actual = (EObject) p.exit_reason;
+
+            /* FIXME:
+            * TODO:
+            * this code is unreachable in some cases - it seems that run_wrapper's throw leeds to an Exception here,
+            * so we have no chance to compare results
+            */
 			Assert.assertEquals(expected, actual);
+            
 		} catch (AssertionFailedError e) {
 		    result.addFailure(this, e);
 		} catch (Throwable e) {
@@ -167,6 +227,7 @@ public class TestRunFile extends AbstractErjangTestCase {
 					     "-s", "erlang", "halt"};
 
 		byte[] bin = execGetBinaryOutput(cmd);
+
 		return ErlConvert.binary_to_term(new EBinary(bin));
 	}
 
@@ -197,7 +258,9 @@ public class TestRunFile extends AbstractErjangTestCase {
 		}
 		assert(exitCode == 0);
 
-		return outThread.getResult();
+		//return outThread.getResult();
+
+        return Arrays.copyOf(outThread.getResult(), outThread.getResult().length);
 	}
 
 	static class OutputCollectorThread extends Thread {
