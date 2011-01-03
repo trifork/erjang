@@ -192,11 +192,6 @@ public class TestRunFile extends AbstractErjangTestCase {
 	        
 			EObject actual = (EObject) p.exit_reason;
 
-            /* FIXME:
-            * TODO:
-            * this code is unreachable in some cases - it seems that run_wrapper's throw leeds to an Exception here,
-            * so we have no chance to compare results
-            */
 			Assert.assertEquals(expected, actual);
             
 		} catch (AssertionFailedError e) {
