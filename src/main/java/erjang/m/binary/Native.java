@@ -16,9 +16,9 @@ import erjang.NotImplemented;
  * 
  * TODO: port implementation (as far as possible) from erts/emulator/beam/erl_bif_binary.c
  * TODO: extend signature with EProc where necessary (acc. to the corresponding C code)
- * TODO: provide a class EUnsigned:EInteger, either in the global package or in this package
- * TODO: think about the class EPart (check if it's a single one since it might be a list or a tuple,
- * depending on the context)
+ * TODO: take care of correct usage of EBig and ESmall. Don't use EInteger
+ * TODO: no EUnsigned class, instead checks for BigInteger.signum where necessary
+ * TODO: implement an EPart class locally?
  *
  */
 public class Native extends ENative {
