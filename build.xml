@@ -97,7 +97,7 @@
     <target name="weavetest" depends="gen-test-compile">
 		<echo message="Weaving test classes ==============" />
 		<java classname="kilim.tools.Weaver" fork="yes">
-			<classpath refid="erjang.testwovenclasspath" />
+            <classpath refid="erjang.classpath" />
 			<assertions>
 				<enable />
 			</assertions>
