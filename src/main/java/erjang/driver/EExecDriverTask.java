@@ -116,16 +116,18 @@ public class EExecDriverTask extends EDriverTask {
 			} else {
 
 				String cmd_path = env.get("PATH");
-				for (String elm : cmd_path.split(File.pathSeparator)) {
-					File dir = new File(elm);
-					f = new File(dir, cmd[0]);
-					if (f.exists()) {
-						cmd[0] = f.getAbsolutePath();
-						break;
-					} else {
-						f = null;
-					}
-				}
+                if (cmd_path != null) {
+                    for (String elm : cmd_path.split(File.pathSeparator)) {
+                        File dir = new File(elm);
+                        f = new File(dir, cmd[0]);
+                        if (f.exists()) {
+                            cmd[0] = f.getAbsolutePath();
+                            break;
+                        } else {
+                            f = null;
+                        }
+                    }
+                }
 			}
 
 			// System.err.println("lauching "+cmd[0]+" "+(f==null?"(not found)":""));		

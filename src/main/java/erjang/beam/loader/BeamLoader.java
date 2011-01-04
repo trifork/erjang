@@ -99,7 +99,7 @@ public class BeamLoader extends CodeTables {
     private EInputStream in;
 	private boolean include_debug_info;
     private EObject attributes, compilation_info, abstract_tree;
-    private FunctionInfo[] exports, localFunctions;
+    private FunctionInfo[] exports = new FunctionInfo[0], localFunctions = new FunctionInfo[0];
     private ArrayList<Insn> code;
 	private ArrayList<FunctionRepr> functionReprs;
 	private EBinary module_md5;
@@ -118,6 +118,8 @@ public class BeamLoader extends CodeTables {
     // Magic numbers, file outline:
     static final int FOR1 = 0x464f5231; // "FOR1"
     static final int BEAM = 0x4245414d; // "BEAM"
+
+	static final int GZIP = 0x1f8b0000; // GZIP header
 
     // Magic numbers, section headers:
     static final int ATOM  = 0x41746f6d; // "Atom"
@@ -142,11 +144,35 @@ public class BeamLoader extends CodeTables {
     // TODO: Take an InputStream instead of a DataInputStream (to avoid overhead when we start out with a ByteArrayInputStream).
     public BeamLoader(DataInputStream in, long actual_file_size, boolean include_debug_info) throws IOException {
 		this.include_debug_info = include_debug_info;
-		if (in.readInt() != FOR1) throw new IOException("Bad header. Not an IFF1 file.");
+		int header;
+
+		in = new DataInputStream(new java.io.BufferedInputStream(in));
+
+		boolean zipped = false;
+
+		in.mark(8);
+		if ((header=in.readInt()) != FOR1) {
+
+			if ((header & 0xffff0000) == GZIP) {
+				in.reset();
+
+				in = new DataInputStream(new java.util.zip.GZIPInputStream(in));
+				zipped = true;
+				
+
+				if (in.readInt() != FOR1) {
+					throw new IOException("Bad header. Not an IFF1 file.");
+				}
+
+			} else {
+				throw new IOException("Bad header. Not an IFF1 file; header: "+ Integer.toHexString(header));
+			}
+
+		}
 		int stated_length = in.readInt();
 		if (in.readInt() != BEAM) throw new IOException("Bad header. Not a BEAM code file.");
 
-		if (stated_length+8 != actual_file_size)
+		if (!zipped && (stated_length+8 != actual_file_size))
 			throw new IOException("File length is off - stated as "+(stated_length+8)+", is "+actual_file_size);
 
 		byte[] data = new byte[stated_length-4];
@@ -236,7 +262,8 @@ public class BeamLoader extends CodeTables {
 	}
 
 	public ArrayList<FunctionRepr> partitionCodeByFunction() {
-		int funCount = exports.length + localFunctions.length;
+		int funCount = (exports==null?0:exports.length) 
+			+ (localFunctions==null?0:localFunctions.length);
 		ArrayList<FunctionRepr> functions = new ArrayList<FunctionRepr>(funCount);
 
 		FunctionInfo fi = null;
