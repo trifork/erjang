@@ -121,12 +121,13 @@
 
 	<!-- This runs those tests depend on generated classes in testclasses-->
 	<target name="testwoven" depends="weavetest">
-		<echo message="Testing Tasks ======================" />
-		<junit fork="yes" showoutput="yes">
-			<formatter type="brief" usefile="false"/>
-			<classpath>
-                <pathelement location="target/test-classes" />
-                <pathelement location="target/test-classes/generated/classes" />
+	  <echo message="Testing Tasks ======================" />
+	  <junit fork="yes" showoutput="yes">
+	    <formatter type="xml"/> <!-- For CI server use. -->
+<!-- <formatter type="brief" usefile="false"/> -->
+	    <classpath>
+              <pathelement location="target/test-classes" />
+              <pathelement location="target/test-classes/generated/classes" />
             </classpath>
             <classpath refid="erjang.classpath" />
 			<assertions><enable /></assertions>
@@ -139,7 +140,7 @@
                 <fileset dir="target/test-classes" includes="**/*_TEST.class" />
                 <!--<fileset dir="target/test-classes" includes="**/sizes_tests_erl_TEST.class" />-->
             </batchtest>
-		</junit>
+	  </junit>
 	</target>
 
 	<target name="jar" description="generate the distribution" depends="clean,weave">
