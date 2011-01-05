@@ -122,7 +122,8 @@
 	<!-- This runs those tests depend on generated classes in testclasses-->
 	<target name="testwoven" depends="weavetest">
 	  <echo message="Testing Tasks ======================" />
-	  <junit fork="yes" showoutput="yes">
+          <mkdir dir="test-outputs" />
+	  <junit fork="yes" showoutput="yes" printsummary="true">
 	    <formatter type="xml"/> <!-- For CI server use. -->
 <!-- <formatter type="brief" usefile="false"/> -->
 	    <classpath>
@@ -136,7 +137,7 @@
             <jvmarg value="-XX:PermSize=128m"/>
             <jvmarg value="-XX:MaxPermSize=700m"/>
             <jvmarg value="-Derjang.configfile=erjang_cfg.properties" />
-			<batchtest>
+	    <batchtest todir="test-outputs">
                 <fileset dir="target/test-classes" includes="**/*_TEST.class" />
                 <!--<fileset dir="target/test-classes" includes="**/sizes_tests_erl_TEST.class" />-->
             </batchtest>
