@@ -60,15 +60,10 @@ public class OTPMain {
 		}
     }
 
-    public static void start_otp_ring0(String[] args) {
+    public static void start_otp_ring0(ESeq argv) {
         EAtom am_otp_ring0 = EAtom.intern("otp_ring0");
 		EAtom am_start = EAtom.intern("start");
 		ESeq env = ERT.NIL;
-		ESeq argv = ERT.NIL;
-
-		for (int i = args.length-1; i >= 0; i--) {
-			argv = argv.cons(EBinary.fromString(args[i]));
-		}
 
 		EProc proc = new EProc(null, am_otp_ring0, am_start, ERT.NIL.cons(argv).cons(env));
 
@@ -76,15 +71,31 @@ public class OTPMain {
 		proc.joinb();
     }
 
+    protected static ESeq process_args(String[] args) {
+        ESeq argv = ERT.NIL;
+        for (int i = args.length-1; i >= 0; i--) {
+            argv = argv.cons(EBinary.fromString(args[i]));
+            
+            //special handling for -noshell / -noinput:
+            //in this case we suppress the Progress wheel since it might break the output
+            if (args[i].equals("-noinput") || args[i].equals("noshell")) {
+                System.setProperty("erjang.progress.suppress", "true");
+            }
+        }
+
+        return argv;
+    }
+
 	public static void main(String[] args) throws ClassNotFoundException, InstantiationException, IllegalAccessException, IOException {
-		
+		ESeq argv = process_args(args);
+
 	    Handler fh = new FileHandler("erjang.log");
 	    Logger.getLogger("").addHandler(fh);
 	   // Logger.getLogger("erjang").setLevel(Level.FINE);
 	    // Logger.getLogger("kilim.Task").setLevel(Level.FINEST);
 
 		load_modules_and_drivers();
-        start_otp_ring0(args);
+        start_otp_ring0(argv);
 		
 		System.out.println("done.");
 	}

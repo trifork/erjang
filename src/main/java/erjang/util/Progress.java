@@ -41,7 +41,15 @@ public class Progress {
 		} else {
 			int next = step.incrementAndGet();
 			try {
-				System.out.write(wheel[next % 4]);
+                //there is a global System.property to suppress the output
+                String suppress = System.getProperty("erjang.progress.suppress");
+                if (suppress == null) {
+                    suppress = "false";
+                }
+
+                if (!Boolean.parseBoolean(suppress)) {
+				    System.out.write(wheel[next % 4]);
+                }
 			} catch (IOException e) {
 				// ignore
 			}
