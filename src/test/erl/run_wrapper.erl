@@ -16,7 +16,8 @@ test_process(Module, Recvr) ->
     Result = (catch {run_result, Module:test()}),
     Recvr ! Result.
 
-report(erjang, Result) ->
-    throw(Result);
-report(erlang, Result) ->
+%report(erjang, Result) ->
+%    throw(Result);
+%report(erlang, Result) ->
+report(_, Result) ->
     io:format("~s", [term_to_binary(Result)]).

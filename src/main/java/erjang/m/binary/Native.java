@@ -19,6 +19,7 @@ import erjang.NotImplemented;
  * TODO: take care of correct usage of EBig and ESmall. Don't use EInteger
  * TODO: no EUnsigned class, instead checks for BigInteger.signum where necessary
  * TODO: implement an EPart class locally?
+ * TODO: use ETupleN instead of ETuple (specific classes)
  *
  */
 public class Native extends ENative {
