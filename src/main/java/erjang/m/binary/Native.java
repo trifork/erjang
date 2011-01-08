@@ -14,7 +14,11 @@ import erjang.m.erlang.ErlConvert;
  * TODO: no EUnsigned class, instead checks for BigInteger.signum where necessary
  * TODO: implement an EPart class locally?
  * TODO: use ETupleN instead of ETuple (specific classes)
+<<<<<<< HEAD
  * TODO: bin_to_list:/* C code works with big binaries in several iterations 
+=======
+ * TODO: bin_to_list:/* C code works with big binaries in several iterations
+>>>>>>> upstream/master
  * (callback starting with a calculated max. loop count). How should we do that?
  * TODO: can binaries become awkwardly big so that EString.make duplicating the byte array would become a problem?
  *
@@ -36,8 +40,13 @@ public class Native extends ENative {
         if (bin == null) throw ERT.badarg(subject);
         if (!bin.isBinary()) throw ERT.badarg(subject);
 
+<<<<<<< HEAD
         if (pos.testSmall() == null) throw ERT.badarg(pos);
         if (len.testSmall() == null) throw ERT.badarg(len);
+=======
+        if (pos.testSmall() == null) throw ERT.badarg(subject);
+        if (len.testSmall() == null) throw ERT.badarg(subject);
+>>>>>>> upstream/master
 
         //TODO: unclear: C code operates with bit_offs which seems to be always 0 for binary:* calls
         //implement using EString for now, but try to find a case where bit_offs actually is set to != 0
@@ -45,7 +54,11 @@ public class Native extends ENative {
         //TODO: another question: C code uses callbacks for big binaries. Here, we don't. This aspect needs to be
         //closer evaluated
 
+<<<<<<< HEAD
         //we have to do some dirty hacks with indexes to fool the ErlConverter thinking we start with 1 and
+=======
+        //we have to do some dirty hacks with indexes to full the ErlConverter thinking we start with 1 and
+>>>>>>> upstream/master
         //expecting the stop instead of length, calculating length itself
         ESmall start = new ESmall(pos.asInt() + 1);
         ESmall stop = new ESmall((len.asInt() == -1) ? bin.byteSize() : len.asInt() + pos.asInt());
@@ -66,6 +79,7 @@ public class Native extends ENative {
 	 */
 	@BIF
 	public static EString bin_to_list(EObject subject, EObject poslen) {
+<<<<<<< HEAD
         if (poslen == null) throw ERT.badarg(poslen);
 
         ETuple tuple = poslen.testTuple();
@@ -76,6 +90,18 @@ public class Native extends ENative {
 
         if (tuple2.elem1.testSmall() == null) throw ERT.badarg(tuple2.elem1);
         if (tuple2.elem2.testSmall() == null) throw ERT.badarg(tuple2.elem2);
+=======
+        if (poslen == null) throw ERT.badarg(subject);
+
+        ETuple tuple = poslen.testTuple();
+        if (tuple == null) throw ERT.badarg(subject);
+
+        ETuple2 tuple2 = ETuple2.cast(tuple);
+        if (tuple2 == null) throw ERT.badarg(subject);
+
+        if (tuple2.elem1.testSmall() == null) throw ERT.badarg(subject);
+        if (tuple2.elem2.testSmall() == null) throw ERT.badarg(subject);
+>>>>>>> upstream/master
 
 		return do_bin_to_list(subject, new ESmall(tuple2.elem1.asInt()), new ESmall(tuple2.elem2.asInt()));
 	}
