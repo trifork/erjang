@@ -14,7 +14,7 @@ import erjang.m.erlang.ErlConvert;
  * TODO: no EUnsigned class, instead checks for BigInteger.signum where necessary
  * TODO: implement an EPart class locally?
  * TODO: use ETupleN instead of ETuple (specific classes)
- * TODO: bin_to_list:/* C code works with big binaries in several iterations
+ * TODO: bin_to_list:/* C code works with big binaries in several iterations 
  * (callback starting with a calculated max. loop count). How should we do that?
  * TODO: can binaries become awkwardly big so that EString.make duplicating the byte array would become a problem?
  *
