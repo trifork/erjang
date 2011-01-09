@@ -133,7 +133,12 @@ public class TestRunFile extends AbstractErjangTestCase {
 
 		byte[] bin = execGetBinaryOutput(cmd);
 
-		return ErlConvert.binary_to_term(new EBinary(bin));
+        //parse out the data part - drop the stdout noise
+        String sbin = new String(bin);
+        int i = sbin.indexOf("DATA::");
+        if (i >= 0) sbin = sbin.substring(i + 6);
+
+		return ErlConvert.binary_to_term(new EBinary((i >= 0) ? sbin.getBytes() : bin));
 	}
 
 	private void erl_compile(String fileName) throws Exception {
