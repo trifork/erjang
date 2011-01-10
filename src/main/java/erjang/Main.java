@@ -156,7 +156,7 @@ public class Main {
 		
 		if (!(new File(erl_bootstrap_ebindir)).exists()) {
 			System.err.println("No bootstrap classes at: "+erl_bootstrap_ebindir);
-			return;
+			System.exit(1);
 		}
 		
 		OTPMain.main(ra.toArray(new String[ra.size()]));
