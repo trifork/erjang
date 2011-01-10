@@ -36,8 +36,8 @@ public class Native extends ENative {
         if (bin == null) throw ERT.badarg(subject);
         if (!bin.isBinary()) throw ERT.badarg(subject);
 
-        if (pos.testSmall() == null) throw ERT.badarg(subject);
-        if (len.testSmall() == null) throw ERT.badarg(subject);
+        if (pos.testSmall() == null) throw ERT.badarg(pos);
+        if (len.testSmall() == null) throw ERT.badarg(len);
 
         //TODO: unclear: C code operates with bit_offs which seems to be always 0 for binary:* calls
         //implement using EString for now, but try to find a case where bit_offs actually is set to != 0
@@ -45,7 +45,7 @@ public class Native extends ENative {
         //TODO: another question: C code uses callbacks for big binaries. Here, we don't. This aspect needs to be
         //closer evaluated
 
-        //we have to do some dirty hacks with indexes to full the ErlConverter thinking we start with 1 and
+        //we have to do some dirty hacks with indexes to fool the ErlConverter thinking we start with 1 and
         //expecting the stop instead of length, calculating length itself
         ESmall start = new ESmall(pos.asInt() + 1);
         ESmall stop = new ESmall((len.asInt() == -1) ? bin.byteSize() : len.asInt() + pos.asInt());
@@ -60,22 +60,22 @@ public class Native extends ENative {
 	public static EString bin_to_list(EObject subject) {
         return do_bin_to_list(subject, new ESmall(0), new ESmall(-1));
 	}
-	
+
 	/**
 	 * bin_to_list(Subject, PosLen) -> list()
 	 */
 	@BIF
 	public static EString bin_to_list(EObject subject, EObject poslen) {
-        if (poslen == null) throw ERT.badarg(subject);
+        if (poslen == null) throw ERT.badarg(poslen);
 
         ETuple tuple = poslen.testTuple();
-        if (tuple == null) throw ERT.badarg(subject);
+        if (tuple == null) throw ERT.badarg(poslen);
 
         ETuple2 tuple2 = ETuple2.cast(tuple);
-        if (tuple2 == null) throw ERT.badarg(subject);
+        if (tuple2 == null) throw ERT.badarg(poslen);
 
-        if (tuple2.elem1.testSmall() == null) throw ERT.badarg(subject);
-        if (tuple2.elem2.testSmall() == null) throw ERT.badarg(subject);
+        if (tuple2.elem1.testSmall() == null) throw ERT.badarg(tuple2.elem1);
+        if (tuple2.elem2.testSmall() == null) throw ERT.badarg(tuple2.elem2);
 
 		return do_bin_to_list(subject, new ESmall(tuple2.elem1.asInt()), new ESmall(tuple2.elem2.asInt()));
 	}
