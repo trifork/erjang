@@ -97,7 +97,7 @@
     <target name="weavetest" depends="gen-test-compile">
 		<echo message="Weaving test classes ==============" />
 		<java classname="kilim.tools.Weaver" fork="yes">
-			<classpath refid="erjang.testwovenclasspath" />
+            <classpath refid="erjang.classpath" />
 			<assertions>
 				<enable />
 			</assertions>
@@ -137,9 +137,9 @@
             <jvmarg value="-XX:PermSize=128m"/>
             <jvmarg value="-XX:MaxPermSize=700m"/>
             <jvmarg value="-Derjang.configfile=erjang_cfg.properties" />
-	    <batchtest todir="test-outputs">
+	        <batchtest todir="test-outputs">
                 <fileset dir="target/test-classes" includes="**/*_TEST.class" />
-                <!--<fileset dir="target/test-classes" includes="**/sizes_tests_erl_TEST.class" />-->
+                <!-- <fileset dir="target/test-classes" includes="**/float_tests_erl_TEST.class" />-->
             </batchtest>
 	  </junit>
 	</target>

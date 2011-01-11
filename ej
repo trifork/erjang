@@ -9,7 +9,7 @@ ERJANG_DIR=`dirname "$EJ_CMD"`
 
 source "$ERJANG_DIR/env_cfg"
 
-##      -Xdebug -Xnoagent -Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=n 
+##      -Xdebug -Xnoagent -Xrunjdwp:transport=dt_socket,address=8787,server=n,suspend=n \
 
 exec java \
     -server \
