@@ -44,16 +44,14 @@ public class AllTests {
 
 		TestSuite otpCompileSuite = new TestSuite("Compiling OTP");
 		//$JUnit-BEGIN$
-		Map<File, List<File>> testsOTP = new HashMap<File, List<File>>();
-		find_files(testsOTP, new File(OTP_HOME), ".beam");
-		buildTestHiearchie(testsOTP, otpCompileSuite, TestCompileFile.class);
+		//find_beam_files(otpCompileSuite, new File(OTP_HOME));
 		//$JUnit-END$
  		suite.addTest(otpCompileSuite);
 		
 		TestSuite coverageRunSuite = new TestSuite("Coverage run tests");
 		//$JUnit-BEGIN$
 		Map<File, List<File>> testsErl = new HashMap<File, List<File>>();
-		find_files(testsErl, new File("src/test/erl"), ".erl");
+		find_files(testsErl, new File("src/test/erl/deterministic"), ".erl");
 		buildTestHiearchie(testsErl, coverageRunSuite, TestRunFile.class);
 		//$JUnit-END$
 		suite.addTest(coverageRunSuite);
@@ -109,7 +107,7 @@ public class AllTests {
         generateTestClasses(args[0], testsOTP, TestCompileFile.class);
 
         Map<File, List<File>> testsErl = new HashMap<File, List<File>>();
-		find_files(testsErl, new File("src/test/erl"), ".erl");
+		find_files(testsErl, new File("src/test/erl/deterministic"), ".erl");
         generateTestClasses(args[0], testsErl, TestRunFile.class);
     }
 
@@ -117,8 +115,8 @@ public class AllTests {
                                               Class<? extends AbstractErjangTestCase> clazz) {
         for (File key : tests.keySet()) {
 			for (File sub : tests.get(key)) {
-                String name = AbstractErjangTestCase.getClassName(sub);
-                String content = AbstractErjangTestCase.getClassContent(clazz, sub);
+                String name = TestClassGenerator.classNameFor(sub);
+                String content = TestClassGenerator.generateClassSource(clazz, sub);
                 try {
                     File file = new File(path + "/" + name + ".java");
 

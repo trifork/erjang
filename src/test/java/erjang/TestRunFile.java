@@ -47,10 +47,6 @@ public class TestRunFile extends AbstractErjangTestCase {
 	static final String RUN_WRAPPER_HOME = "src/test/erl";
 	static final String BEAM_DIR = "target/test-beam";
 
-    public TestRunFile() {
-        super();
-    }
-
     public TestRunFile(String name) {
         super(name);
     }
