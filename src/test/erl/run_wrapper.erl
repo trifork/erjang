@@ -1,12 +1,9 @@
 -module(run_wrapper).
 
--export([test/0,
-	 run_wrapper/1,
+-export([run/1,
 	 test_process/2]).
 
-test() -> ok.
-
-run_wrapper([Platform, Module]) ->
+run([Platform, Module]) ->
     Self = self(),
     spawn(?MODULE, test_process, [Module, Self]),
     Result = receive R -> R after 1000 -> timeout end,

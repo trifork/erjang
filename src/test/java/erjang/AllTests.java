@@ -52,14 +52,14 @@ public class AllTests {
 		//$JUnit-BEGIN$
 		Map<File, List<File>> testsErl = new HashMap<File, List<File>>();
 		find_files(testsErl, new File("src/test/erl/deterministic"), ".erl");
-		buildTestHiearchie(testsErl, coverageRunSuite, TestRunFile.class);
+		buildTestHierarchy(testsErl, coverageRunSuite, OfflineComparisonTestCase.class);
 		//$JUnit-END$
 		suite.addTest(coverageRunSuite);
 
 		return suite;
 	}
 
-	protected static void buildTestHiearchie(Map<File, List<File>> tests, TestSuite suite,
+	protected static void buildTestHierarchy(Map<File, List<File>> tests, TestSuite suite,
                                              Class<? extends AbstractErjangTestCase> clazz) {
 		TestSuite ts = null;
 		for (File key : tests.keySet()) {
@@ -108,7 +108,7 @@ public class AllTests {
 
         Map<File, List<File>> testsErl = new HashMap<File, List<File>>();
 		find_files(testsErl, new File("src/test/erl/deterministic"), ".erl");
-        generateTestClasses(args[0], testsErl, TestRunFile.class);
+        generateTestClasses(args[0], testsErl, OfflineComparisonTestCase.class);
     }
 
     protected static void generateTestClasses(String path, Map<File, List<File>> tests,
