@@ -106,9 +106,13 @@ public class AllTests {
 		find_files(testsOTP, new File(OTP_HOME), ".beam");
         generateTestClasses(args[0], testsOTP, TestCompileFile.class);
 
-        Map<File, List<File>> testsErl = new HashMap<File, List<File>>();
-		find_files(testsErl, new File("src/test/erl/deterministic"), ".erl");
-        generateTestClasses(args[0], testsErl, OfflineComparisonTestCase.class);
+        Map<File, List<File>> testsDet = new HashMap<File, List<File>>();
+		find_files(testsDet, new File("src/test/erl/deterministic"), ".erl");
+        generateTestClasses(args[0], testsDet, OfflineComparisonTestCase.class);
+
+        Map<File, List<File>> testsProp = new HashMap<File, List<File>>();
+		find_files(testsProp, new File("src/test/erl/properties"), ".erl");
+        generateTestClasses(args[0], testsProp, TestCaseWithErlangNodeAccess.class);
     }
 
     protected static void generateTestClasses(String path, Map<File, List<File>> tests,
@@ -118,7 +122,7 @@ public class AllTests {
                 String name = TestClassGenerator.classNameFor(sub);
                 String content = TestClassGenerator.generateClassSource(clazz, sub);
                 try {
-                    File file = new File(path + "/" + name + ".java");
+                    File file = new File(path + File.separator + name + ".java");
 
                     System.out.println("generating test class: " + file.getName());
 

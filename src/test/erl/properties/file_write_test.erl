@@ -21,13 +21,13 @@
 %%
 
 % ../../../ej -sname erj@mcilroy -pz ~/OSS/triq/ebin/
-% c(file_write_test, [{i, "/home/erik/OSS/triq/include"}]), file_write_test:main().
+% c(file_write_test, [{i, "/home/erik/OSS/triq/include"}]), file_write_test:test().
 
 -module(file_write_test).
 
 -include("triq.hrl").
 
--export([main/0]).
+-export([test/0]).
 
 %% ===========================================
 %% Property test for file:write_file() + file:consult()
@@ -46,6 +46,6 @@ prop_file_write_read_identity() ->
 %%
 %% run the test
 %%
-main() ->
+test() ->
     triq:check(prop_file_write_read_identity()).
 

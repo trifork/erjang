@@ -19,6 +19,7 @@
 package erjang;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 
 /** Common definitions and function.
@@ -32,6 +33,9 @@ public abstract class TestUtil {
 
     static final String EJ_PRG  = "./ej";
 	static final String TEST_BEAM_DIR = "target/test-beam";
+
+	static final String TRIQ_HOME = ErjangConfig.getString("erjang.triq.root");
+
 
     public static String get_ej() {
         String ej = EJ_PRG;
@@ -48,6 +52,8 @@ public abstract class TestUtil {
 	public static void erl_compile(String fileName) throws Exception {
 		execGetOutput(new String[] {ERLC_PRG,
 					    "-o", TEST_BEAM_DIR,
+					    "-pa", TRIQ_HOME + File.separator + "ebin",
+					    "-I", TRIQ_HOME + File.separator + "include",
 					    fileName});
 	}
 
@@ -80,6 +86,25 @@ public abstract class TestUtil {
 	    int i = fileName.lastIndexOf('.');
 	    if (i>=0) fileName = fileName.substring(0,i);
 	    return fileName;
+	}
+
+
+	public static Process startErlProcess(String nodeName) throws IOException {
+		String[] cmd = new String[] {ERL_PRG, "-noinput",
+					     "-sname", nodeName,
+					     "-pa", TestUtil.TEST_BEAM_DIR,
+					     "-pa", TRIQ_HOME + File.separator + "ebin",
+					     "-sasl", "sasl_error_logger", "false", // Prevent SASL from polluting stdout
+					     "-noinput"
+		};
+
+		Runtime rt = Runtime.getRuntime();
+		Process p = rt.exec(cmd);
+		return p;
+	}
+
+	public static void stopProcess(Process p) {
+		p.destroy();
 	}
 
 }

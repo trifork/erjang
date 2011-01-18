@@ -24,7 +24,7 @@
 
 % ../../../ej -sname erj@mcilroy -pz ~/OSS/triq/ebin/ -other erl 
 % c(ets_test, [{i, "/home/erik/OSS/triq/include"}]).
-% ets_test:main().
+% ets_test:test().
 
 % Other:
 % erl -pz ~/OSS/triq/ebin/ -sname erl
@@ -33,7 +33,7 @@
 
 -include("triq.hrl").
 
--export([main/0, ets_behaviour/1, ets_behaviour_wrapper/1]).
+-export([test/0, ets_behaviour/1, ets_behaviour_wrapper/1]).
 -export([here/3, other/3]).
 
 
@@ -230,6 +230,6 @@ prop_same_ets_behaviour() ->
 %%
 %% run the test
 %%
-main() ->
+test() ->
     triq:check(prop_same_ets_behaviour()).
 

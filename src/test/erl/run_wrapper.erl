@@ -3,10 +3,16 @@
 -export([run/1,
 	 test_process/2]).
 
+run([Platform, Module, Timeout]) ->
+    run(Platform, Module, list_to_integer(atom_to_list(Timeout)));
 run([Platform, Module]) ->
+    run(Platform, Module, 1).
+
+run(Platform, Module, TimeoutSecs) ->
+    TimeoutMillis = TimeoutSecs * 1000,
     Self = self(),
     spawn(?MODULE, test_process, [Module, Self]),
-    Result = receive R -> R after 1000 -> timeout end,
+    Result = receive R -> R after TimeoutMillis -> timeout end,
     report(Platform, Result).
 
 test_process(Module, Recvr) ->

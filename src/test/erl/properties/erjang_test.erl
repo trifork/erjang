@@ -26,7 +26,7 @@
 
 -include("triq.hrl").
 
--export([main/0, echo/1, echo2/1]).
+-export([test/0, echo/1, echo2/1]).
 
 
 %% ===========================================
@@ -153,6 +153,6 @@ prop_echo() ->
 %%
 %% run the test
 %%
-main() ->
+test() ->
     triq:check(prop_echo()).
 
