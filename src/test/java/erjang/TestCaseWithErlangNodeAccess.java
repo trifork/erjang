@@ -90,6 +90,11 @@ public class TestCaseWithErlangNodeAccess extends AbstractErjangTestCase {
 
     private EObject do_run(File file, String prog, String erlNodeName, String[] outputDest) throws Exception {
 		String hostName = java.net.InetAddress.getLocalHost().getCanonicalHostName();
+		{
+			int dot_idx=hostName.indexOf(".");
+			if (dot_idx >= 0) hostName=hostName.substring(0,dot_idx);
+		}
+
 		String moduleName = TestUtil.trimExtension(file.getName());
 		String[] cmd = new String[] {prog, "-noinput",
 									 "-sname", THIS_NODE_NAME + "@" + hostName,
