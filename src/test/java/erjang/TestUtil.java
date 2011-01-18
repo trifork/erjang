@@ -89,22 +89,27 @@ public abstract class TestUtil {
 	}
 
 
-	public static Process startErlProcess(String nodeName) throws IOException {
-		String[] cmd = new String[] {ERL_PRG, "-noinput",
-					     "-sname", nodeName,
-					     "-pa", TestUtil.TEST_BEAM_DIR,
-					     "-pa", TRIQ_HOME + File.separator + "ebin",
-					     "-sasl", "sasl_error_logger", "false", // Prevent SASL from polluting stdout
-					     "-noinput"
-		};
+    public static Process startErlProcess(String nodeName, String hostName) throws IOException {
+	String[] cmd = new String[] {ERL_PRG, "-noinput",
+				     nodeNameSwitch(hostName), nodeName + "@" + hostName,
+				     "-pa", TestUtil.TEST_BEAM_DIR,
+				     "-pa", TRIQ_HOME + File.separator + "ebin",
+				     "-sasl", "sasl_error_logger", "false", // Prevent SASL from polluting stdout
+				     "-noinput"
+	};
 
-		Runtime rt = Runtime.getRuntime();
-		Process p = rt.exec(cmd);
-		return p;
-	}
+	Runtime rt = Runtime.getRuntime();
+	Process p = rt.exec(cmd);
+	return p;
+    }
 
-	public static void stopProcess(Process p) {
-		p.destroy();
-	}
+    public static void stopProcess(Process p) {
+	p.destroy();
+    }
+
+    public static String nodeNameSwitch(String hostName) {
+	// Use -name if qualified, -sname if not:
+	return (hostName.indexOf('.') >= 0) ? "-name" : "-sname";
+    }
 
 }

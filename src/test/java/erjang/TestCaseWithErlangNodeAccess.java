@@ -70,11 +70,12 @@ public class TestCaseWithErlangNodeAccess extends AbstractErjangTestCase {
 		result.startTest(this);
 		String rawOutput = null;
 		try {
+			String hostName = java.net.InetAddress.getLocalHost().getCanonicalHostName();
 			TestUtil.erl_compile(RUN_WRAPPER_HOME + File.separator +"run_wrapper.erl");
 			TestUtil.erl_compile(file.getAbsolutePath());
-			Process erl_process = TestUtil.startErlProcess(ERL_NODE_NAME);
+			Process erl_process = TestUtil.startErlProcess(ERL_NODE_NAME, hostName);
 			String[] rawOutputArray = new String[1];
-            EObject output = do_run(file, TestUtil.get_ej(), ERL_NODE_NAME, rawOutputArray);
+            EObject output = do_run(file, TestUtil.get_ej(), ERL_NODE_NAME, hostName, rawOutputArray);
 			rawOutput = rawOutputArray[0];
 			TestUtil.stopProcess(erl_process);
 
@@ -88,16 +89,10 @@ public class TestCaseWithErlangNodeAccess extends AbstractErjangTestCase {
 		result.endTest(this);
 	}
 
-    private EObject do_run(File file, String prog, String erlNodeName, String[] outputDest) throws Exception {
-		String hostName = java.net.InetAddress.getLocalHost().getCanonicalHostName();
-		{
-			int dot_idx=hostName.indexOf(".");
-			if (dot_idx >= 0) hostName=hostName.substring(0,dot_idx);
-		}
-
+    private EObject do_run(File file, String prog, String erlNodeName, String hostName, String[] outputDest) throws Exception {
 		String moduleName = TestUtil.trimExtension(file.getName());
 		String[] cmd = new String[] {prog, "-noinput",
-									 "-sname", THIS_NODE_NAME + "@" + hostName,
+									 TestUtil.nodeNameSwitch(hostName), THIS_NODE_NAME + "@" + hostName,
 									 "-other", erlNodeName,
 									 "-pa", TestUtil.TEST_BEAM_DIR,
 									 "-pa", TestUtil.TRIQ_HOME + File.separator + "ebin",
