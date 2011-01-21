@@ -162,7 +162,7 @@ public class Native extends ENative {
 	}
 	
 	/**
-	 * list_to_bin(ByteList) -> binary()
+	 * list_to_bin(ByteList) -> binary()  
 	 */
 	@BIF
 	public static EBinary list_to_bin(EObject byteList) {
