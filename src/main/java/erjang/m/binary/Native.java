@@ -1,6 +1,7 @@
 package erjang.m.binary;
 
 import erjang.*;
+import erjang.m.erlang.ErlBif;
 import erjang.m.erlang.ErlConvert;
 
 /**
@@ -165,7 +166,7 @@ public class Native extends ENative {
 	 */
 	@BIF
 	public static EBinary list_to_bin(EObject byteList) {
-		throw new NotImplemented();
+        return ErlBif.list_to_binary(byteList);
 	}
 	
 	/**
@@ -237,38 +238,6 @@ public class Native extends ENative {
 	 */
 	@BIF
 	public static EInteger referenced_byte_size(EObject subject) {
-		throw new NotImplemented();
-	}
-	
-	/**
-	 * replace(Subject,Pattern,Replacement) -> Result
-	 */
-	@BIF
-	public static EBinary replace(EObject subject, EObject pattern, EObject replacement) {
-		throw new NotImplemented();
-	}
-	
-	/**
-	 * replace(Subject,Pattern,Replacement,Options) -> Result
-	 */
-	@BIF
-	public static EBinary replace(EObject subject, EObject pattern, EObject replacement, EObject options) {
-		throw new NotImplemented();
-	}
-		
-	/**
-	 * split(Subject,Pattern) -> Parts
-	 */
-	@BIF
-	public static EList split(EObject subject, EObject pattern) {
-		throw new NotImplemented();
-	}
-	
-	/**
-	 * split(Subject,Pattern,Options) -> Parts
-	 */
-	@BIF
-	public static EList split(EObject subject, EObject pattern, EObject options) {
 		throw new NotImplemented();
 	}
 }

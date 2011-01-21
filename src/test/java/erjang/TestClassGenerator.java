@@ -1,8 +1,6 @@
 /**
  * This file is part of Erjang - A JVM-based Erlang VM
  *
- * Copyright (c) 2009 by Trifork
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,6 +18,11 @@ package erjang;
 
 import java.io.File;
 
+/**
+ * Generator for different Erjang unit test cases (unit test suites)
+ *
+ * @author Pavlo Baron <pb@pbit.org>
+ */
 public abstract class TestClassGenerator {
 
 	protected static String generateClassSource(Class<? extends AbstractErjangTestCase> clazz, File file) {
