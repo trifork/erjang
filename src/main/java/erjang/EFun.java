@@ -207,18 +207,11 @@ public abstract class EFun extends EObject implements Opcodes {
 		cw.visit(Opcodes.V1_5, Opcodes.ACC_PUBLIC | Opcodes.ACC_ABSTRACT,
 				self_type, null, EFUN_TYPE.getInternalName(), null);
 
-		MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PUBLIC
-				| Opcodes.ACC_ABSTRACT, "invoke", EUtil.getSignature(arity,
-				true), null, PAUSABLE_EX);
-		mv.visitEnd();
+		make_invoke_method(cw, self_type, arity);
 
 		CompilerVisitor.make_invoketail_method(cw, self_type, arity, 0);
-		
-//		mv = cw.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_ABSTRACT,
-//				"invoke_tail", EUtil.getSignature(arity, true), null, null);
-//		mv.visitEnd();
 
-		mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "arity", "()I", null, null);
+		MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "arity", "()I", null, null);
 		mv.visitCode();
 		mv.visitLdcInsn(new Integer(arity));
 		mv.visitInsn(Opcodes.IRETURN);

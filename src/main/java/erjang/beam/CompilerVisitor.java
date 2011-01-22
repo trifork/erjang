@@ -330,7 +330,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 		mv.visitMaxs(1, 1);
 		mv.visitEnd();
 
-		// make the method module_name
+		// make the method attributes
 		mv = cv.visitMethod(ACC_PROTECTED, "attributes",
 				"()" + ESEQ_TYPE.getDescriptor(), null, null);
 		mv.visitCode();
@@ -619,12 +619,20 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 			ClassWeaver w = new ClassWeaver(data, new Compiler.ErjangDetector(
 					self_type.getInternalName(), non_pausable_methods));
-			for (ClassInfo ci : w.getClassInfos()) {
+			if (w.getClassInfos().size() == 0) { // Class did not need weaving
 				try {
-					// System.out.println("> storing "+ci.className);
-					classRepo.store(ci.className, ci.bytes);
+					classRepo.store(full_inner_name, data);
 				} catch (IOException e) {
 					e.printStackTrace();
+				}
+			} else {
+				for (ClassInfo ci : w.getClassInfos()) {
+					try {
+					// System.out.println("> storing "+ci.className);
+						classRepo.store(ci.className, ci.bytes);
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
 				}
 			}
 			
@@ -3064,11 +3072,6 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 		
 		make_constructor(cw, full_inner_name, super_class_name, lambda);
 
-		make_invoke_method(cw, outer_name, fname, arity, proc, freevars,
-				return_type, is_tail_call);
-		
-		// make_invoketail_method(cw, full_inner_name, arity, freevars);
-		
 		make_go_method(cw, outer_name, fname, full_inner_name, arity, proc,
 				freevars, return_type, is_tail_call, is_pausable);
 
