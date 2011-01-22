@@ -111,8 +111,12 @@ public class AllTests {
         generateTestClasses(args[0], testsDet, OfflineComparisonTestCase.class);
 
         Map<File, List<File>> testsProp = new HashMap<File, List<File>>();
-		find_files(testsProp, new File("src/test/erl/properties"), ".erl");
-        generateTestClasses(args[0], testsProp, TestCaseWithErlangNodeAccess.class);
+		find_files(testsProp, new File("src/test/erl/properties/simple"), ".erl");
+        generateTestClasses(args[0], testsProp, PropertyTestCase.class);
+
+        Map<File, List<File>> testsPropNode = new HashMap<File, List<File>>();
+		find_files(testsPropNode, new File("src/test/erl/properties/erlang"), ".erl");
+        generateTestClasses(args[0], testsPropNode, TestCaseWithErlangNodeAccess.class);
     }
 
     protected static void generateTestClasses(String path, Map<File, List<File>> tests,

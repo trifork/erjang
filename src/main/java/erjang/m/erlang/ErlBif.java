@@ -132,7 +132,7 @@ public class ErlBif {
 	}
 
 	@BIF
-	static EBinary list_to_binary(EObject val) {
+	public static EBinary list_to_binary(EObject val) {
 		EString es;
 		if ((es = val.testString()) != null) { 
 			return es.asBitString();
