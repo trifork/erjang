@@ -177,8 +177,7 @@ public class ERT {
 	 */
 	@SuppressWarnings("unchecked")
 	public static <T> Class<? extends T> defineClass(ClassLoader classLoader,
-			String name, byte[] data, int i, int length) {
-
+			String name, byte[] data) {
 		/*
 		 * Class<? extends ETuple> res = (Class<? extends ETuple>)
 		 * loader2.define(name, data);

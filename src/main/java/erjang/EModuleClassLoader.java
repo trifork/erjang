@@ -80,7 +80,7 @@ public class EModuleClassLoader extends URLClassLoader {
 			try {
 				byte[] bb = new byte[resource.available()];
 				resource.read(bb);
-				return ERT.defineClass(EModuleClassLoader.class.getClassLoader(), name, bb, 0, bb.length);
+				return ERT.defineClass(EModuleClassLoader.class.getClassLoader(), name, bb);
 			} catch (IOException ex) {
 				throw new Error(ex);
 			}

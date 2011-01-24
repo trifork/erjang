@@ -158,17 +158,16 @@ public abstract class EFun extends EObject implements Opcodes {
 		byte[] data = CompilerVisitor.make_invoker(module, type, mname, method
 				.getName(), ary, proc, null, Type.getType(method.getReturnType()), true, true);
 
-		String clname = type.getClassName() + "$FN_" + mname;
-
 		ClassLoader cl = declaringClass.getClassLoader();
 
 		// make sure we have it's superclass loaded
 		get_fun_class(ary);
 
 		data = weave(data);
-		
-		Class<? extends EFun> res_class = ERT.defineClass(cl, clname.replace(
-				'/', '.'), data, 0, data.length);
+
+		String clname = type.getClassName() + "$FN_" + mname;
+		clname = clname.replace('/', '.');
+		Class<? extends EFun> res_class = ERT.defineClass(cl, clname, data);
 
 		try {
 			return res_class.newInstance();
@@ -180,12 +179,9 @@ public abstract class EFun extends EObject implements Opcodes {
 	@SuppressWarnings("unchecked")
 	static Class<? extends EFun> get_fun_class(int arity) {
 
-		String self_type = EFUN_TYPE.getInternalName() + arity;
-
 		try {
-			return (Class<? extends EFun>) Class.forName(EFUN_TYPE
-					.getClassName()
-					+ arity, true, EFun.class.getClassLoader());
+			String className = EFUN_TYPE.getClassName() + arity;
+			return (Class<? extends EFun>) Class.forName(className, true, EFun.class.getClassLoader());
 		} catch (ClassNotFoundException ex) {
 			// that's what we'll do here...
 		}
@@ -194,9 +190,9 @@ public abstract class EFun extends EObject implements Opcodes {
 		
 		data = weave(data);
 
-
-		return ERT.defineClass(EFun.class.getClassLoader(), self_type.replace(
-				'/', '.'), data, 0, data.length);
+		String self_type = EFUN_TYPE.getInternalName() + arity;
+		self_type = self_type.replace('/', '.');
+		return ERT.defineClass(EFun.class.getClassLoader(), self_type, data);
 	}
 
 	static byte[] gen_fun_class_data(int arity) {
@@ -313,8 +309,7 @@ public abstract class EFun extends EObject implements Opcodes {
 
 			data = weave(data);
 
-			Class<? extends EFun> clazz = ERT.defineClass(loader, self_type.replace('/', '.'), data, 0,
-					data.length);
+			Class<? extends EFun> clazz = ERT.defineClass(loader, self_type.replace('/', '.'), data);
 
 			try {
 				h = clazz.getConstructor(EFunHandler.class);
