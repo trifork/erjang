@@ -572,6 +572,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			String full_inner_name = outer_name + "$" + inner_name;
 
 			boolean make_fun = false;
+			boolean is_exported = isExported(fun_name, arity);
 			if (lambda != null) {
 				CompilerVisitor.this.module_md5 = lambda.uniq;
 				make_fun = true;
@@ -588,7 +589,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 							"L" + full_inner_name + ";", null, null);
 					EFun.ensure(arity);
 	
-					if (isExported(fun_name, arity)) {
+					if (is_exported) {
 						if (ERT.DEBUG2)
 							System.err.println("export " + module_name + ":"
 									+ fun_name + "/" + arity);
@@ -614,8 +615,8 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			cv.visitInnerClass(full_inner_name, outer_name, inner_name,
 					ACC_STATIC);
 
-			byte[] data = CompilerVisitor.make_invoker(module_name.getName(), self_type, mname, mname,
-					arity, true, lambda, EOBJECT_TYPE, funInfo.may_return_tail_marker, funInfo.is_pausable|funInfo.call_is_pausable);
+			byte[] data = CompilerVisitor.make_invoker(module_name.getName(), fun_name.getName(), self_type, mname, mname,
+					arity, true, is_exported, lambda, EOBJECT_TYPE, funInfo.may_return_tail_marker, funInfo.is_pausable|funInfo.call_is_pausable);
 
 			ClassWeaver w = new ClassWeaver(data, new Compiler.ErjangDetector(
 					self_type.getInternalName(), non_pausable_methods));
@@ -3000,8 +3001,9 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 		return lambdas_xx.get(new FunID(module_name, fun, arity_plus));
 	}
 
-	static public byte[] make_invoker(String module, Type self_type, String mname,
-			String fname, int arity, boolean proc, Lambda lambda,
+	static public byte[] make_invoker(String module, String function,
+			Type self_type, String mname,
+			String fname, int arity, boolean proc, boolean exported, Lambda lambda,
 			Type return_type, boolean is_tail_call, final boolean is_pausable) {
 
 		int freevars = lambda==null ? 0 : lambda.freevars;
@@ -3011,8 +3013,12 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 		String full_inner_name = outer_name + "$" + inner_name;
 
 		ClassWriter cw = new ClassWriter(true);
-		String super_class_name = EFUN_NAME + (arity - freevars);
-		EFun.ensure(arity - freevars);
+		int residual_arity = arity - freevars;
+		String super_class_name = EFUN_NAME + residual_arity +
+			(exported ? "Exported" : "");
+		if (exported) EFun.ensure_exported(residual_arity);
+		else EFun.ensure(residual_arity);
+
 		cw.visit(V1_6, ACC_FINAL | ACC_PUBLIC, full_inner_name, null,
 				super_class_name, null);
 
@@ -3070,7 +3076,8 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			mv.visitEnd();
 		}
 		
-		make_constructor(cw, full_inner_name, super_class_name, lambda);
+		make_constructor(cw, module, function,
+						 full_inner_name, super_class_name, lambda, exported);
 
 		make_go_method(cw, outer_name, fname, full_inner_name, arity, proc,
 				freevars, return_type, is_tail_call, is_pausable);
@@ -3083,7 +3090,8 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 	}
 
 	private static void make_constructor(ClassWriter cw,
-			String full_inner_name, String super_class_name, Lambda lambda) {
+			String module_name, String function_name,
+			String full_inner_name, String super_class_name, Lambda lambda, boolean exported) {
 		StringBuilder sb = new StringBuilder("(");
 		int freevars = lambda==null?0:lambda.freevars;
 		if (lambda != null) {
@@ -3103,7 +3111,13 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 		mv.visitCode();
 
 		mv.visitVarInsn(ALOAD, 0);
-		mv.visitMethodInsn(INVOKESPECIAL, super_class_name, "<init>", "()V");
+		if (exported) {
+			mv.visitLdcInsn(module_name);
+			mv.visitLdcInsn(function_name);
+			mv.visitMethodInsn(INVOKESPECIAL, super_class_name, "<init>", "(Ljava/lang/String;Ljava/lang/String;)V");
+		} else {
+			mv.visitMethodInsn(INVOKESPECIAL, super_class_name, "<init>", "()V");
+		}
 
 		if (lambda != null) {
 			mv.visitVarInsn(ALOAD, 0);

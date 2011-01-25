@@ -64,8 +64,15 @@ public class EModuleClassLoader extends URLClassLoader {
 		}
 
 		if (name.startsWith(EFUN_NAME)) {
-			int arity = Integer.parseInt(name.substring(EFUN_NAME.length()));
-			return EFun.get_fun_class(arity);
+			if (name.endsWith("Exported")) {
+				int num_start  = EFUN_NAME.length();
+				int num_end    = name.length() - "Exported".length();
+				int arity = Integer.parseInt(name.substring(num_start, num_end));
+				return EFun.get_exported_fun_class(arity);
+			} else {
+				int arity = Integer.parseInt(name.substring(EFUN_NAME.length()));
+				return EFun.get_fun_class(arity);
+			}
 		}
 		
 		if (name.startsWith("kilim.S_")) {

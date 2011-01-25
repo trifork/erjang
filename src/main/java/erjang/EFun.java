@@ -108,17 +108,22 @@ public abstract class EFun extends EObject implements Opcodes {
 	}
 
 
+	/*==================== Code generation: ==================*/
+
 	private static final Type EFUN_TYPE = Type.getType(EFun.class);
 	private static final String EFUN_NAME = EFUN_TYPE.getInternalName();
+	private static final Type EATOM_TYPE = Type.getType(EAtom.class);
 	private static final Type EFUNHANDLER_TYPE = Type
 			.getType(EFunHandler.class);
 	private static final Type EOBJECT_TYPE = Type.getType(EObject.class);
+	private static final Type STRING_TYPE = Type.getType(String.class);
 	private static final Type EOBJECT_ARR_TYPE = Type.getType(EObject[].class);
 	private static final Type EPROC_TYPE = Type.getType(EProc.class);
 	static final String GO_DESC = "(" + EPROC_TYPE.getDescriptor() + ")"
 			+ EOBJECT_TYPE.getDescriptor();
 	private static final String EPROC_NAME = EPROC_TYPE.getInternalName();
 	private static final String EOBJECT_DESC = EOBJECT_TYPE.getDescriptor();
+	private static final String EATOM_DESC = EATOM_TYPE.getDescriptor();
 	static final String[] PAUSABLE_EX = new String[] { Type.getType(Pausable.class).getInternalName() };
 
 
@@ -155,8 +160,8 @@ public abstract class EFun extends EObject implements Opcodes {
 
 		Class<?> declaringClass = method.getDeclaringClass();
 		Type type = Type.getType(declaringClass);
-		byte[] data = CompilerVisitor.make_invoker(module, type, mname, method
-				.getName(), ary, proc, null, Type.getType(method.getReturnType()), true, true);
+		byte[] data = CompilerVisitor.make_invoker(module, method.getName(), type, mname, method
+				.getName(), ary, proc, true, null, Type.getType(method.getReturnType()), true, true);
 
 		ClassLoader cl = declaringClass.getClassLoader();
 
@@ -176,6 +181,7 @@ public abstract class EFun extends EObject implements Opcodes {
 		}
 	}
 
+	/*==================== Code generation of EFun{arity}: ==================*/
 	@SuppressWarnings("unchecked")
 	static Class<? extends EFun> get_fun_class(int arity) {
 
@@ -238,10 +244,10 @@ public abstract class EFun extends EObject implements Opcodes {
 		mv.visitMethodInsn(Opcodes.INVOKESPECIAL, EFUN_TYPE.getInternalName(),
 				"<init>", "()V");
 		mv.visitInsn(Opcodes.RETURN);
-		mv.visitMaxs(arity + 2, arity + 2);
+		mv.visitMaxs(1, 1);
 		mv.visitEnd();
 
-		create_cast(cw, arity);
+		make_cast_method(cw, arity);
 		
 		cw.visitEnd();
 
@@ -326,19 +332,8 @@ public abstract class EFun extends EObject implements Opcodes {
 			throw new Error(e);
 		}
 	}
-
-	public static byte[] weave(byte[] data) {
-		ClassWeaver w = new ClassWeaver(data, new Compiler.ErjangDetector("/xx/", (Set<String>)Collections.EMPTY_SET));
-		for (ClassInfo ci : w.getClassInfos()) {
-			// ETuple.dump(ci.className, ci.bytes);
-			
-			if (!ci.className.startsWith("kilim"))
-				data = ci.bytes;
-		}
-		return data;
-	}
 	
-	private static void create_cast(ClassWriter cw, int n) {
+	private static void make_cast_method(ClassWriter cw, int n) {
 		MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PUBLIC|Opcodes.ACC_STATIC, "cast", 
 				"(" + EOBJECT_DESC + ")L" + EFUN_NAME + n + ";",
 				null, null);
@@ -452,7 +447,105 @@ public abstract class EFun extends EObject implements Opcodes {
 		mv.visitMaxs(arity + 2, arity + 2);
 		mv.visitEnd();
 	}
+	/*^^^^^^^^^^^^^^^^^^^^ Code generation of EFun{arity}  ^^^^^^^^^^^^^^^^^^*/
 
+	/*==================== Code generation of EFun{arity}Exported: ==========*/
+	@SuppressWarnings("unchecked")
+	static Class<? extends EFun> get_exported_fun_class(int arity) {
+
+		String className = EFUN_TYPE.getClassName() + arity + "Exported";
+		try {
+			return (Class<? extends EFun>) Class.forName(className, true, EFun.class.getClassLoader());
+		} catch (ClassNotFoundException ex) {
+			// that's what we'll do here...
+		}
+
+		byte[] data = get_exported_fun_class_data(arity);
+
+		data = weave(data);
+
+		return ERT.defineClass(EFun.class.getClassLoader(), className, data);
+	}
+
+	static byte[] get_exported_fun_class_data(int arity) {
+		/* Code template:
+		 * public abstract class EFun{arity}Exported extends EFun{arity} {
+		 *   protected final EAtom module_name, function_name;
+		 *   protected EFun{arity}Exported(String m, String f) {
+		 *     module_name   = EAtom.intern(m);
+		 *     function_name = EAtom.intern(f);
+		 *   }
+		 * }
+		 */
+
+		ensure(arity); // Ensure presence of superclass.
+		String super_type = EFUN_TYPE.getInternalName() + arity;
+		String self_type = super_type + "Exported";
+
+		ClassWriter cw = new ClassWriter(true);
+		cw.visit(Opcodes.V1_5, Opcodes.ACC_PUBLIC | Opcodes.ACC_ABSTRACT,
+				self_type, null, super_type, null);
+
+		cw.visitField(ACC_PROTECTED | ACC_FINAL, "module_name",
+					  EATOM_TYPE.getDescriptor(), null, null)
+			.visitEnd();
+
+		cw.visitField(ACC_PROTECTED | ACC_FINAL, "function_name",
+					  EATOM_TYPE.getDescriptor(), null, null)
+			.visitEnd();
+
+		MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PROTECTED, "<init>", "(Ljava/lang/String;Ljava/lang/String;)V", null, null);
+
+		mv.visitVarInsn(Opcodes.ALOAD, 0);
+		mv.visitMethodInsn(Opcodes.INVOKESPECIAL, super_type, "<init>", "()V");
+
+		mv.visitVarInsn(Opcodes.ALOAD, 0);
+		mv.visitVarInsn(Opcodes.ALOAD, 1);
+		mv.visitMethodInsn(Opcodes.INVOKESTATIC, EATOM_TYPE.getInternalName(),
+						   "intern", "(Ljava/lang/String;)Lerjang/EAtom;");
+		mv.visitFieldInsn(Opcodes.PUTFIELD, self_type, "module_name", EATOM_DESC);
+
+		mv.visitVarInsn(Opcodes.ALOAD, 0);
+		mv.visitVarInsn(Opcodes.ALOAD, 2);
+		mv.visitMethodInsn(Opcodes.INVOKESTATIC, EATOM_TYPE.getInternalName(),
+						   "intern", "(Ljava/lang/String;)Lerjang/EAtom;");
+		mv.visitFieldInsn(Opcodes.PUTFIELD, self_type, "function_name", EATOM_DESC);
+
+		mv.visitInsn(Opcodes.RETURN);
+		mv.visitMaxs(3, 3);
+		mv.visitEnd();
+
+		make_encode_method_for_exported(cw, self_type, arity);
+
+		cw.visitEnd();
+
+		byte[] data = cw.toByteArray();
+		return data;
+	}
+
+
+	static void make_encode_method_for_exported(ClassWriter cw, String className, int arity) {
+		MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "encode", "("+ Type.getDescriptor(EOutputStream.class) +")V", null, null);
+		mv.visitCode();
+
+		mv.visitVarInsn(ALOAD, 1);
+		mv.visitVarInsn(ALOAD, 0);
+		mv.visitFieldInsn(GETFIELD, className, "module_name", EATOM_DESC);
+		mv.visitVarInsn(ALOAD, 0);
+		mv.visitFieldInsn(GETFIELD, className, "function_name", EATOM_DESC);
+		mv.visitLdcInsn(new Integer(arity));
+
+		mv.visitMethodInsn(INVOKEVIRTUAL, Type.getInternalName(EOutputStream.class), "write_external_fun",
+						   "("+EATOM_DESC+EATOM_DESC+"I)V");
+
+		mv.visitInsn(RETURN);
+		mv.visitMaxs(4, 1);
+		mv.visitEnd();
+	}
+
+	/*^^^^^^^^^^^^^^^^^^^^ Code generation of EFun{arity}Exported ^^^^^^^^^^*/
+
+	/*==================== Code generation utilities:  ==================*/
 	/**
 	 * @param mv
 	 * @param i
@@ -464,6 +557,18 @@ public abstract class EFun extends EObject implements Opcodes {
 			mv.visitLdcInsn(new Integer(i));
 		}
 	}
+
+	public static byte[] weave(byte[] data) {
+		ClassWeaver w = new ClassWeaver(data, new Compiler.ErjangDetector("/xx/", (Set<String>)Collections.EMPTY_SET));
+		for (ClassInfo ci : w.getClassInfos()) {
+			// ETuple.dump(ci.className, ci.bytes);
+			
+			if (!ci.className.startsWith("kilim"))
+				data = ci.bytes;
+		}
+		return data;
+	}
+	/*^^^^^^^^^^^^^^^^^^^^ Code generation utilities:  ^^^^^^^^^^^^^^^^^^*/
 
 	/**
 	 * @param a
@@ -477,6 +582,7 @@ public abstract class EFun extends EObject implements Opcodes {
 	public static void main(String[] args) {
 		for (int i = 0; i < 10; i++) {
 			get_fun_class(i);
+			get_exported_fun_class(i);
 		}
 	}
 
@@ -485,6 +591,9 @@ public abstract class EFun extends EObject implements Opcodes {
 	 */
 	public static void ensure(int arity) {
 		get_fun_class(arity);
+	}
+	public static void ensure_exported(int arity) {
+		get_exported_fun_class(arity);
 	}
 
 	/**

@@ -841,6 +841,10 @@ public class EOutputStream extends ByteArrayOutputStream {
 	}
     }
 
+    public void write_external_fun(final EAtom module, final EAtom function, final int arity) {
+		write_external_fun(module.getName(), function.getName(), arity);
+	}
+
     public void write_external_fun(final String module, final String function,
 	    final int arity) {
 	write1(EExternal.externalFunTag);
