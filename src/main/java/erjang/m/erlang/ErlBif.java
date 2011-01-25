@@ -1538,7 +1538,8 @@ public class ErlBif {
 
 	@BIF
 	public static EAtom not(EObject o1) {
-		return (o1 == ERT.FALSE) ? ERT.TRUE : ERT.FALSE;
+		if  (o1.testBoolean() == null) throw ERT.badarg(o1);
+		return ERT.box(o1 == ERT.FALSE);
 	}
 
 	@BIF
@@ -1578,6 +1579,7 @@ public class ErlBif {
 
 	@BIF(type = Type.GUARD, name = "not")
 	public static EAtom not$g(EObject o1) {
+		if  (o1.testBoolean() == null) return null;
 		return ERT.box(o1 == ERT.FALSE);
 	}
 
