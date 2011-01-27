@@ -1163,6 +1163,19 @@ public class ErlBif {
 		return ERT.guard(a1.erlangCompareTo(a2) >= 0);
 	}
 
+	@BIF(name = ">")
+	public static EAtom gt(EObject v1, EObject v2) {
+		return ERT.box(v1.erlangCompareTo(v2) > 0);
+	}
+	@BIF(name = ">")
+	public static EAtom gt(EObject v1, ESmall v2) {
+		return ERT.box(v1.erlangCompareTo(v2) > 0);
+	}
+	@BIF(name = ">")
+	public static EAtom gt(ESmall v1, EObject v2) {
+		return ERT.box(v1.erlangCompareTo(v2) > 0);
+	}
+
 	@BIF(name = "/=")
 	public static final EAtom is_ne(EObject a1, EObject a2) {
 		boolean eq = a1.erlangEquals(a2);
@@ -1507,16 +1520,6 @@ public class ErlBif {
 	@BIF
 	public static EAtom and(EObject o1, EObject e2) {
 		return ERT.box((o1 == ERT.TRUE) && (e2 == ERT.TRUE));
-	}
-
-	@BIF(name = "<")
-	public static EAtom lt(EObject v1, EObject v2) {
-		return ERT.box(v1.erlangCompareTo(v2) < 0);
-	}
-
-	@BIF(name = ">")
-	public static EAtom gt(EObject v1, EObject v2) {
-		return ERT.box(v1.erlangCompareTo(v2) > 0);
 	}
 
 	@BIF(type = Type.GUARD, name = "or")

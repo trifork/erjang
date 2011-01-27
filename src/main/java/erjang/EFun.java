@@ -156,7 +156,8 @@ public abstract class EFun extends EObject implements Opcodes {
 		boolean proc = (ary > 0 && parameterTypes[0].equals(EProc.class));
 		if (proc)
 			ary -= 1;
-		String mname = EUtil.getJavaName(EAtom.intern(method.getName()), ary);
+		String fname = erlangNameOfMethod(method);
+		String mname = EUtil.getJavaName(EAtom.intern(fname), ary);
 
 		Class<?> declaringClass = method.getDeclaringClass();
 		Type type = Type.getType(declaringClass);
@@ -165,7 +166,7 @@ public abstract class EFun extends EObject implements Opcodes {
 
 		ClassLoader cl = declaringClass.getClassLoader();
 
-		// make sure we have it's superclass loaded
+		// make sure we have its superclass loaded
 		get_fun_class(ary);
 
 		data = weave(data);
@@ -180,6 +181,18 @@ public abstract class EFun extends EObject implements Opcodes {
 			throw new Error(e);
 		}
 	}
+
+	private static String erlangNameOfMethod(Method method) {
+		BIF bif_ann = method.getAnnotation(BIF.class);
+		if (bif_ann != null) {
+			String bif_name = bif_ann.name().equals("__SELFNAME__") ? method.getName() : bif_ann.name();
+			if (bif_ann.type() == BIF.Type.GUARD) return bif_name + "\1";
+			else return bif_name;
+		} else {
+			return method.getName();
+		}
+	}
+
 
 	/*==================== Code generation of EFun{arity}: ==================*/
 	@SuppressWarnings("unchecked")
