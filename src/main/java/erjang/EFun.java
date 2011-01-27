@@ -161,7 +161,7 @@ public abstract class EFun extends EObject implements Opcodes {
 
 		Class<?> declaringClass = method.getDeclaringClass();
 		Type type = Type.getType(declaringClass);
-		byte[] data = CompilerVisitor.make_invoker(module, method.getName(), type, mname, method
+		byte[] data = CompilerVisitor.make_invoker(module, fname, type, mname, method
 				.getName(), ary, proc, true, null, Type.getType(method.getReturnType()), true, true);
 
 		ClassLoader cl = declaringClass.getClassLoader();
