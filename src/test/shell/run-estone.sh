@@ -13,9 +13,11 @@ function error() {
 }
 
 # Compile the beam files:
-erlc -W0 -I "$ESTONE_DIR" -o "$ESTONE_DIR" "$ESTONE_DIR"/{ts,estone_SUITE}.erl || error "Compiling EStone failed"
+echo "Compiling estone..." >&2
+(export DIR="$ESTONE_DIR" ; "$EJ_EXE" -noshell -noinput -eval 'Dir=os:getenv("DIR"), Opts=[{i,Dir},{outdir,Dir},nowarn_unused_vars], [{ok,_} = c:c(filename:join(Dir,Mod++".erl"), Opts) || Mod <- ["ts","estone_SUITE"]], erlang:halt().') || error "Compiling EStone failed"
 
 # Run the EStone suite 5 times:
+echo "Running estone..." >&2
 "$EJ_EXE" -pa "$ESTONE_DIR" -noinput -noshell -eval "[ts:run(estone) || _ <- [1,2,3,4,5]], erlang:halt()." > "$RAW_OUTPUT_FILE" || error "Running EStone failed"
 
 cat "$RAW_OUTPUT_FILE" | perl -ne '
