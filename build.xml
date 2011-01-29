@@ -24,7 +24,7 @@
 
 	<target name="all" depends="clean,weave,jar" />
     <target name="all_with_test" depends="all,weavetest" />
-	<target name="test" depends="all_with_test,testwoven" />
+	<target name="test" depends="all_with_test,testwoven,perf_test" />
 
 	<target name="gen-interpreter">
 		<echo message="generating interpreter code ===================" />
@@ -143,6 +143,14 @@
             </batchtest>
 	  </junit>
 	</target>
+
+	<target name="perf_test">
+		<exec dir="." executable="bash" failonerror="no">
+		    <arg value="src/test/shell/run-estone.sh"/>
+		    <arg value="ErjIG_Main.pl"/>
+		</exec>
+	</target>
+
 
 	<target name="jar" description="generate the distribution" depends="clean,weave">
         <echo message="Packaging ======================" />
