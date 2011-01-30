@@ -1,9 +1,13 @@
 #!/bin/bash
 
+OUTPUT_BASE="$1" # A base name
+
 BASE_DIR=`dirname "$BASH_SOURCE"`"/../../.."
 ESTONE_DIR="$BASE_DIR/test_server"
 RAW_OUTPUT_FILE="$BASE_DIR/estone.tmp"
-OUTPUT_FILE="$BASE_DIR/test-outputs/estone.csv"
+
+OUTPUT_FILE="$OUTPUT_BASE.csv"
+OUTPUT_REL_FILE="$OUTPUT_BASE-relative.csv"
 
 EJ_EXE="$BASE_DIR/ej"
 
@@ -20,9 +24,33 @@ echo "Compiling estone..." >&2
 echo "Running estone..." >&2
 "$EJ_EXE" -pa "$ESTONE_DIR" -noinput -noshell -eval "[ts:run(estone) || _ <- [1,2,3,4,5]], erlang:halt()." > "$RAW_OUTPUT_FILE" || error "Running EStone failed"
 
-cat "$RAW_OUTPUT_FILE" | perl -ne '
+cat "$RAW_OUTPUT_FILE" | perl -Wne '
 BEGIN{
+  %reference_numbers = (
+        "EStones - hot VM" => 190864,
+	"Alloc and dealloc" => 5327,
+	"Bif dispatch" => 52608,
+	"Binary handling" => 6453,
+	"Float arithmetics" => 2468,
+	"Function calls" => 16422,
+	"Generic server (with timeout)" => 8556,
+	"Links" => 865,
+	"Small Integer arithmetics" => 4722,
+	"Timers" => 4319,
+	"Work with large dataset" => 5502,
+	"Work with large local dataset" => 5584,
+	"ets datadictionary" => 10574,
+	"huge messages" => 4886,
+	"list manipulation" => 13483,
+	"medium messages" => 13956,
+	"pattern matching" => 17753,
+	"small messages" => 11417,
+	"traverse" => 5969
+   );
+
   %numbers=();
+
+  open(RELOUT,">&3");
 }
 
 if (/^\{[\"\x27]([^\"\x27]*)[\"\x27],(\d+)\}$/) {
@@ -36,10 +64,12 @@ sub avg {
   return $sum/$cnt;
 }
 
-my @keys, @values;
+my (@keys, @values, @rel_values);
 sub add_kv {
-  push(@keys, "\"$_[0]\"");
-  push(@values, $_[1]);
+  my ($k,$v) = @_;
+  push(@keys, "\"$k\"");
+  push(@values, $v);
+  push(@rel_values, sprintf("%6.3f", 100*($v/$reference_numbers{$k}))) if (exists $reference_numbers{$k});
 }
 
 END{
@@ -61,6 +91,9 @@ END{
 
   print (join(",",@keys)."\n");
   print (join(",",@values)."\n");
+
+  print RELOUT (join(",",@keys)."\n");
+  print RELOUT (join(",",@rel_values)."\n");
 }
-' | tee "$OUTPUT_FILE"
+' > "$OUTPUT_FILE" 3>"$OUTPUT_REL_FILE"
 

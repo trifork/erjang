@@ -147,7 +147,7 @@
 	<target name="perf_test">
 		<exec dir="." executable="bash" failonerror="no">
 		    <arg value="src/test/shell/run-estone.sh"/>
-		    <arg value="ErjIG_Main.pl"/>
+		    <arg value="test-outputs/estone"/>
 		</exec>
 	</target>
 
