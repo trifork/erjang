@@ -64,12 +64,15 @@ sub avg {
   return $sum/$cnt;
 }
 
-my (@keys, @values, @rel_values);
+my (@keys, @values, @rel_keys, @rel_values);
 sub add_kv {
   my ($k,$v) = @_;
   push(@keys, "\"$k\"");
   push(@values, $v);
-  push(@rel_values, sprintf("%6.3f", 100*($v/$reference_numbers{$k}))) if (exists $reference_numbers{$k});
+  if (exists $reference_numbers{$k}) {
+    push(@rel_keys, "\"$k\"");
+    push(@rel_values, sprintf("%6.3f", 100*($v/$reference_numbers{$k})));
+  }
 }
 
 END{
@@ -92,7 +95,7 @@ END{
   print (join(",",@keys)."\n");
   print (join(",",@values)."\n");
 
-  print RELOUT (join(",",@keys)."\n");
+  print RELOUT (join(",",@rel_keys)."\n");
   print RELOUT (join(",",@rel_values)."\n");
 }
 ' > "$OUTPUT_FILE" 3>"$OUTPUT_REL_FILE"
