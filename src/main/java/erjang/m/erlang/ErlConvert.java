@@ -249,9 +249,8 @@ public class ErlConvert {
 		
 		if (idx0start < 0 || len < 0 || (idx0start + len) > bin.byteSize())
 			throw ERT.badarg(obj, start, stop);
-		
-		// TODO: use raw data, here we're copying
-		return EString.make(bin.getByteArray(), idx0start, len);
+
+		return EString.make(bin, idx0start, len);
 	}
 
 	static private class BARR extends ByteArrayOutputStream {

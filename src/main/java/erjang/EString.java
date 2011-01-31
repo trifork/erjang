@@ -532,4 +532,8 @@ public class EString extends ESeq implements CharSequence {
 		eos.write_string(stringValue());
 	}
 
+	public static EString make(EBinary bin, int idx0start, int len) {
+		return new EString(bin.data, bin.byteOffset()+idx0start, len);
+	}
+
 }
