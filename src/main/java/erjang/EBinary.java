@@ -183,4 +183,8 @@ public class EBinary extends EBitString {
 	public static EBinary make(byte[] res) {
 		return new EBinary(res);
 	}
+
+	public EBinary sub_binary(int off, int len) {
+		return new EBinary(data, this.byteOffset() + off, len);
+	}
 }

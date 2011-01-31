@@ -90,14 +90,12 @@ public class ErlConvert {
 		if ((b=bin.testBinary()) == null 
 			|| ((i=idx.testSmall()) == null)
 			|| i.value < 0 
-			|| i.value > b.bitSize()) {
+			|| i.value > b.byteSize()) {
 			throw ERT.badarg(bin);
 		}
 		
-		long total = b.bitSize();
-		long split = i.value*8;
-		return new ETuple2(b.substring(0, split),
-						   b.substring(split, total-split));
+		return new ETuple2(b.sub_binary(0, i.value), 
+				           b.sub_binary(i.value, b.byteSize()-i.value));		
 	}
 	
 	@BIF
