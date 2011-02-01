@@ -119,6 +119,12 @@ public class EModuleManager {
 		private EFun makeErrorHandler() {
 			return EFun.get_fun_with_handler(fun.arity,
 					new EFunHandler() {
+				
+					@Override
+						public String toString() {
+							return "#EFunHandler<" + fun.toString() + ">";
+						}
+				
 					public EObject invoke(EProc proc, EObject[] args)
 								throws Pausable {
 							
