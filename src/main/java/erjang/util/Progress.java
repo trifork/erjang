@@ -48,7 +48,7 @@ public class Progress {
                 }
 
                 if (!Boolean.parseBoolean(suppress)) {
-				    System.out.write(wheel[next % 4]);
+				    System.err.write(wheel[next % 4]);
                 }
 			} catch (IOException e) {
 				// ignore
