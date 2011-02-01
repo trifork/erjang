@@ -23,7 +23,8 @@ function measure() {
     local outfile="$1"; shift # Rest of arguments are passed to ej
     /usr/bin/time --format '%e\t%U\t%S\t%M' --output boot-stats.tmp1 \
       ./ej "$@" -noshell -sasl sasl_error_logger false -eval \
-	'AA=hd([V || {T,_,V}<-erlang:system_info(allocated_areas), (T=='"'non_heap:Perm Gen'"' orelse T=='"'non_heap:PS Perm Gen'"')]),
+	'erlang:garbage_collect(),
+         AA=hd([V || {T,_,V}<-erlang:system_info(allocated_areas), (T=='"'non_heap:Perm Gen'"' orelse T=='"'non_heap:PS Perm Gen'"')]),
          GHS=erlang:system_info(global_heaps_size),
          io:format("~b\t~b\n", [AA,GHS]),
          erlang:halt().' \
