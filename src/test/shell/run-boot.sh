@@ -22,8 +22,8 @@ function error() {
 function measure() {
     local outfile="$1"; shift # Rest of arguments are passed to ej
     /usr/bin/time --format '%e\t%U\t%S\t%M' --output boot-stats.tmp1 \
-      ./ej "$@" -noshell -eval \
-	'io:format("~b\n", [element(3,lists:keyfind('"'non_heap:PS Perm Gen'"', 1, erlang:system_info(allocated_areas)))]), erlang:halt().' \
+      ./ej "$@" -noshell -sasl sasl_error_logger false -eval \
+	'io:format("~b\n", [V || {T,_,V}<-erlang:system_info(allocated_areas), (T=='"'non_heap:Perm Gen'"' orelse T=='"'non_heap:PS Perm Gen'"')]), erlang:halt().' \
 	< /dev/null > boot-stats.tmp2
     paste boot-stats.tmp1 boot-stats.tmp2 >> "$outfile"
 }
