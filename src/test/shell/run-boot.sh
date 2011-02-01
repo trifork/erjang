@@ -3,7 +3,6 @@
 OUTPUT_BASE="$1" # A base name
 
 BASE_DIR=`dirname "$BASH_SOURCE"`"/../../.."
-RAW_OUTPUT_FILE="$BASE_DIR/estone.tmp"
 
 OUTPUT_FILE="$OUTPUT_BASE.csv"
 OUTPUT_REL_FILE="$OUTPUT_BASE-relative.csv"
@@ -22,8 +21,11 @@ function error() {
 
 function measure() {
     local outfile="$1"; shift # Rest of arguments are passed to ej
-    /usr/bin/time --format '%e\t%U\t%S\t%M' --output "$outfile" --append \
-    ./ej "$@" < /dev/null
+    /usr/bin/time --format '%e\t%U\t%S\t%M' --output boot-stats.tmp1 \
+      ./ej "$@" -noshell -eval \
+	'io:format("~b\n", [element(3,lists:keyfind('"'non_heap:PS Perm Gen'"', 1, erlang:system_info(allocated_areas)))]), erlang:halt().' \
+	< /dev/null > boot-stats.tmp2
+    paste boot-stats.tmp1 boot-stats.tmp2 >> "$outfile"
 }
 
 # Prepare cache dir and ensure no old result files remain:
@@ -31,7 +33,7 @@ mkdir "$HOME"
 rm boot-measurement-{empty,populated,interpreted}.dat 2>/dev/null
 
 # Run and measure:
-for ((i=1; i<=2 ; i++)) ; do
+for ((i=1; i<=3; i++)) ; do
     # Test from empty cache:
     measure boot-measurement-empty.dat
 
@@ -45,22 +47,30 @@ for ((i=1; i<=2 ; i++)) ; do
     rm "$CACHE_DIR/.erjang/"*.{jar,ja#} 2>/dev/null
 done
 
-for i in empty populated interpreted ; do
-    perl -Wne '
-      BEGIN {@sum=0; $cnt=0;}
+function compute() {
+    local filenamepart="$1" legend="$2"
+    perl -We '
+      BEGIN {@sum=0; $cnt=0; $legend=$ARGV[0];}
 
-      my $i=0;
-      foreach (split("\t")) {$sum[$i++] += $_;}
-      $cnt++;
+      while (<STDIN>) {
+        my $i=0;
+        foreach (split("\t")) {$sum[$i++] += $_;}
+        $cnt++;
+      }
 
       END {
+        # Rearrange: Elapsed, user+system, user, system, footprint, permgen.
+        @sum = ($sum[0], $sum[1]+$sum[2], $sum[1], $sum[2], $sum[3], $sum[4]/1024);
         @avg = map {$_/$cnt} @sum;
-        print "Elapsed,User,System,Memory\n";
+        print "\"$legend - Elapsed time\",\"$legend - User+system time\",\"$legend - User time\",\"$legend - System time\",\"$legend - Process size\",\"$legend - PermGen size\"\n";
         print (join(",",@avg)."\n");
       }
-    ' boot-measurement-$i.dat > "$OUTPUT_BASE-$i.csv"
-done
+    ' "$legend" < boot-measurement-$filenamepart.dat > "$OUTPUT_BASE-$filenamepart.csv"
+}
 
+compute empty "Empty module cache"
+compute populated "Populated module cache"
+compute interpreted "Interpreted mode"
 
 # Clean up:
 rmdir "$CACHE_DIR"
