@@ -12,7 +12,7 @@ EJ_EXE="$BASE_DIR/ej"
 CACHE_DIR="$BASE_DIR/boot-test-cache"
 
 # Special cache location:
-export HOME="$CACHE_DIR"
+export ERJ_CACHE_DIR="$CACHE_DIR"
 
 function error() {
     echo "*** $1" >&2
@@ -29,7 +29,7 @@ function measure() {
 }
 
 # Prepare cache dir and ensure no old result files remain:
-mkdir "$HOME"
+mkdir "$CACHE_DIR"
 rm boot-measurement-{empty,populated,interpreted}.dat 2>/dev/null
 
 # Run and measure:
@@ -44,7 +44,9 @@ for ((i=1; i<=3; i++)) ; do
     measure boot-measurement-interpreted.dat +i
 
     # Clean up:
+    echo -n "Jar count: " ; ls -1 "$CACHE_DIR/.erjang/"*.jar | wc -l
     rm "$CACHE_DIR/.erjang/"*.{jar,ja#} 2>/dev/null
+    rmdir "$CACHE_DIR/.erjang"
 done
 
 function compute() {
