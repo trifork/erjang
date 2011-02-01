@@ -125,13 +125,6 @@ public class ErlBif {
 	}
 	
 	@BIF
-	static ESeq binary_to_list(EObject val) {
-		EBinary bin;
-		if ((bin=val.testBinary()) == null) throw ERT.badarg(val);
-		return EString.make(bin);
-	}
-
-	@BIF
 	public static EBinary list_to_binary(EObject val) {
 		EString es;
 		if ((es = val.testString()) != null) { 
