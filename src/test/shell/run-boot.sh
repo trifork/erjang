@@ -23,7 +23,10 @@ function measure() {
     local outfile="$1"; shift # Rest of arguments are passed to ej
     /usr/bin/time --format '%e\t%U\t%S\t%M' --output boot-stats.tmp1 \
       ./ej "$@" -noshell -sasl sasl_error_logger false -eval \
-	'io:format("~b\n", [V || {T,_,V}<-erlang:system_info(allocated_areas), (T=='"'non_heap:Perm Gen'"' orelse T=='"'non_heap:PS Perm Gen'"')]), erlang:halt().' \
+	'AA=hd([V || {T,_,V}<-erlang:system_info(allocated_areas), (T=='"'non_heap:Perm Gen'"' orelse T=='"'non_heap:PS Perm Gen'"')]),
+         GHS=erlang:system_info(global_heaps_size),
+         io:format("~b\t~b\n", [AA,GHS]),
+         erlang:halt().' \
 	< /dev/null > boot-stats.tmp2
     paste boot-stats.tmp1 boot-stats.tmp2 >> "$outfile"
 }
@@ -33,7 +36,7 @@ mkdir "$CACHE_DIR"
 rm boot-measurement-{empty,populated,interpreted}.dat 2>/dev/null
 
 # Run and measure:
-for ((i=1; i<=3; i++)) ; do
+for ((i=1; i<=1; i++)) ; do
     # Test from empty cache:
     measure boot-measurement-empty.dat
 
@@ -60,9 +63,12 @@ function compute() {
         $cnt++;
       }
 
+      sub max($$) {return ($_[0] > $_[1])? $_[0] : $_[1];}
       END {
-        # Rearrange: Elapsed, user+system, user, system, footprint, permgen.
-        @sum = ($sum[0], $sum[1]+$sum[2], $sum[1], $sum[2], $sum[3], $sum[4]/1024);
+        # Rearrange:
+        # From: Elapsed, user, system, process size, permgen, global heap size
+        # To: Elapsed, user+system, user, system, footprint, permgen.
+        @sum = ($sum[0], $sum[1]+$sum[2], $sum[1], $sum[2], $sum[5]/1024, $sum[4]/1024);
         @avg = map {$_/$cnt} @sum;
         print "\"$legend - Elapsed time\",\"$legend - User+system time\",\"$legend - User time\",\"$legend - System time\",\"$legend - Process size\",\"$legend - PermGen size\"\n";
         print (join(",",@avg)."\n");
