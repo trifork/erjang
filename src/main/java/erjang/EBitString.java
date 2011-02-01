@@ -47,7 +47,7 @@ public class EBitString extends EObject {
 	//private final long bits;
 	//protected final long bitOff = 0;
 
-	public EBitString(byte[] data) {
+	protected EBitString(byte[] data) {
 		this(data.clone(), 0, data.length, 0);
 	}
 	
@@ -89,6 +89,7 @@ public class EBitString extends EObject {
 
 	public EBinary testBinary() {
 		if (isBinary()) {
+			assert false : "EBitString is Binary and testBinary is not overridden.";
 			// this should never happen
 			return new EBinary(toByteArray());
 		}
@@ -136,10 +137,7 @@ public class EBitString extends EObject {
 		
 		int data_len = in_len - (extra>0 ? 1 : 0);
 		
-		return new EBitString(data, 
-					0, 
-					data_len,
-					extra);
+		return EBitString.make(data, 0, data_len, extra);
 	}
 
 	@Override
@@ -214,7 +212,7 @@ public class EBitString extends EObject {
 	}
 
 	public static EBitString makeByteOffsetTail(EBitString org, int byteOff) {
-	    return new EBitString(org.data, org.data_offset+byteOff, org.byte_size-byteOff, org.extra_bits);
+	    return EBitString.make(org.data, org.data_offset+byteOff, org.byte_size-byteOff, org.extra_bits);
 	}
 
 	protected EBitString(byte[] data, int byte_off, int byte_len, int extra_bits) {
@@ -268,9 +266,9 @@ public class EBitString extends EObject {
 		int out_full_bytes = (int) (bit_len/8);
 		int extra = (int) (bit_len%8);
 		if (0 == (bitOff % 8)) {
-			return new EBitString(data, 
-					byteOffset() + (int)(bitOff/8), 
-					(int)out_full_bytes, extra);
+			return EBitString.make(data,
+					byteOffset() + (int)(bitOff/8),
+					out_full_bytes, extra);
 		}
 		
 		int out_bytes = (int) (out_full_bytes + (extra==0 ? 0 : 1));		
@@ -279,10 +277,10 @@ public class EBitString extends EObject {
 			res[i] = (byte) intBitsAt(bitOff + i*8, 8);
 		}
 		if (extra != 0) {
-			res[(int) out_full_bytes] = 
+			res[(int) out_full_bytes] =
 				(byte) (intBitsAt(bitOff + bit_len - extra, extra) << (7-extra));
 		}
-		return new EBitString(res, 0, (int) out_full_bytes, extra);
+		return EBitString.make(res, 0, (int) out_full_bytes, extra);
 	}
 
 	public int bitAt(long bitPos) {
@@ -576,7 +574,7 @@ public class EBitString extends EObject {
 			out.addBinary(data, data_offset, byte_size);
 		} catch (CharCollector.PartialDecodingException e) {
 			int n = e.inputPos;
-			throw new CharCollector.CollectingException(new EBitString(data, data_offset+n, byte_size-n, extra_bits));
+			throw new CharCollector.CollectingException(EBitString.make(data, data_offset+n, byte_size-n, extra_bits));
 		}
 	}
 
