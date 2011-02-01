@@ -36,7 +36,7 @@ mkdir "$CACHE_DIR"
 rm boot-measurement-{empty,populated,interpreted}.dat 2>/dev/null
 
 # Run and measure:
-for ((i=1; i<=1; i++)) ; do
+for ((i=1; i<=3; i++)) ; do
     # Test from empty cache:
     measure boot-measurement-empty.dat
 
