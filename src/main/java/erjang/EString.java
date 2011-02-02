@@ -464,6 +464,10 @@ public class EString extends ESeq implements CharSequence {
 		return new EString(bin.data, bin.byteOffset(), bin.byteSize());
 	}
 
+	public static EString make(EBinary bin, int offset, int length) {
+		return new EString(bin.data, bin.byteOffset()+offset, length);
+	}
+
 	/**
 	 * @return the contents of this string as a java.nio.ByteBuffer
 	 */

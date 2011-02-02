@@ -42,7 +42,7 @@ public class EBitStringBuilder {
 	public EBitStringBuilder(int byte_size, int flags) {
 		this.flags = (byte) flags;
 		data = new byte[byte_size];
-		bs = new EBitString(data, 0, byte_size, 0);
+		bs = EBitString.make(data, 0, byte_size, 0);
 	}
 
 	public static 
@@ -61,7 +61,7 @@ public class EBitStringBuilder {
 	public EBitStringBuilder(int byte_size, int extra_bits, int flags) {
 		if (flags != 0) throw new NotImplemented("flags="+flags);
 		data = new byte[byte_size+(extra_bits>0?1:0)];
-		bs = new EBitString(data, 0, byte_size, extra_bits);
+		bs = EBitString.make(data, 0, byte_size, extra_bits);
 	}
 
 	/** return bitstring under construction */
@@ -157,18 +157,14 @@ public class EBitStringBuilder {
 			if (litteEndian) 
 				throw new NotImplemented();
 			
-			int bits_left_in_current_byte = 
-				(extra_bits == 0 
-						? 8 
-						: 8-extra_bits);
-
+			int bits_left_in_current_byte = 8-extra_bits;
 			int msb_bits = Math.min(bits_left_in_current_byte, bit_size);
 			int lsb_bits = bit_size-msb_bits;
 			
-			while(lsb_bits + msb_bits > 0) {
+			while (lsb_bits + msb_bits > 0) {
 				int mask = ((1 << msb_bits) - 1);
-				int putval = (val >>> lsb_bits) & mask;
-				int getval = data[byte_pos] & ~mask;
+				int putval = ((val >>> lsb_bits) & mask) << (8-msb_bits);
+				int getval = data[byte_pos];
 				
 				assert ((putval & getval) == 0);
 				
@@ -181,7 +177,7 @@ public class EBitStringBuilder {
 								
 				lsb_bits -= msb_bits;
 				msb_bits = Math.min(8, lsb_bits);
-			};
+			}
 			
 			return;
 		}

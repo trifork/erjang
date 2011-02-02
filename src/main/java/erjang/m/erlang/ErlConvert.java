@@ -239,12 +239,12 @@ public class ErlConvert {
 		EBinary bin = obj.testBinary();
 		ESmall s = start.testSmall();
 		ESmall e = stop.testSmall();
-		if (bin == null || s==null||e==null)
+		if (bin == null || s==null || e==null)
 			throw ERT.badarg(obj,start,stop);
 
 		int idx0start = s.value-1;
 		int len = e.value-s.value+1;
-		
+
 		if (idx0start < 0 || len < 0 || (idx0start + len) > bin.byteSize())
 			throw ERT.badarg(obj, start, stop);
 
