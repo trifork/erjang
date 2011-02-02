@@ -193,6 +193,10 @@ public class EOutputStream extends ByteArrayOutputStream {
 	write(bytes);
     }
 
+    public void writeN(final byte[] bytes, int off, int len) {
+		write(bytes, off, len);
+    }
+
     /**
      * Get the current capacity of the stream. As bytes are added the capacity
      * of the stream is increased automatically, however this method returns the
@@ -609,7 +613,7 @@ public class EOutputStream extends ByteArrayOutputStream {
      */
     public void write_list_head(final int arity) {
 	if (arity == 0) {
-	    write_nil();
+	    write_nil(); // Is this correct?
 	} else {
 	    write1(EExternal.listTag);
 	    write4BE(arity);
@@ -792,6 +796,21 @@ public class EOutputStream extends ByteArrayOutputStream {
 	    }
 	}
     }
+
+	public void write_string(byte[] data, int off, int len) {
+	    if (len <= 65535) { // 8-bit string
+			ensureSpace(1+2+len);
+			raw_write(EExternal.stringTag);
+			raw_write2BE(len);
+			writeN(data, off, len);
+	    } else { // Code as list
+			write_list_head(len);
+			for (int i=off; i<off+len; i++) {
+				write_int(data[i]); // Possible performance improvement?
+			}
+			write_nil();
+	    }
+	}
 
     private boolean is8bitString(final String s) {
 	for (int i = 0; i < s.length(); ++i) {
