@@ -40,5 +40,10 @@ class JavaIterator extends ESeq {
 	public EObject head() {
 		return JavaObject.box(self, head);
 	}
+
+	@Override
+	public int hashCode() {
+		return head.hashCode() + rest.hashCode(); // What to do here? The iterator may be an infinite stream.
+	}
 }
 

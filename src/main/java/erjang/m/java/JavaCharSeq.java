@@ -59,4 +59,10 @@ class JavaCharSeq extends ESeq {
 	public EObject head() {
 		return ERT.box(seq.charAt(pos));
 	}
+
+	@Override
+	public int hashCode() {
+		return seq.hashCode();
+	}
+	//TODO: equality operators
 }

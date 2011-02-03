@@ -394,6 +394,12 @@ public class AbstractInterpreter {
 		}
 
 		public abstract void catchAction(ErlangException e, EObject[] reg);
+
+		@Override
+		public int hashCode() { // Shouldn't be called.
+			return 2;
+		}
+
 	}
 
 	static class CatchExceptionHandler extends ExceptionHandlerStackElement {

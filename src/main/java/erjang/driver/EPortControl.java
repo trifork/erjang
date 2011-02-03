@@ -20,15 +20,20 @@
 package erjang.driver;
 
 import kilim.Pausable;
-import erjang.EObject;
+import erjang.EPseudoTerm;
 
 /**
  * Class internal to the driver subsystem, used for async messages to a port task
  */
-public abstract class EPortControl extends EObject {
+public abstract class EPortControl extends EPseudoTerm {
 
 	public EPortControl testPortControl() {
 		return this;
+	}
+
+	@Override
+	public int hashCode() { // Shouldn't be called.
+		return System.identityHashCode(this);
 	}
 
 	/**

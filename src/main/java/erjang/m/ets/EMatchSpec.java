@@ -1125,6 +1125,10 @@ public class EMatchSpec extends EPseudoTerm {
 		return vals;
 	}
 
+	@Override
+	public int hashCode() {
+		return spec.hashCode();
+	}
 }
 
 class EKeyAbsent extends EPseudoTerm {
@@ -1133,5 +1137,10 @@ class EKeyAbsent extends EPseudoTerm {
 		if (rhs == EMatchSpec.KEY_ABSENT)
 			return 0;
 		return -1;
+	}
+
+	@Override
+	public int hashCode() {
+		return 1;
 	}
 }

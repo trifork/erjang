@@ -63,5 +63,10 @@ class JavaMapIterator extends ESeq {
 		return new ETuple2(JavaObject.box(self, ent.getKey()), 
 						   JavaObject.box(self, ent.getValue()));
 	}
+
+	@Override
+	public int hashCode() {
+		return rest.hashCode(); // What to do here? The iterator may be an infinite stream.
+	}
 }
 

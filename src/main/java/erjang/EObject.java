@@ -289,6 +289,10 @@ public abstract class EObject {
 	public EDouble divide(double rhs) { throw ERT.badarith(this,rhs); }
 	public EInteger irem(int rhs) { throw ERT.badarith(this,rhs); }
 
+	@Override
+	public abstract int hashCode();
+
+	@Override
 	public boolean equals(Object other) {
 		if (other == this) return true;
 		if (other instanceof EObject) {

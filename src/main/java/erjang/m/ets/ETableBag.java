@@ -406,7 +406,11 @@ public class ETableBag extends ETable {
 		private boolean seq_has_more(ISeq ent) {
 			return ent != null && ent != ent.empty();
 		}
-		
+
+		@Override
+		public int hashCode() { // Shouldn't be called.
+			return System.identityHashCode(this);
+		}
 	}
 	
 	

@@ -94,4 +94,10 @@ public class EPair extends ECons {
 		eos.write_any(head);
 		eos.write_any(tail);
 	}
+
+	@Override
+	public int hashCode() {
+		//TODO: use phash() rather than this brittle nonsense:
+		return 31 * head.hashCode() + tail.hashCode();
+	}
 }

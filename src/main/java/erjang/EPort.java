@@ -48,7 +48,14 @@ public abstract class EPort extends EHandle {
 		// TODO: make faster
 		return toString().compareTo(rhs.toString());
 	}
-	
+
+	@Override
+	public int hashCode() {
+		return (10000019 * node.hashCode() +
+				20000003 * id +
+				30000001 * creation);
+	}
+
 	@Override
 	public EPort testPort() {
 		return this;
@@ -96,7 +103,7 @@ public abstract class EPort extends EHandle {
 	
 	@Override
 	public String toString() {
-		return "#Port<" + id + "." + creation + ">";
+		return "#Port<" + id + "." + creation + ">"; //TODO: include node?
 	}
 	
 	@Override

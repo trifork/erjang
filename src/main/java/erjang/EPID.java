@@ -76,6 +76,14 @@ public abstract class EPID extends EHandle {
 		return node().compareTo(op.node());
 	}
 
+	@Override
+	public int hashCode() {
+		return (100000007 * id() +
+				200000033 * serial() +
+				300000007 * creation() +
+				400000009 * node().hashCode());
+	}
+
 	/**
 	 * @param gl
 	 */

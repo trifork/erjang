@@ -56,4 +56,10 @@ public class ECompiledRE extends EPseudoTerm {
 	public EBitString testBitString() {
 		return null;
 	}
+
+	@Override
+	public int hashCode() {
+		return patt.hashCode(); //TODO: Or be compatible with testTuple()?
+	}
+	//TODO: equality operators
 }

@@ -24,4 +24,9 @@ public class MBox extends EPseudoTerm {
 	public EObject get_b(long timeout) {
 		return mbox.getb(timeout);
 	}
+
+	@Override
+	public int hashCode() {
+		return System.identityHashCode(this);
+	}
 }

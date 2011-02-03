@@ -482,4 +482,9 @@ public class EBinMatchState extends EPseudoTerm {
 				(c & ~0x1) != 0xFFFE   && // Second invalid range
 				c < 0x110000);            // Third invalid range
 	}
+
+	@Override
+	public int hashCode() { // Shouldn't be called.
+		return System.identityHashCode(this);
+	}
 }
