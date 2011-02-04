@@ -159,8 +159,8 @@ public class EBinList extends ECons {
 	}
 
 	@Override
-	public EObject head() {
-		return EStringList.little[(data[off] & 0xff)];
+	public ESmall head() {
+		return ESmall.little[(data[off] & 0xff)];
 	}
 
 	@Override

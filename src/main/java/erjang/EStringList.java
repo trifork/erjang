@@ -98,14 +98,8 @@ public class EStringList extends ESeq {
 	final int len;
 	final ESeq tail;
 
-	static final ESmall[] little = new ESmall[256];
-	static {
-		for (int i = 0; i < 256; i++) {
-			little[i] = ERT.box(i);
-		}
-	}
-
 	private EStringList(PrependableBytes bytes, int off, int len, ESeq tail) {
+		assert len>0;
 		this.bytes = bytes;
 		this.off = off;
 		this.len = len;
@@ -160,8 +154,8 @@ public class EStringList extends ESeq {
 	}
 
 	@Override
-	public EObject head() {
-		return little[(bytes.data[off] & 0xff)];
+	public ESmall head() {
+		return ESmall.little[(bytes.data[off] & 0xff)];
 	}
 
 	@Override

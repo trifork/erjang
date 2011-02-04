@@ -325,7 +325,7 @@ public class EString extends ESeq implements CharSequence {
 	 */
 	@Override
 	public ESmall head() {
-		return EStringList.little[(data[off] & 0xff)];
+		return ESmall.little[(data[off] & 0xff)];
 	}
 
 	@Override
