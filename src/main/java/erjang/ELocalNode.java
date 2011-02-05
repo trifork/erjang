@@ -21,6 +21,8 @@ package erjang;
 
 import kilim.Pausable;
 
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * 
@@ -67,25 +69,33 @@ public class ELocalNode extends EAbstractNode {
         refId[2] = 0;
     }
 
+    /** Reference serial counters are valid when low bit of
+     * ref_serial_high is equal to high bit of ref_serial_low. */
+    final static AtomicLong ref_serial_low = new AtomicLong();
+    final static AtomicInteger ref_serial_high = new AtomicInteger();
+    public ERef createRef() {
+	/* This algorithm technically has the flaw that it may break
+	 * if > 2^63 time steps pass between these two reads...
+	 * but I think we can consider that unlikely.
+	 * -- Erik Søe Sørensen */
+	long low = ref_serial_low.incrementAndGet();
+	int high = ref_serial_high.get();
 
-    public synchronized ERef createRef() {
-        final ERef r = new ERef(node, refId, creation);
-
-        // increment ref ids (3 ints: 18 + 32 + 32 bits)
-        refId[0]++;
-        if (refId[0] > 0x3ffff) {
-            refId[0] = 0;
-
-            refId[1]++;
-            if (refId[1] == 0) {
-                refId[2]++;
-            }
-        }
-
-        return r;
-
+	// Check validity:
+	if ((low >>> 63) != (high & 1)) {
+	    // Adjust high:
+	    ref_serial_high.compareAndSet(high, ++high);
+	    // Don't mind if we fail; that just means someone else succeeded.
 	}
-	
+
+	// Pick 18 + 32 + 32 bits:
+	int id1 = (int) (low & ((1 << 18) - 1));
+	int id2 = (int)(low >> 18);
+	int id3 = (int)((low >> (18+32)) | (high << (63-(18+32)))); // 1 bit overlap
+
+	return new ERef(node, id1, id2, id3, creation);
+    }
+
     public synchronized int createPortID() {
         portCount++;
         if (portCount > 0xfffffff) { /* 28 bits */

@@ -61,6 +61,17 @@ public final class ERef extends EObject {
         this.ids[0] &= 0x3ffff; // only 18 significant bits in first number
 	}
 
+	public ERef(EAtom node, int id1, int id2, int id3, int creation) {
+        this.node = node;
+        this.creation = creation & 0x03; // 2 bits
+
+        // use at most 82 bits (18 + 32 + 32)
+        this.ids = new int[3];
+        this.ids[0] = id1 & 0x3ffff; // only 18 significant bits in first number
+        this.ids[1] = id2;
+        this.ids[2] = id3;
+	}
+
 	/**
 	 * @param node
 	 * @param id
