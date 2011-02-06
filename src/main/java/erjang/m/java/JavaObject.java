@@ -66,6 +66,12 @@ public class JavaObject extends EPseudoTerm {
 	}
 
 	@Override
+	public int hashCode() {
+		return real_object.hashCode();
+	}
+	//TODO: equality operators
+
+	@Override
 	public EBinary testBinary() {
 		if (real_object instanceof byte[]) {
 			return new EBinary((byte[]) real_object);

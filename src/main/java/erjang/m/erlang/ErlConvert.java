@@ -83,21 +83,27 @@ public class ErlConvert {
 		EBinary bin = term_to_binary(obj);
 		return ERT.box(bin.byteSize());
 	}
-	
+
 	@BIF static ETuple2 split_binary(EObject bin, EObject idx) {
-		EBinary b;
+		EBitString b;
 		ESmall i;
-		if ((b=bin.testBinary()) == null 
+		if ((b=bin.testBitString()) == null
 			|| ((i=idx.testSmall()) == null)
-			|| i.value < 0 
+			|| i.value < 0
 			|| i.value > b.byteSize()) {
 			throw ERT.badarg(bin);
 		}
-		
-		return new ETuple2(b.sub_binary(0, i.value), 
-				           b.sub_binary(i.value, b.byteSize()-i.value));		
+
+		long split = i.value*8;
+		return new ETuple2(b.substring(0, split),
+						   b.substring(split));
+
+		/* more efficient, but works only for EBinary */
+
+		// return new ETuple2(b.sub_binary(0, i.value), 
+		//    b.sub_binary(i.value, b.byteSize()-i.value));		
 	}
-	
+
 	@BIF
 	public static ESeq fun_to_list(EObject fun) {
 		return EString.fromString(fun.toString());

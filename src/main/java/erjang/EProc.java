@@ -717,4 +717,9 @@ class ETailMarker extends EPseudoTerm {
 			return 0;
 		return -1;
 	}
+
+	@Override
+	public int hashCode() { // Shouldn't be called.
+		return 0;
+	}
 }

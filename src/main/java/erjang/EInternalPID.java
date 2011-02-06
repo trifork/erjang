@@ -171,6 +171,11 @@ public class EInternalPID extends EPID implements ELocalHandle {
 		return rhs==this;
 	}
 
+	@Override
+	public int hashCode() {
+		return System.identityHashCode(this);
+	}
+
 	/**
 	 * @param eTimerTask
 	 */

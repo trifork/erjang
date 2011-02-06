@@ -189,4 +189,17 @@ public abstract class ESeq extends ECons {
 		
 		return r;
 	}
+
+	@Override
+	public int hashCode() {
+		int h = 0;
+		ESeq curr = this;
+		do {
+			h = 31*h + curr.head().hashCode();
+			curr = curr.tail();
+		} while (curr != ERT.NIL);
+
+		return h;
+	}
+
 }

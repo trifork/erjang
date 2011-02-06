@@ -361,5 +361,10 @@ public abstract class ErlangException extends RuntimeException {
 		public ErlangException getException() {
 			return ErlangException.this;
 		}
+
+		@Override
+		public int hashCode() { // Shouldn't be called.
+			return System.identityHashCode(this);
+		}
 	}
 }

@@ -197,8 +197,8 @@ public class ERT {
 		return res;
 	}
 
-	public static ESmall box(int i) {
-		return new ESmall(i);
+	public static ESmall box(int v) {
+		return ESmall.make(v);
 	}
 
 	/**
@@ -214,7 +214,7 @@ public class ERT {
 
 		int intVal = (int) longVal;
 		if (longVal == (long) intVal) {
-			return new ESmall(intVal);
+			return ESmall.make(intVal);
 		} else {
 			return new EBig(longVal);
 		}
@@ -225,7 +225,7 @@ public class ERT {
 		int intVal = (int)longVal;
 		
 		if (intVal == longVal) {
-			return new ESmall(intVal);
+			return ESmall.make(intVal);
 		} else {
 			return new EBig(longVal);
 		}
@@ -256,7 +256,7 @@ public class ERT {
 		if (res.compareTo(INT_MAX_AS_BIG) > 0)
 			return new EBig(res);
 
-		return new ESmall(res.intValue());
+		return ESmall.make(res.intValue());
 	}
 
 	/**
@@ -613,7 +613,7 @@ public class ERT {
 	public static EFun resolve_fun(EObject mod, EObject fun, int arity) {
 		EAtom f = fun.testAtom();
 		if (f == null) {
-			throw ERT.badarg(mod, fun, new ESmall(arity));
+			throw ERT.badarg(mod, fun, ESmall.make(arity));
 		}
 
 		JavaObject jo;
@@ -645,7 +645,7 @@ public class ERT {
 				
 			}
 			
-			throw ERT.badarg(mod, fun, new ESmall(arity));
+			throw ERT.badarg(mod, fun, ESmall.make(arity));
 		}
 		EFun efun = EModuleManager.resolve(new FunID(m, f, arity));
 

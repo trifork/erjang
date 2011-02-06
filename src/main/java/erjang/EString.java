@@ -325,7 +325,7 @@ public class EString extends ESeq implements CharSequence {
 	 */
 	@Override
 	public ESmall head() {
-		return EStringList.little[(data[off] & 0xff)];
+		return ESmall.little[(data[off] & 0xff)];
 	}
 
 	@Override
@@ -534,10 +534,6 @@ public class EString extends ESeq implements CharSequence {
 	@Override
 	public void encode(EOutputStream eos) {
 		eos.write_string(stringValue());
-	}
-
-	public static EString make(EBinary bin, int idx0start, int len) {
-		return new EString(bin.data, bin.byteOffset()+idx0start, len);
 	}
 
 }

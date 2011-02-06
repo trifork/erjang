@@ -132,7 +132,7 @@ public final class ERef extends EObject {
     	// System.err.println("equals "+this+" =:= "+rhs+"  ==> "+val);
     	return val;
 	}
-    
+
     public boolean equals2(final Object o) {
     	
         if (!(o instanceof ERef)) {
@@ -145,6 +145,7 @@ public final class ERef extends EObject {
             return false;
         }
 
+		// TODO: Compare the isNewRef()s ?
         if (isNewRef() && ref.isNewRef()) {
             return ids[0] == ref.ids[0]
                 && ids[1] == ref.ids[1]
@@ -154,7 +155,20 @@ public final class ERef extends EObject {
         return ids[0] == ref.ids[0];
     }
 
-	
+	@Override
+	public int hashCode() {
+		int res =
+			500000003  * node.hashCode() +
+			1000000007 * creation +
+			1500000001 * ids[0];
+		if (isNewRef()) {
+			res +=
+				ids[1] * 250000013 +
+				ids[2] * 750000007;
+		}
+		return res;
+	}
+
 	@Override
 	int cmp_order() {
 		return CMP_ORDER_REFERENCE;

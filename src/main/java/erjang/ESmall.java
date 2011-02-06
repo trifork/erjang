@@ -34,6 +34,16 @@ public final class ESmall extends EInteger {
 	public static final ESmall ONE = new ESmall(1);
 	public final int value;
 
+	final static int PREALLOC_COUNT = 256; // Must be at least 256.
+	static final ESmall[] little = new ESmall[PREALLOC_COUNT];
+	static {
+		for (int i = 0; i < little.length; i++) {
+			little[i] = new ESmall(i);
+		}
+	}
+
+
+	@Override
 	public ESmall testSmall() {
 		return this;
 	}
@@ -168,8 +178,9 @@ public final class ESmall extends EInteger {
 	 * @param arity
 	 * @return
 	 */
-	public static ESmall make(int arity) {
-		return ERT.box(arity);
+	public static ESmall make(int v) {
+		if (v >= 0 && v < PREALLOC_COUNT) return little[v];
+		else return new ESmall(v);
 	}
 
 	//

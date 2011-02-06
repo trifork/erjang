@@ -21,7 +21,7 @@ package erjang;
 import java.nio.ByteBuffer;
 import java.io.IOException;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -37,145 +37,125 @@ import org.objectweb.asm.Type;
  */
 public class EStringList extends ESeq {
 
-	static class Bytes {
-		AtomicReference<EStringList> owner;
+	static class PrependableBytes {
+		AtomicInteger start_pos;
 		byte[] data;
-		int end_pos;
-		
-		Bytes(byte[] data, int end_pos, EStringList owner) {
-			this.owner = new AtomicReference<EStringList>(owner);
-			this.data = data;
-			this.end_pos = end_pos;
+
+		PrependableBytes(int size) {
+			this.data = new byte[size];
+			this.start_pos = new AtomicInteger(data.length);
 		}
-		
-		Bytes take_and_grow(EStringList from, EStringList give_to) {
-			if (owner.compareAndSet(from, give_to)) {
+
+		PrependableBytes(int size, byte v) {
+			this.data = new byte[size];
+			data[size-1] = v;
+			this.start_pos = new AtomicInteger(data.length-1);
+		}
+
+		PrependableBytes(byte[] org, int extra) {
+			this(org, 0, org.length, extra);
+		}
+
+		PrependableBytes(byte[] org, int off, int len, int extra) {
+			this(org.length + extra);
+			System.arraycopy(org,off, data,data.length-len, len);
+		}
+
+		PrependableBytes prepend(int old_start, byte b) {
+			assert (old_start > 0);
+			int new_start = old_start-1;
+			if (start_pos.compareAndSet(old_start, new_start)) {
+				data[new_start] = b;
 				return this;
-			} else {
-				byte[] new_data = new byte[end_pos*2];
-				System.arraycopy(data, 0, new_data, end_pos, end_pos);
-				return new Bytes(new_data, end_pos*2, give_to);
-			}
+			} else return null;
+		}
+
+		boolean prepend2(int old_start, byte b) {
+			assert (old_start > 0);
+			int new_start = old_start-1;
+			if (start_pos.compareAndSet(old_start, new_start)) {
+				data[new_start] = b;
+				return true;
+			} else return false;
+		}
+
+		PrependableBytes prepend(int old_start, byte[] org, int off, int len) {
+			assert (old_start > 0);
+			int new_start = old_start-len;
+			if (start_pos.compareAndSet(old_start, new_start)) {
+				System.arraycopy(org,off, data,new_start, len);
+				return this;
+			} else return null;
 		}
 	}
-	
+
 	/**
 	 * 
 	 */
 	private static final int INITIAL_BUFFER_SIZE = 10;
-	final byte[] data;
+	final PrependableBytes bytes;
 	final int off;
 	final int len;
 	final ESeq tail;
 
-	static final ESmall[] little = new ESmall[256];
-	static {
-		for (int i = 0; i < 256; i++) {
-			little[i] = ERT.box(i);
-		}
-	}
-	
-	// synchronized access
-	/** True if <code>data</code> is shared by other instances of EBinList.
-	 * In that case, we need to copy the data array if we need to grow. */
-	private boolean shared;
-
-	/** create list as sublist of data given */
-	private EStringList(byte[] data, int off, int len, ESeq tail, boolean shared) {
-		
-		assert len != 0;
-		
-		this.data = data;
+	private EStringList(PrependableBytes bytes, int off, int len, ESeq tail) {
+		assert len>0;
+		this.bytes = bytes;
 		this.off = off;
 		this.len = len;
 		this.tail = tail;
-		this.shared = shared;
-
-		assert(tail!=null);
-		if (len < 1 || off + len > data.length)
-			throw ERT.badarg();
-		
 	}
+
 
 	/** create a list with [value|tail], where value is a smallint 0..255 */
 	public EStringList(byte value, ESeq tail) {
-		this.data = new byte[INITIAL_BUFFER_SIZE];
-		this.off = INITIAL_BUFFER_SIZE-1;
-		this.len = 1;
-		this.tail = tail;
-		this.shared = false;
-
-		data[off] = value;
+		this(new PrependableBytes(INITIAL_BUFFER_SIZE, value),
+			 INITIAL_BUFFER_SIZE-1, 1, tail);
 	}
-	
+
+	public EStringList(byte[] header, ESeq tail) {
+		this(new PrependableBytes(header, INITIAL_BUFFER_SIZE),
+			 INITIAL_BUFFER_SIZE, header.length, tail);
+	}
+
 	public ECons testNonEmptyList() {
-		if (len == 0) 
+		if (len == 0)
 			return tail.testNonEmptyList();
 		return this;
 	}
-	
+
 	public ESeq testSeq() {
 		return this;
 	}
 
-
-	/**
-	 * @param header
-	 * @param tail
-	 */
-	public EStringList(byte[] header, ESeq tail) {
-		this(header, 0, header.length, tail, true);
-	}
-
-	/**
-	 * @param header
-	 * @param tail2
-	 */
-	public EStringList(ByteBuffer buf, ESeq tail) {
-		this(buf.array(), buf.arrayOffset()+buf.position(), buf.remaining(), tail, true);
-	}
-
 	@Override
 	public ESeq cons(EObject h) {
-		ESmall sm;
-		byte bvalue;
-		if ((sm = h.testSmall()) != null && (((bvalue = (byte)sm.value) == sm.value))) {
+		ESmall sm = h.testSmall();
+		if (sm != null) {
+			int value = sm.value;
+			if ((value & ~0xff) == 0) { // Fits in a byte
+				if (off==0) return new EStringList((byte)value, this);
 
-			byte[] res_data = data;
-			int res_off = off;
-			int res_len = len + 1;
-
-			synchronized (this) {
-				if (shared || off == 0) {
-					res_data = new byte[len * 2 + 1];
-					System.arraycopy(data, off, res_data, len + 1, len);
-					res_off = len + 1;
+				if (bytes.prepend2(this.off, (byte)value)) {
+					return new EStringList(bytes, off-1, len+1, tail);
 				} else {
-					shared = true;
+					return new EStringList((byte)value, this);
 				}
 			}
-
-			res_data[--res_off] = bvalue;
-			return new EStringList(res_data, res_off, res_len, tail, res_data==data);
-
-		} else {
-			return new EList(h, this);
 		}
+		return new EList(h, this);
 	}
 
 	public EObject drop(int n) {
 		if (n > len) throw new IllegalArgumentException();
 		if (n == len) return tail;
 
-		synchronized (this) {
-			shared = true;
-		}
-		return new EStringList(data, off+n, len-n, tail, true);
+		return new EStringList(bytes, off + n, len - n, tail);
 	}
 
 	@Override
-	public EObject head() {
-		return little[(data[off] & 0xff)];
+	public ESmall head() {
+		return ESmall.little[(bytes.data[off] & 0xff)];
 	}
 
 	@Override
@@ -183,10 +163,10 @@ public class EStringList extends ESeq {
 		if (len == 1)
 			return tail;
 
-		return new EStringList(data, off + 1, len - 1, tail, true);
+		return new EStringList(bytes, off + 1, len - 1, tail);
 	}
 
-	// TODO: Remote this method all together
+	// TODO: Remove this method altogether
 	@Override
 	public boolean isNil() {
 		assert len != 0;
@@ -205,16 +185,16 @@ public class EStringList extends ESeq {
 		if (st == null) {
 			return null;
 		}
-		
+		//TODO: handle stringlist chain more efficiently?
 		byte[] out_bin = new byte[len + st.length()];
-		System.arraycopy(this.data, this.off, out_bin, 0, this.len);
+		System.arraycopy(this.bytes.data, this.off, out_bin, 0, this.len);
 		System.arraycopy(st.data, st.off, out_bin, len, st.length());
 		return new EString(out_bin, 0);
 	}
 
 	private ESeq seq() { return new Seq(); }
-	
-	/**
+
+   /**
 	 * Helper class that looks at this EBinList as a Seq.
 	 */
 	private class Seq extends ESeq {
@@ -225,12 +205,12 @@ public class EStringList extends ESeq {
 
 		@Override
 		public ESeq cons(EObject h) {
-			return EStringList.this.cons(h).testSeq();
+			return EStringList.this.cons(h);
 		}
 
 		@Override
 		public ESeq tail() {
-			return EStringList.this.tail().testSeq();
+			return EStringList.this.tail();
 		}
 
 		@Override
@@ -247,7 +227,7 @@ public class EStringList extends ESeq {
 	private boolean all_printable() {
 		byte val;
 		for (int i = 0; i < len; i++) {
-			val = data[off+i];
+			val = bytes.data[off+i];
 			if (val < ' ' || val >= 127) {
 				return false;
 			}
@@ -264,7 +244,7 @@ public class EStringList extends ESeq {
 		if (tail.isNil() && all_printable()) {
 			StringBuilder sb = new StringBuilder("\"");
 			for (int i = 0; i < len; i++) {
-				byte val = data[off+i];
+				byte val = bytes.data[off+i];
 				sb.append((char)val);
 			}
 			sb.append('"');
@@ -279,7 +259,7 @@ public class EStringList extends ESeq {
 		int max = Math.min(len, 40);
 		for (int i = 0; i < max; i++) {
 			if (i != 0) { sb.append(","); }
-			byte val = data[off+i];
+			byte val = bytes.data[off+i];
 			if (val > ' ' && val < 127) {
 				sb.append('$');
 				sb.append((char)val);
@@ -303,7 +283,7 @@ public class EStringList extends ESeq {
 	
 	@Override
 	public boolean collectIOList(List<ByteBuffer> out) {
-		out.add(ByteBuffer.wrap(data, off, len));
+		out.add(ByteBuffer.wrap(bytes.data, off, len)); //?
 		return tail.collectIOList(out);
 	}
 
@@ -314,7 +294,7 @@ public class EStringList extends ESeq {
 		IOException
 	{
 		try {
-			out.addBinary(data, off, len);
+			out.addBinary(bytes.data, off, len);
 		} catch (CharCollector.PartialDecodingException e) {
 			throw new CharCollector.CollectingException(drop(e.inputPos - off));
 		}
@@ -328,11 +308,15 @@ public class EStringList extends ESeq {
 
 	@Override
 	public void encode(EOutputStream eos) {
-		eos.write_list_head(len);
-		for (int i = 0; i < len; i++) {
-			eos.write_int(data[off+i]);
+		if (tail.isNil()) {
+			eos.write_string(bytes.data, off, len);
+		} else { //TODO: Check whether tail is EString or EStringList
+			eos.write_list_head(len);
+			for (int i = 0; i < len; i++) {
+				eos.write_int(bytes.data[off+i]);
+			}
+			eos.write_any(tail);
 		}
-		eos.write_any(tail);
 	}
 	
 	public static EStringList fromString(String c, ESeq tail) {
@@ -354,7 +338,7 @@ public class EStringList extends ESeq {
 
 		char[] ch = new char[len];
 		for (int i = 0; i < len; i++) {
-			ch[i] = (char)(0xff & (int)data[off+i]);
+			ch[i] = (char)(0xff & (int)bytes.data[off+i]);
 		}
 		
 		fa.visitLdcInsn(new String(ch));

@@ -64,7 +64,19 @@ public class EBinList extends ECons {
 		assert(tail!=null);
 		if (len < 1 || off + len > data.length)
 			throw ERT.badarg();
-		
+	}
+
+	@Override
+	public int hashCode() {
+		ESeq seq;
+		if ((seq=testSeq()) != null) return seq.hashCode();
+
+		//TODO: use phash() rather than this brittle nonsense:
+		int h = 0;
+		for (int i=off; i<off+len; i++) {
+			h = 31*h + data[i];
+		}
+		return h + tail.hashCode();
 	}
 
 	/** create a list with [value|tail], where value is a smallint 0..255 */
@@ -147,8 +159,8 @@ public class EBinList extends ECons {
 	}
 
 	@Override
-	public EObject head() {
-		return EStringList.little[(data[off] & 0xff)];
+	public ESmall head() {
+		return ESmall.little[(data[off] & 0xff)];
 	}
 
 	@Override
