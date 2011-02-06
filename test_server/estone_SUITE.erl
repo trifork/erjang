@@ -86,7 +86,7 @@ estone(Config) when is_list(Config) ->
     ?line {Total, Stones} = sum_micros(L, 0, 0),
     ?line pp(Mhz,Total,Stones,L),
     ?line {comment,Mhz ++ " MHz, " ++ 
-	   integer_to_list(Stones) ++ " ESTONES"}.
+	   lists:flatten(io_lib:format("~.2f", [Stones])) ++ " ESTONES"}.
 
 %%
 %% Calculate CPU speed
@@ -146,7 +146,7 @@ pp(Mhz,Total,Stones,Ms) ->
     io:format("EStone test completed~n",[]),
     io:format("**** CPU speed ~s MHz ****~n",[Mhz]),
     io:format("**** Total time ~w seconds ****~n", [Total / 1000000]),
-    io:format("**** ESTONES = ~w ****~n~n", [Stones]),
+    io:format("**** ESTONES = ~.2f ****~n~n", [Stones]),
     io:format("~-31s      ~-12s  ~-10s   %    ~-10s ~n~n",
 	      ["    Title", "Millis", "Estone", "Loops"]),
     erlang:display({'ESTONES', Stones}),
@@ -158,9 +158,9 @@ sum_micros([H|T], Tot, Sto) ->
 
 pp2([]) ->   ok;
 pp2([R|Tail]) ->
-    io:format("~-35s  ~-12w    ~-10w   ~-2w    ~-10w ~n",
+    io:format("~-35s  ~12.2f    ~10.2f   ~2b    ~10b ~n",
 	      [ks(title,R), 
-	       round(ks(microsecs, R) / 1000), 
+	       ks(microsecs, R) / 1000, 
 	       ks(estones, R),
 	       ks(weight_percentage, R),
 	       ks(loops, R)]),
@@ -352,10 +352,10 @@ apply_micro(M) ->
      {weight_percentage, M#micro.weight},
      {loops, M#micro.loops},
      {microsecs,MicroSecs},
-     {estones, (M#micro.weight * M#micro.weight * ?STONEFACTOR) div MicroSecs},
+     {estones, (M#micro.weight * M#micro.weight * ?STONEFACTOR) / MicroSecs},
      {gcs, GC1 - GC0},
-     {kilo_word_reclaimed, (Words1 - Words0) div 1000},
-     {kilo_reductions, Reds div 1000},
+     {kilo_word_reclaimed, (Words1 - Words0) / 1000},
+     {kilo_reductions, Reds / 1000},
      {gc_intensity, gci(Elapsed, GC1 - GC0, Words1 - Words0)}].
 
 

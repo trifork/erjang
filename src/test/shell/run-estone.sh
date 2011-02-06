@@ -20,9 +20,9 @@ function error() {
 echo "Compiling estone..." >&2
 (export DIR="$ESTONE_DIR" ; "$EJ_EXE" -noshell -noinput -eval 'Dir=os:getenv("DIR"), Opts=[{i,Dir},{outdir,Dir},nowarn_unused_vars], [{ok,_} = c:c(filename:join(Dir,Mod++".erl"), Opts) || Mod <- ["ts","estone_SUITE"]], erlang:halt().') || error "Compiling EStone failed"
 
-# Run the EStone suite 5 times:
+# Run the EStone suite 8 times:
 echo "Running estone..." >&2
-"$EJ_EXE" -pa "$ESTONE_DIR" -noinput -noshell -eval "[ts:run(estone) || _ <- [1,2,3,4,5]], erlang:halt()." > "$RAW_OUTPUT_FILE" || error "Running EStone failed"
+"$EJ_EXE" -pa "$ESTONE_DIR" -noinput -noshell -eval "[ts:run(estone) || _ <- [1,2,3,4,5,6,7,8]], erlang:halt()." > "$RAW_OUTPUT_FILE" || error "Running EStone failed"
 
 cat "$RAW_OUTPUT_FILE" | perl -Wne '
 BEGIN{
@@ -53,7 +53,7 @@ BEGIN{
   open(RELOUT,">&3");
 }
 
-if (/^\{[\"\x27]([^\"\x27]*)[\"\x27],(\d+)\}$/) {
+if (/^\{[\"\x27]([^\"\x27]*)[\"\x27],([\d.]+)\}$/) {
   $numbers{$1} = [] unless exists($numbers{$1});
   push(@{$numbers{$1}}, $2);
 #  print "$1: $2\n";
@@ -68,17 +68,27 @@ my (@keys, @values, @rel_keys, @rel_values);
 sub add_kv {
   my ($k,$v) = @_;
   push(@keys, "\"$k\"");
-  push(@values, $v);
+  push(@values, sprintf("%.2f", $v));
   if (exists $reference_numbers{$k}) {
     push(@rel_keys, "\"$k\"");
     push(@rel_values, sprintf("%6.3f", 100*($v/$reference_numbers{$k})));
   }
 }
 
+sub remove_extremes {
+  my ($d) = (@_);
+  if (scalar @{$d} > 3) {
+    # Throw away the extremes:
+    @{$d}=sort @{$d};
+    shift @{$d}; pop @{$d};
+  }
+}
+
 END{
   { # EStones totals:
     my ($d1,$d2,@d) = @{$numbers{"ESTONES"}};
-    my $hotavg = int(0.5 + avg(@d));
+    remove_extremes(\@d);
+    my $hotavg = avg(@d);
       # Three data points: first, second, and average-of-rest run.
       add_kv("EStones - first iteration",  $d1);
       add_kv("EStones - second iteration", $d2);
@@ -88,7 +98,8 @@ END{
   for my $k (sort keys %numbers) {
     next if ($k eq "ESTONES");
     my ($d1,$d2,@d) = @{$numbers{$k}};
-    my $hotavg = int(0.5 + avg(@d));
+    remove_extremes(\@d);
+    my $hotavg = avg(@d);
     add_kv($k, $hotavg);
   }
 
