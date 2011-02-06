@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.TimeZone;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import kilim.Pausable;
 import kilim.Task;
@@ -1016,13 +1017,11 @@ public class ErlBif {
 	}
 
 	@BIF(name = "now")
-	
 	static public ETuple3 now() {
-
-		long now = System.currentTimeMillis();
-		long megas = now / 1000000000;
-		long secs = ((now % 1000000000) / 1000);
-		long micros = (now % 1000) * 1000;
+		long now = now_micros();
+		int micros = (int)(now % 1000000); now /= 1000000;
+		int secs   = (int)(now % 1000000); now /= 1000000;
+		int megas  = (int)now;
 
 		ETuple3 res = new ETuple3();
 
@@ -1030,9 +1029,28 @@ public class ErlBif {
 		res.elem2 = ERT.box(secs);
 		res.elem3 = ERT.box(micros);
 
-		//System.out.println("now() => "+res);
-		
 		return res;
+	}
+
+	final static AtomicLong latest_now = new AtomicLong();
+	final static long micros_from_epoch_to_nanotime =
+		System.currentTimeMillis() * 1000 - System.nanoTime() / 1000;
+
+	static long now_micros() {
+		/* now() must fulfill:
+		 * - Any return value approximates the current time.
+		 * - The return values are strictly increasing (and thus unique).
+		 * We ensure the latter by (a) always increasing latest_now,
+		 * (b) always returning what we set it to.
+		 */
+		long micros = System.nanoTime() / 1000 + micros_from_epoch_to_nanotime;
+		long prev;
+		while ((prev = latest_now.get()) < micros) {
+			if (latest_now.compareAndSet(prev,micros)) {
+				return micros;
+			}
+		}
+		return latest_now.incrementAndGet();
 	}
 
 	// tests
