@@ -93,6 +93,10 @@ import erjang.m.erlang.ErlBif;
  */
 public class CompilerVisitor implements ModuleVisitor, Opcodes {
 	public static boolean PARANOIA_MODE = false;
+	
+	// a select ins with up to this many cases that are all
+	// atom values is just encoded as an if-then-else-etc.
+	public static final int ATOM_SELECT_IF_ELSE_LIMIT = 4;
 
 	ECons atts = ERT.NIL;
 	private Set<String> exported = new HashSet<String>();
@@ -2551,6 +2555,34 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					mv.visitLookupSwitchInsn(getLabel(failLabel), ivals, label);
 					return;
 				}
+
+				if (values.length < ATOM_SELECT_IF_ELSE_LIMIT) {
+					boolean all_atoms = true;
+					for (int i = 0; i < values.length; i++) {
+						if (!(values[i].value instanceof EAtom)) {
+							all_atoms = false;
+							break;
+						}
+					}
+				
+					if (all_atoms) {
+						
+						for (int i = 0; i < values.length; i++) {
+
+							push(in, in.type);
+							push(values[i], values[i].type);
+							mv.visitJumpInsn(IF_ACMPEQ, getLabel(targets[i]));
+
+						}
+						
+						mv.visitJumpInsn(GOTO, getLabel(failLabel));
+						
+						return;
+					}
+				
+
+				}
+				
 
 				class Case implements Comparable<Case> {
 
