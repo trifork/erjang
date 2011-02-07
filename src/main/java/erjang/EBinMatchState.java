@@ -221,18 +221,9 @@ public class EBinMatchState extends EPseudoTerm {
 		}
 
 		if (size <= 32) {
-			int value = bin.intBitsAt(offset, size);
-			if (little_endian) {
-				int i1 = (value >>> 24) & 0xff;
-				int i2 = (value >>> 16) & 0xff;
-				int i3 = (value >>> 8) & 0xff;
-				int i4 = value & 0xff;
-				
-				value = i4 << 24;
-				value |= i3 << 16;
-				value |= i2 << 8;
-				value |= i1;
-			}
+			int value = little_endian
+				? bin.intLittleEndianBitsAt(offset, size)
+				: bin.intBitsAt(offset, size);
 			if (signed) {
 				value = EBitString.signExtend(value, size);
 			}
@@ -242,10 +233,9 @@ public class EBinMatchState extends EPseudoTerm {
 		}
 
 		if (size <= 64) {
-			long value = bin.longBitsAt(offset, size);
-			if (little_endian) {
-				throw new Error("little endian not supported: " + flags);
-			}
+			long value = little_endian
+				? bin.longLittleEndianBitsAt(offset, size)
+				: bin.longBitsAt(offset, size);
 
 			if (signed) {
 				value = EBitString.signExtend(value, size);
