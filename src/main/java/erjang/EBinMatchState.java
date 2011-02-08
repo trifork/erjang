@@ -25,6 +25,8 @@ import java.nio.ByteOrder;
  * but in a very controlled fashion. */
 public class EBinMatchState extends EPseudoTerm {
 
+	public static final BigInteger TWO_TO_64 = BigInteger.ONE.shiftLeft(64);
+
 	public EBinMatchState testBinMatchState() {
 		return this;
 	}
@@ -197,7 +199,7 @@ public class EBinMatchState extends EPseudoTerm {
 		}
 		
 		return null;
-}
+	}
 		
 	public EInteger bs_get_integer2(int size, int unit, int flags) {
 
@@ -224,11 +226,14 @@ public class EBinMatchState extends EPseudoTerm {
 			int value = little_endian
 				? bin.intLittleEndianBitsAt(offset, size)
 				: bin.intBitsAt(offset, size);
+			offset += size;
+
 			if (signed) {
 				value = EBitString.signExtend(value, size);
+			} else if (value < 0) { // Uh oh - not representable in an int
+				return new EBig(value & 0xFFFFffffL);
 			}
 			ESmall res = new ESmall(value);
-			offset += size;
 			return res;
 		}
 
@@ -236,53 +241,68 @@ public class EBinMatchState extends EPseudoTerm {
 			long value = little_endian
 				? bin.longLittleEndianBitsAt(offset, size)
 				: bin.longBitsAt(offset, size);
+			offset += size;
 
 			if (signed) {
 				value = EBitString.signExtend(value, size);
+			} else if (value < 0) { // Uh oh - not representable in a long
+				BigInteger big = BigInteger.valueOf(value).add(TWO_TO_64);
+				return new EBig(big);
 			}
 			EInteger res = ERT.box(value);
-			offset += size;
 			return res;
 		}
 
 		byte[] data;
 		int extra_in_front = (size%8);
+		int bytes_needed, out_offset;
 		if (extra_in_front != 0) {
-			int bytes_needed = size/8 + 1;
-			data = new byte[bytes_needed];
-			int out_offset = 0;
+			out_offset = 0;
+			bytes_needed = size/8 + 1;
+		} else {
+			// if signed, the MSB of data[0] is the sign.
+			// if unsigned, but a 0-byte in front to make it unsiged
+			out_offset = signed ? 0 : 1;
+			bytes_needed = size/8 + out_offset;
+		}
+		data = new byte[bytes_needed];
 
-			data[0] = (byte) bin.intBitsAt(offset, extra_in_front);
+		long read_offset;
+		if (little_endian) {
+			read_offset = offset + size;
+		} else {
+			read_offset = offset;
+		}
+
+		if (extra_in_front != 0) { // Read the partial byte
+			if (little_endian) {
+				read_offset -= extra_in_front;
+				data[0] = (byte) bin.intBitsAt(read_offset, extra_in_front);
+			} else {
+				data[0] = (byte) bin.intBitsAt(read_offset, extra_in_front);
+				read_offset += extra_in_front;
+			}
 			out_offset = 1;
-			offset += extra_in_front;
-			
+
 			if (signed) {
 				// in this case, sign extend the extra bits to 8 bits
 				data[0] = (byte) ( 0xff & EBitString.signExtend(data[0], extra_in_front) );
 			}
-
-			for (int i = 0; i < size/8; i++) {
-				data[out_offset+i] = (byte) bin.intBitsAt(offset, 8);
-				offset += 8;
-			}
-			
-		} else {
-
-			// if signed, the MSB of data[0] is the sign.
-			// if unsigned, but a 0-byte in front to make it unsiged
-			
-			int bytes_needed = size/8 + (signed ? 0 : 1);
-			data = new byte[bytes_needed];
-			int out_offset = signed ? 0 : 1;
-
-			for (int i = 0; i < size/8; i++) {
-				data[out_offset+i] = (byte) bin.intBitsAt(offset, 8);
-				offset += 8;
-			}
-			
 		}
-		
-		
+
+		if (little_endian) {
+			for (int i = 0; i < size/8; i++) {
+				read_offset -= 8;
+				data[out_offset+i] = (byte) bin.intBitsAt(read_offset, 8);
+			}
+		} else {
+			for (int i = 0; i < size/8; i++) {
+				data[out_offset+i] = (byte) bin.intBitsAt(read_offset, 8);
+				read_offset += 8;
+			}
+		}
+
+		offset += size;
 		BigInteger bi = new BigInteger(data);
 		return ERT.box(bi);
 	}
