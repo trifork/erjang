@@ -25,8 +25,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import com.trifork.clj_ds.IPersistentSet;
+import com.trifork.clj_ds.PersistentHashSet;
 
 import erjang.m.erlang.ErlProc;
 
@@ -51,7 +55,9 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 	 */
 	public abstract H self_handle();
 
-	protected Set<EHandle> links = new ConcurrentSkipListSet<EHandle>(EObject.ERLANG_ORDERING);
+	private AtomicReference<PersistentHashSet<EHandle>> 
+		linksref = new AtomicReference<PersistentHashSet<EHandle>>(PersistentHashSet.EMPTY);
+
 	protected Map<ERef,EHandle> monitors = new ConcurrentHashMap<ERef, EHandle>();
 
 	public void unlink(EHandle other) throws Pausable {
@@ -60,7 +66,22 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 	}
 	
 	public void unlink_oneway(EHandle handle) {
-		links.remove(handle);
+		PersistentHashSet old, links;
+		try {
+
+			do {
+				old = linksref.get();
+				links = (PersistentHashSet) old.disjoin(handle);
+			} while (!linksref.weakCompareAndSet(old, links));
+
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}		
+	}
+	
+	protected boolean has_no_links() {
+		IPersistentSet<EHandle> links = linksref.get();
+		return links.count() == 0;
 	}
 	
 	/**
@@ -81,12 +102,33 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 		// TODO: check if h is valid.
 		
 		if (h.exists()) {
-			links.add(h);
+
+			PersistentHashSet old, links;
+			try {
+				
+				do {
+					old = linksref.get();
+					links = (PersistentHashSet) old.cons(h);
+				} while (!linksref.weakCompareAndSet(old, links));
+				
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}		
+
 			return true;
 		} else {
 			return false;
 		}
 	}
+
+	public ESeq links() {
+		ESeq res = ERT.NIL;
+		for (EHandle h : linksref.get()) {
+			res = res.cons(h);
+		}
+		return res;
+	}
+
 
 	/**
 	 * @param h
@@ -99,11 +141,12 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 		throw new ErlangError(ERT.am_noproc);
 	}
 
+	@SuppressWarnings("unchecked")
 	protected void do_proc_termination(EObject exit_reason) throws Pausable {
 		this.exit_reason = exit_reason;
 		H me = self_handle();
 		EAtom name = me.name;
-		for (EHandle handle : links) {
+		for (EHandle handle : linksref.get()) {
 			try {
 			handle.exit_signal(me, exit_reason, false);
 			} catch (Error e) {
@@ -272,7 +315,7 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 		
 		// make sure we don't also send him an exit signal
 		if (!is_erlang_exit2)
-			links.remove(from);
+			unlink_oneway(from);
 
 		synchronized (this) {
 			switch (pstate) {

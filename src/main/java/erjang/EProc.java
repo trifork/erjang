@@ -474,7 +474,7 @@ public final class EProc extends ETask<EInternalPID> {
 				this.pstate = STATE_DONE;
 			}
 			
-			if (result != am_normal && monitors.isEmpty() && links.isEmpty() && !(death instanceof ErlangExitSignal)) {
+			if (result != am_normal && monitors.isEmpty() && has_no_links() && !(death instanceof ErlangExitSignal)) {
 					
 					EFun fun = EModuleManager.resolve(new FunID(am_error_logger, am_info_report, 1));
 					
@@ -527,17 +527,6 @@ public final class EProc extends ETask<EInternalPID> {
 			res = res.cons(new ETuple2(am_registered_name, reg_name));
 		
 		if (res == ERT.NIL) return ERT.am_undefined;
-		return res;
-	}
-
-	/**
-	 * @return
-	 */
-	private ESeq links() {
-		ESeq res = ERT.NIL;
-		for (EHandle h : super.links) {
-			res = res.cons(h);
-		}
 		return res;
 	}
 

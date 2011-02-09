@@ -797,15 +797,7 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 		}
 		
 		throw new NotImplemented("port_info(" + spec + ")");
-		
-	}
-
-	private ESeq links() {
-		ESeq res = ERT.NIL;
-		for (EHandle h : super.links) {
-			res = res.cons(h);
-		}
-		return res;
+	 
 	}
 
 	public void exit(final EObject reason) {
