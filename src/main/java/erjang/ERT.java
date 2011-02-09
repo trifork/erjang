@@ -320,10 +320,12 @@ public class ERT {
 	protected static final EAtom am_new = EAtom.intern("new");
 
 	public static EBitStringBuilder bs_init(int size, int flags) {
+		if (size<0) throw ERT.badarg();
 		return new EBitStringBuilder(size, flags);
 	}
 
 	public static EBitStringBuilder bs_initBits(int size, int flags) {
+		if (size<0) throw ERT.badarg();
 		return new EBitStringBuilder(size/8, size%8, flags);
 	}
 
