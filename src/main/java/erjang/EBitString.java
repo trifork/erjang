@@ -265,12 +265,14 @@ public class EBitString extends EObject {
 		if (bitOff < 0 || bitOff + bit_len > bitSize()) {
 			throw new IllegalArgumentException("offset out of range");
 		}
-		
+
+		bitOff += byteOffset() * 8;
+
 		int out_full_bytes = (int) (bit_len/8);
 		int extra = (int) (bit_len%8);
 		if (0 == (bitOff % 8)) {
 			return EBitString.make(data,
-					byteOffset() + (int)(bitOff/8),
+					(int)(bitOff/8),
 					out_full_bytes, extra);
 		}
 		
@@ -281,7 +283,7 @@ public class EBitString extends EObject {
 		}
 		if (extra != 0) {
 			res[(int) out_full_bytes] =
-				(byte) (intBitsAt(bitOff + bit_len - extra, extra) << (7-extra));
+				(byte) (intBitsAt(bitOff + bit_len - extra, extra) << (8-extra));
 		}
 		return EBitString.make(res, 0, (int) out_full_bytes, extra);
 	}
@@ -330,7 +332,6 @@ public class EBitString extends EObject {
 
 			bitLength -= len;
 			bitPos += len;
-
 		}
 
 		assert ((bitPos & 0x07) == 0);
@@ -354,7 +355,7 @@ public class EBitString extends EObject {
 			int len = bitLength;
 
 			// the byte
-			int val = 0x0ff & (int) data[(int) (bitPos >> 3)];
+			int val = 0x0ff & (int) data[pos];
 			res <<= bitLength;
 			res |= val >> (8 - len);
 

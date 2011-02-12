@@ -277,7 +277,7 @@ public class EBinMatchState extends EPseudoTerm {
 		if (extra_in_front != 0) { // Read the partial byte
 			if (little_endian) {
 				read_offset -= extra_in_front;
-				data[0] = (byte) bin.intBitsAt(read_offset, extra_in_front);
+				data[0] = (byte) bin.intLittleEndianBitsAt(read_offset, extra_in_front);
 			} else {
 				data[0] = (byte) bin.intBitsAt(read_offset, extra_in_front);
 				read_offset += extra_in_front;
