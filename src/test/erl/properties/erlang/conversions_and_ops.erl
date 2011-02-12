@@ -174,8 +174,8 @@ program_tree(integer) ->
 	   {unop, fun erlang:'byte_size'/1,  smaller_tree(binary)},
 	   {unop, fun erlang:'bit_size'/1,   smaller_tree(binary)},
 	   {unop, fun erlang:'iolist_size'/1,smaller_tree(oneof([list,binary]))},
-	   {unop, fun erlang:'crc32'/1,      smaller_tree(binary)},
-	   {unop, fun erlang:'adler32'/1,    smaller_tree(binary)},
+%NotImplemented:	   {unop, fun erlang:'crc32'/1,      smaller_tree(binary)},
+%NotImplemented:	   {unop, fun erlang:'adler32'/1,    smaller_tree(binary)},
 
 	   {binop, oneof([fun erlang:'+'/2,
 			  fun erlang:'-'/2,
@@ -234,9 +234,9 @@ program_tree(tuple) ->
     oneof([{literal, tuple(any())},
 	   {unop, fun erlang:list_to_tuple/1, smaller_tree(list)},
 	   {binop, fun erlang:'make_tuple'/2,
-	    smaller_tree(integer), smaller_tree(term)},
-	   {binop, fun erlang:'append_element'/2,
-	    smaller_tree(tuple), smaller_tree(term)}
+	    smaller_tree(integer), smaller_tree(term)}%,
+%NotImplemented:	   {binop, fun erlang:'append_element'/2,
+%	    smaller_tree(tuple), smaller_tree(term)}
 	   ]);
 program_tree(list) ->
     oneof([{literal, list(any())},
@@ -257,7 +257,7 @@ program_tree(binary) ->
 	   {unop, fun erlang:term_to_binary/1,  smaller_tree(term)},
 	   {unop, fun erlang:list_to_binary/1,  smaller_tree(list)},
 	   {unop, fun erlang:atom_to_binary/1,  smaller_tree(atom)},
-	   {unop, fun lists:iolist_to_binary/1, smaller_tree(iolist)},
+%NotImplemented:	   {unop, fun lists:iolist_to_binary/1, smaller_tree(iolist)},
 	   {unop, fun erlang:'md5'/1,           smaller_tree(iolist)}
 		 ])]);
 %% Type unions:
