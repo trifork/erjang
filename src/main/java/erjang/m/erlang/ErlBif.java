@@ -283,9 +283,12 @@ public class ErlBif {
 	}
 
 	@BIF
-	
-	static public EString integer_to_list(EObject num) {
-		return new EString(num.toString());
+	static public EString integer_to_list(EObject obj) {
+		EInteger num;
+		if ((num = obj.testInteger()) != null) {
+			return new EString(num.toString());
+		}
+		throw ERT.badarg(obj);
 	}
 
 	@BIF
@@ -1438,7 +1441,7 @@ public class ErlBif {
 	@BIF
 	public static ETuple make_tuple(EObject arity, EObject initial) {
 		ESmall sm = arity.testSmall();
-		if (sm == null) throw ERT.badarg(arity, initial);
+		if (sm == null || sm.value < 0) throw ERT.badarg(arity, initial);
 		ETuple et = ETuple.make(sm.value);
 		for (int i = 1; i <= sm.value; i++) {
 			et.set(i, initial);
