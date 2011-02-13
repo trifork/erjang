@@ -470,7 +470,7 @@ public class ErlBif {
 	static public EObject element(EObject idx, EObject tup) {
 		ESmall i = idx.testSmall();
 		ETuple t = tup.testTuple();
-		if (i == null || t == null || i.value > t.arity()) {
+		if (i == null || t == null || i.value < 1 || i.value > t.arity()) {
 			throw ERT.badarg(idx, tup);
 		}
 
