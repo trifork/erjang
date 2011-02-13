@@ -189,7 +189,7 @@ public abstract class ECons extends EObject {
 			if ((binary = head.testBinary()) != null) {
 				binary.collectIOList(out);
 			} else if ((sublist = head.testNonEmptyList()) != null) {
-				sublist.collectIOList(out);
+				if (!sublist.collectIOList(out)) return false;
 			} else if (head.isNil()) {
 				// do nothing //
 			} else {
