@@ -1521,19 +1521,18 @@ public class ErlBif {
 
 	@BIF
 	public static EAtom or(EObject o1, EObject o2) {
-		if (o1==ERT.TRUE) {
-			if (o2==ERT.TRUE || o2==ERT.FALSE) return ERT.TRUE;
-		} else if (o2==ERT.TRUE) {
-			if (o1==ERT.FALSE) return ERT.TRUE;
-		} else if (o1 == ERT.FALSE && o2 == ERT.FALSE) {
-			return ERT.FALSE;
-		}
-		throw ERT.badarg(o1, o2);
+		Boolean b1 = ERT.asBoolean(o1);
+		Boolean b2 = ERT.asBoolean(o2);
+		if (b1==null || b2==null) throw ERT.badarg(o1,o2);
+		return ERT.box(b1.booleanValue() || b2.booleanValue());
 	}
 
 	@BIF
-	public static EAtom and(EObject o1, EObject e2) {
-		return ERT.box((o1 == ERT.TRUE) && (e2 == ERT.TRUE));
+	public static EAtom and(EObject o1, EObject o2) {
+		Boolean b1 = ERT.asBoolean(o1);
+		Boolean b2 = ERT.asBoolean(o2);
+		if (b1==null || b2==null) throw ERT.badarg(o1,o2);
+		return ERT.box(b1.booleanValue() && b2.booleanValue());
 	}
 
 	@BIF(type = Type.GUARD, name = "or")
