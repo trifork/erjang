@@ -309,7 +309,7 @@ public class ErlBif {
 			ESeq s = EString.make(list);
 			return ERT.loopkup_pid(s);
 		}
-		throw ERT.badarg();
+		throw ERT.badarg(obj);
 	}
 
 	@BIF
@@ -319,7 +319,7 @@ public class ErlBif {
 		if ((pid = obj.testPID()) != null) {
 			return pid.getName();
 		}
-		throw ERT.badarg();
+		throw ERT.badarg(obj);
 	}
 
 	@BIF
@@ -329,7 +329,7 @@ public class ErlBif {
 		if ((port = obj.testPort()) != null) {
 			return port.getName();
 		}
-		throw ERT.badarg();
+		throw ERT.badarg(obj);
 	}
 
 	@BIF
@@ -339,7 +339,7 @@ public class ErlBif {
 		if ((value = obj.testFloat()) != null) {
 			return value.to_list();
 		}
-		throw ERT.badarg();
+		throw ERT.badarg(obj);
 	}
 
 	@BIF
@@ -737,7 +737,7 @@ public class ErlBif {
 		if ((n1 = v1.testNumber()) != null) {
 			return n1.negate();
 		}
-		throw ERT.badarg();
+		throw ERT.badarg(v1);
 	}
 
 	@BIF(name = "-", type=Type.GUARD)
@@ -902,7 +902,7 @@ public class ErlBif {
 		if ((n1 = v1.testFloat()) != null) {
 			return trunc(n1.value);
 		}
-		throw ERT.badarg();
+		throw ERT.badarg(v1);
 	}
 
 	@BIF
@@ -1092,7 +1092,7 @@ public class ErlBif {
 		{
 			EBinary b;
 			if ((b = o.testBinary()) == null)
-				throw ERT.badarg();
+				throw ERT.badarg(o);
 			
 			return ERT.box(b.byteSize());
 		}
@@ -1270,7 +1270,7 @@ public class ErlBif {
 	public static EString atom_to_list(EObject atom) {
 		EAtom am = atom.testAtom();
 		if (am == null)
-			throw ERT.badarg();
+			throw ERT.badarg(atom);
 		return new EString(am.getName());
 	}
 
@@ -1417,7 +1417,7 @@ public class ErlBif {
 	@BIF
 	public static ETuple2 load_module(EProc proc, EAtom mod, EBinary bin) {
 		if (mod == null || bin == null)
-			throw ERT.badarg();
+			throw ERT.badarg(mod, bin);
 
 		try {
 			ERT.load_module(mod, bin);
@@ -1473,7 +1473,7 @@ public class ErlBif {
 	public static ESmall tuple_size(EObject tup) {
 		ETuple t;
 		if ((t = tup.testTuple()) == null)
-			throw ERT.badarg();
+			throw ERT.badarg(tup);
 		return ERT.box(t.arity());
 	}
 
@@ -1489,7 +1489,7 @@ public class ErlBif {
 	public static ESmall byte_size(EObject o) {
 		EBitString bin = o.testBitString();
 		if (bin == null)
-			throw ERT.badarg();
+			throw ERT.badarg(o);
 		return ERT.box(bin.totalByteSize());
 	}
 
@@ -1506,7 +1506,7 @@ public class ErlBif {
 	public static EInteger bit_size(EObject o) {
 		EBitString bin = o.testBitString();
 		if (bin == null)
-			throw ERT.badarg();
+			throw ERT.badarg(o);
 		return ERT.box(bin.bitSize());
 	}
 
