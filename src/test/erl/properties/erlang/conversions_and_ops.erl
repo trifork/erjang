@@ -243,12 +243,12 @@ program_tree(list) ->
 	   oneof([
            {unop, fun erlang:binary_to_list/1,  smaller_tree(binary)},
 	   {unop, fun erlang:integer_to_list/1, smaller_tree(integer)},
-	   {unop, fun erlang:float_to_list/1,   smaller_tree(float)},
+%Erlang version isn't too reliable on last digits   {unop, fun erlang:float_to_list/1,   smaller_tree(float)},
 	   {unop, fun erlang:tuple_to_list/1,   smaller_tree(tuple)},
 	   {unop, fun lists:flatten/1,          smaller_tree(list)},
 	   {binop, oneof([fun erlang:'++'/2, fun erlang:'--'/2]),
 	    smaller_tree(list), smaller_tree(list)},
-	   {binop, fun erlang:integer_to_list/1,
+	   {binop, fun erlang:integer_to_list/2,
 	    smaller_tree(integer), smaller_tree(integer)}
 	   ])]);
 program_tree(binary) ->
@@ -256,7 +256,7 @@ program_tree(binary) ->
 	   oneof([
 	   {unop, fun erlang:term_to_binary/1,  smaller_tree(term)},
 	   {unop, fun erlang:list_to_binary/1,  smaller_tree(list)},
-	   {unop, fun erlang:atom_to_binary/1,  smaller_tree(atom)},
+%NotImplemented:	   {unop, fun erlang:atom_to_binary/1,  smaller_tree(atom)},
 %NotImplemented:	   {unop, fun lists:iolist_to_binary/1, smaller_tree(iolist)},
 	   {unop, fun erlang:'md5'/1,           smaller_tree(iolist)}
 		 ])]);
@@ -264,7 +264,7 @@ program_tree(binary) ->
 program_tree(number) ->
     smaller_tree(oneof([integer, float]));
 program_tree(iolist) ->
-    oneof([list(int()),
+    oneof([{literal, list(int())},
 	   smaller_tree(binary),
 	   [smaller_tree(iolist) | smaller_tree(iolist)]
 	  ]);
@@ -286,7 +286,7 @@ eval_catch_early(T) ->
 	case T of
 	    {literal, V} -> V;
 	    {unop, F, A} -> F(eval_catch_early(A));
-	    {unop, F, A, B} -> F(eval_catch_early(A), eval_catch_early(B))
+	    {binop, F, A, B} -> F(eval_catch_early(A), eval_catch_early(B))
 	end
     catch Cls:Reason ->
 	    {'exception', Cls, Reason, hd(erlang:get_stacktrace())}
