@@ -89,7 +89,6 @@ public class EString extends ESeq implements CharSequence {
 
 		} else if (list.isNil()) {
 			return EString.EMPTY;
-
 		} else {
 			ByteArrayOutputStream barr = new ByteArrayOutputStream();
 
@@ -354,7 +353,7 @@ public class EString extends ESeq implements CharSequence {
 	@Override
 	int compare_same(EObject rhs) {
 		if (rhs.isNil())
-			return 1;
+			return isNil()? 0 : 1;
 
 		int length = length();
 
@@ -377,7 +376,6 @@ public class EString extends ESeq implements CharSequence {
 			if (length < length2)
 				return -1;
 			return 0;
-
 		}
 
 		ECons rseq;

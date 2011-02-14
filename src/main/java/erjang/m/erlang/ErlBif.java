@@ -283,9 +283,12 @@ public class ErlBif {
 	}
 
 	@BIF
-	
-	static public EString integer_to_list(EObject num) {
-		return new EString(num.toString());
+	static public EString integer_to_list(EObject obj) {
+		EInteger num;
+		if ((num = obj.testInteger()) != null) {
+			return new EString(num.toString());
+		}
+		throw ERT.badarg(obj);
 	}
 
 	@BIF
@@ -306,7 +309,7 @@ public class ErlBif {
 			ESeq s = EString.make(list);
 			return ERT.loopkup_pid(s);
 		}
-		throw ERT.badarg();
+		throw ERT.badarg(obj);
 	}
 
 	@BIF
@@ -316,7 +319,7 @@ public class ErlBif {
 		if ((pid = obj.testPID()) != null) {
 			return pid.getName();
 		}
-		throw ERT.badarg();
+		throw ERT.badarg(obj);
 	}
 
 	@BIF
@@ -326,7 +329,7 @@ public class ErlBif {
 		if ((port = obj.testPort()) != null) {
 			return port.getName();
 		}
-		throw ERT.badarg();
+		throw ERT.badarg(obj);
 	}
 
 	@BIF
@@ -336,7 +339,7 @@ public class ErlBif {
 		if ((value = obj.testFloat()) != null) {
 			return value.to_list();
 		}
-		throw ERT.badarg();
+		throw ERT.badarg(obj);
 	}
 
 	@BIF
@@ -470,7 +473,7 @@ public class ErlBif {
 	static public EObject element(EObject idx, EObject tup) {
 		ESmall i = idx.testSmall();
 		ETuple t = tup.testTuple();
-		if (i == null || t == null || i.value > t.arity()) {
+		if (i == null || t == null || i.value < 1 || i.value > t.arity()) {
 			throw ERT.badarg(idx, tup);
 		}
 
@@ -734,7 +737,7 @@ public class ErlBif {
 		if ((n1 = v1.testNumber()) != null) {
 			return n1.negate();
 		}
-		throw ERT.badarg();
+		throw ERT.badarg(v1);
 	}
 
 	@BIF(name = "-", type=Type.GUARD)
@@ -899,7 +902,7 @@ public class ErlBif {
 		if ((n1 = v1.testFloat()) != null) {
 			return trunc(n1.value);
 		}
-		throw ERT.badarg();
+		throw ERT.badarg(v1);
 	}
 
 	@BIF
@@ -1089,7 +1092,7 @@ public class ErlBif {
 		{
 			EBinary b;
 			if ((b = o.testBinary()) == null)
-				throw ERT.badarg();
+				throw ERT.badarg(o);
 			
 			return ERT.box(b.byteSize());
 		}
@@ -1267,7 +1270,7 @@ public class ErlBif {
 	public static EString atom_to_list(EObject atom) {
 		EAtom am = atom.testAtom();
 		if (am == null)
-			throw ERT.badarg();
+			throw ERT.badarg(atom);
 		return new EString(am.getName());
 	}
 
@@ -1414,7 +1417,7 @@ public class ErlBif {
 	@BIF
 	public static ETuple2 load_module(EProc proc, EAtom mod, EBinary bin) {
 		if (mod == null || bin == null)
-			throw ERT.badarg();
+			throw ERT.badarg(mod, bin);
 
 		try {
 			ERT.load_module(mod, bin);
@@ -1438,7 +1441,7 @@ public class ErlBif {
 	@BIF
 	public static ETuple make_tuple(EObject arity, EObject initial) {
 		ESmall sm = arity.testSmall();
-		if (sm == null) throw ERT.badarg(arity, initial);
+		if (sm == null || sm.value < 0) throw ERT.badarg(arity, initial);
 		ETuple et = ETuple.make(sm.value);
 		for (int i = 1; i <= sm.value; i++) {
 			et.set(i, initial);
@@ -1470,7 +1473,7 @@ public class ErlBif {
 	public static ESmall tuple_size(EObject tup) {
 		ETuple t;
 		if ((t = tup.testTuple()) == null)
-			throw ERT.badarg();
+			throw ERT.badarg(tup);
 		return ERT.box(t.arity());
 	}
 
@@ -1486,7 +1489,7 @@ public class ErlBif {
 	public static ESmall byte_size(EObject o) {
 		EBitString bin = o.testBitString();
 		if (bin == null)
-			throw ERT.badarg();
+			throw ERT.badarg(o);
 		return ERT.box(bin.totalByteSize());
 	}
 
@@ -1503,7 +1506,7 @@ public class ErlBif {
 	public static EInteger bit_size(EObject o) {
 		EBitString bin = o.testBitString();
 		if (bin == null)
-			throw ERT.badarg();
+			throw ERT.badarg(o);
 		return ERT.box(bin.bitSize());
 	}
 
@@ -1518,19 +1521,18 @@ public class ErlBif {
 
 	@BIF
 	public static EAtom or(EObject o1, EObject o2) {
-		if (o1==ERT.TRUE) {
-			if (o2==ERT.TRUE || o2==ERT.FALSE) return ERT.TRUE;
-		} else if (o2==ERT.TRUE) {
-			if (o1==ERT.FALSE) return ERT.TRUE;
-		} else if (o1 == ERT.FALSE && o2 == ERT.FALSE) {
-			return ERT.FALSE;
-		}
-		throw ERT.badarg(o1, o2);
+		Boolean b1 = ERT.asBoolean(o1);
+		Boolean b2 = ERT.asBoolean(o2);
+		if (b1==null || b2==null) throw ERT.badarg(o1,o2);
+		return ERT.box(b1.booleanValue() || b2.booleanValue());
 	}
 
 	@BIF
-	public static EAtom and(EObject o1, EObject e2) {
-		return ERT.box((o1 == ERT.TRUE) && (e2 == ERT.TRUE));
+	public static EAtom and(EObject o1, EObject o2) {
+		Boolean b1 = ERT.asBoolean(o1);
+		Boolean b2 = ERT.asBoolean(o2);
+		if (b1==null || b2==null) throw ERT.badarg(o1,o2);
+		return ERT.box(b1.booleanValue() && b2.booleanValue());
 	}
 
 	@BIF(type = Type.GUARD, name = "or")

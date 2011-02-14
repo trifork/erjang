@@ -265,12 +265,14 @@ public class EBitString extends EObject {
 		if (bitOff < 0 || bitOff + bit_len > bitSize()) {
 			throw new IllegalArgumentException("offset out of range");
 		}
-		
+
+		bitOff += byteOffset() * 8;
+
 		int out_full_bytes = (int) (bit_len/8);
 		int extra = (int) (bit_len%8);
 		if (0 == (bitOff % 8)) {
 			return EBitString.make(data,
-					byteOffset() + (int)(bitOff/8),
+					(int)(bitOff/8),
 					out_full_bytes, extra);
 		}
 		
@@ -281,7 +283,7 @@ public class EBitString extends EObject {
 		}
 		if (extra != 0) {
 			res[(int) out_full_bytes] =
-				(byte) (intBitsAt(bitOff + bit_len - extra, extra) << (7-extra));
+				(byte) (intBitsAt(bitOff + bit_len - extra, extra) << (8-extra));
 		}
 		return EBitString.make(res, 0, (int) out_full_bytes, extra);
 	}
@@ -330,7 +332,6 @@ public class EBitString extends EObject {
 
 			bitLength -= len;
 			bitPos += len;
-
 		}
 
 		assert ((bitPos & 0x07) == 0);
@@ -354,7 +355,7 @@ public class EBitString extends EObject {
 			int len = bitLength;
 
 			// the byte
-			int val = 0x0ff & (int) data[(int) (bitPos >> 3)];
+			int val = 0x0ff & (int) data[pos];
 			res <<= bitLength;
 			res |= val >> (8 - len);
 
@@ -442,6 +443,10 @@ public class EBitString extends EObject {
 	 * @see http://www-graphics.stanford.edu/~seander/bithacks.html#VariableSignExtend
 	 * */
 	static int signExtend(int val, int bits) {
+		// Simpler (but slower?):
+		// int nonbits = 32-bits;
+		// return (val << nonbits) >> nonbits;
+		if (bits==32) return val;
 		int r;      // resulting sign-extended number
 		int m = 1 << (bits - 1); // mask can be pre-computed if b is fixed
 
@@ -452,6 +457,10 @@ public class EBitString extends EObject {
 	}
 	
 	static long signExtend(long val, int bits) {
+		// Simpler (but slower?):
+		// int nonbits = 64-bits;
+		// return (val << nonbits) >> nonbits;
+		if (bits==64) return val;
 		long r;      // resulting sign-extended number
 		long m = 1 << (bits - 1); // mask can be pre-computed if b is fixed
 
@@ -566,7 +575,7 @@ public class EBitString extends EObject {
 			int len = 8 - (int)(bitPos & 0x07);
 
 			// the byte
-			int val = 0x0ff & (int) data[(int) (bitPos >> 3)];
+			int val =  data[(int) (bitPos >> 3)] & 0x0ff;
 			res = val & ((1 << len) - 1);
 
 			// are we looking for less that len bits?
@@ -584,8 +593,8 @@ public class EBitString extends EObject {
 
 		// we're getting bytes
 		int pos = (int) (bitPos >> 3);
-		while (bitLength > 7) {
-			res |= (data[pos++] & 0x0ff) << res_offset;
+		while (bitLength >= 8) {
+			res |= ((long)(data[pos++] & 0x0ff)) << res_offset;
 
 			res_offset += 8;
 			bitPos += 8;
@@ -602,8 +611,8 @@ public class EBitString extends EObject {
 			int len = bitLength;
 
 			// the byte
-			int val = 0x0ff & (int) data[(int) (bitPos >> 3)];
-			res |= (val >> (8 - len)) << res_offset;
+			int val = data[pos] & 0x0ff;
+			res |= (long)(val >> (8 - len)) << res_offset;
 
 			res_offset += len;
 			bitLength -= len;

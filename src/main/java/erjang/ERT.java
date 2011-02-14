@@ -494,7 +494,9 @@ public class ERT {
 		//System.out.println(""+proc+" :: "+pid+" ! "+msg);
 
 		EHandle p;
-		if ((p = pid.testHandle()) != null) {
+		EAtom name;
+		if ((p = pid.testHandle()) != null ||
+			((name=pid.testAtom()) != null && (p = register.get(name)) != null)) {
 			proc.reds += p.send(proc.self_handle(), msg);
 			if (proc.reds > 1000) {
 				proc.reds = 0;
@@ -503,7 +505,6 @@ public class ERT {
 			return msg;
 		}
 
-		EAtom name;
 		ETuple tup;
 		EAtom node;
 		if ((tup=pid.testTuple()) != null 
@@ -525,18 +526,6 @@ public class ERT {
 				} else {				
 					return peer.dsig_reg_send(proc.self_handle(), name, msg);
 				}
-			}
-		}
-
-		if ((name=pid.testAtom()) != null) {
-			p = register.get(name);
-			if (p != null) {
-				proc.reds += p.send(proc.self_handle(), msg);
-				if (proc.reds > 1000) {
-					proc.reds = 0;
-					Task.yield();
-				}
-				return msg;
 			}
 		}
 
@@ -930,10 +919,6 @@ public class ERT {
 		return i.intValue();
 	}
 
-	public static double unboxToDouble(EInteger i) {
-		return i.doubleValue();
-	}
-
 	public static int unboxToInt(EObject i) {
 		ESmall ii;
 		if ((ii = i.testSmall()) == null)
@@ -943,6 +928,10 @@ public class ERT {
 
 	public static int unboxToInt(ENumber i) {
 		return i.intValue();
+	}
+
+	public static double unboxToDouble(EInteger i) {
+		return i.doubleValue();
 	}
 
 	public static double unboxToDouble(ENumber i) {
@@ -958,6 +947,12 @@ public class ERT {
 
 	public static double unboxToDouble(int i) {
 		return i;
+	}
+
+	public static Boolean asBoolean(EObject obj) {
+		if (obj == ERT.TRUE) return true;
+		if (obj == ERT.FALSE) return false;
+		return null;
 	}
 
 	public static void check_exit(EProc p) {
