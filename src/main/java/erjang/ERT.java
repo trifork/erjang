@@ -342,8 +342,13 @@ public class ERT {
 	}
 
 	public static void test_fun(EObject orig, EFun fun) {
-		if (fun == null)
-			throw new ErlangError(am_badfun, orig);
+		if (fun == null) {
+			if ((orig.testFunction()) != null) {
+				throw new ErlangError(new ETuple2(am_badarity, new ETuple2(orig, NIL)));
+			} else {
+				throw new ErlangError(am_badfun, orig);
+			}
+		}
 	}
 	
 	static EInteger max_send_time = ERT.box(4294967295L);
@@ -779,6 +784,7 @@ public class ERT {
 	public static EAtom am_attributes = EAtom.intern("attributes");
 	public static EAtom am_exports = EAtom.intern("exports");
 	public static EAtom am_badfun = EAtom.intern("badfun");
+	public static EAtom am_badarity = EAtom.intern("badarity");
 
 	public static EAtom am_name = EAtom.intern("name");
 	public static EAtom am_arity = EAtom.intern("arity");
