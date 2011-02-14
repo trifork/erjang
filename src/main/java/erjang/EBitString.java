@@ -462,7 +462,7 @@ public class EBitString extends EObject {
 		// return (val << nonbits) >> nonbits;
 		if (bits==64) return val;
 		long r;      // resulting sign-extended number
-		long m = 1 << (bits - 1); // mask can be pre-computed if b is fixed
+		long m = 1L << (bits - 1); // mask can be pre-computed if b is fixed
 
 		// val = val & ((1 << bits) - 1);  // (Skip this if bits in x above position b are already zero.)
 		r = (val ^ m) - m;
