@@ -11,6 +11,7 @@ run([Platform, Module]) ->
 run(Platform, Module, TimeoutSecs) ->
     TimeoutMillis = TimeoutSecs * 1000,
     Self = self(),
+    Module:module_info(), % ensure module is loaded
     spawn(?MODULE, test_process, [Module, Self]),
     Result = receive R -> R after TimeoutMillis -> timeout end,
     report(Platform, Result).
