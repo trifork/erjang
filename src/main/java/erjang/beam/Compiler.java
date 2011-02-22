@@ -48,9 +48,9 @@ import erjang.EObject;
 import erjang.ERT;
 import erjang.ETuple;
 import erjang.beam.analysis.BeamTypeAnalysis;
+import erjang.ErjangCodeCache;
 
 import erjang.beam.loader.ErjangBeamDisLoader;
-import erjang.util.Progress;
 
 public class Compiler implements Opcodes {
 	private ClassRepo classRepo;
@@ -66,7 +66,6 @@ public class Compiler implements Opcodes {
 	}
 
 	public static void compile(BeamFileData data, ClassRepo repo) throws IOException {
-		
 		// reset thread-local data 
 		ClassWeaver.reset();
 		
@@ -152,7 +151,6 @@ public class Compiler implements Opcodes {
 		@Override
 		public ArrayList<String> getSuperClasses(String cc)
 				throws ClassMirrorNotFoundException {
-			
 			Matcher m = FUN.matcher(cc);
 			if (m.matches()) {
 				int arity = Integer.parseInt(m.group(1));
@@ -173,7 +171,7 @@ public class Compiler implements Opcodes {
 				String desc) {
 
 			// System.out.println("status? "+className+"#"+methodName+""+desc);
-			
+
 			if (className.startsWith(CompilerVisitor.ETUPLE_NAME)) {
 				return Detector.METHOD_NOT_PAUSABLE;
 			}
@@ -228,7 +226,7 @@ public class Compiler implements Opcodes {
 				int idx0 = args[i].lastIndexOf(File.separator);
 
 				String shortName = args[i].substring(idx0 + 1, idx);
-				File out = new File(out_dir, moduleJarFileName(shortName, crcFile(in)));
+				File out = new File(out_dir, ErjangCodeCache.moduleJarFileName(shortName, crcFile(in))); // TODO: don't use the code cache location.
 				JarClassRepo jcp = new JarClassRepo(out);
 
 				System.out.println("compiling " + in + " -> " + out + " ...");
@@ -254,89 +252,4 @@ public class Compiler implements Opcodes {
 			cis.close();
 		}
 	}
-
-	public static File compile(String name, EBinary beam_data, BeamLoader beam_parser) throws IOException {
-
-		Progress.activity("loading "+name+"...");
-		
-		long crc = beam_data.crc();
-		
-//		crc ^= BIFUtil.all_bif_hash();
-
-		File jarFile = new File(erjdir(), moduleJarFileName(name, crc));
-
-		if (!jarFile.exists()) {
-			File jarFile2 = new File(erjdir(), moduleJarBackupFileName(name, crc));
-
-			JarClassRepo repo = new JarClassRepo(jarFile2);
-
-			try {
-				compile(beam_parser.load(beam_data.getByteArray()), repo);
-
-				repo.close();
-				repo = null;
-			} finally {
-				if (repo != null) {
-					try {repo.close();
-					 // jarFile.delete();
-					} catch (Exception e) {}
-				}
-			}
-			
-			jarFile2.renameTo(jarFile);
-			
-		}
-
-		Progress.done();
-		
-		return jarFile;
-	}
-
-	static File erjdir() throws IOException {
-		
-		String ERJ_CACHE_DIR = System.getenv("ERJ_CACHE_DIR");
-		
-		File home = new File(ERJ_CACHE_DIR == null ? System.getProperty("user.home") : ERJ_CACHE_DIR);
-		
-		File dir = new File(home, ".erjang");
-		if (!dir.exists()) {
-			if (!dir.mkdirs())
-				throw new IOException("cannot create " + dir);
-
-		} else if (!dir.canWrite()) {
-			throw new IOException("cannot write to " + dir);
-		}
-
-		return dir;
-	}
-
-	static String moduleJarFileName(String moduleName, long crc) {
-		return moduleFileName(moduleName, crc, "jar");
-	}
-	static String moduleJarBackupFileName(String moduleName, long crc) {
-		return moduleFileName(moduleName, crc, "ja#");
-	}
-
-	static String moduleFileName(String moduleName, long crc, String extension) {
-		return mangle(moduleName)
-			+ "-" + Long.toHexString(crc)
-			+ "." + extension;
-	}
-
-	/** Mangle string so that the result contains only [a-z0-9_$]. */
-	static String mangle(String s) {
-		// TODO: Faster handling of the normal case.
-		StringBuffer sb = new StringBuffer();
-		for (int i=0; i<s.length(); i++) {
-			char c = s.charAt(i);
-			if (('a' <= c && c <= 'z') ||
-				('0' <= c && c <= '9') ||
-				c == '_')
-				sb.append(c);
-			else
-				sb.append('$').append(Integer.toHexString(c)).append('$');
-		}
-		return sb.toString();
-	}
-
 }
