@@ -37,8 +37,8 @@ class TypeMap {
 	private static Type[] NO_TYPES = new Type[0];
 	private static IPersistentMap NO_XTYPES = PersistentHashMap.EMPTY;
 	
-	private IPersistentMap xregs;
-	private Type[] yregs, fregs;
+	private final IPersistentMap xregs;
+	private final Type[] yregs, fregs;
 	final int stacksize; // number of y-regs
 
 	final BasicBlock bb;
@@ -295,7 +295,8 @@ class TypeMap {
 			return null;
 	}
 
-	public TypeMap setx(int reg, Type t) {
+	public TypeMap setx(int reg, Type t, XRegMarker marker) {
+	        marker.mark_xreg_as_used(reg);
 		bb.kill_x(reg);
 
 		if (eq(getx(reg), t))
@@ -434,4 +435,8 @@ class TypeMap {
 		}
 		return max + 1;
 	}
+
+    interface XRegMarker {
+	void mark_xreg_as_used(int reg);
+    }
 }
