@@ -442,6 +442,15 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 	public EBinary module_md5;
 
+	private static final String SEQ_CONS_SIG = "(" + EOBJECT_DESC + ")"
+		+ ESEQ_DESC;
+	private static final String FUNC_INFO_SIG = "(" + EATOM_DESC + EATOM_DESC + ESEQ_DESC +")"
+		+ EOBJECT_DESC;
+	private static final String ERT_CONS_SIG = "(" + EOBJECT_DESC + EOBJECT_DESC + ")"
+		+ ECONS_TYPE.getDescriptor();
+	private static final String TEST_FUN_SIG ="(" + EOBJECT_DESC + EFUN_DESCRIPTOR + ")V";
+
+
 	class ASMFunctionAdapter implements FunctionVisitor2 {
 		private final EAtom fun_name;
 		private final int arity;
@@ -1772,9 +1781,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				case put_list:
 					push(in[0], EOBJECT_TYPE);
 					push(in[1], EOBJECT_TYPE);
-					mv.visitMethodInsn(INVOKESTATIC, ERT_NAME, "cons", "("
-							+ EOBJECT_DESC + EOBJECT_DESC + ")"
-							+ ECONS_TYPE.getDescriptor());
+					mv.visitMethodInsn(INVOKESTATIC, ERT_NAME, "cons", ERT_CONS_SIG);
 					pop(out, ECONS_TYPE);
 					return;
 				case call_fun: {
@@ -1791,7 +1798,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					
 					mv.visitInsn(DUP_X1);
 					
-					mv.visitMethodInsn(INVOKESTATIC, ERT_NAME, "test_fun", "(" + EOBJECT_DESC + EFUN_DESCRIPTOR + ")V");
+					mv.visitMethodInsn(INVOKESTATIC, ERT_NAME, "test_fun", TEST_FUN_SIG);
 
 					mv.visitVarInsn(ALOAD, 0); // load proc
 					for (int i = 0; i < nargs; i++) {
@@ -2062,13 +2069,10 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					push_immediate(ERT.NIL, ENIL_TYPE);
 					for (int i=f.arity-1; i>=0; i--) {
 						push(new Arg(Kind.X, i), EOBJECT_TYPE);
-						mv.visitMethodInsn(INVOKEVIRTUAL, ESEQ_NAME, "cons", "("
-										   + EOBJECT_DESC + ")"
-										   + ESEQ_DESC);
+						mv.visitMethodInsn(INVOKEVIRTUAL, ESEQ_NAME, "cons", SEQ_CONS_SIG);
 					}
 
-					mv.visitMethodInsn(INVOKESTATIC, ERT_NAME, "func_info", "("
-							+ EATOM_DESC + EATOM_DESC + ESEQ_DESC +")" + EOBJECT_DESC);
+					mv.visitMethodInsn(INVOKESTATIC, ERT_NAME, "func_info", FUNC_INFO_SIG);
 					mv.visitInsn(ARETURN);
 					return;
 				}//switch
