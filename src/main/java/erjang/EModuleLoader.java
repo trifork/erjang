@@ -25,6 +25,8 @@ import erjang.beam.EUtil;
 
 import erjang.beam.loader.ErjangBeamDisLoader;
 
+import erjang.util.Progress;
+
 import java.util.List;
 import java.util.ArrayList;
 
@@ -47,7 +49,7 @@ import java.net.URL;
  *  - Module creation: From beam representation to executable module (EModule).
  */
 class EModuleLoader {
-	public static final boolean DEBUG_MODULE_LOAD = false;
+	public static final boolean DEBUG_MODULE_LOAD = ErjangConfig.getBoolean("erjang.debug.load");
 
 	final static BeamLoader beamParser = new ErjangBeamDisLoader();
 
@@ -69,20 +71,20 @@ class EModuleLoader {
 	public static EModule load_module(String moduleName, EBinary beamBin) throws IOException {
 		// This is where the module creation mode is selected.
 		boolean use_interpreter = ErjangConfig.getBoolean("erjang.beam.option.i");
-
 		long before = System.currentTimeMillis();
 		long after;
+
 		EModule loaded_module;
+		Progress.activity("loading "+moduleName+"...");
 		if (use_interpreter) {
 			BeamFileData bfd = beamParser.load(beamBin.toByteArray());
 			loaded_module = erjang.beam.interpreter.Interpreter.beamFileToEModule(bfd);
 			after = System.currentTimeMillis();
 		} else { // Use compiler
-			File jarFile = Compiler.compile(moduleName, beamBin, beamParser);
+			EModuleClassLoader moduleClassLoader = ErjangCodeCache.getModuleClassLoader(moduleName, beamBin, beamParser);
 			after = System.currentTimeMillis();
-			loaded_module = load_compiled_module(moduleName, jarFile.toURI().toURL());
+			loaded_module = load_compiled_module(moduleName, moduleClassLoader);
 		}
-
 		if (DEBUG_MODULE_LOAD) {
 			long after_load = System.currentTimeMillis();
 			System.err.print("[");
@@ -95,7 +97,8 @@ class EModuleLoader {
 			else
 				acc_load += (after_load-after);
 			System.err.println("("+acc_load+")");
-		}
+		Progress.done();
+ 		}
 
 		return loaded_module;
 	}
@@ -137,15 +140,14 @@ class EModuleLoader {
 	/*==================== MODULE CREATION STEP ====================*/
 
 	@SuppressWarnings("unchecked")
-	public static EModule load_compiled_module(String mod, URL jarUrl) {
+	public static EModule load_compiled_module(String mod, EModuleClassLoader loader) {
 
 		if (DEBUG_MODULE_LOAD) {
- 			System.err.println("EML| load_compiled_module: "+mod+" @ "+jarUrl);
+ 			System.err.println("EML| load_compiled_module: "+mod+" @ "+loader);
 		}
 		
 		String internalName = erjang.beam.Compiler.moduleClassName(mod);
 		String java_name = internalName.replace('/', '.');
-		EModuleClassLoader loader = new EModuleClassLoader(jarUrl);
 		Class<? extends EModule> clazz;
 		try {
 			clazz = (Class<? extends EModule>) loader.loadClass(java_name);

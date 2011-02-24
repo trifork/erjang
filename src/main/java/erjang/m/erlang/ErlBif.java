@@ -33,6 +33,7 @@ import java.util.TimeZone;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicStampedReference;
 
 import kilim.Pausable;
 import kilim.Task;
@@ -262,24 +263,52 @@ public class ErlBif {
 		return proc.self_handle();
 	}
 
+    private static final AtomicStampedReference<ETuple> cachedDate = new AtomicStampedReference(null, 0);
+	static final int MILLIS_PER_MINUTE = 60 * 1000;
+
 	@BIF
 	static public ETuple date() {
+		// Calculating the date using GregorianCalendar is rather slow, so we cache.
+		// As stamp, we use 'midnight at the end of the day', in minutes since Epoch.
+	    long millis = System.currentTimeMillis();
+	    int curMinutes = (int)(millis / MILLIS_PER_MINUTE);
+		int[] cacheValidUntilMinutes = new int[1];
+		ETuple cachedResult = cachedDate.get(cacheValidUntilMinutes);
+		if (curMinutes < cacheValidUntilMinutes[0]  && cachedResult != null) { // Still valid
+			return cachedResult;
+		}
+
+		// Cache is invalid.
+		// Calculate the current date:
 		GregorianCalendar cal = new GregorianCalendar();
 		int year = cal.get(Calendar.YEAR);
 		int month = cal.get(Calendar.MONTH)+1;
 		int day = cal.get(Calendar.DAY_OF_MONTH);
-		
-		return ETuple.make(ERT.box(year), ERT.box(month), ERT.box(day));
+
+		ETuple result = ETuple.make(ERT.box(year), ERT.box(month), ERT.box(day));
+
+		// Calculate valid-until, i.e. next midnight:
+		cal.add(Calendar.DAY_OF_YEAR, 1);
+		cal.set(Calendar.HOUR, 0);
+		cal.set(Calendar.MINUTE, 0);
+		cal.set(Calendar.SECOND, 0);
+		cal.set(Calendar.MILLISECOND, 0);
+		int newValidUntilMinutes =  (int)(cal.getTime().getTime() / MILLIS_PER_MINUTE);
+		// Update cache (or try to):
+		cachedDate.weakCompareAndSet(cachedResult, result,
+									 cacheValidUntilMinutes[0], newValidUntilMinutes);
+
+		return result;
 	}
 
 	@BIF
 	static public ETuple time() {
 		GregorianCalendar cal = new GregorianCalendar();
-		int year = cal.get(Calendar.HOUR_OF_DAY);
-		int month = cal.get(Calendar.MINUTE);
-		int day = cal.get(Calendar.SECOND);
+		int hour   = cal.get(Calendar.HOUR_OF_DAY);
+		int minute = cal.get(Calendar.MINUTE);
+		int second = cal.get(Calendar.SECOND);
 		
-		return ETuple.make(ERT.box(year), ERT.box(month), ERT.box(day));
+		return ETuple.make(ERT.box(hour), ERT.box(minute), ERT.box(second));
 	}
 
 	@BIF

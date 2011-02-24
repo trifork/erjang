@@ -32,11 +32,6 @@ import java.util.TreeSet;
 
 import org.objectweb.asm.Type;
 
-import com.trifork.clj_ds.IPersistentCollection;
-import com.trifork.clj_ds.IPersistentSet;
-import com.trifork.clj_ds.PersistentHashSet;
-import com.trifork.clj_ds.PersistentTreeSet;
-
 import erjang.EAtom;
 import erjang.EBig;
 import erjang.EBinMatchState;
@@ -137,7 +132,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 		return f;
 	}
 
-	class FV extends FunctionAdapter implements BeamFunction {
+	class FV extends FunctionAdapter implements BeamFunction, TypeMap.XRegMarker {
 
 		BasicBlock makeBasicBlock(int label, int index) {
 			assert ((label & 0xffff) == label);
@@ -213,7 +208,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 		public int max_stack;
 
-		public Set<Integer> all_xregs = PersistentHashSet.EMPTY;
+		public HashSet<Integer> all_xregs = new HashSet();
 
 		public int max_freg;
 
@@ -228,11 +223,6 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 		@Override
 		public void visitEnd() {
-
-			if (this.name.getName().equals("load")) {
-				dump();
-			}
-
 			LabeledBlock lb = lbs.get(startLabel);
 			lb.merge_from(this.make_initial());
 
@@ -343,7 +333,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 		private TypeMap make_initial() {
 			TypeMap res = new TypeMap(makeBasicBlock(startLabel, 0));
 			for (int i = 0; i < arity; i++) {
-				res = res.setx(i, EOBJECT_TYPE);
+				res = res.setx(i, EOBJECT_TYPE, this);
 			}
 			return res;
 		}
@@ -379,7 +369,23 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 			return extLabel;
 		}
 
-		class LabeledBlock implements BlockVisitor, BeamCodeBlock {
+		public void mark_xreg_as_used(int reg) {
+			all_xregs.add(reg);
+		}
+
+		private void update_max_regs(TypeMap current) {
+			max_stack = Math.max(max_stack, current.stacksize);
+			max_freg  = Math.max(max_freg, current.max_freg());
+
+			/* As for the X registers, we wish to track their usage
+			 * individually (rather than just the number of the
+			 * highest one used).
+			 * This set could be updated here, but it is far more
+			 * efficient to do it elsewhere - see TypeMap.setx().
+			 */
+		}
+
+	    class LabeledBlock implements BlockVisitor, BeamCodeBlock {
 
 			private final int block_label;
 			TypeMap initial;
@@ -1488,7 +1494,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 					case send: {
 						current.touchx(0, 2);
-						current = current.setx(0, current.getx(1));
+						current = current.setx(0, current.getx(1), FV.this);
 						continue next_insn;
 					}
 
@@ -1720,9 +1726,9 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						Insn.Y insn = (Insn.Y) insn_;
 						getType(current, insn.y);
 						current = current.popExceptionHandler();
-						current = current.setx(0, EATOM_TYPE); // exc.class
-						current = current.setx(1, EOBJECT_TYPE); // value/reason
-						current = current.setx(2, EOBJECT_TYPE); // exc.object
+						current = current.setx(0, EATOM_TYPE, FV.this); // exc.class
+						current = current.setx(1, EOBJECT_TYPE, FV.this); // value/reason
+						current = current.setx(2, EOBJECT_TYPE, FV.this); // exc.object
 						continue next_insn;
 					}
 
@@ -1746,14 +1752,14 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 					case catch_end: {
 						current = current.popExceptionHandler();
-						current = current.setx(0, EOBJECT_TYPE); // value
+						current = current.setx(0, EOBJECT_TYPE, FV.this); // value
 						continue next_insn;
 					}
 
 					case make_fun2: {
 						Insn.F insn = (Insn.F) insn_;
 						current.touchx(0, insn.anon_fun.free_vars);
-						current = current.setx(0, EFUN_TYPE);
+						current = current.setx(0, EFUN_TYPE, FV.this);
 						continue next_insn;
 					}
 
@@ -1766,7 +1772,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 					case remove_message:
 						// assume this insn overrides X0
-						// current = current.setx(0, EOBJECT_TYPE);
+						// current = current.setx(0, EOBJECT_TYPE, FV.this);
 						continue next_insn;
 
 					case loop_rec_end:
@@ -1878,7 +1884,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						Insn.I insn = (Insn.I) insn_;
 						int argCount = insn.i1;
 						current.touchx(0, argCount);
-						current = current.setx(0, EOBJECT_TYPE);
+						current = current.setx(0, EOBJECT_TYPE, FV.this);
 						continue next_insn;
 					}
 
@@ -1918,7 +1924,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					case bs_context_to_binary: {
 						Insn.D insn = (Insn.D) insn_;
 						checkArg(current, insn.dest);
-						current = current.setx(0, EBINARY_TYPE);
+						current = current.setx(0, EBINARY_TYPE, FV.this);
 						continue next_insn;
 					}
 
@@ -2006,7 +2012,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 							if (current.getx(i) == null)
 								throw new Error("uninitialized x" + i);
 						}
-						current = current.setx(0, EOBJECT_TYPE);
+						current = current.setx(0, EOBJECT_TYPE, FV.this);
 						continue next_insn;
 					}
 
@@ -2035,18 +2041,6 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 					}
 				}
-			}
-
-			private void update_max_regs(TypeMap current) {
-				max_stack = Math.max(max_stack, current.stacksize);
-				
-				IPersistentCollection xregs = (IPersistentCollection) all_xregs;
-				for (Integer i : current.allXregs()) {
-					xregs = xregs.cons(i);
-				}
-				
-				all_xregs = (Set<Integer>) xregs;
-				max_freg = Math.max(max_freg, current.max_freg());
 			}
 
 			boolean is_term(BeamOpcode code) {
@@ -2397,7 +2391,8 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 				EObject value = dst.elm(2);
 				if (key == X_ATOM) {
 					current = current.setx(value.asInt(),
-							type == Type.DOUBLE_TYPE ? EDOUBLE_TYPE : type);
+							type == Type.DOUBLE_TYPE ? EDOUBLE_TYPE : type,
+							       FV.this);
 				} else if (key == Y_ATOM) {
 					current = current.sety(value.asInt(),
 							type == Type.DOUBLE_TYPE ? EDOUBLE_TYPE : type);
@@ -2421,7 +2416,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 				{
 					Operands.XReg xreg;
 					if ((xreg = dst.testXReg()) != null) {
-						return current.setx(xreg.nr, type);
+						return current.setx(xreg.nr, type, FV.this);
 					}
 				}
 				{
