@@ -242,7 +242,7 @@ public class ERT {
 
 	static BigInteger INT_MIN_AS_BIG = BigInteger.valueOf(Integer.MIN_VALUE);
 	static BigInteger INT_MAX_AS_BIG = BigInteger.valueOf(Integer.MAX_VALUE);
-	private static ENode localNode = new ENode();
+	private static final ENode localNode = new ENode();
 
 	/**
 	 * @param add
@@ -491,102 +491,98 @@ public class ERT {
 	 * @throws Pausable
 	 */
 	@BIF(name = "!")
-	public static EObject send(EProc proc, EObject pid, EObject msg)
-			throws Pausable {
-		// TODO handle ports also?
-		proc.check_exit();
-		
-		//System.out.println(""+proc+" :: "+pid+" ! "+msg);
-
-		EHandle p;
-		EAtom name;
-		if ((p = pid.testHandle()) != null ||
-			((name=pid.testAtom()) != null && (p = register.get(name)) != null)) {
-			proc.reds += p.send(proc.self_handle(), msg);
-			if (proc.reds > 1000) {
-				proc.reds = 0;
-				Task.yield();
-			}
-			return msg;
-		}
-
-		ETuple tup;
-		EAtom node;
-		if ((tup=pid.testTuple()) != null 
-			&& tup.arity()==2 
-			&& (name=tup.elm(1).testAtom()) != null
-			&& (node=tup.elm(2).testAtom()) != null){
-			
-			if (node == getLocalNode().node) {
-				// ok, we're talking to ourselves
-				
-				pid = name;
-			} else {
-
-				System.err.println("sending msg "+pid+" ! "+msg);
-				
-				EAbstractNode peer = EPeer.get(node);
-				if (peer == null) {
-					return erlang__dsend__2.invoke(proc, new EObject[] { pid, msg });
-				} else {				
-					return peer.dsig_reg_send(proc.self_handle(), name, msg);
-				}
-			}
-		}
-
-		throw badarg(pid, msg);				
-	}
-
-	@BIF
-	public static EObject send(EProc proc, EObject pid, EObject msg,
-			EObject options) throws Pausable {
+	public static EObject send(EProc proc, EObject pid, EObject msg) throws Pausable {
 		// TODO handle ports also?
 		proc.check_exit();
 
 		// log.log(Level.FINER, "ignored options to send: " + options);
-		
+
 		EHandle p;
+		EAtom reg_name;
 		if ((p = pid.testHandle()) != null) {
-			p.send(proc.self_handle(), msg);
-			return am_ok;
-		}
-
-		ETuple t;
-		if ((t = pid.testTuple()) != null 
-				&& t.arity()==2) {
-			
-			EAtom reg_name;
+			send_to_handle(proc, p, msg);
+		} else if ((reg_name = pid.testAtom()) != null) {
+			send_to_locally_registered(proc, reg_name, msg);
+		} else {
+			ETuple t;
 			EAtom node_name;
-			if ((reg_name = t.elm(1).testAtom()) != null
-			 && (node_name = t.elm(2).testAtom()) != null) {
-				
-				if (node_name == getLocalNode().node) {
-					// ok, we're talking to ourselves
-					
-					pid = reg_name;
-				} else {
-					System.err.println("sending msg "+pid+" ! "+msg);
-	
-					EAbstractNode node = EPeer.get(node_name);
-					if (node == null) {
-						return erlang__dsend__3.invoke(proc, new EObject[] { pid, msg, options });
-					} else {
-						node.dsig_reg_send(proc.self_handle(), reg_name, msg);
-						return am_ok;
-					}
-				}
+			if ((t = pid.testTuple()) != null && t.arity()==2 &&
+				(reg_name = t.elm(1).testAtom()) != null &&
+				(node_name = t.elm(2).testAtom()) != null)
+			{
+				send_to_remote(proc, t, node_name, reg_name, msg, null);
+			} else { // PID was of a bad type.
+				log.info("trying to send message to "+pid+" failed.");
+				throw badarg(pid, msg);
 			}
-			
 		}
-		
-		p = register.get(pid);
-		if (p != null) {
-			p.send(proc.self_handle(), msg);
-			return am_ok;
-		}
+		// Arguments were of vali types; return the message:
+		return msg;
+	}
 
-		log.info("trying to send message to "+pid+" failed.");			
-		throw badarg(pid, msg);
+	@BIF
+	public static EObject send(EProc proc, final EObject pid, final EObject msg, EObject options) throws Pausable {
+		// TODO handle ports also?
+		proc.check_exit();
+
+		// log.log(Level.FINER, "ignored options to send: " + options);
+
+		EHandle handle;
+		EAtom reg_name;
+		if ((handle = pid.testHandle()) != null) {
+			send_to_handle(proc, handle, msg);
+		} else if ((reg_name = pid.testAtom()) != null) {
+			send_to_locally_registered(proc, reg_name, msg);
+		} else {
+			ETuple t;
+			EAtom node_name;
+			if ((t = pid.testTuple()) != null && t.arity()==2 &&
+				(reg_name = t.elm(1).testAtom()) != null &&
+				(node_name = t.elm(2).testAtom()) != null)
+			{
+				send_to_remote(proc, t, node_name, reg_name, msg, options);
+			} else { // PID was of a bad type.
+				log.info("trying to send message to "+pid+" failed.");
+				throw badarg(pid, msg);
+			}
+		}
+		// Arguments were of vali types; return the message:
+		return msg;
+	}
+
+	private static void send_to_remote(EProc proc, ETuple dest, EAtom node_name, EAtom reg_name, EObject msg, EObject options) throws Pausable {
+		// INVARIANT: t == ETuple.make(node_name, reg_name)
+
+		if (node_name == getLocalNode().node) { // We're talking to ourselves
+			send_to_locally_registered(proc, reg_name, msg);
+		} else { // We're talking to anothe node
+			System.err.println("sending msg "+dest+" ! "+msg);
+
+			EAbstractNode node = EPeer.get(node_name);
+			if (node == null) {
+				EObject[] args = (options!=null
+								  ? new EObject[] { dest, msg, options }
+								  : new EObject[] { dest, msg });
+				erlang__dsend__3.invoke(proc, args);
+			} else {
+				node.dsig_reg_send(proc.self_handle(), reg_name, msg);
+			}
+		}
+	}
+
+	private static void send_to_locally_registered(EProc proc, EAtom name, EObject msg) throws Pausable {
+		EHandle handle;
+		if ((handle = register.get(name)) != null) {
+			send_to_handle(proc, handle, msg);
+		}
+	}
+
+	private static void send_to_handle(EProc proc, EHandle handle, EObject msg) throws Pausable {
+		proc.reds += handle.send(proc.self_handle(), msg);
+		if (proc.reds > 1000) {
+			proc.reds = 0;
+			Task.yield();
+		}
 	}
 
 	/**
