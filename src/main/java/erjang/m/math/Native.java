@@ -33,16 +33,6 @@ public class Native extends ENative {
 
 	
 	@BIF
-	public static ENumber log10(EObject val)
-	{
-		ENumber num;
-		if ((num = val.testNumber()) != null) {
-			return new EDouble(Math.log10(num.doubleValue()));
-		}
-		throw ERT.badarg(val);
-	}
-	
-	@BIF
 	public static ENumber sin(EObject val)
 	{
 		ENumber num;
@@ -77,7 +67,7 @@ public class Native extends ENative {
 	{
 		ENumber num;
 		if ((num = val.testNumber()) != null) {
-			return new EDouble(Math.asin(num.doubleValue()));
+			return boxIfValid(Math.asin(num.doubleValue()), val);
 		}
 		throw ERT.badarg(val);
 	}
@@ -87,7 +77,7 @@ public class Native extends ENative {
 	{
 		ENumber num;
 		if ((num = val.testNumber()) != null) {
-			return new EDouble(Math.acos(num.doubleValue()));
+			return boxIfValid(Math.acos(num.doubleValue()), val);
 		}
 		throw ERT.badarg(val);
 	}
@@ -147,7 +137,17 @@ public class Native extends ENative {
 	{
 		ENumber num;
 		if ((num = val.testNumber()) != null) {
-			return new EDouble(Math.log(num.doubleValue()));
+			return boxIfValid(Math.log(num.doubleValue()), val);
+		}
+		throw ERT.badarg(val);
+	}
+
+	@BIF
+	public static ENumber log10(EObject val)
+	{
+		ENumber num;
+		if ((num = val.testNumber()) != null) {
+			return boxIfValid(Math.log10(num.doubleValue()), val);
 		}
 		throw ERT.badarg(val);
 	}
@@ -172,7 +172,7 @@ public class Native extends ENative {
 	@BIF
 	public static EDouble sqrt(EDouble val)
 	{
-		return new EDouble(Math.sqrt(val.value));
+		return boxIfValid(Math.sqrt(val.value), val);
 	}
 
 	@BIF
@@ -180,10 +180,14 @@ public class Native extends ENative {
 	{
 		ENumber num;
 		if ((num = val.testNumber()) != null) {
-			return new EDouble(Math.sqrt(num.doubleValue()));
+			return boxIfValid(Math.sqrt(num.doubleValue()), val);
 		}
 		throw ERT.badarg(val);
 	}
 
+	public static EDouble boxIfValid(double value, EObject arg) {
+		if (Double.isNaN(value)) throw ERT.badarg(arg);
+		else return new EDouble(value);
+	}
 
 }
