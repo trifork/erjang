@@ -57,7 +57,7 @@ public class Native extends ENative {
 	{
 		ENumber num;
 		if ((num = val.testNumber()) != null) {
-			return new EDouble(Math.tan(num.doubleValue()));
+			return boxIfValid(Math.tan(num.doubleValue()), val);
 		}
 		throw ERT.badarg(val);
 	}
@@ -87,7 +87,7 @@ public class Native extends ENative {
 	{
 		ENumber num;
 		if ((num = val.testNumber()) != null) {
-			return new EDouble(Math.atan(num.doubleValue()));
+			return boxIfValid(Math.atan(num.doubleValue()), val);
 		}
 		throw ERT.badarg(val);
 	}
@@ -97,7 +97,7 @@ public class Native extends ENative {
 	{
 		ENumber num;
 		if ((num = val.testNumber()) != null) {
-			return new EDouble(Math.sinh(num.doubleValue()));
+			return boxIfValid(Math.sinh(num.doubleValue()), val);
 		}
 		throw ERT.badarg(val);
 	}
@@ -107,7 +107,7 @@ public class Native extends ENative {
 	{
 		ENumber num;
 		if ((num = val.testNumber()) != null) {
-			return new EDouble(Math.cosh(num.doubleValue()));
+			return boxIfValid(Math.cosh(num.doubleValue()), val);
 		}
 		throw ERT.badarg(val);
 	}
@@ -117,7 +117,7 @@ public class Native extends ENative {
 	{
 		ENumber num;
 		if ((num = val.testNumber()) != null) {
-			return new EDouble(Math.tanh(num.doubleValue()));
+			return boxIfValid(Math.tanh(num.doubleValue()), val);
 		}
 		throw ERT.badarg(val);
 	}
@@ -127,7 +127,7 @@ public class Native extends ENative {
 	{
 		ENumber num;
 		if ((num = val.testNumber()) != null) {
-			return new EDouble(Math.exp(num.doubleValue()));
+			return boxIfValid(Math.exp(num.doubleValue()), val);
 		}
 		throw ERT.badarg(val);
 	}
@@ -186,7 +186,7 @@ public class Native extends ENative {
 	}
 
 	public static EDouble boxIfValid(double value, EObject arg) {
-		if (Double.isNaN(value)) throw ERT.badarg(arg);
+		if (Double.isNaN(value) || Double.isInfinite(value)) throw ERT.badarg(arg);
 		else return new EDouble(value);
 	}
 
