@@ -12,6 +12,19 @@ import erjang.m.erlang.ErlBif;
 
 public class Native extends ENative {
 
+	static MBox started_mbox = new MBox();
+	
+	@BIF
+	static public EObject erjang_started() throws Pausable 
+	{
+		started_mbox.put(ERT.am_ok);
+		return ERT.am_ok;
+	}
+
+	public static void wait_for_started(long timeout) {
+		started_mbox.get_b(timeout);
+	}
+
 	@BIF
 	static public EObject call_from_java(EProc self, EObject m, EObject f, EObject args, 
 										 EObject mbox) throws Pausable

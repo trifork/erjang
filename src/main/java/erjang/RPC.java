@@ -1,7 +1,5 @@
 package erjang;
 
-import erjang.m.erlang.ErlBif;
-import erjang.m.erlang.ErlProc;
 import erjang.m.rpc.MBox;
 
 public class RPC {
@@ -13,15 +11,22 @@ public class RPC {
 	static EAtom am_call = EAtom.intern("call");
 	static EAtom am_rpc = EAtom.intern("rpc");
 	static EAtom am_call_from_java = EAtom.intern("call_from_java");
+	static EAtom am_init = EAtom.intern("init");
+	static EAtom am_get_status = EAtom.intern("get_status");
+	static EAtom am_started = EAtom.intern("started");
 	
 	
+	public static EObject call(EAtom mod, EAtom fun, EObject... args) {
+		return call(mod, fun, EList.fromArray(args));
+	}
 	
 	public static EObject call(EAtom mod, EAtom fun, ESeq args) {
 		
 		MBox mbox = new MBox();
-		EProc proc = new EProc(null, am_rpc, am_call_from_java, EList.make(mod, fun, args, mbox));
+		ESeq callargs = EList.make(mod, fun, args, mbox);
+		EProc proc = new EProc(null, am_rpc, am_call_from_java, callargs);
 		ERT.run(proc);
-		proc.joinb();
+		//proc.joinb();
 
 		return mbox.get_b();
 	}
@@ -36,6 +41,10 @@ public class RPC {
 		ERT.run(proc);
 
 		return mbox.get_b(timeout);
+	}
+
+	public static void wait_for_erjang_started(long timeout) {
+		erjang.m.rpc.Native.wait_for_started(timeout);
 	}
 	
 	
