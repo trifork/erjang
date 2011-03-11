@@ -516,7 +516,7 @@ public class ERT {
 				throw badarg(pid, msg);
 			}
 		}
-		// Arguments were of vali types; return the message:
+		// Arguments were of valid types; return the message:
 		return msg;
 	}
 
@@ -531,8 +531,11 @@ public class ERT {
 		EAtom reg_name;
 		if ((handle = pid.testHandle()) != null) {
 			send_to_handle(proc, handle, msg);
+			return am_ok;
 		} else if ((reg_name = pid.testAtom()) != null) {
-			send_to_locally_registered(proc, reg_name, msg);
+			boolean ok = send_to_locally_registered(proc, reg_name, msg);
+			if (ok) return am_ok;
+			else throw badarg(pid, msg);
 		} else {
 			ETuple t;
 			EAtom node_name;
@@ -540,22 +543,22 @@ public class ERT {
 				(reg_name = t.elm(1).testAtom()) != null &&
 				(node_name = t.elm(2).testAtom()) != null)
 			{
-				send_to_remote(proc, t, node_name, reg_name, msg, options);
+				return send_to_remote(proc, t, node_name, reg_name, msg, options);
 			} else { // PID was of a bad type.
 				log.info("trying to send message to "+pid+" failed.");
 				throw badarg(pid, msg);
 			}
 		}
-		// Arguments were of vali types; return the message:
-		return msg;
 	}
 
-	private static void send_to_remote(EProc proc, ETuple dest, EAtom node_name, EAtom reg_name, EObject msg, EObject options) throws Pausable {
+	private static EObject send_to_remote(EProc proc, ETuple dest, EAtom node_name, EAtom reg_name, EObject msg, EObject options) throws Pausable {
 		// INVARIANT: t == ETuple.make(node_name, reg_name)
 
 		if (node_name == getLocalNode().node) { // We're talking to ourselves
 			send_to_locally_registered(proc, reg_name, msg);
-		} else { // We're talking to anothe node
+			return am_ok; // Even if the process does not exist.
+			//TODO: Return 'noconnect' if options contain noconnect?...
+		} else { // We're talking to another node
 			System.err.println("sending msg "+dest+" ! "+msg);
 
 			EAbstractNode node = EPeer.get(node_name);
@@ -563,18 +566,20 @@ public class ERT {
 				EObject[] args = (options!=null
 								  ? new EObject[] { dest, msg, options }
 								  : new EObject[] { dest, msg });
-				erlang__dsend__3.invoke(proc, args);
+				return erlang__dsend__3.invoke(proc, args);
 			} else {
 				node.dsig_reg_send(proc.self_handle(), reg_name, msg);
+				return am_ok;
 			}
 		}
 	}
 
-	private static void send_to_locally_registered(EProc proc, EAtom name, EObject msg) throws Pausable {
+	private static boolean send_to_locally_registered(EProc proc, EAtom name, EObject msg) throws Pausable {
 		EHandle handle;
 		if ((handle = register.get(name)) != null) {
 			send_to_handle(proc, handle, msg);
-		}
+			return true;
+		} else return false;
 	}
 
 	private static void send_to_handle(EProc proc, EHandle handle, EObject msg) throws Pausable {
