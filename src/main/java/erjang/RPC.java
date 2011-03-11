@@ -24,11 +24,15 @@ public class RPC {
 		
 		MBox mbox = new MBox();
 		ESeq callargs = EList.make(mod, fun, args, mbox);
-		EProc proc = new EProc(null, am_rpc, am_call_from_java, callargs);
+		EProc proc = new EProc(default_groupleader(), am_rpc, am_call_from_java, callargs);
 		ERT.run(proc);
 		//proc.joinb();
 
 		return mbox.get_b();
+	}
+	
+	private static EPID default_groupleader() {
+		return erjang.m.rpc.Native.get_local_group_leader();	
 	}
 	
 	
@@ -36,8 +40,9 @@ public class RPC {
 		
 		MBox mbox = new MBox();
 		
-		EProc proc = new EProc(null, am_rpc, am_call_from_java, 
-							   EList.make(mod, fun, args, mbox));
+		EProc proc = new EProc(default_groupleader(), 
+				               am_rpc, am_call_from_java, 
+				               EList.make(mod, fun, args, mbox));
 		ERT.run(proc);
 
 		return mbox.get_b(timeout);
