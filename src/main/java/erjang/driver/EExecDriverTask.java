@@ -108,7 +108,7 @@ public class EExecDriverTask extends EDriverTask {
 			
 			parseOptions(cmd, portSetting);
 
-			File f = new File(cmd[0]);
+			File f = ERT.newFile(cmd[0]);
 			if (f.exists() && f.canExecute()) {
 				// ok !
 			} else if (f.isAbsolute()) {
@@ -118,7 +118,7 @@ public class EExecDriverTask extends EDriverTask {
 				String cmd_path = env.get("PATH");
                 if (cmd_path != null) {
                     for (String elm : cmd_path.split(File.pathSeparator)) {
-                        File dir = new File(elm);
+                        File dir = ERT.newFile(elm);
                         f = new File(dir, cmd[0]);
                         if (f.exists()) {
                             cmd[0] = f.getAbsolutePath();

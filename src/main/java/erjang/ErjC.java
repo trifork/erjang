@@ -39,9 +39,9 @@ public class ErjC {
 
 		for (int i = 0; i < args.length; i++) {
 			if (args[i].endsWith(".beam")) {
-				File in = new File(args[i]);
+				File in = ERT.newFile(args[i]);
 				int idx = args[i].lastIndexOf('.');
-				File out = new File(args[i].substring(0, idx) + ".jar");
+				File out = ERT.newFile(args[i].substring(0, idx) + ".jar");
 				JarClassRepo jcp = new JarClassRepo(out);
 
 				System.out.println("compiling "+in+" -> "+out+" ...");

@@ -110,7 +110,7 @@ public class ErjangCodeCache {
     }
 
     static File erjdir() throws IOException {
-	File home = new File(ERJ_CACHE_DIR);
+	File home = ERT.newFile(ERJ_CACHE_DIR);
 
 	File dir = new File(home, ".erjang");
 	if (!dir.exists()) {

@@ -473,7 +473,7 @@ public class EFile extends EDriverInstance {
 		public SimpleFileAsync(byte command, String path) {
 			this.command = command;
 			this.name = path;
-			this.file = new File(path);
+			this.file = ERT.newFile(path);
 		}
 
 		@Override
@@ -789,7 +789,7 @@ public class EFile extends EDriverInstance {
 
 					// first time only, initialize binp
 					if (binp == null) {
-						File file = new File(name);
+						File file = ERT.newFile(name);
 						try {
 							this.fd = new FileInputStream(file).getChannel();
 						} catch (FileNotFoundException e) {
@@ -1306,7 +1306,11 @@ public class EFile extends EDriverInstance {
 							posix_errno = Posix.EUNKNOWN;
 						}
 					} else {
-						System.setProperty("user.dir", this.name);
+						try {
+							System.setProperty("user.dir", file.getCanonicalPath());
+						} catch (IOException e) {
+							posix_errno = Posix.EUNKNOWN;
+						}
 					}
 				}
 			};
@@ -1469,7 +1473,7 @@ public class EFile extends EDriverInstance {
 		case FILE_LSTAT: {
 			
 			final String file_name = IO.strcpy(buf);
-			final File file = new File(file_name);
+			final File file = ERT.newFile(file_name);
 			
 			d = new FileAsync() {
 				
@@ -1573,7 +1577,7 @@ public class EFile extends EDriverInstance {
 			
 			final String dir_name = IO.strcpy(buf);
 			//final File cwd = new File(System.getProperty("user.dir")).getAbsoluteFile();
-			final File dir = new File(/*cwd, */dir_name);
+			final File dir = ERT.newFile(/*cwd, */dir_name);
 			
 			
 			d = new FileAsync() {
@@ -1636,7 +1640,7 @@ public class EFile extends EDriverInstance {
 		
 		case FILE_RENAME: {
 			final String from_name = IO.getstr(buf, true);
-			final File to_name   = new File(IO.getstr(buf, true));
+			final File to_name   = ERT.newFile(IO.getstr(buf, true));
 			
 			if (ERT.DEBUG_EFILE) 
 				System.err.println(""+this+"rename "+from_name+" -> "+to_name);

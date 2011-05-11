@@ -87,7 +87,7 @@ public class ExecDriverInstance extends EDriverInstance {
 		}
 
 		try {
-			this.process = Runtime.getRuntime().exec(cmd, envp, new File(cwd));
+			this.process = Runtime.getRuntime().exec(cmd, envp, ERT.newFile(cwd));
 		} catch (IOException e1) {
 			throw new ErlangError(e1);
 		}

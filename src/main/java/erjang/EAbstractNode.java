@@ -120,7 +120,7 @@ public abstract class EAbstractNode {
         BufferedReader br = null;
 
         try {
-            final File dotCookieFile = new File(dotCookieFilename);
+            final File dotCookieFile = ERT.newFile(dotCookieFilename);
 
             br = new BufferedReader(new FileReader(dotCookieFile));
             defaultCookie = EAtom.intern( br.readLine().trim() );

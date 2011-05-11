@@ -39,6 +39,7 @@ import erjang.driver.Drivers;
 import erjang.driver.EAsync;
 import erjang.driver.EDriver;
 import erjang.driver.EDriverTask;
+import erjang.driver.efile.Posix;
 import erjang.m.erlang.ErlDist;
 import erjang.m.java.JavaObject;
 
@@ -1056,6 +1057,13 @@ public class ERT {
 		System.setIn(in);
 		System.setOut(out);
 		System.setErr(err);
+	}
+
+	public static File newFile(String file_name) {
+		File file = new File(file_name);
+		if (file.isAbsolute())
+			return file;
+		return new File(Posix.getCWD(), file_name);
 	}
 
 }

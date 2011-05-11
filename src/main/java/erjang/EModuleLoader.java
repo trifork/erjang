@@ -130,7 +130,7 @@ class EModuleLoader {
 
 	private static void addLoadPaths(List<File> out, String path) {
 		for (String s : path.split(File.pathSeparator)) {
-			File elem = new File(s);
+			File elem = ERT.newFile(s);
 			if (elem.exists() && elem.isDirectory()) {
 				out.add(elem);
 			}
