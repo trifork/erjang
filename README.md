@@ -24,7 +24,7 @@ Yes!  It does actually work.
 - Etc. etc.  Lot's of stuff work.
 
 <pre> krab$ ./ej 
-Eshell V5.8  (abort with ^G)
+Eshell V5.7.5  (abort with ^G)
 1> erlang:display("hello world!").
 "hello world!"
 true
@@ -72,7 +72,7 @@ values are "/usr/lib/erlang" and "/usr/local/lib/erlang").
 ## Running
 
 <pre>renaissance:erjang krab$ ./ej
-Eshell V5.8  (abort with ^G)
+Eshell V5.7.5  (abort with ^G)
 1> 3+4.
 7
 2> 
@@ -88,7 +88,7 @@ forcing Erjang to recompile next time it runs.
 
 ### Prerequisites
 
-I have only been testing this with Erlang/OTP R14B.
+I have only been testing this with Erlang/OTP R13.  ERJANG DOES NOT WORK WITH R14 since it introduced an incompatible API to the efile driver. 
 
 If you run with a different erts (Erlang runtime system), then you can
 use the +e <ErtsVsn> flag, like this:
