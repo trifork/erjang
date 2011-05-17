@@ -485,6 +485,11 @@ public class JavaObject extends EPseudoTerm {
 				EAtom am;
 				if ((am = val.testAtom()) != null)
 					return am.getName();
+				
+				EBinary bi;
+				if ((bi = val.testBinary()) != null) {
+					return new String(bi.toByteArray(), IO.UTF8);
+				}
 
 				throw new IllegalArgumentException();
 			}
