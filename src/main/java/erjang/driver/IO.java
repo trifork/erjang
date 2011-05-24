@@ -20,6 +20,7 @@ package erjang.driver;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.BindException;
 import java.net.ConnectException;
@@ -29,6 +30,7 @@ import java.nio.channels.WritableByteChannel;
 import java.nio.charset.Charset;
 import java.util.zip.GZIPOutputStream;
 
+import erjang.EBinary;
 import erjang.ERT;
 import erjang.driver.efile.Posix;
 
@@ -216,6 +218,32 @@ public class IO {
 			buf.position(buf.limit());
 			return str;
 		}
+	}
+
+	static private class BARR2 extends ByteArrayOutputStream {
+		EBinary asBinary() {
+			return new EBinary(super.buf, 0, super.count);
+		}
+	}
+
+	public static EBinary istream2binary(InputStream in) throws IOException {
+		BARR2 out = new BARR2();
+		byte[] buf = new byte[4 * 1024];
+		int read;
+		while ((read = in.read(buf)) > 0) {
+			out.write(buf, 0, read);
+		}
+		return out.asBinary();
+	}
+
+	public static byte[] istream2bytearray(InputStream in) throws IOException {
+		BARR2 out = new BARR2();
+		byte[] buf = new byte[4 * 1024];
+		int read;
+		while ((read = in.read(buf)) > 0) {
+			out.write(buf, 0, read);
+		}
+		return out.toByteArray();
 	}
 
 }

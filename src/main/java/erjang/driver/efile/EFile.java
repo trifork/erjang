@@ -18,6 +18,7 @@
 
 package erjang.driver.efile;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileInputStream;
@@ -25,6 +26,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
@@ -39,6 +41,7 @@ import java.util.Queue;
 import java.util.concurrent.locks.Lock;
 
 import kilim.Pausable;
+import erjang.EBinList;
 import erjang.EBinary;
 import erjang.EHandle;
 import erjang.EPort;
@@ -56,6 +59,7 @@ import erjang.driver.IO;
  */
 public class EFile extends EDriverInstance {
 
+	public static final String RESOURCE_PREFIX = "/~resource/";
 	private static Field FileDescriptor_FD;
 	
 	static {
@@ -775,6 +779,18 @@ public class EFile extends EDriverInstance {
 				reply_posix_error(Posix.ENOENT);
 				return;
 			}
+			
+			if (name.startsWith(RESOURCE_PREFIX)) {
+
+				EBinary data = ClassPathResource.read_file(name);
+				if (data == null) {
+					reply_posix_error(Posix.ENOENT);
+				} else {
+					task.output_from_driver(new EBinList(FILE_RESP_OK_HEADER, data));
+				}
+
+				return;
+			}
 
 			FileAsync d = new FileAsync() {
 				private ByteBuffer binp = null;
@@ -1475,6 +1491,11 @@ public class EFile extends EDriverInstance {
 			final String file_name = IO.strcpy(buf);
 			final File file = ERT.newFile(file_name);
 			
+			if (file_name.startsWith(RESOURCE_PREFIX)) {
+				ClassPathResource.fstat(this, file_name);
+				return;
+			}
+			
 			d = new FileAsync() {
 				
 				long file_size;
@@ -1576,6 +1597,12 @@ public class EFile extends EDriverInstance {
 		case FILE_READDIR: {
 			
 			final String dir_name = IO.strcpy(buf);
+			
+			if (dir_name.startsWith(RESOURCE_PREFIX)) {
+				ClassPathResource.listdir(this, dir_name.substring(RESOURCE_PREFIX.length()));
+				return;
+			}
+			
 			//final File cwd = new File(System.getProperty("user.dir")).getAbsoluteFile();
 			final File dir = ERT.newFile(/*cwd, */dir_name);
 			
@@ -1618,21 +1645,7 @@ public class EFile extends EDriverInstance {
 						return;
 					}
 										
-					for (int i = 0; i < files.length; i++) {
-						ByteBuffer resbuf = ByteBuffer.allocate(files[i].length()+1);
-						resbuf.put(FILE_RESP_OK);
-						resbuf.limit(resbuf.capacity());
-						resbuf.position(1);
-						
-						IO.putstr(resbuf, files[i], false);
-						
-						driver_output2(resbuf, null);
-					}
-					
-					ByteBuffer resbuf = ByteBuffer.allocate(1);
-					resbuf.put(FILE_RESP_OK);
-					driver_output2(resbuf, null);
-					
+					reply_list_directory(files);
 				}
 			};
 			break;
@@ -1881,6 +1894,23 @@ public class EFile extends EDriverInstance {
 		}
 		return "EFile[name=\""+name+"\";pos="+pos+"]";
 		
+	}
+
+	void reply_list_directory(String[] files) throws Pausable {
+		for (int i = 0; i < files.length; i++) {
+			ByteBuffer resbuf = ByteBuffer.allocate(files[i].length()+1);
+			resbuf.put(FILE_RESP_OK);
+			resbuf.limit(resbuf.capacity());
+			resbuf.position(1);
+			
+			IO.putstr(resbuf, files[i], false);
+			
+			driver_output2(resbuf, null);
+		}
+		
+		ByteBuffer resbuf = ByteBuffer.allocate(1);
+		resbuf.put(FILE_RESP_OK);
+		driver_output2(resbuf, null);
 	}
 	
 }

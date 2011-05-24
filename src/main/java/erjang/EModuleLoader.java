@@ -24,6 +24,8 @@ import erjang.beam.Compiler;
 import erjang.beam.EUtil;
 
 import erjang.beam.loader.ErjangBeamDisLoader;
+import erjang.driver.efile.ClassPathResource;
+import erjang.driver.efile.EFile;
 
 import erjang.util.Progress;
 
@@ -111,6 +113,8 @@ class EModuleLoader {
 		for (File e : loadPath) {
 			File beam = new File(e, n + ".beam");
 			if (beam.exists())
+				return beam;
+			if (ClassPathResource.read_file(beam.getPath()) != null)
 				return beam;
 		}
 
