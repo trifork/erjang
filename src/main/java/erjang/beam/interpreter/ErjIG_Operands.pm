@@ -37,7 +37,7 @@ our %TYPES_OPERAND_CLASS =
      'L' => "Operands.Label",
      'nolabel' => ["Operands.Label", "(# == null || #.nr == 0)"],
      'E' => "ExtFun",
-     'G' => ["ExtFun", "# instanceof ExtFun && \$onFail != null"],
+     'G' => ["ExtFun", "# instanceof ExtFun && (\$onFail != null && \$onFail.nr != 0)"],
      'JV' => "Operands.SelectList",
      'JA' => "Operands.SelectList"
      );
