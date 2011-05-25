@@ -18,6 +18,7 @@
 
 package erjang;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +28,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import erjang.driver.EDriver;
+import erjang.driver.efile.ClassPathResource;
+import erjang.driver.efile.EFile;
 
 /**
  * This will eventually be the main entrypoint for an OTP node.
@@ -49,9 +52,24 @@ public class OTPMain {
 	};
 
     public static void load_modules_and_drivers() throws ClassNotFoundException, InstantiationException, IllegalAccessException, IOException {
-        for (String m : MODULES) {
-			ERT.load_module(EAtom.intern(m));
-		}
+
+    	if (Main.erl_bootstrap_ebindir.startsWith(EFile.RESOURCE_PREFIX)) {
+
+    		for (String m : MODULES) {
+	    		String beam_path = Main.erl_bootstrap_ebindir + "/" + m + ".beam";
+				EBinary bin = ClassPathResource.read_file(beam_path);
+				if (bin == null) {
+					throw new FileNotFoundException(beam_path);
+				}
+	    		EModuleLoader.load_module(m, bin);
+			}
+    		
+    	} else {    	
+	    	for (String m : MODULES) {
+				ERT.load_module(EAtom.intern(m));
+			}
+    	}
+    	
 		for (EDriver d : DRIVERS) {
 			erjang.driver.Drivers.register(d);
 		}

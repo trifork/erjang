@@ -136,7 +136,7 @@ public abstract class EDriverInstance extends EDriverControl {
 		task.output_from_driver(res);
 	}
 	
-	protected void driver_output2(ByteBuffer header, ByteBuffer buf) throws Pausable {
+	public void driver_output2(ByteBuffer header, ByteBuffer buf) throws Pausable {
 
 		int status = task.status;
 		

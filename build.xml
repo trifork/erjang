@@ -1,6 +1,8 @@
 <?xml version="1.0"?>
 <project name="erjang" default="all">
 	<property name="erjang.version" value="0.1" />
+	<property file="erjang_cfg.properties" />
+
 	<path id="erjang.classpath">
 		<pathelement location="target/classes/" />
 		<pathelement location="lib/js.jar" />
@@ -178,6 +180,27 @@
 		</jar>
 	</target>
 
+	<target name="otpjar">
+	  <jar jarfile="otp-${erjang.otp.version}.jar" basedir="${erjang.otp.root}">
+	     <exclude name="**/*.so" />
+	     <exclude name="**/*.dll" />
+	     <exclude name="**/*.a" />
+	     <exclude name="**/*.erl" />
+	     <exclude name="**/bin/beam" />
+	     <exclude name="**/bin/beam.smp" />
+	     <exclude name="lib/megaco-*/**" />
+	     <exclude name="lib/wx-*/**" />
+	     <exclude name="lib/hipe-*/**" />
+	     <exclude name="lib/jinterface-*/**" />
+
+	     <!-- include all of erjang -->
+	     <zipgroupfileset dir="." includes="erjang-${erjang.version}.jar" />
+
+	     <manifest>
+	       <attribute name="Main-Class" value="erjang.Main" />
+	     </manifest>
+	  </jar>
+	</target>
 
 	<target name="javadoc" description="generate Javadoc documentation">
 		<javadoc destdir="target/doc">
