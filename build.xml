@@ -192,6 +192,10 @@
 	     <exclude name="lib/wx-*/**" />
 	     <exclude name="lib/hipe-*/**" />
 	     <exclude name="lib/jinterface-*/**" />
+	     <exclude name="lib/erl_interface-*/**" />
+	     <exclude name="lib/ic-*/java_src/**" />
+	     <exclude name="usr/include/**" />
+	     <exclude name="**/examples/**" />
 	  </jar>
 	</target>
 
