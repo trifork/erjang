@@ -192,9 +192,15 @@
 	     <exclude name="lib/wx-*/**" />
 	     <exclude name="lib/hipe-*/**" />
 	     <exclude name="lib/jinterface-*/**" />
+	  </jar>
+	</target>
 
+	<target name="alljar" depends="jar,otpjar">
+	  <jar jarfile="erjang-${erjang.version}-otp-${erjang.otp.version}.jar" basedir="${erjang.otp.root}">
 	     <!-- include all of erjang -->
 	     <zipgroupfileset dir="." includes="erjang-${erjang.version}.jar" />
+	     <!-- include all of OTP -->
+	     <zipgroupfileset dir="." includes="otp-${erjang.otp.version}.jar" />
 
 	     <manifest>
 	       <attribute name="Main-Class" value="erjang.Main" />
