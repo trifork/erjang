@@ -1864,6 +1864,23 @@ public class ErlBif {
 		throw new NotImplemented();
 	}
 	
+	
+	static EObject sysmon_pid = ERT.am_undefined;
+	
+	@BIF
+	static public EObject system_monitor(EObject pid, EObject opts) {
+		EPID spid = pid.testPID();
+		if(spid == null) throw ERT.badarg(pid, opts);
+		sysmon_pid = pid;
+		return system_monitor();
+	}
+	
+	@BIF
+	static public EObject system_monitor() {
+		System.err.println("system_monitor setting ignored");
+		return new ETuple2(sysmon_pid, ERT.NIL);
+	}
+	
 	@BIF
 	static public EObject memory(EObject type) {
 		Runtime runtime = Runtime.getRuntime();
