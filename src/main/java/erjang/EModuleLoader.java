@@ -140,8 +140,8 @@ class EModuleLoader {
 	@SuppressWarnings("unchecked")
 	public static EModule load_compiled_module(String mod, EModuleClassLoader loader) {
 
-		if (log.isLoggable(Level.INFO)) {
- 			log.info("EML| load_compiled_module: "+mod+" @ "+loader);
+		if (log.isLoggable(Level.FINE)) {
+ 			log.fine("EML| load_compiled_module: "+mod+" @ "+loader);
 		}
 		
 		String internalName = erjang.beam.Compiler.moduleClassName(mod);

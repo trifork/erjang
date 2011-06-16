@@ -484,7 +484,7 @@ public class Native extends ENative {
 	}
 	
 	@BIF static public EObject repair_continuation(EObject cont, EObject ms) {
-		log.info("repair cont="+cont+"; ms="+ms);
+		if (log.isLoggable(Level.FINE)) log.fine("repair cont="+cont+"; ms="+ms);
 		return cont;
 	}
 

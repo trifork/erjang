@@ -112,7 +112,7 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 
 		EDriver drv = driver.getDriver();
 		if (drv.useDriverLevelLocking() == true) {
-			log.info("DRIVER_LEVEL_LOCK: "+driver);
+			log.fine("DRIVER_LEVEL_LOCK: "+driver);
 			driver = new LockingDriverInstance(driver, drv.getLock());
 		} else {
 			driver = new LockingDriverInstance(driver, new kilim.ReentrantLock());
