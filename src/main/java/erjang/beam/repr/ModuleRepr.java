@@ -21,6 +21,8 @@ package erjang.beam.repr;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import erjang.EAtom;
 import erjang.EObject;
@@ -33,6 +35,8 @@ import erjang.beam.CodeAtoms;
 import erjang.beam.ModuleVisitor;
 
 public class ModuleRepr implements BeamFileData {
+	static Logger log = Logger.getLogger("erjang.beam");
+	
 	private EAtom moduleName;
 	private final CodeTables ct;
 	private final FunctionInfo[] exports;
@@ -63,8 +67,8 @@ public class ModuleRepr implements BeamFileData {
 			for (FunctionRepr fun : functions) fun.declare(v);
 			for (FunctionRepr fun : functions) fun.accept(v);
 		} catch (RuntimeException e) {
-			System.err.println("ModuleRepr: Error in traversal: "+e);
-			e.printStackTrace(System.err);
+			log.severe("ModuleRepr: Error in traversal: "+e.getMessage());
+			log.log(Level.FINE, "details: ", e);
 			throw(e);
 		} finally {
 			v.visitEnd();

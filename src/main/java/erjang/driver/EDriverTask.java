@@ -79,7 +79,7 @@ import erjang.NotImplemented;
 public abstract class EDriverTask extends ETask<EInternalPort> implements
 		NIOHandler {
 
-	static Logger log = Logger.getLogger(EProc.class.getName());
+	static Logger log = Logger.getLogger("erjang.driver");
 
 	public abstract EObject getName();
 	
@@ -112,7 +112,7 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 
 		EDriver drv = driver.getDriver();
 		if (drv.useDriverLevelLocking() == true) {
-			System.err.println("DRIVER_LEVEL_LOCK: "+driver);
+			log.info("DRIVER_LEVEL_LOCK: "+driver);
 			driver = new LockingDriverInstance(driver, drv.getLock());
 		} else {
 			driver = new LockingDriverInstance(driver, new kilim.ReentrantLock());
@@ -349,8 +349,8 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 
 				result = ETuple.make(java_ex, erl_trace);
 				
-				if (ERT.DEVEL) {
-					System.err.println("EXITING "+result);
+				if (log.isLoggable(Level.FINER)) {
+					log.finer("EXITING "+result);
 					System.exit(1);
 				}
 
@@ -419,7 +419,7 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 							EHandle caller = sender.testHandle();
 							
 							if (caller == null) {
-								System.err.println("*** sender is null? "+sender);
+								log.warning("*** sender is null? "+sender);
 							}
 							
 							if (out.size() == 0) {
@@ -498,12 +498,12 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 		if (pstate == STATE_RUNNING || pstate == STATE_INIT) {
 			// ok
 		} else {
-			System.err.println("port "+this.self_handle()+" in state: "+pstate);
+			log.warning("port "+this.self_handle()+" in state: "+pstate);
 			throw ERT.badarg();
 		}
 
-		if (ERT.DEBUG_PORT) 
-			System.out.println("ctrl: cmd="+op+"; arg="+EBinary.make(cmd2));
+		if (log.isLoggable(Level.FINE)) 
+			log.fine("ctrl: cmd="+op+"; arg="+EBinary.make(cmd2));
 		
 		while (mbox.hasMessage()) {
 			Task.yield();
@@ -742,12 +742,12 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 	}
 
 	public void output_term_from_driver(EObject out) throws Pausable {
-		if (ERT.DEBUG_PORT) System.err.println(""+owner+" ! "+out);
+		if (log.isLoggable(Level.FINE)) log.fine(""+owner+" ! "+out);
 		owner.send(port, out);
 	}
 
 	public void output_term_from_driver_b(EObject out) {
-		if (ERT.DEBUG_PORT) System.err.println(""+owner+" ! "+out);
+		if (log.isLoggable(Level.FINE)) log.fine(""+owner+" ! "+out);
 		owner.sendb(out);
 	}
 

@@ -3,6 +3,8 @@ package erjang.epmd;
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.nio.*;
 import java.nio.channels.*;
 
@@ -20,7 +22,8 @@ import java.nio.channels.*;
  * @version 1.0 June 14,2004
  */
 public abstract class PacketServer {
-	static int debugLevel = 2;
+	static final Logger log = Logger.getLogger("erjang.epmd");
+	
 	private ServerSocket ss; // the listening socket
 	private ServerSocketChannel sschan; // the listening channel
 	private Selector selector; // the only selector
@@ -31,7 +34,7 @@ public abstract class PacketServer {
 		Iterator<SelectionKey> it;
 		SelectionKey key;
 
-		Functions.dout(1, "listening on port=" + port);
+		log.info("listening on port=" + port);
 		try {
 			sschan = ServerSocketChannel.open();
 			sschan.configureBlocking(false);
@@ -50,9 +53,10 @@ public abstract class PacketServer {
 				n = selector.select();
 			} // select
 			catch (Exception e) {
-				Functions.fail(e, "select failed");
+				log.severe("select failed: " + e.getMessage());
+				log.log(Level.FINE, "details: ", e);
 			}
-			Functions.dout(0, "select n=" + n);
+			log.fine("select n=" + n);
 
 			// process any selected keys
 			Set<SelectionKey> selectedKeys = selector.selectedKeys();
@@ -60,7 +64,7 @@ public abstract class PacketServer {
 			while (it.hasNext()) {
 				key = (SelectionKey) it.next();
 				int kro = key.readyOps();
-				Functions.dout(0, "kro=" + kro);
+				log.fine("kro=" + kro);
 				if ((kro & SelectionKey.OP_READ) == SelectionKey.OP_READ)
 					doRead(key);
 				if ((kro & SelectionKey.OP_WRITE) == SelectionKey.OP_WRITE)
@@ -78,7 +82,7 @@ public abstract class PacketServer {
 
 	private void doAccept(SelectionKey sk) {
 		ServerSocketChannel sc = (ServerSocketChannel) sk.channel();
-		Functions.dout(2, "accept");
+		log.fine("accept");
 		SocketChannel usc = null;
 		ByteBuffer data;
 		try {
@@ -87,7 +91,7 @@ public abstract class PacketServer {
 			usc.configureBlocking(false);
 			Socket sock = usc.socket();
 			String nm = sock.getInetAddress() + ":" + sock.getPort();
-			System.out.println("connection from " + nm);
+			log.info("connection from " + nm);
 			sock.setKeepAlive(true);
 			data = ByteBuffer.allocate(bufsz);
 			data.position(data.limit()); // looks like write complete
@@ -96,7 +100,8 @@ public abstract class PacketServer {
 			conn.setName(nm);
 			dsk.attach(conn); // link it to the key so we can find it
 		} catch (IOException re) {
-			Functions.fail(re, "registration error");
+			log.severe("registration error: " + re.getMessage());
+			log.log(Level.FINE, "details: ", re);
 		}
 	}
 

@@ -63,7 +63,7 @@ import erjang.OTPMain;
  */
 public class ErlProc {
 	
-	private static Logger log = Logger.getLogger(ErlProc.class.getName());
+	private static Logger log = Logger.getLogger("erjang.module.proc");
 
 	private static final EAtom am_smp_support = EAtom.intern("smp_support");
 	private static final EAtom am_schedulers = EAtom.intern("schedulers");
@@ -286,7 +286,7 @@ public class ErlProc {
 		EString str = value.testString();
 		if (str != null) {		
 			// TODO: create crash file
-			System.err.println(str.stringValue());
+			log.severe("halting system: " + str.stringValue());
 			System.exit(1);
 		}
 		

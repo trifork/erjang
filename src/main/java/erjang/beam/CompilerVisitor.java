@@ -33,6 +33,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import kilim.Pausable;
 import kilim.analysis.ClassInfo;
@@ -105,7 +107,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 	private final ClassVisitor cv;
 	private EAtom module_name;
 	private Type self_type;
-
+	
 	private static final EObject ATOM_field_flags = EAtom.intern("field_flags");
 	private static final EObject ATOM_start = EAtom.intern("start");
 
@@ -606,8 +608,8 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					EFun.ensure(arity);
 	
 					if (is_exported) {
-						if (ERT.DEBUG2)
-							System.err.println("export " + module_name + ":"
+						if (ModuleAnalyzer.log.isLoggable(Level.FINE))
+							ModuleAnalyzer.log.fine("export " + module_name + ":"
 									+ fun_name + "/" + arity);
 						AnnotationVisitor an = fv.visitAnnotation(EXPORT_ANN_TYPE
 								.getDescriptor(), true);
@@ -3337,8 +3339,8 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			int freevars, Type returnType, boolean isTailCall, boolean isPausable) {
 		
 		if (isPausable) {
-			if (ModuleAnalyzer.DEBUG_ANALYZE) {
-				System.err.println
+			if (ModuleAnalyzer.log.isLoggable(Level.FINE)) {
+				ModuleAnalyzer.log.fine
 					("not generating go2 (pausable) for "+full_inner);
 			}
 			return;

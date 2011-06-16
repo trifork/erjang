@@ -194,7 +194,7 @@ public abstract class ECons extends EObject {
 				// do nothing //
 			} else {
 				
-				System.err.println("head is "+head+"::"+head.getClass());
+				ERT.debug("head is "+head+"::"+head.getClass());
 				
 				// not a well-formed iolist
 				return false;

@@ -21,6 +21,8 @@ package erjang.beam.interpreter;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import erjang.EModule;
 import erjang.EModuleManager;
@@ -49,7 +51,7 @@ import erjang.beam.repr.FunctionInfo;
 import kilim.Pausable;
 
 public class AbstractInterpreter {
-	static final boolean DEBUG = false;
+	static Logger log = Logger.getLogger("erjang.beam");
 
 	public static abstract class Encoder implements ModuleVisitor {
 		private EAtom moduleName;
@@ -76,16 +78,16 @@ public class AbstractInterpreter {
 		public void visitAttribute(EAtom att, EObject value) {}
 
 		public void visitEnd() {
- 			if (DEBUG) System.err.println("Interpreter code for module '"+moduleName+"':");
+ 			log.fine("Interpreter code for module '"+moduleName+"':");
 
 			for (Backpatch bp : backpatches) {
 				bp.patch(label_map.get(bp.label));
 			}
 
-			if (DEBUG) {
+			if (log.isLoggable(Level.FINE)) {
 				for (int i=0; i<code.size(); i++) {
 					Insn insn = insn_start.get(i);
-					System.err.println((insn!=null? "*" : " ") + i +
+					log.fine((insn!=null? "*" : " ") + i +
 									   ": " + (int)code.get(i) +
 									   (insn!=null ? ("\t"+insn.toSymbolic().toString()) : ""));
 				}
@@ -98,7 +100,7 @@ public class AbstractInterpreter {
 			ValueJumpTable[] valueJumpTableArray = value_jump_tables.toArray(new ValueJumpTable[value_jump_tables.size()]);
 			ArityJumpTable[] arityJumpTableArray = arity_jump_tables.toArray(new ArityJumpTable[arity_jump_tables.size()]);
 			List<FunIDWithEntry> exports = convertExports(raw_exports);
-			if (DEBUG) System.err.println("INT| Constructing module for "+moduleName.getName());
+			log.fine("INT| Constructing module for "+moduleName.getName());
 			return makeModule(moduleName.getName(),
 							  codeArray, constArray,
 							  valueJumpTableArray, arityJumpTableArray,

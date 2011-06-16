@@ -25,12 +25,10 @@ import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import erjang.driver.NIOChannelInfo.Interest;
 
@@ -38,6 +36,7 @@ import erjang.driver.NIOChannelInfo.Interest;
  * 
  */
 public class NIOSelector extends Thread {
+	static Logger log = Logger.getLogger("erjang.driver");
 
 	static final NIOSelector INSTANCE = new NIOSelector();
 	private Selector selector;
@@ -72,8 +71,8 @@ public class NIOSelector extends Thread {
 		try {
 			run0();
 		} catch (Throwable e) {
-			System.err.println("unhandled exception in Select loop");
-			e.printStackTrace(System.err);
+			log.severe("unhandled exception in Select loop: " +e.getMessage());
+			log.log(Level.FINE, "details: ", e);
 		}
 	}
 
@@ -106,14 +105,14 @@ public class NIOSelector extends Thread {
 			int num;
 
 				if (false) {
-					System.err.println("select loop");
+					log.fine("select loop");
 					
 					for (SelectionKey key : selector.keys()) {
 						if (key.isValid()) {
 							
 							SelectableChannel ch = key.channel();
 							int interst = key.interestOps();
-							System.err.println(Integer.toBinaryString(interst) + ":"  + ch);
+							if (log.isLoggable(Level.FINE)) log.fine(Integer.toBinaryString(interst) + ":"  + ch);
 							
 						}
 					}
@@ -143,7 +142,7 @@ public class NIOSelector extends Thread {
 				
 				NIOChannelInfo req = (NIOChannelInfo) key.attachment();
 				if (req == null) {
-					System.err.println("Internal error, SelectionKey's attachement is null");
+					log.severe("Internal error, SelectionKey's attachement is null");
 				} else {
 					req.ready(key);
 				}

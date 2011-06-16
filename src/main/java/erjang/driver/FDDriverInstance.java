@@ -19,7 +19,6 @@
 
 package erjang.driver;
 
-import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -28,7 +27,6 @@ import java.nio.ByteOrder;
 import java.nio.channels.SelectableChannel;
 
 import kilim.Pausable;
-
 import erjang.EBinary;
 import erjang.EHandle;
 import erjang.EObject;

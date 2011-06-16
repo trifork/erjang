@@ -18,10 +18,6 @@
 
 package erjang;
 
-import java.io.File;
-import java.net.MalformedURLException;
-
-import erjang.beam.Compiler;
 
 /**
  * 

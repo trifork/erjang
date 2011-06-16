@@ -82,7 +82,7 @@ public class Main {
 			}
 		}
 		
-		System.err.println("Cannot find OTPROOT directory\n"
+		ERT.log.severe("Cannot find OTPROOT directory\n"
 				+ "Pass -root <dir>, or set environment variable.");
 		System.exit(-1);
 		
@@ -161,7 +161,7 @@ public class Main {
 		System.setProperty("erjang.path", erl_bootstrap_ebindir);
 		
 		if (!(new File(erl_bootstrap_ebindir)).exists() && !erl_bootstrap_ebindir.startsWith(EFile.RESOURCE_PREFIX)) {
-			System.err.println("No bootstrap classes at: "+erl_bootstrap_ebindir);
+			ERT.log.severe("No bootstrap classes at: "+erl_bootstrap_ebindir);
 			System.exit(1);
 		}
 		

@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import erjang.EAtom;
 import erjang.EObject;
@@ -18,7 +20,7 @@ import erjang.beam.repr.Operands.SourceOperand;
 
 public class ModuleAnalyzer implements ModuleVisitor {
 
-	public static final boolean DEBUG_ANALYZE = false;
+	static Logger log = Logger.getLogger("erjang.beam.analyze");
 	Map<Label, FunInfo> info = new HashMap<Label, FunInfo>();
 
 	static class FunInfo {
@@ -83,8 +85,8 @@ public class ModuleAnalyzer implements ModuleVisitor {
 					if (!caller.is_pausable) {
 						effect = caller.is_pausable = true;
 						
-						if (DEBUG_ANALYZE) {
-							System.err.println("propagate " +fun+ " -> " + caller);
+						if (log.isLoggable(Level.FINE)) {
+							log.fine("propagate " +fun+ " -> " + caller);
 						}
 					}
 				}
@@ -94,8 +96,8 @@ public class ModuleAnalyzer implements ModuleVisitor {
 					if (!caller.call_is_pausable) {
 						effect = caller.call_is_pausable = true;
 						
-						if (DEBUG_ANALYZE) {
-							System.err.println("propagate " +fun+ " -> " + caller);
+						if (log.isLoggable(Level.FINE)) {
+							log.fine("propagate " +fun+ " -> " + caller);
 						}
 					}
 				}
@@ -140,9 +142,9 @@ public class ModuleAnalyzer implements ModuleVisitor {
 	public void visitEnd() {
 		propagate();
 
-		if (ERT.DEBUG2) {
+		if (log.isLoggable(Level.FINE)) {
 		for (Map.Entry<Label, FunInfo> e : info.entrySet()) {
-			System.err.println(e.getValue());
+			log.fine(e.getValue().toString());
 		}
 		}
 
@@ -158,8 +160,8 @@ public class ModuleAnalyzer implements ModuleVisitor {
 	public FunctionVisitor visitFunction(EAtom name, int arity,
 			final int startLabel) {
 		
-		if (DEBUG_ANALYZE) {
-			System.err.println("== analyzing "+ModuleAnalyzer.this.name+":"+name+"/"+arity);
+		if (log.isLoggable(Level.FINE)) {
+			log.fine("== analyzing "+ModuleAnalyzer.this.name+":"+name+"/"+arity);
 		}
 
 		Label start = new Label(startLabel);
@@ -179,8 +181,8 @@ public class ModuleAnalyzer implements ModuleVisitor {
 						switch (op = insn.opcode()) {
 
 						case send: {
-							if (DEBUG_ANALYZE && !self.is_pausable) {
-								System.err.println("pausable: send");
+							if (log.isLoggable(Level.FINE) && !self.is_pausable) {
+								log.fine("pausable: send");
 							}
 							
 							self.is_pausable = true;
@@ -243,8 +245,8 @@ public class ModuleAnalyzer implements ModuleVisitor {
 						}
 
 						case apply_last:
-							if (DEBUG_ANALYZE && !self.call_is_pausable) {
-								System.err.println("call_pausable: " + op);
+							if (log.isLoggable(Level.FINE) && !self.call_is_pausable) {
+								log.fine("call_pausable: " + op);
 							}
 
 							self.may_return_tail_marker = true;
@@ -267,8 +269,8 @@ public class ModuleAnalyzer implements ModuleVisitor {
 							}
 						}							
 							
-							if (DEBUG_ANALYZE && !self.call_is_pausable) {
-								System.err.println("call_pausable: " + op);
+							if (log.isLoggable(Level.FINE) && !self.call_is_pausable) {
+								log.fine("call_pausable: " + op);
 							}
 
 							self.may_return_tail_marker = true;
@@ -290,8 +292,8 @@ public class ModuleAnalyzer implements ModuleVisitor {
 							
 							if (bif != null) {
 								
-								if (DEBUG_ANALYZE && !self.is_pausable && bif.isPausable()) {
-									System.err.println("pausable: calls " + bif.javaMethod);
+								if (log.isLoggable(Level.FINE) && !self.is_pausable && bif.isPausable()) {
+									log.fine("pausable: calls " + bif.javaMethod);
 								}
 
 								
@@ -300,8 +302,8 @@ public class ModuleAnalyzer implements ModuleVisitor {
 
 							} else if (op == BeamOpcode.call_ext) {
 
-								if (DEBUG_ANALYZE && !self.is_pausable) {
-									System.err.println("pausable: calls "+mod+":"+fun+"/"+arity);
+								if (log.isLoggable(Level.FINE) && !self.is_pausable) {
+									log.fine("pausable: calls "+mod+":"+fun+"/"+arity);
 								}
 
 								self.is_pausable = true;
@@ -313,8 +315,8 @@ public class ModuleAnalyzer implements ModuleVisitor {
 						case call_fun:
 						case wait:
 						case wait_timeout:
-							if (DEBUG_ANALYZE && !self.is_pausable) {
-								System.err.println("pausable: "+op);
+							if (log.isLoggable(Level.FINE) && !self.is_pausable) {
+								log.fine("pausable: "+op);
 							}
 							self.is_pausable = true;
 							
@@ -343,8 +345,8 @@ public class ModuleAnalyzer implements ModuleVisitor {
 
 							self.is_pausable |= bif.isPausable();
 
-							if (DEBUG_ANALYZE && self.is_pausable) {
-								System.err.println("pausable: calls "+bif.javaMethod);
+							if (log.isLoggable(Level.FINE) && self.is_pausable) {
+								log.fine("pausable: calls "+bif.javaMethod);
 							}
 
 						}

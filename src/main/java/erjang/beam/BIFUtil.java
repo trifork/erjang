@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
 
 import org.objectweb.asm.Type;
 
@@ -291,8 +292,8 @@ public class BIFUtil {
 			for (Args a : args.generalize()) {
 				m = found.get(a);
 				if (m != null) {
-					if (ERT.DEBUG2)
-						System.err.println("missed opportunity erlang:"
+					if (ERT.log.isLoggable(Level.FINE))
+						ERT.log.fine("missed opportunity erlang:"
 							+ EAtom.intern(name) + "/" + parmTypes.length + " "
 							+ args + ", \n\tusing " + m);
 

@@ -23,12 +23,13 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicReference;
 
 import kilim.Pausable;
+
 import com.trifork.clj_ds.APersistentMap;
 import com.trifork.clj_ds.IMapEntry;
 import com.trifork.clj_ds.IPersistentMap;
 import com.trifork.clj_ds.ISeq;
 import com.trifork.clj_ds.PersistentTreeMap;
-import com.trifork.clj_ds.RT;
+
 import erjang.EAtom;
 import erjang.EInteger;
 import erjang.EInternalPID;
@@ -54,8 +55,6 @@ import erjang.NotImplemented;
  * 
  */
 abstract class ETable implements ExitHook {
-
-
 	public static final EAtom am_stm = EAtom.intern("stm");
 	
 	protected WeakReference<EProc> owner;
@@ -194,7 +193,7 @@ abstract class ETable implements ExitHook {
 			}
 			
 		} else {
-			System.err.println("table "+aname+" ("+tid+") received exit from unrelated "+dyingPID);
+			Native.log.warning("table "+aname+" ("+tid+") received exit from unrelated "+dyingPID);
 		}
 	}
 

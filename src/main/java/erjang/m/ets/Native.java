@@ -18,10 +18,11 @@
 
 package erjang.m.ets;
 
-import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import erjang.BIF;
 import erjang.EAtom;
@@ -29,7 +30,6 @@ import erjang.EInteger;
 import erjang.EInternalPID;
 import erjang.ENative;
 import erjang.EObject;
-import erjang.EPID;
 import erjang.EProc;
 import erjang.ERT;
 import erjang.ESeq;
@@ -45,6 +45,7 @@ import erjang.NotImplemented;
  * This class implements the BIFs in ets.
  */
 public class Native extends ENative {
+	static Logger log = Logger.getLogger("erjang.module.ets");
 
 	// atoms used in this module are declared using the convention
 	// of naming it am_XXX where XXX is the name of the atom (if sensible).
@@ -454,8 +455,8 @@ public class Native extends ENative {
 		try {
 			matcher = new EPattern(table.keypos1, spec);
 		} catch (ErlangException e) {
-			System.err.println("bad match spec: "+spec);
-			e.printStackTrace();
+			log.severe("bad match spec: "+spec + ": " +e.getMessage());
+			log.log(Level.FINE, "details: ", e);
 			throw ERT.badarg(nameOrTid, spec);
 		}
 		
@@ -483,7 +484,7 @@ public class Native extends ENative {
 	}
 	
 	@BIF static public EObject repair_continuation(EObject cont, EObject ms) {
-		System.err.println("repair cont="+cont+"; ms="+ms);
+		log.info("repair cont="+cont+"; ms="+ms);
 		return cont;
 	}
 

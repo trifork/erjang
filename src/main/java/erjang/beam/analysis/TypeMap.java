@@ -20,6 +20,7 @@ package erjang.beam.analysis;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Logger;
 
 import org.objectweb.asm.Type;
 
@@ -30,6 +31,7 @@ import erjang.EObject;
 import erjang.ETuple;
 
 class TypeMap {
+	private static Logger log = Logger.getLogger("erjang.beam");
 	private static Type TYPE_EOBJECT = Type.getType(EObject.class);
 	private static Type TYPE_ETUPLE = Type.getType(ETuple.class);
 	private static String ETUPLE_NAME = TYPE_ETUPLE.getInternalName();
@@ -151,7 +153,7 @@ class TypeMap {
 		this.exh = exh;
 		
 		if (stacksize > 1023) {
-			System.err.println("stacksize > 1023!");
+			log.warning("stacksize > 1023!");
 		}
 		
 	}

@@ -18,6 +18,8 @@
 
 package erjang.m.erlang;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import kilim.Pausable;
@@ -48,6 +50,7 @@ import erjang.driver.EDriverTask;
  * BIFs supporting distribution
  */
 public class ErlDist {
+	static Logger log = Logger.getLogger("erjang.dist");
 
 	private static DistEntry this_dist_entry = null;
 	private static final EAtom am_net_kernel = EAtom.intern("net_kernel");
@@ -188,7 +191,7 @@ public class ErlDist {
 		EAtom node = arg_node.testAtom();
 		
 		if (cr == null || node == null || cr.value > 3 || !is_node_name_atom(node)) {
-			System.err.println("cr="+cr+"; node="+node+"; is_name="+is_node_name_atom(node));
+			if (log.isLoggable(Level.FINE)) log.fine("cr="+cr+"; node="+node+"; is_name="+is_node_name_atom(node));
 			throw ERT.badarg(arg_node, arg_creation);
 		}
 

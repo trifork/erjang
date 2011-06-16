@@ -28,6 +28,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.GatheringByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.charset.Charset;
+import java.util.logging.Level;
 import java.util.zip.GZIPOutputStream;
 
 import erjang.EBinary;
@@ -140,8 +141,8 @@ public class IO {
 			}
 		}
 		
-		System.err.println("unknown exception: "+e);
-		e.printStackTrace(System.err);
+		ERT.log.warning("unknown exception: "+e.getMessage());
+		ERT.log.log(Level.FINE, "details: ", e);
 		
 		// TODO: implement some more error codes here
 		return Posix.EUNKNOWN;

@@ -24,6 +24,8 @@ import java.util.Map;
 import java.util.LinkedList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import erjang.driver.EDriverTask;
 
@@ -33,6 +35,7 @@ import kilim.Pausable;
  * This corresponds to a DistEntry in BEAM
  */
 public class EPeer extends EAbstractNode {
+	static Logger log = Logger.getLogger("erjang.dist");
 
 	protected static final byte passThrough = (byte) 0x70;
 	protected static final byte distHeader = (byte) 131;
@@ -129,7 +132,7 @@ public class EPeer extends EAbstractNode {
 				close_and_finish(port);
 			}
 		} else {
-			System.err.println("sending cast to dead task (port="+port+", this="+this+", sender="+sender+")");
+			log.warning("sending cast to dead task (port="+port+", this="+this+", sender="+sender+")");
 		}
 	}
 
@@ -165,7 +168,7 @@ public class EPeer extends EAbstractNode {
 			if (do_set_port) {
 				peer.setPort(port);
 			} else if (port != null) {
-				System.err.println("Port already set for node (to "+peer.port+"); refraining from setting it again (to "+port+")");
+				log.warning("Port already set for node (to "+peer.port+"); refraining from setting it again (to "+port+")");
 			}
 
 			return peer;
@@ -200,9 +203,7 @@ public class EPeer extends EAbstractNode {
 			throws IOException, Pausable {
 
 		if (buf.remaining() == 0) {
-			if (ERT.DEBUG_DIST) {
-				System.err.println("received tick from " + this.node);
-			}
+			log.fine("received tick from " + this.node);
 			return;
 		}
 
@@ -250,8 +251,8 @@ public class EPeer extends EAbstractNode {
 				break receive_loop;
 			}
 
-			if (ERT.DEBUG_DIST) {
-				System.err.println("received net_message " + tmp);
+			if (log.isLoggable(Level.FINE)) {
+				log.fine("received net_message " + tmp);
 			}
 			
 			ESmall tag_sm;
@@ -291,8 +292,8 @@ public class EPeer extends EAbstractNode {
 			case SEND: { // {2, Cookie, ToPid}
 
 				EObject msg = ibuf.read_any();
-				if (ERT.DEBUG_DIST)
-					System.err.println("           payload: " + msg);
+				if (log.isLoggable(Level.FINE))
+					log.fine("           payload: " + msg);
 				EHandle dst = head.elm(3).testHandle();
 				if (dst == null)
 					throw new IOException("protocol error");
@@ -307,8 +308,8 @@ public class EPeer extends EAbstractNode {
 								// }
 			{
 				EObject msg = ibuf.read_any();
-				if (ERT.DEBUG_DIST)
-					System.err.println("           payload: " + msg);
+				if (log.isLoggable(Level.FINE))
+					log.fine("           payload: " + msg);
 				EAtom toname = head.elm(4).testAtom();
 				if (toname == null)
 					throw new IOException("protocol error");
@@ -413,8 +414,7 @@ public class EPeer extends EAbstractNode {
 			EInputStream ibuf) throws IOException {
 		EAtom[] atom_cache_refs;
 
-		if (ERT.DEBUG_DIST)
-			System.err.println("parsing distribuionHeader....");
+		log.fine("parsing distribuionHeader....");
 		
 		int datum = ibuf.read1();
 
@@ -445,7 +445,7 @@ public class EPeer extends EAbstractNode {
 			boolean longAtoms = (flags[numberOfAtomCacheRefs] & 0x01) == 1;
 
 			if (longAtoms) {
-				System.err.println("LONGATOMS!");
+				log.fine("LONGATOMS!");
 			}
 
 			for (int i = 0; i < numberOfAtomCacheRefs; i++) {
@@ -453,8 +453,8 @@ public class EPeer extends EAbstractNode {
 				int segment_index = flags[i] & 7;
 				int index = ibuf.read1();
 
-				if (ERT.DEBUG_DIST)
-				System.err.print("cache[" + i + "] -> ref["
+				if (log.isLoggable(Level.FINE))
+					log.fine("cache[" + i + "] -> ref["
 						+ segment_index + "][" + index + "]");
 
 				if ((flags[i] & 8) == 8) {
@@ -477,8 +477,8 @@ public class EPeer extends EAbstractNode {
 
 				atom_cache_refs[i] = atom_cache[segment_index][index];
 
-				if (ERT.DEBUG_DIST)
-					System.err.println(" => " + atom_cache_refs[i]);
+				if (log.isLoggable(Level.FINE))
+					log.fine(" => " + atom_cache_refs[i]);
 			}
 
 			ibuf.setAtomCacheRefs(atom_cache_refs);
