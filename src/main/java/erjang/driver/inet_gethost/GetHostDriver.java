@@ -68,7 +68,7 @@ public class GetHostDriver extends EDriverInstance {
 	protected void output(EHandle caller, ByteBuffer buf) throws IOException,
 			Pausable {
 
-		// System.err.println(EBinary.make(buf));
+		// log.fine(EBinary.make(buf).toString());
 		
 		final int seq = buf.getInt();
 		byte op = buf.get();
@@ -97,7 +97,7 @@ public class GetHostDriver extends EDriverInstance {
 	private EAsync gethostbyname(ByteBuffer buf, final int seq) {
 		final byte proto = buf.get();
 		final String host = IO.getstr(buf, true);
-		// System.err.println(" gethostsbyname["+seq+"][call] "+host);
+		// log.fine(" gethostsbyname["+seq+"][call] "+host);
 
 		return new EAsync() {
 			
@@ -109,14 +109,14 @@ public class GetHostDriver extends EDriverInstance {
 			@Override
 			public void async() {
 				
-				// System.err.println(" gethostsbyname["+seq+"][async] "+host);
+				// log.fine(" gethostsbyname["+seq+"][async] "+host);
 				try {
 					primary = InetAddress.getByName(host);
 					addr = InetAddress.getAllByName(host);
 					names = new String[addr.length];
 					for (int i = 0; i < addr.length; i++) {
 						names[i] = addr[i].getCanonicalHostName();
-						// System.err.println(">> " + addr[i]+" -> "+names[i]);
+						// log.fine(">> " + addr[i]+" -> "+names[i]);
 					}
 				} catch (UnknownHostException e) {
 					this.err = e;
@@ -126,7 +126,7 @@ public class GetHostDriver extends EDriverInstance {
 			@Override
 			public void ready() throws Pausable {
 				
-				// System.err.println(" gethostsbyname["+seq+"][ready] "+host);
+				// log.fine(" gethostsbyname["+seq+"][ready] "+host);
 				if (addr != null) {
 					// we're ok
 					byte[][] bytes = new byte[addr.length][];
@@ -136,7 +136,7 @@ public class GetHostDriver extends EDriverInstance {
 					int first = -1;
 					int acount = 0;
 					for (int i = 0; i < addr.length; i++) {
-						//System.err.println("gethostbyname["+i+"]="+addr[i]+" / "+names[i]);
+						//log.fine("gethostbyname["+i+"]="+addr[i]+" / "+names[i]);
 						if ((proto==PROTO_IPV4 && (addr[i] instanceof Inet4Address))
 								|| (proto==PROTO_IPV6 && (addr[i] instanceof Inet6Address))) {
 							bytes[i] = addr[i].getAddress();
@@ -144,7 +144,7 @@ public class GetHostDriver extends EDriverInstance {
 							acount += 1;
 							if (first == -1) first = i;
 							if (host.equals(names[i])) {
-								//System.err.println("gethostbyname["+i+"]=>"+primary);
+								//log.fine("gethostbyname["+i+"]=>"+primary);
 								first = i;
 							}
 						}
@@ -212,7 +212,7 @@ public class GetHostDriver extends EDriverInstance {
 				rep.put(UNIT_ERROR);
 				rep.put(msg);
 				
-				dump_write(new ByteBuffer[] {rep});
+				dump_buffer(new ByteBuffer[] {rep});
 				
 				driver_output(rep);
 			}
@@ -226,7 +226,7 @@ public class GetHostDriver extends EDriverInstance {
 		final byte[] host = new byte[ proto == PROTO_IPV4 ? 4 : 16 ];
 		buf.get(host);
 		
-		// System.err.println(" gethostbyaddr["+seq+"][call] "+host);
+		// log.fine(" gethostbyaddr["+seq+"][call] "+host);
 
 		return new EAsync() {
 			
@@ -238,7 +238,7 @@ public class GetHostDriver extends EDriverInstance {
 			@Override
 			public void async() {
 				
-				// System.err.println(" gethostbyaddr["+seq+"][async] "+host);
+				// log.fine(" gethostbyaddr["+seq+"][async] "+host);
 				try {
 					primary = InetAddress.getByAddress(host);
 					name = primary.getCanonicalHostName();
@@ -251,7 +251,7 @@ public class GetHostDriver extends EDriverInstance {
 			@Override
 			public void ready() throws Pausable {
 				
-				// System.err.println(" gethostsbyname["+seq+"][ready] "+host);
+				// log.fine(" gethostsbyname["+seq+"][ready] "+host);
 				if (addr != null) {
 					// we're ok
 					byte[][] bytes = new byte[addr.length][];
@@ -261,7 +261,7 @@ public class GetHostDriver extends EDriverInstance {
 					int first = -1;
 					int acount = 0;
 					for (int i = 0; i < addr.length; i++) {
-						//System.err.println("gethostbyname["+i+"]="+addr[i]+" / "+names[i]);
+						//log.fine("gethostbyname["+i+"]="+addr[i]+" / "+names[i]);
 						if ((proto==PROTO_IPV4 && (addr[i] instanceof Inet4Address))
 								|| (proto==PROTO_IPV6 && (addr[i] instanceof Inet6Address))) {
 							bytes[i] = addr[i].getAddress();
@@ -333,7 +333,7 @@ public class GetHostDriver extends EDriverInstance {
 				rep.put(UNIT_ERROR);
 				rep.put(msg);
 				
-				dump_write(new ByteBuffer[] {rep});
+				dump_buffer(new ByteBuffer[] {rep});
 				
 				driver_output(rep);
 			}
@@ -363,77 +363,4 @@ public class GetHostDriver extends EDriverInstance {
 		throw new erjang.NotImplemented();
 
 	}
-
-	public static void dump_write(ByteBuffer[] ev) {
-
-		
-		System.err.println(" vec[" + ev.length + "]:: ");
-
-		for (int i = 0; i < ev.length; i++) {
-
-			ByteBuffer evp = ev[i];
-			int off = 0;
-			for (int p = 0; p < evp.position(); p++) {
-
-				if ((off % 0x10) == 0 && off != 0)
-					System.err.println("");
-
-				if ((off % 0x10) == 0)
-					System.err.print("0x" + hex4(off) + " :");
-
-				System.err.print(" ");
-				byte ch = evp.get(p);
-				System.err.print(hex2(ch&0xff));
-
-				off += 1;
-
-			}
-
-			if (i < ev.length-1) System.out.println();
-		}
-
-		System.err.println("---");
-
-		for (int i = 0; i < ev.length; i++) {
-
-			ByteBuffer evp = ev[i];
-			int off = 0;
-			for (int p = 0; p < evp.position(); p++) {
-
-				if ((off % 0x10) == 0 && off != 0)
-					System.err.println("");
-
-				if ((off % 0x10) == 0)
-					System.err.print("0x" + hex4(off) + " : ");
-
-				byte ch = evp.get(p);
-				if (ch >= 32 && ch <= 127) {
-					System.err.print((char)ch);
-				} else {
-					System.err.print('.');
-				}
-
-				off += 1;
-
-			}
-
-			if (i < ev.length-1) System.out.println();
-		}
-
-
-	}
-
-	static String hex2(int i) {
-		if (i < 0x10) return "0" + Integer.toHexString(i);
-		return Integer.toHexString(i);
-	}
-	
-	static String hex4(int i) {
-		if (i < 0x10) return "000" + Integer.toHexString(i);
-		if (i < 0x100) return "00" + Integer.toHexString(i);
-		if (i < 0x1000) return "0" + Integer.toHexString(i);
-		return Integer.toHexString(i);
-	}
-	
-
 }

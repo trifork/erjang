@@ -35,6 +35,7 @@ import erjang.driver.efile.Posix;
 import java.io.IOException;
 import java.io.ByteArrayOutputStream;
 
+import java.util.logging.Level;
 import java.util.zip.Inflater;
 
 import java.nio.ByteBuffer;
@@ -149,7 +150,8 @@ public class RamFile extends EDriverInstance {
 						baos.write(buf, 0, inflated);
 					}
 				} catch (Exception e) {
-					System.err.println("DB| inflation error: "+e);
+					log.severe("DB| inflation error: "+e.getMessage());
+					log.log(Level.FINE, "details: ", e);
 					reply_posix_error(Posix.EINVAL);
 					return;
 				}

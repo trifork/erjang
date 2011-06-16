@@ -21,6 +21,8 @@ package erjang.m.erlang;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import kilim.Pausable;
 import erjang.BIF;
@@ -39,6 +41,7 @@ import erjang.ETuple;
 import erjang.ETuple2;
 import erjang.ETuple3;
 import erjang.driver.EDriver;
+import erjang.driver.EDriverInstance;
 import erjang.driver.EDriverTask;
 import erjang.driver.EExecDriverTask;
 import erjang.driver.EFDDriverTask;
@@ -49,6 +52,7 @@ import erjang.driver.tcp_inet.TCPINet;
  * 
  */
 public class ErlPort {
+	static Logger log = Logger.getLogger("erjang.port");
 
 	public static final EAtom am_fd = EAtom.intern("fd");
 	private static final ByteBuffer EMPTY_BYTEBUFFER = ByteBuffer.allocate(0);
@@ -100,8 +104,8 @@ public class ErlPort {
 			throws Pausable {
 		EInternalPort p = port.testInternalPort();
 
-		if (ERT.DEBUG_PORT)
-		System.err.print("port_command "+port+", "+data);
+		if (log.isLoggable(Level.FINER))
+		log.finer("port_command "+port+", "+data);
 		
 
 		
@@ -115,8 +119,8 @@ public class ErlPort {
 
 		List<ByteBuffer> ovec = new ArrayList<ByteBuffer>();
 		if (p == null || !data.collectIOList(ovec)) {
-			if (ERT.DEBUG_PORT) {
-				System.err.println("collect failed! or p==null: "+p);
+			if (log.isLoggable(Level.WARNING)) {
+				log.warning("collect failed! or p==null: "+p);
 			}
 			throw ERT.badarg(port, data);
 		}
@@ -124,12 +128,12 @@ public class ErlPort {
 		ByteBuffer[] out = new ByteBuffer[ovec.size()];
 		ovec.toArray(out);
 
-		if (ERT.DEBUG_PORT) {
-			System.err.print("EVEC: ");
-			TCPINet.dump_write(out);
+		if (log.isLoggable(Level.FINE)) {
+			log.fine("EVEC: ");
+			TCPINet.dump_buffer(out);
 		}
 		
-		// System.err.println("packing "+data+"::"+data.getClass().getName()+" -> "+ovec);
+		// log.finer("packing "+data+"::"+data.getClass().getName()+" -> "+ovec);
 
 		p.command(proc.self_handle(), out);
 
@@ -142,8 +146,8 @@ public class ErlPort {
 			throws Pausable {
 		EInternalPort p = port.testInternalPort();
 
-		if (ERT.DEBUG_PORT)
-		System.err.print("port_command "+port+", "+data);
+		if (log.isLoggable(Level.FINE))
+			log.fine("port_command "+port+", "+data);
 		
 
 		
@@ -157,8 +161,8 @@ public class ErlPort {
 
 		List<ByteBuffer> ovec = new ArrayList<ByteBuffer>();
 		if (p == null || !data.collectIOList(ovec)) {
-			if (ERT.DEBUG_PORT) {
-				System.err.println("collect failed! or p==null: "+p);
+			if (log.isLoggable(Level.FINE)) {
+				log.fine("collect failed! or p==null: "+p);
 			}
 			throw ERT.badarg(port, data);
 		}
@@ -166,12 +170,9 @@ public class ErlPort {
 		ByteBuffer[] out = new ByteBuffer[ovec.size()];
 		ovec.toArray(out);
 
-		if (ERT.DEBUG_PORT) {
-			System.err.print("EVEC: ");
-			TCPINet.dump_write(out);
-		}
+		EDriverInstance.dump_buffer(log, "EVEC: ", out);
 		
-		// System.err.println("packing "+data+"::"+data.getClass().getName()+" -> "+ovec);
+		// log.fine("packing "+data+"::"+data.getClass().getName()+" -> "+ovec);
 
 		p.command(proc.self_handle(), out);
 
@@ -312,7 +313,7 @@ public class ErlPort {
 			
 			if (in == null || out == null) throw ERT.badarg(portName, portSetting);
 			
-			// System.err.println("creating fd driver in="+in+"; out="+out);
+			// log.finer("creating fd driver in="+in+"; out="+out);
 			task = new EFDDriverTask(proc, in.value, out.value, portSetting);
 			
 		}
@@ -363,7 +364,7 @@ public class ErlPort {
 		EAtom spec = a2.testAtom();
 		if (p==null || spec==null) throw ERT.badarg();
 		EObject info = p.port_info(spec);
-		//System.err.println(""+proc.self_handle()+"::port_info ("+a1+") => "+info);
+		//log.finer(""+proc.self_handle()+"::port_info ("+a1+") => "+info);
 		return info;
 	}
 	

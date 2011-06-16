@@ -36,7 +36,7 @@ import erjang.m.erlang.ErlProc;
  */
 public final class EProc extends ETask<EInternalPID> {
 	
-	static Logger log = Logger.getLogger(EProc.class.getName());
+	static Logger log = Logger.getLogger("erjang.proc");
 	
 	public static final EObject TAIL_MARKER = new ETailMarker();
 	
@@ -436,12 +436,9 @@ public final class EProc extends ETask<EInternalPID> {
 					}
 				}
 				 
-				//System.out.println("proc "+this+" exited "+tmp);
-				
 				result = am_normal;
 
 			} catch (NotImplemented e) {
-				System.err.print("exiting "+self_handle()+" with: ");
 				log.log(Level.SEVERE, "[fail] exiting "+self_handle(), e);
 				result = e.reason();
 				death = e;
@@ -459,8 +456,7 @@ public final class EProc extends ETask<EInternalPID> {
 				
 			} catch (Throwable e) {
 
-				System.err.print("[java] exiting "+self_handle()+" with: ");
-				e.printStackTrace();
+				log.log(Level.SEVERE, "[java] exiting "+self_handle()+" with: ", e);
 
 				ESeq erl_trace = ErlangError.decodeTrace(e.getStackTrace());
 				ETuple java_ex = ETuple.make(am_java_exception, EString
@@ -587,7 +583,7 @@ public final class EProc extends ETask<EInternalPID> {
 			return new ETuple2(am_memory, ERT.box(50000));
 			
 		} else {
-			System.err.println("NotImplemented: process_info("+spec+")");
+			log.warning("NotImplemented: process_info("+spec+")");
 			throw new NotImplemented("process_info("+spec+")");
 		}
 	}
@@ -682,13 +678,13 @@ public final class EProc extends ETask<EInternalPID> {
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 			@Override
 			public void run() {
-				System.err.println("===== LIVE TASKS UPON EXIT");
+				log.warning("===== LIVE TASKS UPON EXIT");
 				for (EProc task : all_tasks.values()) {
 					
-					System.err.println("==" + task);
-					System.err.println (task.fiber);
+					log.warning("==" + task);
+					log.warning(task.fiber.toString());
 				}
-				System.err.println("=====");				
+				log.warning("=====");				
 			}
 		});
 	}

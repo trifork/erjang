@@ -7,8 +7,12 @@ import java.nio.channels.GatheringByteChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public abstract class PacketConnection implements Connection {
+	static final Logger log = Logger.getLogger("erjang.epmd");
+	
 	protected SelectionKey sk;
 	private int state;
 
@@ -69,7 +73,7 @@ public abstract class PacketConnection implements Connection {
 		try {
 			sc.finishConnect();
 			sk.interestOps(sk.interestOps() & ~SelectionKey.OP_CONNECT); 
-			Functions.dout(2, "connect complete");
+			log.fine("connect complete");
 			state = Connection.OPEN;
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -95,7 +99,7 @@ public abstract class PacketConnection implements Connection {
 				//e.printStackTrace();
 				len = -1;
 			} // error look like eof
-			Functions.dout(1, "read len=" + len);
+			log.finer("read len=" + len);
 
 			if (len == -1) {
 				close();
@@ -176,7 +180,7 @@ public abstract class PacketConnection implements Connection {
 	 * process a write ready selection
 	 */
 	public void doWrite() {
-		Functions.dout(12, "write ready");
+		log.finer("write ready");
 
 		if (!outbuf.isEmpty()) {
 			GatheringByteChannel bc = (GatheringByteChannel) sk.channel();
@@ -214,25 +218,25 @@ public abstract class PacketConnection implements Connection {
 				if (state == Connection.OPEN) // open attempt graceful
 				// shutdown
 				{
-					Functions.dout(2, "shutting down");
+					log.fine("shutting down");
 					state = Connection.CLOSING;
 					Socket sock = sc.socket();
 					try {
 						sock.shutdownOutput();
 					} catch (IOException se) {
-						Functions.dout(12, "shutdown failed");
-						se.printStackTrace();
+						log.severe("shutdown failed: " + se.getMessage());
+						log.log(Level.FINE, "details: ", se);
 					}
 				} else
 					closeComplete();
 			} else
-				Functions.dout(12, "already closed");
+				log.warning("already closed");
 		}
 	}
 
 	// called internally if already closing or closed by partner
 	private void closeComplete() {
-		Functions.dout(2, "closing channel");
+		log.fine("closing channel");
 		try {
 			sk.interestOps(0);
 			SocketChannel sc = (SocketChannel) sk.channel();
@@ -241,7 +245,8 @@ public abstract class PacketConnection implements Connection {
 			sk.selector().wakeup();
 			sk.attach(null);
 		} catch (IOException ce) {
-			Functions.fail(ce, "close failed");
+			log.severe("close failed: " + ce.getMessage());
+			log.log(Level.FINE, "details: ", ce);
 		}
 		state = Connection.CLOSED;
 		connectionClosed();

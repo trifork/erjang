@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Progress {
-
 	static ProgressListener listener;
 
 	public static void setListener(ProgressListener listener) {

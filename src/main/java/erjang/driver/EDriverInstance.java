@@ -24,6 +24,8 @@ import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.util.ArrayList;
 import java.util.concurrent.locks.Lock;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import kilim.Pausable;
 import kilim.ReentrantLock;
@@ -49,6 +51,7 @@ import erjang.m.erlang.ErlProc;
  * 
  */
 public abstract class EDriverInstance extends EDriverControl {
+	protected static Logger log = Logger.getLogger("erjang.driver");
 
 	EDriver driver;
 	protected EDriverTask task;
@@ -272,9 +275,7 @@ public abstract class EDriverInstance extends EDriverControl {
 		try {
 			return ErlProc.demonitor(task, monitor, ERT.NIL) == ERT.TRUE;
 		} catch (ErlangException e) {
-			if (ERT.DEBUG_PORT) {
-				e.printStackTrace();
-			}
+			EDriverTask.log.log(Level.FINE, "demonitor", e);
 			return false;
 		}
 	}
@@ -463,6 +464,97 @@ public abstract class EDriverInstance extends EDriverControl {
 	protected void set_busy_port(boolean b) {
 		throw new erjang.NotImplemented();
 		
+	}
+	
+	public static void dump_buffer(ByteBuffer[] buffer) {
+		dump_buffer(log, null, buffer);
+	}
+	
+	public static void dump_buffer(Logger log, String heading, ByteBuffer[] buffer) {
+		dump_buffer(log, Level.FINEST, heading, buffer);
+	}
+	
+	public static void dump_buffer(Logger log, Level level, String heading, ByteBuffer[] buffer) {
+
+		if (!log.isLoggable(level)) return;
+		
+		StringBuilder sb = new StringBuilder();
+		if (heading != null) {
+			sb.append(heading);
+			sb.append("\n");
+		}
+		
+		sb.append(" vec[" + buffer.length + "]:: \n");
+
+		for (int i = 0; i < buffer.length; i++) {
+
+			ByteBuffer evp = buffer[i];
+			int off = 0;
+			boolean did_print = false;
+			for (int p = evp.position(); p < evp.limit(); p++) {
+
+				if ((off % 0x10) == 0 && off != 0)
+					sb.append("\n");
+
+				if ((off % 0x10) == 0)
+					sb.append("["+i+"] 0x" + hex4(off) + " :");
+
+				did_print = true;
+				sb.append(" ");
+				byte ch = evp.get(p);
+				sb.append(hex2(ch&0xff));
+
+				off += 1;
+
+			}
+
+			if (i < buffer.length-1 && did_print) sb.append("\n");
+		}
+
+		sb.append("---\n");
+
+		for (int i = 0; i < buffer.length; i++) {
+
+			ByteBuffer evp = buffer[i];
+			int off = 0;
+			boolean did_print = false;
+			for (int p = evp.position(); p < evp.limit(); p++) {
+
+				if ((off % 0x10) == 0 && off != 0)
+					sb.append("\n");
+
+				if ((off % 0x10) == 0)
+					sb.append("["+i+"] 0x" + hex4(off) + " : ");
+
+				did_print = true;
+				byte ch = evp.get(p);
+				if (ch >= 32 && ch <= 127) {
+					sb.append((char)ch);
+				} else {
+					sb.append('.');
+				}
+
+				off += 1;
+
+			}
+
+			if (i < buffer.length-1 && did_print) sb.append("\n");
+		}
+		
+		String msg = sb.toString();
+		log.log(level, msg);
+	}
+
+	public static String hex2(int i) {
+		if (i < 0x10) return "0" + Integer.toHexString(i);
+		return Integer.toHexString(i);
+	}
+	
+	public static String hex4(int i) {
+		if (i < 0x10) return "000" + Integer.toHexString(i);
+		if (i < 0x100) return "00" + Integer.toHexString(i);
+		if (i < 0x1000) return "0" + Integer.toHexString(i);
+		return Integer.toHexString(i);
 	}
 
 

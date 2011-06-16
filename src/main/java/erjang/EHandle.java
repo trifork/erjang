@@ -59,8 +59,8 @@ public abstract class EHandle extends EObject {
 			task.mbox.put(msg);
 			return task.mbox.size();
 		} else {
-			if (ERT.log.isLoggable(Level.FINE)) {
-				ERT.log.fine("sending message to dead process/port ignored "+this+" ! "+msg);
+			if (ERT.ipclog.isLoggable(Level.FINE)) {
+				ERT.ipclog.fine("sending message to dead process/port ignored "+this+" ! "+msg);
 			}
 			return 0;
 		}

@@ -22,27 +22,23 @@ package erjang;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.trifork.clj_ds.IPersistentSet;
-import com.trifork.clj_ds.PersistentHashSet;
-
-import erjang.m.erlang.ErlProc;
-
 import kilim.Mailbox;
 import kilim.Pausable;
+
+import com.trifork.clj_ds.IPersistentSet;
+import com.trifork.clj_ds.PersistentHashSet;
 
 /**
  * An ETask is what is common for processes and open ports
  */
 public abstract class ETask<H extends EHandle> extends kilim.Task {
 
-	static Logger log = Logger.getLogger(ETask.class.getName());
+	static Logger log = Logger.getLogger("erjang.proc");
 	
 	public static final EAtom am_normal = EAtom.intern("normal");
 	protected static final EAtom am_java_exception = EAtom
@@ -150,12 +146,12 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 			try {
 			handle.exit_signal(me, exit_reason, false);
 			} catch (Error e) {
-				System.err.println("EXCEPTION IN EXIT HANDLER");
-				e.printStackTrace();
+				log.severe("EXCEPTION IN EXIT HANDLER");
+				log.log(Level.FINE, "details: ", e);
 				throw e;
 			} catch (RuntimeException e) {
-				System.err.println("EXCEPTION IN EXIT HANDLER");
-				e.printStackTrace();
+				log.severe("EXCEPTION IN EXIT HANDLER");
+				log.log(Level.FINE, "details: ", e);
 				throw e;
 			}
 		}

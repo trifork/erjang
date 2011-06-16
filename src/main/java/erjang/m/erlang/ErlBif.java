@@ -258,7 +258,7 @@ public class ErlBif {
 	
 	static public EPID self(EProc proc) {
 		if (proc == null) {
-			System.out.println("Houston, we have a problem.");
+			log.severe("Houston, we have a problem.");
 		}
 		return proc.self_handle();
 	}
@@ -1877,7 +1877,7 @@ public class ErlBif {
 	
 	@BIF
 	static public EObject system_monitor() {
-		System.err.println("system_monitor setting ignored");
+		if (log.isLoggable(Level.FINE)) log.fine("system_monitor setting ignored");
 		return new ETuple2(sysmon_pid, ERT.NIL);
 	}
 	

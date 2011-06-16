@@ -15,8 +15,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import kilim.Pausable;
-
-import erjang.EBinList;
 import erjang.EBinary;
 import erjang.driver.IO;
 

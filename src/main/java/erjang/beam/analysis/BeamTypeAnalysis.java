@@ -29,6 +29,8 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.objectweb.asm.Type;
 
@@ -83,6 +85,7 @@ import static erjang.beam.repr.Operands.DestinationOperand;
 import static erjang.beam.CodeAtoms.*;
 
 public class BeamTypeAnalysis extends ModuleAdapter {
+	static final Logger log = Logger.getLogger("erjang.beam");
 	/**
 	 * 
 	 */
@@ -187,7 +190,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 				}
 			} while (change);
 
-			// System.err.println("live analysis for " + name + "/" + arity
+			// log.finer("live analysis for " + name + "/" + arity
 			// + " completed in " + iter + " iterations.");
 		}
 
@@ -265,7 +268,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					if (lb.insns.get(0).opcode() == BeamOpcode.func_info) {
 						// ignore this
 					} else {
-						System.err.println("UNREACHABLE " + lb.block_label);
+						log.fine("UNREACHABLE " + lb.block_label);
 						has_unreachable_code = true;
 					}
 				}
@@ -316,8 +319,8 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 		}
 
 		private void dump() {
-			if (ERT.DEBUG2) {
-			System.err.println("DUMPING " + name + "/" + arity);
+			if (log.isLoggable(Level.FINER)) {
+			log.finer("DUMPING " + name + "/" + arity);
 
 			for (Map.Entry<Integer, LabeledBlock> ent : lbs.entrySet()) {
 				ent.getValue().dump();
@@ -442,7 +445,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					switch (opcode) {
 					case func_info: {
 						Insn.AAI insn = (Insn.AAI)insn_;
-						// System.err.print("go: " + insn);
+						// log.finer("go: " + insn);
 						vis.visitInsn(opcode, insn.getExtFun());
 						break;
 					}
@@ -1417,11 +1420,11 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 			}
 
 			private void dump() {
-				if (ERT.DEBUG2 == false) return;
+				if (!log.isLoggable(Level.FINER)) return;
 				next_insn: for (int i = 0; i < insns.size(); i++) {
-					System.err.println(name + "(" + block_label + "):" + i
+					log.finer(name + "(" + block_label + "):" + i
 							+ " :: " + (map == null ? "?" : map[i]));
-					System.err.println("     >> " + insns.get(i));
+					log.finer("     >> " + insns.get(i));
 				}
 			}
 
@@ -1777,7 +1780,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 					case loop_rec_end:
 					case timeout: {
-						// System.err.println(insn);
+						// log.finer(insn);
 						continue next_insn;
 					}
 
@@ -2035,7 +2038,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 							lbv.merge_from(current);
 					} catch (Error e) {
 
-						System.out.println("merge " + current + "\n    | "
+						log.severe("merge " + current + "\n    | "
 								+ lbv.initial + "\n FAILED");
 						throw e;
 
@@ -2360,7 +2363,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					if (new_types == initial) {
 						// ignore //
 					} else if (new_types.equals(initial)) {
-					    if (ERT.DEBUG) System.err.println("Missed TypeMap sharing opportunity");
+					    if (log.isLoggable(Level.FINE)) log.fine("Missed TypeMap sharing opportunity");
 					} else {
 
 						// System.out.println("merge " + initial + "\n    | " +

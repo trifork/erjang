@@ -4,10 +4,13 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import erjang.driver.IO;
 
 public class EPMDConnection extends PacketConnection {
+	
+	static final Logger log = Logger.getLogger("erjang.epmd");
 
 	private NodeInfo connectedNode;
 
@@ -39,7 +42,7 @@ public class EPMDConnection extends PacketConnection {
 		
 		int op = buf.get();
 		
-		Functions.dout(1, "processing op "+op+" from "+getName());
+		log.fine("processing op "+op+" from "+getName());
 		
 		switch (op) {
 		case ALIVE2_REQ: 
@@ -151,7 +154,7 @@ public class EPMDConnection extends PacketConnection {
 		}
 			
 		default:
-			Functions.dout(0, "Unknown message: "+op);
+			log.warning("Unknown message: "+op);
 			System.exit(1);
 		}
 

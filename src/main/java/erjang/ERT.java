@@ -34,33 +34,33 @@ import java.util.logging.Logger;
 
 import kilim.Pausable;
 import kilim.Task;
-import erjang.beam.Compiler;
 import erjang.driver.Drivers;
 import erjang.driver.EAsync;
 import erjang.driver.EDriver;
 import erjang.driver.EDriverTask;
 import erjang.driver.efile.Posix;
-import erjang.m.erlang.ErlDist;
 import erjang.m.java.JavaObject;
 
 @Module(value = "erlang")
 public class ERT {
 
-	static Logger log = Logger.getLogger("erjang");
+	public static Logger log = Logger.getLogger("erjang");
+	static Logger ipclog = Logger.getLogger("erjang.ipc");
 	public static EAtom am_badsig = EAtom.intern("badsig");
 
 	public static EObject raise(EObject trace, EObject value) throws ErlangException {
-		// System.err.println("raise "+trace);
+		log.warning("raise "+trace);
 		if (trace instanceof ErlangException.ExceptionAsObject) {
 			ErlangException etrace = ((ErlangException.ExceptionAsObject) trace).getException();
 			EAtom clazz = etrace.getExClass();
 			ESeq traz = etrace.getLazyTrace();
 			throw new ErlangRaise(clazz, value, traz);
 		} else if (trace==am_exit || trace==am_error || trace==am_throw) {
-			System.err.println("Pre-R10-1 exception style is not supported.");
+			log.warning("Pre-R10-1 exception style is not supported.");
 		}
 
-		new Throwable("bad argument to raise2: ("+value+", "+trace+")").printStackTrace(System.err);
+		Throwable error = new Throwable("bad argument to raise2: ("+value+", "+trace+")");
+		log.log(Level.WARNING, "bad argument to raise2: ("+value+", "+trace+")", error);
 		return am_badarg;
 	}
 
@@ -290,12 +290,6 @@ public class ERT {
 	public static final EAtom am_try_case_clause = EAtom
 			.intern("try_case_clause");
 	public static final EAtom am_if_clause = EAtom.intern("if_clause");
-	public static final boolean DEBUG = false;
-	public static final boolean DEBUG2 = false;
-	public static final boolean DEBUG_WAIT = false;
-	public static final boolean DEBUG_PORT = ErjangConfig.getBoolean("erjang.debug.port");
-	public static final boolean DEBUG_INET = ErjangConfig.getBoolean("erjang.debug.inet");
-	public static final boolean DEBUG_EFILE = false;
 	public static final EBinary EMPTY_BINARY = new EBinary(new byte[0]);
 	public static final ByteBuffer[] EMPTY_BYTEBUFFER_ARR = new ByteBuffer[0];
 	public static final ByteBuffer EMPTY_BYTEBUFFER = ByteBuffer.allocate(0);
@@ -311,8 +305,6 @@ public class ERT {
 			.intern("function_clause");
 	public static final EAtom am_ok = EAtom.intern("ok");
 	public static final EAtom am_noconnect = EAtom.intern("noconnect");
-	public static final boolean DEVEL = true;
-	public static final boolean DEBUG_DIST = false;
 	public static final EAtom am_latin1 = EAtom.intern("latin1");
 	public static final EAtom am_utf8 = EAtom.intern("utf8");
 	public static final EAtom am_unicode = EAtom.intern("unicode");
@@ -513,7 +505,7 @@ public class ERT {
 			{
 				send_to_remote(proc, t, node_name, reg_name, msg, null);
 			} else { // PID was of a bad type.
-				log.info("trying to send message to "+pid+" failed.");
+				ipclog.info("trying to send message to "+pid+" failed.");
 				throw badarg(pid, msg);
 			}
 		}
@@ -546,7 +538,7 @@ public class ERT {
 			{
 				return send_to_remote(proc, t, node_name, reg_name, msg, options);
 			} else { // PID was of a bad type.
-				log.info("trying to send message to "+pid+" failed.");
+				ipclog.info("trying to send message to "+pid+" failed.");
 				throw badarg(pid, msg);
 			}
 		}
@@ -560,7 +552,9 @@ public class ERT {
 			return am_ok; // Even if the process does not exist.
 			//TODO: Return 'noconnect' if options contain noconnect?...
 		} else { // We're talking to another node
-			System.err.println("sending msg "+dest+" ! "+msg);
+			if (ipclog.isLoggable(Level.FINE)) {
+				ipclog.fine("sending msg "+dest+" ! "+msg);
+			}
 
 			EAbstractNode node = EPeer.get(node_name);
 			if (node == null) {
@@ -838,7 +832,7 @@ public class ERT {
 		int idx = proc.midx;
 		proc.in_receive = true;
 		EObject msg = proc.mbox.peek(idx);		
-		if (DEBUG_WAIT) System.err.println("WAIT| entered loop #"+idx+" message="+msg);
+		if (ipclog.isLoggable(Level.FINE)) ipclog.fine("WAIT| entered loop #"+idx+" message="+msg);
 		return msg;
 	}
 
@@ -860,11 +854,11 @@ public class ERT {
 		try {
 			proc.check_exit();
 
-		if (ERT.DEBUG_WAIT) System.err.println("WAIT| "+proc+" waits for messages for "+howlong+" ms");
+		if (ipclog.isLoggable(Level.FINE)) ipclog.fine("WAIT| "+proc+" waits for messages for "+howlong+" ms");
 			if (howlong == am_infinity) {
 				proc.mbox.untilHasMessages(proc.midx+1);
 				proc.check_exit();
-				if (ERT.DEBUG_WAIT) System.err.println("WAIT| "+proc+" wakes up on message");
+				if (ipclog.isLoggable(Level.FINE)) ipclog.fine("WAIT| "+proc+" wakes up on message");
 				return true;
 			} else {
 				long now = System.currentTimeMillis();
@@ -889,11 +883,11 @@ public class ERT {
 				} else {
 				
 
-				if (ERT.DEBUG_WAIT) System.err.println("WAIT| "+proc+" waiting for "+left+"ms for msg #"+(proc.midx+1));
+				if (ipclog.isLoggable(Level.FINE)) ipclog.fine("WAIT| "+proc+" waiting for "+left+"ms for msg #"+(proc.midx+1));
 				boolean res = proc.mbox
 					.untilHasMessages(proc.midx + 1, left);
 				proc.check_exit();
-				if (ERT.DEBUG_WAIT) System.err.println("WAIT| "+proc+" wakes up "+(res?"on message" : "after timeout"));
+				if (ipclog.isLoggable(Level.FINE)) ipclog.fine("WAIT| "+proc+" wakes up "+(res?"on message" : "after timeout"));
 				
 				return res;
 				}
@@ -907,9 +901,9 @@ public class ERT {
 	public static void wait(EProc proc) throws Pausable {
 		try {
 			int idx = proc.midx + 1;
-			if (DEBUG_WAIT) System.err.println("WAIT| "+proc+" waits for "+idx+" messages");
+			if (ipclog.isLoggable(Level.FINE)) ipclog.fine("WAIT| "+proc+" waits for "+idx+" messages");
 			proc.mbox.untilHasMessages(idx);
-			if (DEBUG_WAIT) System.err.println("WAIT| "+proc+" wakes up after timeout; now has "+(idx));
+			if (ipclog.isLoggable(Level.FINE)) ipclog.fine("WAIT| "+proc+" wakes up after timeout; now has "+(idx));
 		} finally {
 			proc.in_receive = false;
 		}		
@@ -917,7 +911,7 @@ public class ERT {
 
 	/** message reception timed out, reset message index */
 	public static void timeout(EProc proc) {
-		if (DEBUG_WAIT) System.err.println("WAIT| "+proc+" timed out");
+		if (ipclog.isLoggable(Level.FINE)) ipclog.fine("WAIT| "+proc+" timed out");
 		proc.midx = 0;
 		proc.timeout_start = 0L;
 		proc.in_receive = false;
@@ -1064,6 +1058,16 @@ public class ERT {
 		if (file.isAbsolute())
 			return file;
 		return new File(Posix.getCWD(), file_name);
+	}
+
+	public static void debug(String text) {
+		log.fine(text);
+	}
+	
+	public static void debug(boolean condition, String text) {
+		if (condition) {
+			debug(text);
+		}
 	}
 
 }

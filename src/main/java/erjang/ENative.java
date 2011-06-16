@@ -19,6 +19,8 @@
 
 package erjang;
 
+import java.util.logging.Logger;
+
 /**
  * Base class for native code.  
  * 
@@ -30,6 +32,7 @@ package erjang;
  * 
  */
 public abstract class ENative {
+	protected static Logger log = Logger.getLogger("erjang.module");
 		
 	/**
 	 * if you want to put the BIFs in multiple class files, you can tell which

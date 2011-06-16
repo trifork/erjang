@@ -20,6 +20,8 @@ package erjang.beam;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import com.ericsson.otp.erlang.OtpAuthException;
 import com.ericsson.otp.erlang.OtpConnection;
@@ -35,6 +37,7 @@ import com.ericsson.otp.erlang.OtpSelf;
 import erjang.ETuple;
 
 public class ErlangBeamDisLoader extends BeamLoader {
+	static Logger log = Logger.getLogger("erjang.beam");
 	/** For transition phase from external to internal beam file reader */
 	final boolean TRY_NATIVE_LOADER = true;
 
@@ -120,14 +123,13 @@ public class ErlangBeamDisLoader extends BeamLoader {
 		return check(dis1, dis2);
 	}
 	protected ETuple check(ETuple dis1, ETuple dis2) {
-		System.err.print("DB| loader-cmp: ");
+		log.fine("DB| loader-cmp: ");
 		boolean eq = false;
 		try {eq = dis1.equals(dis2);} catch (RuntimeException re) {
-			System.err.println(re);
-			re.printStackTrace(System.err);
+			log.log(Level.WARNING, "failed to compare tuples", re);
 		}
-		if (eq) System.err.println("OK");
-		else System.err.println("DIFF:\n"+dis1+"\nvs\n"+dis2);
+		if (eq) log.fine("OK");
+		else { if (log.isLoggable(Level.FINE)) { log.fine("DIFF:\n"+dis1+"\nvs\n"+dis2); }}
 		return dis1;
 	}
 

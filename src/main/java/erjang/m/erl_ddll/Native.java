@@ -1,5 +1,7 @@
 package erjang.m.erl_ddll;
 
+import java.util.logging.Level;
+
 import erjang.BIF;
 import erjang.ENative;
 import erjang.EObject;
@@ -29,7 +31,7 @@ public class Native extends ENative {
 	@BIF public static 
 	EObject try_load(EObject path, EObject driver, EObject options) {
 
-	    System.err.println("hack try_load: "+driver);
+	    if (log.isLoggable(Level.FINE)) log.fine("hack try_load: "+driver);
 	    return new ETuple2(am_ok, am_loaded);
 	}
 	

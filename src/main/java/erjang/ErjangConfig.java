@@ -19,6 +19,8 @@
 package erjang;
 
 import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.io.FileInputStream;
 import java.io.IOException;
 
@@ -30,6 +32,7 @@ import java.io.IOException;
  * Java property "erjang.configfile".
  */
 public class ErjangConfig {
+	static final Logger log = Logger.getLogger("erjang.config");
 
 	static {
 		String configFileName = System.getProperty("erjang.configfile");
@@ -48,7 +51,8 @@ public class ErjangConfig {
 					in.close();
 				}
 			} catch (IOException ioe) {
-				System.err.println("Failed to load Erjang properties from "+configFileName+": "+ioe);
+				log.warning("Failed to load Erjang properties from "+configFileName+": "+ioe.getMessage());
+				log.log(Level.FINE, "details: ", ioe);
 			}
 		}
 	}

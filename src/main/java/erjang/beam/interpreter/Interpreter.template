@@ -59,6 +59,9 @@ import erjang.beam.repr.ExtFun;
 
 import kilim.Pausable;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 public class Interpreter extends AbstractInterpreter {
 #ENUM#
 	public static final short ENSURE_REG_CAPACITY = MAX_OPCODE + 1;
@@ -112,7 +115,7 @@ public class Interpreter extends AbstractInterpreter {
 				int opcode_pos = emitPlaceholder();
 				insn_start.put(opcode_pos, insn);
 
-				//System.err.println("@ "+opcode_pos+": "+insn.toSymbolic());
+				//log.finer("@ "+opcode_pos+": "+insn.toSymbolic());
 				switch (insn.opcode()) {
 #ENCODE#
 				default: throw new Error("Unknown opcode: "+insn);
@@ -146,7 +149,7 @@ public class Interpreter extends AbstractInterpreter {
 			this.exports = exports;
 			this.imports = imports;
 			ext_funs = new EFun[imports.size()];
-			if (DEBUG) System.err.println("INT| Constructed module for "+this.name);
+			log.fine("INT| Constructed module for "+this.name);
 			setup();
 		}
 
@@ -158,7 +161,7 @@ public class Interpreter extends AbstractInterpreter {
 				FunIDWithGuardedness imp_wg = imports.get(i);
 				FunID imp = imp_wg.fun;
 				boolean is_guard = imp_wg.is_guard;
-// 				System.err.println("INT| Import #"+i+": "+imp+" / "+is_guard);
+				log.finer("INT| Import #"+i+": "+imp+" / "+is_guard);
 
 				// If this is a BIF, resolve it right away:
 				BuiltInFunction bif =
@@ -177,7 +180,7 @@ public class Interpreter extends AbstractInterpreter {
 
 			int j=0;
 			for (FunIDWithEntry fi : exports) {
-// 				System.err.println("INT| Export #"+(j++)+": "+fi);
+				log.finer("INT| Export #"+(j++)+": "+fi);
 				EFun fun = EFun.get_fun_with_handler(fi.arity, new Function(fi.start_pc), getModuleClassLoader());
 				EModuleManager.add_export(this, fi, fun);
 			}
@@ -196,7 +199,9 @@ public class Interpreter extends AbstractInterpreter {
 				int argCnt = args.length;
 				EObject[] reg = getRegs(proc); //??
 				for (int i=0; i<argCnt; i++) {reg[i] = args[i];} //??
-				//for (int i=0; i<argCnt; i++) System.err.println("INT| arg#"+i+"="+args[i]);
+				if (log.isLoggable(Level.FINER)) {
+					for (int i=0; i<argCnt; i++) log.finer("INT| arg#"+i+"="+args[i]);
+				}
 				return interpret(proc, start_pc, reg);
 			}
 
@@ -207,14 +212,16 @@ public class Interpreter extends AbstractInterpreter {
 				} else {
 					int argCnt = len;
 					for (int i=0; i<argCnt; i++) {reg[i] = args[i];} //??
-					//for (int i=0; i<argCnt; i++) System.err.println("INT| arg#"+i+"="+args[i]);
+					if (log.isLoggable(Level.FINER)) {
+						for (int i=0; i<argCnt; i++) log.finer("INT| arg#"+i+"="+args[i]);
+					}
 					return interpret(proc, start_pc, reg);					
 				}
 			}
 
 			/** Local call - with given PC and register array */
 			public EObject invoke_local(final EProc proc, final EObject[] reg, int argCnt, int pc) throws Pausable {
-// 				System.err.println("INT| invoking "+name+"@"+pc+"...");
+				log.fine("INT| invoking "+name+"@"+pc+"...");
 				return interpret(proc, pc, reg);
 			}
 
@@ -238,18 +245,19 @@ public class Interpreter extends AbstractInterpreter {
 
 				while (true) try {
 						while (true) {
-// 							System.err.print('¤');
 							if (pc >= code.length) {
 								throw new Error("Bad jump to: "+module_name()+"@"+pc+"; from_pc="+last_pc+"; op="+((int)code[last_pc]));
 							}
 							last_pc = pc;
 							final int opcode = code[pc++];
-							//System.err.print("STACK| "); for (int i=0; i<=sp; i++) {System.err.print("  "+i+":"+stack[i]);} System.err.println();
-// 							System.err.println("INTP|"+proc.self_handle()+" (pc="+(pc-1)+"; sp="+sp+")"+opcode+"   "+reg[0]);
+							if (log.isLoggable(Level.FINEST)) {
+								log.finest("STACK| "); for (int i=0; i<=sp; i++) {log.finest("  "+i+":"+stack[i]);} log.finest("");
+							}
+							log.finer("INTP|"+proc.self_handle()+" (pc="+(pc-1)+"; sp="+sp+")"+opcode+"   "+reg[0]);
 							switch (opcode) {
 							case ENSURE_REG_CAPACITY: {
 								int max_x = code[pc++];
-								System.err.println("INTP|"+proc.self_handle()+" Ensure reg capacity: "+max_x);
+								log.finer("INTP|"+proc.self_handle()+" Ensure reg capacity: "+max_x);
 								reg = ensureCapacity(reg, max_x);
 							} break;
 
@@ -282,10 +290,10 @@ public class Interpreter extends AbstractInterpreter {
 							continue;
 						} else throw(e);
 					} catch (RuntimeException e) {
-						if (ERT.DEBUG) {
-							System.err.println("DB| Error when interpreting "+module_name()+"@"+(pc-1)+"; opcode="+code[last_pc]+"; prefetched1="+prefetched1+"; prefetched2="+prefetched2+" : "+e);
-							System.err.println("Code:");
-							for (int i=Math.max(0,pc-15); i<Math.min(code.length,pc+5); i++) System.err.println("  "+i+": "+(int)code[i]);
+						if (log.isLoggable(Level.WARNING)) {
+							log.warning("DB| Error when interpreting "+module_name()+"@"+(pc-1)+"; opcode="+code[last_pc]+"; prefetched1="+prefetched1+"; prefetched2="+prefetched2+" : "+e);
+							log.warning("Code:");
+							for (int i=Math.max(0,pc-15); i<Math.min(code.length,pc+5); i++) log.warning("  "+i+": "+(int)code[i]);
 						}
 						throw e;
 					}
@@ -301,13 +309,15 @@ public class Interpreter extends AbstractInterpreter {
 			}
 
 			public EObject invoke(final EProc proc, final EObject[] args) throws Pausable {
-// 				System.err.println("INT| Closure invoked @ "+start_pc);
+				log.fine("INT| Closure invoked @ "+start_pc);
 				int argCnt = args.length;
 				int envCnt = env.length;
 				EObject[] reg = new EObject[1024]; //??
 				for (int i=0; i<argCnt; i++) {reg[i] = args[i];} //??
 				for (int i=0; i<envCnt; i++) {reg[argCnt+i] = env[i];}
-				//for (int i=0; i<argCnt+envCnt; i++) System.err.println("INT| reg#"+i+"="+reg[i]);
+				if (log.isLoggable(Level.FINER)) {
+					for (int i=0; i<argCnt+envCnt; i++) log.finer("INT| reg#"+i+"="+reg[i]);
+				}
 				return interpret(proc, start_pc, reg);
 			}
 		}

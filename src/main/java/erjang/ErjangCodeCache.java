@@ -18,30 +18,24 @@
 
 package erjang;
 
-import java.net.URL;
-
-import java.io.IOException;
 import java.io.File;
-import java.io.ByteArrayOutputStream;
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
 import java.io.FileOutputStream;
-
-import java.util.Map;
-import java.util.HashMap;
+import java.io.IOException;
 import java.util.Collections;
-import java.util.Queue;
+import java.util.HashMap;
 import java.util.LinkedList;
-
+import java.util.Map;
+import java.util.Queue;
 import java.util.jar.JarOutputStream;
+import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 
-import erjang.beam.Compiler;
 import erjang.beam.BeamLoader;
-import erjang.beam.JarClassRepo;
+import erjang.beam.Compiler;
 import erjang.beam.RamClassRepo;
 
 public class ErjangCodeCache {
+	static final Logger log = Logger.getLogger("erjang.beam.cache");
     // Config:
     static final String ERJ_CACHE_DIR;
     static final boolean useAsyncPersisting;
@@ -203,7 +197,7 @@ public class ErjangCodeCache {
 		jo.close();
 		tmpFile.renameTo(file);
 	    } catch (IOException ioe) {
-		System.err.println("Warning: Failed to store cached module in "+file);
+	    	log.warning("Warning: Failed to store cached module in "+file);
 	    }
 	}
     }

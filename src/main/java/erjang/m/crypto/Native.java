@@ -5,6 +5,7 @@ import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.util.logging.Level;
 
 import erjang.BIF;
 import erjang.EBinary;
@@ -83,7 +84,7 @@ public class Native extends ENative {
 		BigInteger fi = mp2big(fb);
 		BigInteger ti = mp2big(tb);
 		
-		System.err.println("rand_uniform ("+fb+", "+tb+")");
+		if (log.isLoggable(Level.FINE)) log.fine("rand_uniform ("+fb+", "+tb+")");
 		
 		BigInteger interval = ti.subtract(fi).subtract(BigInteger.ONE);
 		
@@ -96,7 +97,7 @@ public class Native extends ENative {
 
 		result = fi.add(base_value);
 		
-		System.err.println("rand_uniform ("+fi+", "+ti+") -> "+result);
+		if (log.isLoggable(Level.FINE)) log.fine("rand_uniform ("+fi+", "+ti+") -> "+result);
 
 		EBinary res = big2mp(result);
 		return res;

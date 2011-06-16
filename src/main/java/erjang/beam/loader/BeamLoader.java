@@ -18,8 +18,6 @@
 
 package erjang.beam.loader;
 
-import static erjang.beam.CodeAtoms.BEAM_FILE_ATOM;
-import static erjang.beam.CodeAtoms.FUNCTION_ATOM;
 import static erjang.beam.CodeAtoms.START_ATOM;
 
 import java.io.ByteArrayInputStream;
@@ -33,20 +31,22 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import erjang.EAtom;
 import erjang.EBinary;
 import erjang.EInputStream;
 import erjang.EObject;
 import erjang.ESeq;
-import erjang.ESmall;
-import erjang.ETuple;
 import erjang.beam.BeamOpcode;
-
+import erjang.beam.repr.AnonFun;
 import erjang.beam.repr.CodeTables;
-import erjang.beam.repr.ModuleRepr;
+import erjang.beam.repr.ExtFun;
+import erjang.beam.repr.FunctionInfo;
 import erjang.beam.repr.FunctionRepr;
 import erjang.beam.repr.Insn;
+import erjang.beam.repr.ModuleRepr;
 import erjang.beam.repr.Operands;
 import erjang.beam.repr.Operands.AllocList;
 import erjang.beam.repr.Operands.Atom;
@@ -62,13 +62,9 @@ import erjang.beam.repr.Operands.SourceOperand;
 import erjang.beam.repr.Operands.TableLiteral;
 import erjang.beam.repr.Operands.XReg;
 import erjang.beam.repr.Operands.YReg;
-import erjang.beam.repr.ExtFun;
-import erjang.beam.repr.AnonFun;
-import erjang.beam.repr.FunctionInfo;
 
 public class BeamLoader extends CodeTables {
-    static final boolean DEBUG = false;
-    static final boolean DEBUG_ON_ERROR = true;
+	static Logger log = Logger.getLogger("erjang.beam");
 
 	/** For testing purposes. */
     public static void main(String[] args) throws IOException {
@@ -296,7 +292,7 @@ public class BeamLoader extends CodeTables {
 		int tag;
 		try {
 			tag = in.read4BE();
-			if (DEBUG) System.err.println("Reading section with tag "+toSymbolicTag(tag)+" at "+in.getPos());
+			if (log.isLoggable(Level.FINE)) log.fine("Reading section with tag "+toSymbolicTag(tag)+" at "+in.getPos());
 		} catch (EOFException eof) {
 			return null;
 		}
@@ -324,7 +320,7 @@ public class BeamLoader extends CodeTables {
 			case C_INF: readCompilationInfoSection(); break;
 			case ABST:  readASTSection(); break;
 			default:
-				if (DEBUG) System.err.println("Unrecognized section tag: "+Integer.toHexString(section.tag));
+				if (log.isLoggable(Level.WARNING)) log.warning("Unrecognized section tag: "+Integer.toHexString(section.tag));
 			} // switch
 		} catch (Exception e) {
 			int relPos = in.getPos()-section.offset;
@@ -333,15 +329,17 @@ public class BeamLoader extends CodeTables {
 				in.setPos(curPos-16);
 				byte[] d = new byte[64];
 				int ctxlen = in.read(d);
-				if (DEBUG_ON_ERROR) {
-					System.err.println("Context dump: ");
+				if (log.isLoggable(Level.SEVERE)) {
+					StringBuilder sb = new StringBuilder();
+					sb.append("Context dump: \n");
 					for (int i=0; i<ctxlen; i++) {
 						int byt = d[i] & 0xFF;
-						if (byt<16) System.err.print("0");
-						System.err.print(Integer.toHexString(byt & 0xFF));
-						System.err.print(" ");
-						if ((i+1) % 16 == 0 || (i+1)==ctxlen) System.err.println();
+						if (byt<16) sb.append("0");
+						sb.append(Integer.toHexString(byt & 0xFF));
+						sb.append(" ");
+						if ((i+1) % 16 == 0 || (i+1)==ctxlen) sb.append("\n");
 					}
+					log.severe(sb.toString());
 				}
 			} catch (Exception e2) {}
 			throw new IOException("Error occurred around "+relPos+"=0x"+Integer.toHexString(relPos)+" bytes into section "+Integer.toHexString(section.tag), e);
@@ -372,27 +370,27 @@ public class BeamLoader extends CodeTables {
 
 
 	public void readAtomSection() throws IOException {
-		if (DEBUG) System.err.println("readAtomSection");
+		if (log.isLoggable(Level.FINE)) log.fine("readAtomSection");
 		int nAtoms = in.read4BE();
-		if (DEBUG) System.err.println("Number of atoms: "+nAtoms);
+		if (log.isLoggable(Level.FINE)) log.fine("Number of atoms: "+nAtoms);
 		atoms = new EAtom[nAtoms];
 		for (int i=0; i<nAtoms; i++) {
 			String atom = readString(in.read1());
-			if (DEBUG) System.err.println("- #"+(i+1)+": '"+atom+"'");
+			if (log.isLoggable(Level.FINE)) log.fine("- #"+(i+1)+": '"+atom+"'");
 			atoms[i] = EAtom.intern(atom);
 		}
     }
 
     public void readStringSection(int sectionLength) throws IOException {
-		if (DEBUG) System.err.println("readStringSection");
+		if (log.isLoggable(Level.FINE)) log.fine("readStringSection");
 		stringpool = readBinary(sectionLength);
     }
 
     public void readExportSection() throws IOException {
-		if (DEBUG) System.err.println("readExportSection");
+		if (log.isLoggable(Level.FINE)) log.fine("readExportSection");
 		int nExports = in.read4BE();
 		exports = new FunctionInfo[nExports];
-		if (DEBUG) System.err.println("Number of exports: "+nExports);
+		if (log.isLoggable(Level.FINE)) log.fine("Number of exports: "+nExports);
 		EAtom mod = moduleName();
 		for (int i=0; i<nExports; i++) {
 			int fun_atom_nr = in.read4BE();
@@ -401,17 +399,17 @@ public class BeamLoader extends CodeTables {
 			EAtom fun = atom(fun_atom_nr);
 			exports[i] = new FunctionInfo(mod, fun, arity, label);
 			addFunctionAtLabel(exports[i]);
-			if (DEBUG && atoms != null) {
-				System.err.println("- #"+(i+1)+": "+atom(fun_atom_nr)+"/"+arity+" @ "+label);
+			if (log.isLoggable(Level.FINE) && atoms != null) {
+				log.fine("- #"+(i+1)+": "+atom(fun_atom_nr)+"/"+arity+" @ "+label);
 			}
 		}
     }
 
     public void readLocalFunctionSection() throws IOException {
-		if (DEBUG) System.err.println("readLocalFunctionSection");
+		if (log.isLoggable(Level.FINE)) log.fine("readLocalFunctionSection");
 		int nLocals = in.read4BE();
 		localFunctions = new FunctionInfo[nLocals];
-		if (DEBUG) System.err.println("Number of locals: "+nLocals);
+		if (log.isLoggable(Level.FINE)) log.fine("Number of locals: "+nLocals);
 		EAtom mod = moduleName();
 		for (int i=0; i<nLocals; i++) {
 			int fun_atom_nr = in.read4BE();
@@ -420,17 +418,17 @@ public class BeamLoader extends CodeTables {
 			EAtom fun = atom(fun_atom_nr);
 			localFunctions[i] = new FunctionInfo(mod, fun, arity, label);
 			addFunctionAtLabel(localFunctions[i]);
-			if (DEBUG && atoms != null) {
-				System.err.println("- #"+(i+1)+": "+atom(fun_atom_nr)+"/"+arity+" @ "+label);
+			if (log.isLoggable(Level.FINE) && atoms != null) {
+				log.fine("- #"+(i+1)+": "+atom(fun_atom_nr)+"/"+arity+" @ "+label);
 			}
 		}
     }
 
     public void readFunctionSection() throws IOException {
-		if (DEBUG) System.err.println("readFunctionSection");
+		if (log.isLoggable(Level.FINE)) log.fine("readFunctionSection");
 		int nFunctions = in.read4BE();
 		anonymousFuns = new AnonFun[nFunctions];
-		if (DEBUG) System.err.println("Number of function descrs: "+nFunctions);
+		if (log.isLoggable(Level.FINE)) log.fine("Number of function descrs: "+nFunctions);
 		EAtom mod = moduleName();
 		for (int i=0; i<nFunctions; i++) {
 			int fun_atom_nr = in.read4BE();
@@ -443,9 +441,9 @@ public class BeamLoader extends CodeTables {
 			anonymousFuns[i] = new AnonFun(mod, fun, arity, label,
 					old_uniq, i, module_md5, index, free_vars);
 
-			if (DEBUG && atoms != null) {
-				System.err.println("- #"+(i+1)+": "+fun+"/"+arity+" @ "+label);
-				System.err.println("--> occur:"+index+" free:"+free_vars+" $ "+old_uniq);
+			if (log.isLoggable(Level.FINE) && atoms != null) {
+				log.fine("- #"+(i+1)+": "+fun+"/"+arity+" @ "+label);
+				log.fine("--> occur:"+index+" free:"+free_vars+" $ "+old_uniq);
 			}
 		}
     }
@@ -453,9 +451,9 @@ public class BeamLoader extends CodeTables {
 	/** readImportSection
 	 *  Depends on atom table. */
     public void readImportSection() throws IOException {
-		if (DEBUG) System.err.println("readImportSection");
+		if (log.isLoggable(Level.FINE)) log.fine("readImportSection");
 		int nImports = in.read4BE();
-		if (DEBUG) System.err.println("Number of imports: "+nImports);
+		if (log.isLoggable(Level.FINE)) log.fine("Number of imports: "+nImports);
 		externalFuns = new ExtFun[nImports];
 		for (int i=0; i<nImports; i++) {
 			int m_atm_no = in.read4BE();
@@ -463,56 +461,56 @@ public class BeamLoader extends CodeTables {
 			int arity    = in.read4BE();
 			EAtom mod = atom(m_atm_no), fun = atom(f_atm_no);
 			externalFuns[i] = new ExtFun(mod, fun, arity);
-			if (DEBUG && atoms != null) {
-				System.err.println("- #"+(i+1)+": "+mod+":"+fun+"/"+arity);
+			if (log.isLoggable(Level.FINE) && atoms != null) {
+				log.fine("- #"+(i+1)+": "+mod+":"+fun+"/"+arity);
 			}
 		}
     }
 
     public void readAttributeSection() throws IOException {
-		if (DEBUG) System.err.println("readAttributeSection");
+		if (log.isLoggable(Level.FINE)) log.fine("readAttributeSection");
 		attributes = in.read_any();
-		if (DEBUG) System.err.println("Attibutes: "+attributes);
+		if (log.isLoggable(Level.FINE)) log.fine("Attibutes: "+attributes);
     }
 
     public void readCompilationInfoSection() throws IOException {
-		if (DEBUG) System.err.println("readCompilationInfoSection");
+		if (log.isLoggable(Level.FINE)) log.fine("readCompilationInfoSection");
 		compilation_info = in.read_any();
-		if (DEBUG) System.err.println("Compilation info: "+compilation_info);
+		if (log.isLoggable(Level.FINE)) log.fine("Compilation info: "+compilation_info);
     }
 
     public void readASTSection() throws IOException {
-		if (DEBUG) System.err.println("readASTSection");
+		if (log.isLoggable(Level.FINE)) log.fine("readASTSection");
 		if (!include_debug_info) return;
 		abstract_tree = in.read_any();
-// 	if (DEBUG) System.err.println("AST: "+abstract_tree);
+// 	if (log.isLoggable(Level.FINE)) log.fine("AST: "+abstract_tree);
     }
 
     public void readLiteralSection() throws IOException {
-		if (DEBUG) System.err.println("readLiteralSection");
+		if (log.isLoggable(Level.FINE)) log.fine("readLiteralSection");
 		final byte[] buf = in.read_size_and_inflate();
 		final EInputStream is = new EInputStream(buf);
 		int nLiterals = is.read4BE();
-		if (DEBUG) System.err.println("Number of literals: "+nLiterals);
+		if (log.isLoggable(Level.FINE)) log.fine("Number of literals: "+nLiterals);
 		literals = new EObject[nLiterals];
 		for (int i=0; i<nLiterals; i++) {
 			int lit_length = is.read4BE();
 			int pos_before_lit = is.getPos();
 			literals[i] = is.read_any();
-			if (DEBUG) System.err.println("- #"+i+": "+literals[i]);
+			if (log.isLoggable(Level.FINE)) log.fine("- #"+i+": "+literals[i]);
 			int pos_after_lit = is.getPos();
 			assert(pos_after_lit == pos_before_lit + lit_length);
 		}
     }
 
     public void readCodeSection() throws IOException {
-		if (DEBUG) System.err.println("readCodeSection");
+		if (log.isLoggable(Level.FINE)) log.fine("readCodeSection");
 		int flags = in.read4BE(); // Only 16 ever seen
 		int zero  = in.read4BE(); // Only 0 ever seen
 		int highestOpcode = in.read4BE();
 		int labelCnt = in.read4BE();
 		int funCnt = in.read4BE();
-		if (DEBUG) System.err.println("Code metrics: flags:"+flags+
+		if (log.isLoggable(Level.FINE)) log.fine("Code metrics: flags:"+flags+
 									  ", z:"+zero+
 									  ", hop:"+highestOpcode+
 									  ", L:"+labelCnt+
@@ -550,7 +548,7 @@ public class BeamLoader extends CodeTables {
 			case apply:
 			{
 				int i1 = readCodeInteger();
-				if (DEBUG && opcode==BeamOpcode.label) System.err.println("DB| ### label "+i1+"###");
+				if (log.isLoggable(Level.FINE) && opcode==BeamOpcode.label) log.fine("DB| ### label "+i1+"###");
 				return new Insn.I(opcode, i1);
 			}
 
@@ -1231,12 +1229,12 @@ public class BeamLoader extends CodeTables {
 				return new TableLiteral(literal(nr));
 			}
 			default:
-				System.err.println("*** Unhandled extended operand tag: "+moretag);
+				log.warning("*** Unhandled extended operand tag: "+moretag);
 			} // switch
 			break;
 		}
 		default:
-			System.err.println("*** Unhandled operand tag: "+tag);
+			log.warning("*** Unhandled operand tag: "+tag);
 		} // switch
 		return null;
     }

@@ -20,6 +20,7 @@ package erjang;
 
 import java.io.IOException;
 import java.util.Set;
+import java.util.logging.Logger;
 
 import erjang.m.ets.EMatchContext;
 import erjang.m.ets.EPattern;
@@ -27,7 +28,7 @@ import erjang.m.ets.ETermPattern;
 
 
 public abstract class EPID extends EHandle {
-
+	static Logger log = Logger.getLogger("erjang.proc");
 	/**
 	 * 
 	 */
@@ -116,7 +117,7 @@ public abstract class EPID extends EHandle {
 			EPID res = EProc.find(id, serial);
 			if (res != null) return res;
 
-			System.err.println("deadpid <"+id+"."+serial+"."+creation+">");
+			log.warning("deadpid <"+id+"."+serial+"."+creation+">");
 			// return DEADPID?
 		}
 		EAbstractNode peer = EPeer.get(node);
@@ -124,7 +125,7 @@ public abstract class EPID extends EHandle {
 		if (peer instanceof EPeer) {
 			return new EExternalPID((EPeer) peer, id, serial, creation);
 		} else {
-			System.err.println("localnode="+ERT.getLocalNode().node+"; asking="+node);
+			log.fine("localnode="+ERT.getLocalNode().node+"; asking="+node);
 			// Presumably another node
 			// might be local with different name
 			return new EExternalPID(EPeer.get_or_create(node, creation, 0, 0), id, serial, creation);
