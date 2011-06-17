@@ -157,6 +157,7 @@ public class ErlConvert {
 		}
 		
 		EOutputStream eos = new EOutputStream();
+		eos.write(EExternal.versionTag);
 		if (compression != 0) {
 			eos.write_compressed(obj, compression);
 		} else {
