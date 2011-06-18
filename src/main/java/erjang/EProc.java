@@ -243,12 +243,7 @@ public final class EProc extends ETask<EInternalPID> {
 			
 		} 
 
-		if (reason == am_kill) {
-			this.exit_reason = am_killed;
-			this.pstate = STATE_EXIT_SIG;
-			this.resume();
-
-		} else if (trap_exit == ERT.TRUE) {
+		if (trap_exit == ERT.TRUE) {
 			// we're trapping exits, so we in stead send an {'EXIT', from,
 			// reason} to self
 			ETuple msg = ETuple.make(ERT.am_EXIT, from, reason);
@@ -256,6 +251,11 @@ public final class EProc extends ETask<EInternalPID> {
 			
 			mbox.put(msg);
 			
+		} else if (reason == am_kill) {
+			this.exit_reason = am_killed;
+			this.pstate = STATE_EXIT_SIG;
+			this.resume();
+
 		} else if (reason != am_normal) {
 			// System.err.println("kill signal: " +reason + " from "+from);
 			// try to kill this thread
