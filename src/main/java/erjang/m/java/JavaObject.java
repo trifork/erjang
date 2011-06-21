@@ -131,17 +131,18 @@ public class JavaObject extends EPseudoTerm {
 		/** a java.lang.Runnable can be used as a function of 0 arguments */
 		if ((nargs == 0) && (real_object instanceof Runnable)) {
 			final Runnable r = (Runnable) real_object;
-			return EFun.get_fun_with_handler(0, new EFunHandler() {
-				@Override
-				public EObject invoke(EProc proc, EObject[] args)
-						throws Pausable {
-					if (proc != owner)
-						throw new ErlangError(ERT.am_badfun, args);
+			return EFun.get_fun_with_handler("java.lang.Runnable", "run", 0,
+				new EFunHandler() {
+					@Override
+					public EObject invoke(EProc proc, EObject[] args)
+							throws Pausable {
+						if (proc != owner)
+							throw new ErlangError(ERT.am_badfun, args);
 
-					r.run();
-					return ERT.am_ok;
-				}
-			}, getClass().getClassLoader());
+						r.run();
+						return ERT.am_ok;
+					}
+				}, getClass().getClassLoader());
 
 		}
 
@@ -151,22 +152,23 @@ public class JavaObject extends EPseudoTerm {
 		 */
 		if ((nargs == 1) && (real_object instanceof java.util.Map<?, ?>)) {
 			final java.util.Map<?, ?> r = (java.util.Map<?, ?>) real_object;
-			return EFun.get_fun_with_handler(0, new EFunHandler() {
-				@Override
-				public EObject invoke(EProc self, EObject[] args)
-						throws Pausable {
-					if (self != owner)
-						throw new ErlangError(ERT.am_badfun, args);
+			return EFun.get_fun_with_handler("java.util.Map", "get", 0,
+				new EFunHandler() {
+					@Override
+					public EObject invoke(EProc self, EObject[] args)
+							throws Pausable {
+						if (self != owner)
+							throw new ErlangError(ERT.am_badfun, args);
 
-					Object key = JavaObject.unbox(self, Object.class, args[0]);
-					if (r.containsKey(key)) {
-						return new ETuple2(args[0], JavaObject.box(self, r
-								.get(key)));
-					} else {
-						return am_none;
+						Object key = JavaObject.unbox(self, Object.class, args[0]);
+						if (r.containsKey(key)) {
+							return new ETuple2(args[0], JavaObject.box(self, r
+									.get(key)));
+						} else {
+							return am_none;
+						}
 					}
-				}
-			}, getClass().getClassLoader());
+				}, getClass().getClassLoader());
 
 		}
 
@@ -428,7 +430,7 @@ public class JavaObject extends EPseudoTerm {
 							
 							final Mailbox<Object> reply = new Mailbox<Object>(1);
 							
-							EFun job = EFun.get_fun_with_handler(0, new EFunHandler() {
+							EFun job = EFun.get_fun_with_handler("erlang", "apply", 0, new EFunHandler() {
 								@Override
 								public EObject invoke(EProc proc, EObject[] _) throws Pausable {
 
@@ -612,7 +614,7 @@ public class JavaObject extends EPseudoTerm {
 
 		// TODO: we can make this much much faster!
 
-		return EFun.get_fun_with_handler(arity,
+		return EFun.get_fun_with_handler("java.lang.Object", f.toString(), arity,
 
 		new EFunHandler() {
 			@Override
