@@ -117,7 +117,7 @@ public class EModuleManager {
 		}
 
 		private EFun makeErrorHandler() {
-			return EFun.get_fun_with_handler(fun.arity,
+			return EFun.get_fun_with_handler(fun.module.toString(), fun.function.toString(), fun.arity,
 					new EFunHandler() {
 				
 					@Override
@@ -351,7 +351,7 @@ public class EModuleManager {
 			
 			if (maker == null || !md5.equals(module_md5)) {
 				LocalFunID fid = new LocalFunID(module, ERT.am_undefined, arity, old_index, index, old_uniq, md5);
-				return EFun.get_fun_with_handler(0, new EFunHandler() {					
+				return EFun.get_fun_with_handler(this.module.toString(), "badfun", 0, new EFunHandler() {					
 					@Override
 					public EObject invoke(EProc proc, EObject[] args) throws Pausable {
 						throw new ErlangError(am_badfun, args);
@@ -375,7 +375,7 @@ public class EModuleManager {
 			
 			if (maker==null) {				
 				LocalFunID fid = new LocalFunID(module, ERT.am_undef, 0, old_index, 0, old_uniq, empty_md5);
-				return EFun.get_fun_with_handler(0, new EFunHandler() {					
+				return EFun.get_fun_with_handler(module.toString(), "badfun", 0, new EFunHandler() {					
 					@Override
 					public EObject invoke(EProc proc, EObject[] args) throws Pausable {
 						throw new ErlangError(am_badfun, args);
