@@ -25,6 +25,7 @@ import java.lang.reflect.Modifier;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.Set;
 
 import kilim.Pausable;
@@ -269,6 +270,7 @@ public abstract class EFun extends EObject implements Opcodes {
 	}
 
 	static Map<String, Constructor<? extends EFun>> handlers = new HashMap<String, Constructor<? extends EFun>>();
+	static final Pattern JAVA_ID = Pattern.compile("([a-z]|[A-Z]|$|_|[0-9])*"); // valid java identifier
 
     public static EFun get_fun_with_handler(String module, String function, int arity, EFunHandler handler, ClassLoader loader) {
     	String signature = module + function + arity;
@@ -278,7 +280,11 @@ public abstract class EFun extends EObject implements Opcodes {
 
 			get_fun_class(arity);
 			
-			String self_type = EFUN_TYPE.getInternalName() + "Handler" + arity;
+			String safe_function = JAVA_ID.matcher(function).matches() ? function : make_valid_java_id(function);
+			StringBuffer sb = new StringBuffer();
+			String self_type = sb.append(EFUN_TYPE.getInternalName())
+								.append(module).append(safe_function)
+								.append("Handler").append(arity).toString();
 
 			ClassWriter cw = new ClassWriter(true);
 			String super_class_name = EFUN_TYPE.getInternalName() + arity;
@@ -493,6 +499,25 @@ public abstract class EFun extends EObject implements Opcodes {
 		mv.visitInsn(RETURN);
 		mv.visitMaxs(4, 1);
 		mv.visitEnd();
+	}
+
+	private static String make_valid_java_id(CharSequence seq) {
+		StringBuffer sb = new StringBuffer();
+		for (int i = 0; i < seq.length(); i++) {
+			char ch = seq.charAt(i);
+			if ((ch >= 'a' && ch <= 'z') ||
+				(ch >= 'A' && ch <= 'Z') ||
+				(ch >= '0' && ch <= '9') ||
+				ch == '_' || ch == '$') {
+				sb.append(ch);
+			} else {
+				sb.append('_').append('x');
+				if (ch < 0x10) sb.append('0');
+				sb.append(Integer.toHexString(ch).toUpperCase());
+			}
+		}
+
+		return sb.toString();
 	}
 	/*^^^^^^^^^^^^^^^^^^^^ Code generation of EFun{arity}  ^^^^^^^^^^^^^^^^^^*/
 
