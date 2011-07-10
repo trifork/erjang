@@ -66,6 +66,7 @@ public class RamFile extends EDriverInstance {
 	/* Commands like file interface's */
 	public static final int FILE_PREAD		= 17;
 	public static final int FILE_PWRITE		= 18;
+	public static final int RAM_FILE_FDATASYNC = 19;
 
 	/* Special ram_file commands */
 	public static final int RAM_FILE_GET		= 30;

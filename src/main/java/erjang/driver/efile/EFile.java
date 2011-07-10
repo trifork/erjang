@@ -345,6 +345,7 @@ public class EFile extends EDriverInstance {
 	public static final int FILE_IPREAD = 27;
 	public static final int FILE_ALTNAME = 28;
 	public static final int FILE_READ_LINE = 29;
+	public static final int FILE_FDATASYNC = 30;
 
 	/* Return codes */
 
@@ -1214,7 +1215,7 @@ public class EFile extends EDriverInstance {
 	@Override
 	protected void output(EHandle caller, ByteBuffer buf) throws Pausable {
 		FileAsync d;
-		byte cmd = buf.get();
+		final byte cmd = buf.get();
 		switch (cmd) {
 		
 		case FILE_TRUNCATE: {
@@ -1247,13 +1248,14 @@ public class EFile extends EDriverInstance {
 			};
 		} break;
 		
+		case FILE_FDATASYNC:
 		case FILE_FSYNC: {
 			d = new FileAsync() {
 		
 				{
 					level = 2;
 					fd = EFile.this.fd;
-					command = FILE_FSYNC;
+					command = cmd;
 				}
 				
 				@Override
