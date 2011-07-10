@@ -77,6 +77,7 @@ public class RamFile extends EDriverInstance {
 	public static final int RAM_FILE_UUENCODE	= 35;
 	public static final int RAM_FILE_UUDECODE	= 36;
 	public static final int RAM_FILE_SIZE		= 37;
+	public static final int RAM_FILE_ADVISE		= 38;
 
 	private static final byte[] FILE_RESP_NUMBER_HEADER = new byte[]{ FILE_RESP_NUMBER };
 

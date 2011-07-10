@@ -346,6 +346,8 @@ public class EFile extends EDriverInstance {
 	public static final int FILE_ALTNAME = 28;
 	public static final int FILE_READ_LINE = 29;
 	public static final int FILE_FDATASYNC = 30;
+	public static final int FILE_FADVISE = 31;
+
 
 	/* Return codes */
 
@@ -374,6 +376,14 @@ public class EFile extends EDriverInstance {
 	/* IPREAD variants */
 
 	public static final int IPREAD_S32BU_P32BU = 0;
+	
+	/* POSIX file advises */
+	public static final int POSIX_FADV_NORMAL		= 0;
+	public static final int POSIX_FADV_RANDOM		= 1;
+	public static final int POSIX_FADV_SEQUENTIAL	= 2;
+	public static final int POSIX_FADV_WILLNEED		= 3;
+	public static final int POSIX_FADV_DONTNEED		= 4;
+	public static final int POSIX_FADV_NOREUSE		= 5;
 
 	/* Limits */
 
@@ -1695,6 +1705,13 @@ public class EFile extends EDriverInstance {
 
 			};
 			break;
+		}
+		
+		case FILE_FADVISE: {
+			// fadvice() is not available from Java,
+			// so we simply ignore it and return success
+			reply_ok();
+			return;			
 		}
 		
 		case FILE_SETOPT: {
