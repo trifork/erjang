@@ -18,7 +18,6 @@
 
 package erjang.driver.efile;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileInputStream;
@@ -26,14 +25,12 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
 import java.nio.channels.SelectableChannel;
-import java.nio.charset.Charset;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.LinkedList;
@@ -46,7 +43,6 @@ import kilim.Pausable;
 import erjang.EBinList;
 import erjang.EBinary;
 import erjang.EHandle;
-import erjang.EPort;
 import erjang.ERT;
 import erjang.ERef;
 import erjang.EString;
@@ -85,11 +81,7 @@ public class EFile extends EDriverInstance {
 	/**
 	 * 
 	 */
-	private static final Charset ISO_8859_1 = Charset.forName("ISO_8859_1");
-	private final EString command;
 	private FileChannel fd;
-	private EPort port;
-	private EPort key;
 	private int flags;
 	private TimerState timer_state;
 	private FileAsync invoke;
@@ -419,10 +411,8 @@ public class EFile extends EDriverInstance {
 	 */
 	public EFile(EString command, Driver driver) {
 		super(driver);
-		this.command = command;
 
 		this.fd = (FileChannel) null;
-		this.key = port;
 		this.flags = 0;
 		this.invoke = null;
 		this.cq = new LinkedList<FileAsync>();
@@ -1374,9 +1364,6 @@ public class EFile extends EDriverInstance {
 
 
 		case FILE_PWD: {
-			int drive = buf.get();
-			char dr = drive==0 ? '?' : (char)('A'+drive);
-			
 			d = new FileAsync() {
 
 				private String pwd;
