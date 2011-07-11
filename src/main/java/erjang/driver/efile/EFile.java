@@ -18,7 +18,6 @@
 
 package erjang.driver.efile;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileInputStream;
@@ -26,14 +25,12 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
 import java.nio.channels.SelectableChannel;
-import java.nio.charset.Charset;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.LinkedList;
@@ -46,7 +43,6 @@ import kilim.Pausable;
 import erjang.EBinList;
 import erjang.EBinary;
 import erjang.EHandle;
-import erjang.EPort;
 import erjang.ERT;
 import erjang.ERef;
 import erjang.EString;
@@ -85,11 +81,7 @@ public class EFile extends EDriverInstance {
 	/**
 	 * 
 	 */
-	private static final Charset ISO_8859_1 = Charset.forName("ISO_8859_1");
-	private final EString command;
 	private FileChannel fd;
-	private EPort port;
-	private EPort key;
 	private int flags;
 	private TimerState timer_state;
 	private FileAsync invoke;
@@ -345,6 +337,9 @@ public class EFile extends EDriverInstance {
 	public static final int FILE_IPREAD = 27;
 	public static final int FILE_ALTNAME = 28;
 	public static final int FILE_READ_LINE = 29;
+	public static final int FILE_FDATASYNC = 30;
+	public static final int FILE_FADVISE = 31;
+
 
 	/* Return codes */
 
@@ -361,6 +356,9 @@ public class EFile extends EDriverInstance {
 	public static final byte FILE_RESP_LDATA = 6;
 	public static final byte FILE_RESP_N2DATA = 7;
 	public static final byte FILE_RESP_EOF = 8;
+	public static final byte FILE_RESP_FNAME = 9;
+	public static final byte FILE_RESP_ALL_DATA = 10;
+	private static final byte[] FILE_RESP_ALL_DATA_HEADER = new byte[]{ FILE_RESP_ALL_DATA };
 
 	/* Options */
 
@@ -370,6 +368,14 @@ public class EFile extends EDriverInstance {
 	/* IPREAD variants */
 
 	public static final int IPREAD_S32BU_P32BU = 0;
+	
+	/* POSIX file advises */
+	public static final int POSIX_FADV_NORMAL		= 0;
+	public static final int POSIX_FADV_RANDOM		= 1;
+	public static final int POSIX_FADV_SEQUENTIAL	= 2;
+	public static final int POSIX_FADV_WILLNEED		= 3;
+	public static final int POSIX_FADV_DONTNEED		= 4;
+	public static final int POSIX_FADV_NOREUSE		= 5;
 
 	/* Limits */
 
@@ -405,10 +411,8 @@ public class EFile extends EDriverInstance {
 	 */
 	public EFile(EString command, Driver driver) {
 		super(driver);
-		this.command = command;
 
 		this.fd = (FileChannel) null;
-		this.key = port;
 		this.flags = 0;
 		this.invoke = null;
 		this.cq = new LinkedList<FileAsync>();
@@ -877,7 +881,7 @@ public class EFile extends EDriverInstance {
 					}
 					
 					binp.flip();
-					driver_output_binary(FILE_RESP_OK_HEADER, binp);
+					driver_output_binary(isUnicodeDriverInterface() ? FILE_RESP_ALL_DATA_HEADER : FILE_RESP_OK_HEADER, binp);
 				}
 
 			};
@@ -1211,7 +1215,7 @@ public class EFile extends EDriverInstance {
 	@Override
 	protected void output(EHandle caller, ByteBuffer buf) throws Pausable {
 		FileAsync d;
-		byte cmd = buf.get();
+		final byte cmd = buf.get();
 		switch (cmd) {
 		
 		case FILE_TRUNCATE: {
@@ -1244,13 +1248,14 @@ public class EFile extends EDriverInstance {
 			};
 		} break;
 		
+		case FILE_FDATASYNC:
 		case FILE_FSYNC: {
 			d = new FileAsync() {
 		
 				{
 					level = 2;
 					fd = EFile.this.fd;
-					command = FILE_FSYNC;
+					command = cmd;
 				}
 				
 				@Override
@@ -1359,9 +1364,6 @@ public class EFile extends EDriverInstance {
 
 
 		case FILE_PWD: {
-			int drive = buf.get();
-			char dr = drive==0 ? '?' : (char)('A'+drive);
-			
 			d = new FileAsync() {
 
 				private String pwd;
@@ -1389,10 +1391,22 @@ public class EFile extends EDriverInstance {
 					if (!result_ok) {
 						reply_posix_error(posix_errno);
 					} else {
-						ByteBuffer reply = ByteBuffer.allocate(1+pwd.length());
-						reply.put(FILE_RESP_OK);
-						IO.putstr(reply, pwd, false);
-						driver_output2(reply, null);
+						ByteBuffer reply = null;
+						ByteBuffer data = null;
+						if (isUnicodeDriverInterface()) {
+							// prim_file interface from R14 on
+							reply = ByteBuffer.allocate(1);
+							data = ByteBuffer.allocate(pwd.length());
+							reply.put(FILE_RESP_FNAME);
+							IO.putstr(data, pwd, false);
+						}
+						else {
+							// prim_file interface up to R13B
+							reply = ByteBuffer.allocate(1+pwd.length());
+							reply.put(FILE_RESP_OK);
+							IO.putstr(reply, pwd, false);
+						}
+						driver_output2(reply, data);
 					}
 				}
 
@@ -1680,6 +1694,13 @@ public class EFile extends EDriverInstance {
 			break;
 		}
 		
+		case FILE_FADVISE: {
+			// fadvice() is not available from Java,
+			// so we simply ignore it and return success
+			reply_ok();
+			return;			
+		}
+		
 		case FILE_SETOPT: {
 			reply_ok();
 			return;			
@@ -1902,19 +1923,55 @@ public class EFile extends EDriverInstance {
 
 	void reply_list_directory(String[] files) throws Pausable {
 		for (int i = 0; i < files.length; i++) {
-			ByteBuffer resbuf = ByteBuffer.allocate(files[i].length()+1);
-			resbuf.put(FILE_RESP_OK);
-			resbuf.limit(resbuf.capacity());
-			resbuf.position(1);
-			
-			IO.putstr(resbuf, files[i], false);
-			
-			driver_output2(resbuf, null);
+			if (isUnicodeDriverInterface()) {
+				// prim_file interface from R14 on
+				ByteBuffer reply = ByteBuffer.allocate(1);
+				reply.put(FILE_RESP_FNAME);
+				
+				ByteBuffer data = ByteBuffer.allocate(files[i].length());
+				data.limit(data.capacity());
+				data.position(0);
+				IO.putstr(data, files[i], false);
+				
+				driver_output2(reply, data);
+			}
+			else {
+				// prim_file interface up to R13B
+				ByteBuffer resbuf = ByteBuffer.allocate(files[i].length()+1);
+				resbuf.put(FILE_RESP_OK);
+				resbuf.limit(resbuf.capacity());
+				resbuf.position(1);
+				
+				IO.putstr(resbuf, files[i], false);
+				
+				driver_output2(resbuf, null);
+			}
 		}
 		
 		ByteBuffer resbuf = ByteBuffer.allocate(1);
-		resbuf.put(FILE_RESP_OK);
+		resbuf.put(isUnicodeDriverInterface() ? FILE_RESP_FNAME : FILE_RESP_OK);
 		driver_output2(resbuf, null);
+	}
+	
+	/**
+	 * the new unicode driver interface is used since OTP version R14B01.
+	 * 
+	 * @see http://www.erlang.org/doc/apps/stdlib/unicode_usage.html#id60205
+	 */
+	static boolean unicodeDriverInterface = ("R14B".compareTo(erjang.Main.OTP_VERSION) <= 0);
+	
+	/**
+	 * Determine whether to use the new unicode driver interface
+	 * from R14B01.
+	 * 
+	 * @return <code>true</code>, if the new driver interface
+	 * from R14B01 is to be used, <code>false</code> for the older 
+	 * driver interface up to R13
+	 * 
+	 * @see http://www.erlang.org/doc/apps/stdlib/unicode_usage.html#id60205
+	 */
+	private static boolean isUnicodeDriverInterface() {
+		return unicodeDriverInterface;
 	}
 	
 }
