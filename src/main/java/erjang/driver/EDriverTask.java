@@ -351,7 +351,6 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 				
 				if (log.isLoggable(Level.FINER)) {
 					log.finer("EXITING "+result);
-					System.exit(1);
 				}
 
 			} finally {

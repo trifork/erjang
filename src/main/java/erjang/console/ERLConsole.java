@@ -56,7 +56,7 @@ public class ERLConsole extends JFrame {
     static final int HINSET = 8;
 
     public static void main(final String[] args) {
-        final ERLConsole console = new ERLConsole("Erjang Console");
+        ERLConsole console = new ERLConsole("Erjang Console");
 
         console.getContentPane().setLayout(new BorderLayout());
         console.setSize(700, 600);
@@ -77,7 +77,7 @@ public class ERLConsole extends JFrame {
         pane.setBorder(BorderFactory.createLineBorder(Color.darkGray));
         console.getContentPane().add(pane, BorderLayout.CENTER);
         
-        StatusBar status = new StatusBar();
+        final StatusBar status = new StatusBar();
         console.getContentPane().add(status, BorderLayout.SOUTH);
                 
         console.validate();
@@ -88,12 +88,20 @@ public class ERLConsole extends JFrame {
                 ERT.shutdown();
             }
         });
+        console.setVisible(true);
+        
+        Timer timer = new Timer(true);
+        timer.schedule(new TimerTask() {
+
+			@Override
+			public void run() {
+				status.updateMemory();
+			}}, 1000, 1000);
 
         erjang.OTPMain.add_driver(tty);
 
         Thread t2 = new Thread() {
             public void run() {
-                console.setVisible(true);
                 try {
 					erjang.Main.main(args);
 				} catch (Exception e) {
@@ -108,8 +116,12 @@ public class ERLConsole extends JFrame {
         } catch (InterruptedException ie) {
             // ignore
         }
-
-        System.exit(0);
+        timer.cancel();
+        timer.purge();
+        timer = null;
+        console.setVisible(false);
+        console.dispose();
+        console = null;
     }
 
     private Font findFont(String otherwise, int style, int size, String[] families) {
@@ -138,7 +150,7 @@ public class ERLConsole extends JFrame {
 @SuppressWarnings("serial")
 class StatusBar extends JPanel {
 
-	  private JLabel mem_label;
+	private JLabel mem_label;
 	private JLabel progress;
 
 	public StatusBar() {
@@ -168,13 +180,6 @@ class StatusBar extends JPanel {
 	    
 	    mem_label = new JLabel();
 	    add(mem_label, BorderLayout.CENTER);
-	    
-	    new Timer(true).schedule(new TimerTask() {
-
-			@Override
-			public void run() {
-				StatusBar.this.updateMemory();
-			}}, 1000, 1000);
 	  }
 
 	  void updateMemory() {

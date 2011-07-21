@@ -1041,6 +1041,14 @@ public class ERT {
 			init_pid.sendb(tup);
 		}
 	}
+	
+	/**
+	 * Shutdown Kilim schedulers.
+	 */
+	/*package*/ static void shutdownSchedulers() {
+		scheduler.shutdown();
+		async_scheduler.shutdown();
+	}
 
 	static public InputStream orig_in = System.in;
 	static public PrintStream orig_out = System.out;
@@ -1069,5 +1077,4 @@ public class ERT {
 			debug(text);
 		}
 	}
-
 }

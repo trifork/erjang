@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.FileHandler;
 import java.util.logging.Handler;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import erjang.driver.EDriver;
@@ -83,10 +82,18 @@ public class OTPMain {
 		EAtom am_start = EAtom.intern("start");
 		ESeq env = ERT.NIL;
 
+		// launch first (initial) process, which starts OTP
 		EProc proc = new EProc(null, am_otp_ring0, am_start, ERT.NIL.cons(argv).cons(env));
 
 		ERT.run(proc);
+		
+		// wait for this process to terminate
 		proc.joinb();
+		
+		// shutdown schedulers, after the first (initial) process has stopped
+		ERT.shutdownSchedulers();
+		// shutdown timer task
+		ETimerTask.shutdown();
     }
 
     protected static ESeq process_args(String[] args) {
