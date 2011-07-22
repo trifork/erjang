@@ -84,7 +84,6 @@ public class Main {
 		
 		ERT.log.severe("Cannot find OTPROOT directory\n"
 				+ "Pass -root <dir>, or set environment variable.");
-		System.exit(-1);
 		
 		return null;
 	}
@@ -162,7 +161,7 @@ public class Main {
 		
 		if (!(new File(erl_bootstrap_ebindir)).exists() && !erl_bootstrap_ebindir.startsWith(EFile.RESOURCE_PREFIX)) {
 			ERT.log.severe("No bootstrap classes at: "+erl_bootstrap_ebindir);
-			System.exit(1);
+			throw new IllegalArgumentException("No bootstrap classes at: "+erl_bootstrap_ebindir);
 		}
 		
 		OTPMain.main(ra.toArray(new String[ra.size()]));

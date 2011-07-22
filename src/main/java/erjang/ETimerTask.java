@@ -134,4 +134,9 @@ public abstract class ETimerTask extends TimerTask implements ExitHook {
 		
 		return -1;
 	}
+	
+	public static void shutdown() {
+		send_timer.cancel();
+		send_timer.purge();
+	}
 }

@@ -271,28 +271,35 @@ public class ErlProc {
 	
 	@BIF
 	public static EObject halt(EProc proc) {
-		System.exit(0);
-		return null;
+		return halt(proc, null);
 	}
 	
 	@BIF
 	public static EObject halt(EProc proc, EObject value) {
-		ESmall val = value.testSmall();
-		if (val != null) {
-			System.exit(val.value);
-			return null;
+		int exitCode = 1;
+		String message = null;
+		if (value != null) {
+			ESmall val = value.testSmall();
+			if (val != null) {
+				exitCode = val.value;
+			}
+			
+			EString str = value.testString();
+			if (str != null) {
+				message = str.stringValue();
+			}
 		}
 		
-		EString str = value.testString();
-		if (str != null) {		
-			// TODO: create crash file
-			log.severe("halting system: " + str.stringValue());
-			System.exit(1);
+		// TODO: create crash file
+		if (message != null) {
+			log.severe("halting system: " + message);
 		}
+		else {
+			log.info("halting system");
+		}
+		ERT.shutdown();
 		
-		throw ERT.badarg(value);
-		
-
+		return null;
 	}
 	
 	@BIF
