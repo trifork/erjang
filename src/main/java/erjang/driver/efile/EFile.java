@@ -434,9 +434,16 @@ public class EFile extends EDriverInstance {
 	 * @throws Pausable 
 	 */
 	public void reply_Uint(int value) throws Pausable {
-		ByteBuffer response = ByteBuffer.allocate(4);
-		response.putInt(value);
-		driver_output2(response, null);
+		if (isUnicodeDriverInterface()) {
+			ByteBuffer response = ByteBuffer.allocate(9);
+			response.put(FILE_RESP_NUMBER);
+			response.putLong(value);
+			driver_output2(response, null);
+		} else {
+			ByteBuffer response = ByteBuffer.allocate(4);
+			response.putInt(value);
+			driver_output2(response, null);
+		}
 	}
 
 	public void reply_Uint_error(int value, int posix_error) throws Pausable {
@@ -1958,7 +1965,7 @@ public class EFile extends EDriverInstance {
 	 * 
 	 * @see http://www.erlang.org/doc/apps/stdlib/unicode_usage.html#id60205
 	 */
-	static boolean unicodeDriverInterface = ("R14B".compareTo(erjang.Main.OTP_VERSION) <= 0);
+	static boolean unicodeDriverInterface = ("R14B".compareTo(erjang.Main.OTP_VERSION) < 0);
 	
 	/**
 	 * Determine whether to use the new unicode driver interface
@@ -1973,5 +1980,4 @@ public class EFile extends EDriverInstance {
 	private static boolean isUnicodeDriverInterface() {
 		return unicodeDriverInterface;
 	}
-	
 }

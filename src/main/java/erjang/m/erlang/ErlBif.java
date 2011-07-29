@@ -178,8 +178,8 @@ public class ErlBif {
 		}
 		
 		
-		ESeq seq;
-		if ((seq = val.testSeq()) == null) {
+		ECons seq;
+		if ((seq = val.testCons()) == null) {
 			throw ERT.badarg(val);
 		}
 		
