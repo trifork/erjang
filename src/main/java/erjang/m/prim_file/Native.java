@@ -52,15 +52,12 @@ public class Native extends ENative
 	public static EObject internal_native2name(EObject arg) {
 		EBinary bin = arg.testBinary();
 		byte[] binbytes;
-		byte[] outbytes;
 		
 		if (bin == null) {
 			throw ERT.badarg(arg);
 		}
 		binbytes = bin.getByteArray();
-		outbytes = new byte[binbytes.length - 1];
-		System.arraycopy(binbytes, 0, outbytes, 0, binbytes.length - 1);
-		String out = new String(outbytes);
+		String out = new String(binbytes);
 		
 		return new EString(out);
 	}
