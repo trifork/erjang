@@ -31,6 +31,7 @@ import erjang.ETuple;
 import erjang.ESmall;
 import erjang.ESeq;
 
+import erjang.beam.loader.Rewriter;
 
 public class FunctionRepr {
 	protected FunctionInfo sig;
@@ -82,4 +83,7 @@ public class FunctionRepr {
 		return fun;
 	}
 
+	public void rewrite(Rewriter rw) {
+		rw.rewriteFunctionBody(body, sig);
+	}
 }

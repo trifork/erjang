@@ -245,6 +245,7 @@ public class ModuleAnalyzer implements ModuleVisitor {
 						}
 
 						case apply_last:
+						case i_call_fun_last: {
 							if (log.isLoggable(Level.FINE) && !self.call_is_pausable) {
 								log.fine("call_pausable: " + op);
 							}
@@ -252,6 +253,7 @@ public class ModuleAnalyzer implements ModuleVisitor {
 							self.may_return_tail_marker = true;
 							self.call_is_pausable = true;
 							break;
+						}
 
 						case call_ext_last:
 						case call_ext_only: 

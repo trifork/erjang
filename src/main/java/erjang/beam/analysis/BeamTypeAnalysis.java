@@ -922,7 +922,8 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						break;
 					}
 
-					case call_fun: {
+					case call_fun:
+					case i_call_fun_last: {
 						Insn.I insn = (Insn.I) insn_;
 						int nargs = insn.i1;
 						Arg[] args = new Arg[nargs + 1];
@@ -2008,14 +2009,19 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						continue next_insn;
 					}
 
-					case call_fun: {
+					case call_fun:
+					case i_call_fun_last: {
 						Insn.I insn = (Insn.I)insn_;
 						int nargs = insn.i1;
 						for (int i = 0; i < nargs; i++) {
 							if (current.getx(i) == null)
 								throw new Error("uninitialized x" + i);
 						}
-						current = current.setx(0, EOBJECT_TYPE, FV.this);
+						if (code == BeamOpcode.i_call_fun_last) {
+							is_tail_recursive = true;
+						} else {
+							current = current.setx(0, EOBJECT_TYPE, FV.this);
+						}
 						continue next_insn;
 					}
 
@@ -2059,6 +2065,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 				case call_ext_only:
 				case func_info:
 				case apply_last:
+				case i_call_fun_last:
 
 				case wait:
 				case select_tuple_arity:

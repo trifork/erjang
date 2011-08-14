@@ -154,6 +154,9 @@ public enum BeamOpcode {
 	bif,
 	gc_bif,
 	arithfbif,
+
+	// Synthetic (Erjang-internal) opcodes
+	i_call_fun_last            (0xF0),
 	
 	// illegal op-code
 	NONE

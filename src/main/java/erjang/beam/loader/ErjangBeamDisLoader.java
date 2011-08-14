@@ -32,12 +32,14 @@ public class ErjangBeamDisLoader extends erjang.beam.BeamLoader {
 	@Override
 	public BeamFileData load(File file) throws IOException {
 		ModuleRepr mod = BeamLoader.read(file.getAbsolutePath());
+		mod.rewrite(new Rewriter());
 		return mod;
 	}
 
 	@Override
 	public BeamFileData load(byte[] data) throws IOException {
 		ModuleRepr mod = BeamLoader.parse(data);
+		mod.rewrite(new Rewriter());
 		return mod;
 	}
 

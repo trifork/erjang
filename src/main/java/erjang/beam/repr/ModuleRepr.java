@@ -34,6 +34,8 @@ import erjang.beam.BeamFileData;
 import erjang.beam.CodeAtoms;
 import erjang.beam.ModuleVisitor;
 
+import erjang.beam.loader.Rewriter;
+
 public class ModuleRepr implements BeamFileData {
 	static Logger log = Logger.getLogger("erjang.beam");
 	
@@ -128,4 +130,9 @@ public class ModuleRepr implements BeamFileData {
 		return ESeq.fromList(symFunctions);
     }
 
+	public void rewrite(Rewriter rw) {
+		for (FunctionRepr f : functions) {
+			f.rewrite(rw);
+		}
+	}
 }
