@@ -1050,7 +1050,7 @@ public class ErlBif {
 
 	@BIF(name = "now")
 	static public ETuple3 now() {
-		long now = now_micros();
+		long now = now_unique_micros();
 		int micros = (int)(now % 1000000); now /= 1000000;
 		int secs   = (int)(now % 1000000); now /= 1000000;
 		int megas  = (int)now;
@@ -1068,14 +1068,18 @@ public class ErlBif {
 	final static long micros_from_epoch_to_nanotime =
 		System.currentTimeMillis() * 1000 - System.nanoTime() / 1000;
 
-	static long now_micros() {
+	public static long now_raw_micros() {
+		return System.nanoTime() / 1000 + micros_from_epoch_to_nanotime;
+	}
+
+	static long now_unique_micros() {
 		/* now() must fulfill:
 		 * - Any return value approximates the current time.
 		 * - The return values are strictly increasing (and thus unique).
 		 * We ensure the latter by (a) always increasing latest_now,
 		 * (b) always returning what we set it to.
 		 */
-		long micros = System.nanoTime() / 1000 + micros_from_epoch_to_nanotime;
+		long micros = now_raw_micros();
 		long prev;
 		while ((prev = latest_now.get()) < micros) {
 			if (latest_now.compareAndSet(prev,micros)) {
@@ -1084,6 +1088,7 @@ public class ErlBif {
 		}
 		return latest_now.incrementAndGet();
 	}
+
 
 	// tests
 

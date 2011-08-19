@@ -31,6 +31,7 @@ import erjang.EObject;
 import erjang.ERT;
 import erjang.EString;
 import erjang.ETuple2;
+import erjang.ETuple3;
 import erjang.ECons;
 import erjang.NotImplemented;
 
@@ -146,6 +147,22 @@ public class Native extends ENative {
 		return result;
 		
 		
+	}
+
+	@BIF
+	static public ETuple3 timestamp() {
+		long now = erjang.m.erlang.ErlBif.now_raw_micros();
+		int micros = (int)(now % 1000000); now /= 1000000;
+		int secs   = (int)(now % 1000000); now /= 1000000;
+		int megas  = (int)now;
+
+		ETuple3 res = new ETuple3();
+
+		res.elem1 = ERT.box(megas);
+		res.elem2 = ERT.box(secs);
+		res.elem3 = ERT.box(micros);
+
+		return res;
 	}
 
 }
