@@ -1798,9 +1798,12 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					mv.visitMethodInsn(INVOKESTATIC, ERT_NAME, "cons", ERT_CONS_SIG);
 					pop(out, ECONS_TYPE);
 					return;
-				case call_fun: {
-					ensure_exception_handler_in_place();
+
+				case call_fun:
+				case i_call_fun_last: {
+				    	ensure_exception_handler_in_place();
 					
+				    	boolean is_tail = opcode == BeamOpcode.i_call_fun_last;
 					int nargs = in.length - 1;
 					push(in[nargs], EOBJECT_TYPE);
 					mv.visitInsn(DUP);
@@ -1819,12 +1822,17 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 						push(in[i], EOBJECT_TYPE);
 					}
 
-					mv.visitMethodInsn(INVOKEVIRTUAL, funtype, "invoke", EUtil
-							.getSignature(nargs, true));
-					pop(out, EOBJECT_TYPE);
+					mv.visitMethodInsn(INVOKEVIRTUAL, funtype,
+							   is_tail ? "invoke_tail" : "invoke",
+							   EUtil.getSignature(nargs, true));
+					if (is_tail) {
+					    mv.visitInsn(ARETURN);
+					} else {
+					    pop(out, EOBJECT_TYPE);
+					}
 					return;
 				}
-				}
+				}//switch
 
 				throw new Error();
 			}
