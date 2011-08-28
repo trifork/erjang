@@ -103,7 +103,7 @@ public class OTPMain {
             
             //special handling for -noshell / -noinput:
             //in this case we suppress the Progress wheel since it might break the output
-            if (args[i].equals("-noinput") || args[i].equals("noshell")) {
+            if (args[i].equals("-noinput") || args[i].equals("-noshell")) {
                 System.setProperty("erjang.progress.suppress", "true");
             }
         }
