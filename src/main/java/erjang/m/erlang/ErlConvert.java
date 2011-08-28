@@ -20,6 +20,7 @@ package erjang.m.erlang;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.math.BigInteger;
 
 import erjang.BIF;
@@ -280,12 +281,17 @@ public class ErlConvert {
 		
 		BARR barr = new BARR();
 
-		collectList(list, iol, barr);
+		try {
+			collectList(list, iol, barr);
+		} catch (IOException e) {
+			// should not happen, barr is an byte array stream
+			throw new InternalError();
+		}
 		
 		return barr.asBinary();
 	}
 
-	private static void collectList(EObject list, ECons iol, BARR barr) {
+	private static void collectList(EObject list, ECons iol, OutputStream barr) throws IOException {
 		EObject tail;
 		ECons cons;
 		for (tail=iol; (cons = tail.testNonEmptyList()) != null; tail = cons.tail()) {
@@ -299,12 +305,7 @@ public class ErlConvert {
 					throw ERT.badarg(list);
 				barr.write(sm.value);
 			} else if ((bi = hd.testBinary()) != null) {
-				try {
-					bi.writeTo(barr);
-				} catch (IOException e) {
-					// should not happen, barr is an byte array stream
-					throw new InternalError();
-				}
+				bi.writeTo(barr);
 			} else if ((co = hd.testNonEmptyList()) != null) {
 				collectList(list, co, barr);
 			} else if (hd.isNil()) {
@@ -324,6 +325,25 @@ public class ErlConvert {
 		} else if (! tail.isNil()) {
 			throw ERT.badarg(list);
 		}
+	}
+
+	/**
+	 * Write io list to output stream.
+	 * 
+	 * @param list io list containing terms to write
+	 * @param out output stream
+	 * @throws IOException in case of io errors
+	 */
+	public static void collectList(EObject list, OutputStream out) throws IOException {
+		ECons iol = list.testCons();
+		if (iol == null)
+			throw ERT.badarg(list);
+
+		if (iol.isNil()) {
+			return;
+		}
+
+		collectList(list, iol, out);
 	}
 
 	@BIF
