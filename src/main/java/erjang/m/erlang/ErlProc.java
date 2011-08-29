@@ -602,7 +602,7 @@ public class ErlProc {
 			
 		} else if (type == am_otp_release) {
 			// TODO: be smarter somehow
-			return new EString(Main.OTP_VERSION);
+			return new EString(Main.otp_version);
 			
 		} else if (type == am_logical_processors) {
 			// TODO: be smarter somehow

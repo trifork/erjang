@@ -77,4 +77,7 @@ public class ErjangConfig {
 	public static String getString(String propname, String fallback) {
 		return System.getProperty(propname, fallback);
 	}
+	public static boolean hasString(String propname) {
+		return (System.getProperty(propname) != null);
+	}
 }

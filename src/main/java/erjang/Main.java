@@ -18,18 +18,26 @@
 
 package erjang;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import erjang.driver.efile.EFile;
 
 public class Main {
 	public static final String SYSTEM_ARCHITECTURE = "java";
-	public static final String OTP_VERSION = ErjangConfig.getString("erjang.otp.version", "R13B04");
 	public static final String DRIVER_VERSION = "1.5";
 
-	static String erts_version = "erts-"+ErjangConfig.getString("erjang.erts.version", "5.7.5");
+	// determine dynamically from $OTPROOT (and make therefore non-final), if unspecified
+	public static String otp_version = (ErjangConfig.hasString("erjang.otp.version") ? ErjangConfig.getString("erjang.otp.version", null) : null);
+	static String erts_version = (ErjangConfig.hasString("erjang.erts.version") ? "erts-"+ErjangConfig.getString("erjang.erts.version", null) : null);
 	static String erl_rootdir;
 	static String erl_bootstrap_ebindir;
 	
@@ -47,6 +55,45 @@ public class Main {
 			erl_rootdir = guess_erl_root();
 		}
 		
+		File erlangRoot = new File(erl_rootdir);
+		if (!erlangRoot.isDirectory()) {
+			return null;
+		}
+		
+		if (erts_version == null) {
+			// guess erts version from directory $OTPROOT/lib/erts-<version>
+			File libDir = new File(erlangRoot, "lib");
+			String[] ertsDirs = libDir.list(new FilenameFilter() {
+				@Override
+				public boolean accept(File dir, String name) {
+					return name.startsWith("erts-");
+				}
+			});
+			if (ertsDirs != null) {
+				for (int d = 0; d < ertsDirs.length; d++) {
+					String dir = ertsDirs[d];
+					erts_version = dir;
+				}
+			}
+		}
+		
+		if (otp_version == null) {
+			// guess OTP version from directory $OTPROOT/bin/start.script
+			File startScript = new File(erlangRoot, "bin/start.script");
+			otp_version = guess_otp_version(startScript);
+		}
+		
+		if (otp_version == null) {
+			// guess OTP version from directory $OTPROOT/bin/start.script
+			File startScript = new File(erlangRoot, "releases/RELEASES");
+			otp_version = guess_otp_version(startScript);
+		}
+		
+		if (otp_version == null) {
+			ERT.log.severe("Cannot determine OTP version! Please specify system property 'erjang.otp.version'");
+			return null;
+		}
+		
 		erl_bootstrap_ebindir = System.getenv("ERL_BOOTSTRAP_EBIN");
 		if (erl_bootstrap_ebindir == null) {
 			erl_bootstrap_ebindir = erl_rootdir + File.separator + "lib" + File.separator
@@ -54,6 +101,47 @@ public class Main {
 		}
 		
 		return erl_rootdir;
+	}
+	
+	private static String guess_otp_version(File file) {
+		if ((file == null) || !file.exists() || !file.canRead()) {
+			return null;
+		}
+		
+		BufferedReader reader = null;
+		try {
+			Pattern pattern = Pattern.compile(".*\"(.*OTP[\\s]+APN.*)\",\"(R\\w+)\".*");
+			reader = new BufferedReader(new FileReader(file));
+			String line;
+			while ((line = reader.readLine()) != null) {
+				Matcher match = pattern.matcher(line);
+				if (!match.matches()) {
+					continue;
+				}
+				String otpVersion = match.group(2);
+				if ((otpVersion != null)
+					&& (otpVersion.length() > 0)) {
+					return otpVersion;
+				}
+			}
+			
+		}
+		catch (Throwable t) {
+			// ignore
+		}
+		finally {
+			// close reader
+			if (reader != null) {
+				try {
+					reader.close();
+				}
+				catch (Throwable t) {
+					// ignore
+				}
+			}
+		}
+		
+		return null;
 	}
 	
 	private static String guess_erl_root() {
@@ -64,8 +152,16 @@ public class Main {
 		
 		// this logic works on Unixes ... what about windows?
 		String path = System.getenv("PATH");
-		for (String elem : path.split(File.pathSeparator)) {
+		List<String> paths = new ArrayList<String>();
+		paths.addAll(Arrays.asList(path.split(File.pathSeparator)));
+		// also check canonical locations /usr/local/lib/erlang and
+		// /opt/local/lib/erlang
+		paths.add("/usr/local/lib/erlang/bin");
+		paths.add("/opt/local/lib/erlang/bin");
+		for (String elem : paths) {
 			File dir = new File(elem);
+			// TODO check for some other file, which might not be s 
+			// symbolic link in a generic bin dir such as /usr/local/bin
 			File erl = new File(dir, "erl");
 			if (erl.exists()) {
 				
