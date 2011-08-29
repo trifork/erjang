@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <launchConfiguration type="org.eclipse.jdt.launching.localJavaApplication">
-<stringAttribute key="bad_container_name" value="\erlang\o"/>
+<stringAttribute key="bad_container_name" value="\erjang\o"/>
 <listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_PATHS">
-<listEntry value="/erlang/src/main/java/erjang/Main.java"/>
+<listEntry value="/erjang/src/main/java/erjang/Main.java"/>
 </listAttribute>
 <listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_TYPES">
 <listEntry value="1"/>
@@ -12,6 +12,6 @@
 <listEntry value="org.eclipse.debug.ui.launchGroup.run"/>
 </listAttribute>
 <stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="erjang.Main"/>
-<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="-root ${env_var:ERLROOT}"/>
-<stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="erlang"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="-sname erj -root /opt/local/lib/erlang"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="erjang"/>
 </launchConfiguration>
