@@ -30,6 +30,7 @@ import java.util.logging.Logger;
 import kilim.Pausable;
 import erjang.m.erlang.ErlFun;
 import erjang.m.erlang.ErlProc;
+import erjang.m.java.JavaObject;
 
 /**
  * An erlang process
@@ -97,6 +98,17 @@ public final class EProc extends ETask<EInternalPID> {
 	public int sp = 0;
 // 	double[] fregs = new double[16];
 	public EDouble[] fregs = new EDouble[16];
+	
+	public EProc(EPID group_leader, EAtom m, EAtom f, Object[] a) {
+		self = new EInternalPID(this);
+
+		// if no group leader is given, we're our own group leader
+		this.group_leader = group_leader == null ? self : group_leader;
+		
+		setTarget(m, f, a);
+		
+		all_tasks.put(key(), this);
+	}
 
 	/**
 	 * @param m
@@ -108,6 +120,30 @@ public final class EProc extends ETask<EInternalPID> {
 
 		// if no group leader is given, we're our own group leader
 		this.group_leader = group_leader == null ? self : group_leader;
+		
+		setTarget(m, f, a);
+		
+		all_tasks.put(key(), this);
+	}
+	
+	protected void setTarget(EAtom m, EAtom f, Object[] args) {
+		// wrap any non-EObject argument in JavaObject
+		EObject[] eargs = new EObject[args.length];
+		for (int i = 0; i < args.length; i++) {
+			Object arg = args[i];
+			if (arg instanceof EObject) {
+				EObject earg = (EObject) arg;
+				eargs[i] = earg;
+			}
+			else {
+				// wrap in JavaObject
+				eargs[i] = JavaObject.box(this, arg);
+			}
+		}
+		setTarget(m, f, ESeq.fromArray(eargs));
+	}
+	
+	protected void setTarget(EAtom m, EAtom f, ESeq a) {
 		this.spawn_mod = m;
 		this.spawn_fun = f;
 		this.spawn_args = a.length();
@@ -140,8 +176,6 @@ public final class EProc extends ETask<EInternalPID> {
 			this.arg0 = a.head(); a = a.tail();
 		case 0:
 		}
-		
-		all_tasks.put(key(), this);
 	}
 
 	private int key() {
