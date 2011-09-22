@@ -454,6 +454,9 @@ public final class EProc extends ETask<EInternalPID> {
 				result = e.reason();
 				death = e;
 				
+			} catch (ErlangHalt e) {
+				throw e;
+
 			} catch (Throwable e) {
 
 				log.log(Level.SEVERE, "[java] exiting "+self_handle()+" with: ", e);
@@ -480,6 +483,8 @@ public final class EProc extends ETask<EInternalPID> {
 					
 					try {
 						fun.invoke(this, new EObject[] { EString.fromString(msg) });
+					} catch (ErlangHalt e) {
+						throw e;
 					} catch (ThreadDeath e) {
 						throw e;
 					} catch (Throwable e) {
@@ -492,6 +497,9 @@ public final class EProc extends ETask<EInternalPID> {
 			//System.err.println("task "+this+" exited with "+result);
 			
 			do_proc_termination(result);
+
+		} catch (ErlangHalt e) {
+			throw e;
 
 		} catch (ThreadDeath e) {
 			throw e;

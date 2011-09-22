@@ -51,6 +51,7 @@ import erjang.ETuple2;
 import erjang.ErjangHibernateException;
 import erjang.ErlangException;
 import erjang.ErlangExit;
+import erjang.ErlangHalt;
 import erjang.ErlangUndefined;
 import erjang.FunID;
 import erjang.Import;
@@ -299,7 +300,7 @@ public class ErlProc {
 		}
 		ERT.shutdown();
 		
-		return null;
+		throw new erjang.ErlangHalt();
 	}
 	
 	@BIF
