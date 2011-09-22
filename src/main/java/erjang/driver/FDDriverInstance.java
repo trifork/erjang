@@ -60,15 +60,15 @@ public class FDDriverInstance extends EDriverInstance {
 		this.out = out;
 		
 		if (in == 0) {
-			ins = System.in;
+			ins = ERT.getInputStream();
 		} 
 		
 		if (out == 1) {
-			outs = System.out;
+			outs = ERT.getOutputStream();
 		}
 		
 		if (out == 2) {
-			outs = System.err;
+			outs = ERT.getErrorStream();
 		}
 		// that's it.
 	}

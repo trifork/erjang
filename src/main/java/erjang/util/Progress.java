@@ -21,6 +21,8 @@ package erjang.util;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import erjang.ERT;
+
 public class Progress {
 	static ProgressListener listener;
 
@@ -47,7 +49,7 @@ public class Progress {
                 }
 
                 if (!Boolean.parseBoolean(suppress)) {
-				    System.err.write(wheel[next % 4]);
+                	ERT.getErrorStream().write(wheel[next % 4]);
                 }
 			} catch (IOException e) {
 				// ignore

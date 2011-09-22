@@ -21,6 +21,7 @@ package erjang;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -1050,15 +1051,56 @@ public class ERT {
 		async_scheduler.shutdown();
 	}
 
-	static public InputStream orig_in = System.in;
-	static public PrintStream orig_out = System.out;
-	static public PrintStream orig_err = System.err;
+	static protected volatile InputStream in = System.in;
+	static protected volatile PrintStream out = System.out;
+	static protected volatile PrintStream err = System.err;
 	
 	public static void set_stdio(InputStream in,
 			PrintStream out, PrintStream err) {
-		System.setIn(in);
-		System.setOut(out);
-		System.setErr(err);
+		// avoid null
+		ERT.in = (in != null ? in : new NullInputStream());
+		ERT.out = (out != null ? out : new PrintStream(new NullOutputStream()));
+		ERT.err = (err != null ? err : new PrintStream(new NullOutputStream()));
+	}
+
+	public static void set_stdio(InputStream in,
+			OutputStream out, OutputStream err) {
+		// avoid null
+		ERT.in = (in != null ? in : new NullInputStream());
+		ERT.out = (out != null ? new PrintStream(out) : new PrintStream(new NullOutputStream()));
+		ERT.err = (err != null ? new PrintStream(err) : new PrintStream(new NullOutputStream()));
+	}
+
+	public static void setInputStream(InputStream in) {
+		ERT.in = (in != null ? in : new NullInputStream());
+	}
+
+	public static InputStream getInputStream() {
+		return in;
+	}
+
+	public static void setOutputStream(PrintStream out) {
+		ERT.out = (out != null ? out : new PrintStream(new NullOutputStream()));
+	}
+
+	public static void setOutputStream(OutputStream out) {
+		ERT.out = (out != null ? new PrintStream(out) : new PrintStream(new NullOutputStream()));
+	}
+
+	public static PrintStream getOutputStream() {
+		return out;
+	}
+
+	public static void setErrorStream(PrintStream err) {
+		ERT.err = (err != null ? err : new PrintStream(new NullOutputStream()));
+	}
+
+	public static void setErrorStream(OutputStream err) {
+		ERT.err = (err != null ? new PrintStream(err) : new PrintStream(new NullOutputStream()));
+	}
+
+	public static PrintStream getErrorStream() {
+		return err;
 	}
 
 	public static File newFile(String file_name) {
@@ -1077,4 +1119,26 @@ public class ERT {
 			debug(text);
 		}
 	}
+	
+	static class NullInputStream extends InputStream {
+		@Override
+		public int read() throws IOException {
+			return -1;
+		}
+	}
+	static class NullOutputStream extends OutputStream {
+		@Override
+		public void write(int arg0) throws IOException {
+			// ignore
+		}
+		@Override
+		public void write(byte[] b) throws IOException {
+			// ignore
+		}
+		@Override
+		public void write(byte[] b, int off, int len) throws IOException {
+			// ignore
+		}
+	}
+
 }

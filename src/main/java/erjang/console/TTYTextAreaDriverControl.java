@@ -47,6 +47,7 @@ import erjang.EBinary;
 import erjang.EHandle;
 import erjang.EObject;
 import erjang.EPID;
+import erjang.ERT;
 import erjang.EString;
 import erjang.driver.EDriverInstance;
 import erjang.driver.IO;
@@ -157,7 +158,7 @@ public class TTYTextAreaDriverControl extends EDriverInstance implements
 	}
 
 	public InputStream getInputStream() {
-		return System.in;
+		return ERT.getInputStream();
 	}
 
 	public OutputStream getOutputStream() {

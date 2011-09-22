@@ -120,7 +120,7 @@ public class ErlProc {
 
 	@BIF
 	public static EObject display(EProc proc, EObject obj) {
-		System.out.println(obj);
+		ERT.getOutputStream().println(obj);
 		return ERT.TRUE;
 	}
 
