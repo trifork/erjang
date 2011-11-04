@@ -1,0 +1,28 @@
+---
+layout: nil
+is_index: true
+---
+
+
+{% include header.html %}
+  {% for post in paginator.posts %}
+    {% include post.html %}
+  {% endfor %}
+
+	<div class="pagination" id="bottom_page">
+		<ul>
+			{% if paginator.previous_page %}
+				{% if paginator.previous_page == 1 %}
+				<li class="previous"><a href="{{ site.baseurl }}">&larr; Previous</a></li>
+				{% else %}
+				<li class="previous"><a href="{{ site.baseurl }}/page{{ paginator.previous_page }}">&larr; Previous</a></li>
+				{% endif %}
+			{% endif %}
+				<li><p>Page {{ paginator.page }} of {{ paginator.total_pages }}</p></li>
+			{% if paginator.next_page %}
+				<li class="next"><a href="{{ site.basurl }}/page{{ paginator.next_page }}">Next &rarr;</a></li>
+			{% endif %}
+		</ul>
+	</div>
+
+{% include footer.html %}

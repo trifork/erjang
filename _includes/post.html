@@ -1,0 +1,23 @@
+  {% if page.is_index %}{% assign content = post.content %}{% endif %}
+    <div class="span11 content">
+		<div class="page-header">
+		 {% if post.title %}<h3 class="title">{% if page.is_index %}<a href="{{ site.baseurl }}{{ post.url }}">{{ post.title }}</a>{% else %}{{ post.title}}{% endif %}</h3>{% endif %}
+		</div>
+		<div class="post_content">
+			{% if page.is_index %}
+				{% if post.summary %}{{ post.summary }}
+				{% else %}
+				{{ content }}
+				{% endif %}
+			{% else %}
+			{{ content }}
+			{% endif %}
+		</div>
+    </div><!--content-->
+
+	<div class="span5 sidebar">
+		<h4>Published on {{ post.date | date:'%d %B %Y' }}</h4>
+		{% for category in post.categories %}
+		<h6>{{ category }}</h6>
+		{% endfor %}
+	</div>

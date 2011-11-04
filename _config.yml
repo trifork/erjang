@@ -1,0 +1,5 @@
+permalink: /:year/:month/:title/
+paginate: 10
+exclude:
+name: Erjang - Erlang on the JVM
+baseurl:
