@@ -199,9 +199,11 @@ public class Interpreter extends AbstractInterpreter {
 				int argCnt = args.length;
 				EObject[] reg = getRegs(proc); //??
 				for (int i=0; i<argCnt; i++) {reg[i] = args[i];} //??
+				/*
 				if (log.isLoggable(Level.FINER)) {
 					for (int i=0; i<argCnt; i++) log.finer("INT| arg#"+i+"="+args[i]);
 				}
+				*/
 				return interpret(proc, start_pc, reg);
 			}
 
@@ -212,16 +214,18 @@ public class Interpreter extends AbstractInterpreter {
 				} else {
 					int argCnt = len;
 					for (int i=0; i<argCnt; i++) {reg[i] = args[i];} //??
+					/*
 					if (log.isLoggable(Level.FINER)) {
 						for (int i=0; i<argCnt; i++) log.finer("INT| arg#"+i+"="+args[i]);
 					}
+					*/
 					return interpret(proc, start_pc, reg);					
 				}
 			}
 
 			/** Local call - with given PC and register array */
 			public EObject invoke_local(final EProc proc, final EObject[] reg, int argCnt, int pc) throws Pausable {
-				log.fine("INT| invoking "+name+"@"+pc+"...");
+				//log.fine("INT| invoking "+name+"@"+pc+"...");
 				return interpret(proc, pc, reg);
 			}
 
@@ -250,14 +254,16 @@ public class Interpreter extends AbstractInterpreter {
 							}
 							last_pc = pc;
 							final int opcode = code[pc++];
+							/*
 							if (log.isLoggable(Level.FINEST)) {
 								log.finest("STACK| "); for (int i=0; i<=sp; i++) {log.finest("  "+i+":"+stack[i]);} log.finest("");
 							}
 							log.finer("INTP|"+proc.self_handle()+" (pc="+(pc-1)+"; sp="+sp+")"+opcode+"   "+reg[0]);
+							*/
 							switch (opcode) {
 							case ENSURE_REG_CAPACITY: {
 								int max_x = code[pc++];
-								log.finer("INTP|"+proc.self_handle()+" Ensure reg capacity: "+max_x);
+								//log.finer("INTP|"+proc.self_handle()+" Ensure reg capacity: "+max_x);
 								reg = ensureCapacity(reg, max_x);
 							} break;
 
@@ -309,15 +315,17 @@ public class Interpreter extends AbstractInterpreter {
 			}
 
 			public EObject invoke(final EProc proc, final EObject[] args) throws Pausable {
-				log.fine("INT| Closure invoked @ "+start_pc);
+				// log.fine("INT| Closure invoked @ "+start_pc);
 				int argCnt = args.length;
 				int envCnt = env.length;
 				EObject[] reg = new EObject[1024]; //??
 				for (int i=0; i<argCnt; i++) {reg[i] = args[i];} //??
 				for (int i=0; i<envCnt; i++) {reg[argCnt+i] = env[i];}
+				/*
 				if (log.isLoggable(Level.FINER)) {
 					for (int i=0; i<argCnt+envCnt; i++) log.finer("INT| reg#"+i+"="+reg[i]);
 				}
+				*/
 				return interpret(proc, start_pc, reg);
 			}
 		}
