@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <project name="erjang" default="all">
-	<property name="erjang.version" value="0.1" />
+	<property name="erjang.version" value="0.2" />
 	<property file="erjang_cfg.properties" />
 
 	<path id="erjang.classpath">

@@ -626,7 +626,7 @@ public class ERT {
 				
 				final EFun pfun = EModuleManager.resolve(new FunID(pmod, f, arity+1));
 				
-				return EFun.get_fun_with_handler(m.toString(), f.toString(), arity, new EFunHandler() {
+				return EFun.get_fun_with_handler(pmod.toString(), f.toString(), arity, new EFunHandler() {
 					@Override
 					public EObject invoke(EProc proc, EObject[] args) throws Pausable {
 						EObject[] real_args = new EObject[args.length+1];
@@ -1141,4 +1141,18 @@ public class ERT {
 		}
 	}
 
+	/**
+	 * contains versions, paths and other information.
+	 * use {@link ERT#setRuntimeInfo(RuntimeInfo)} to set this field.
+	 */
+	public static RuntimeInfo runtime_info = null;
+	
+	public static void setRuntimeInfo(RuntimeInfo info) {
+		// TODO perform synchronization? We usually set this 
+		// field only once from Main before ERT is started
+		runtime_info = info;
+		if (runtime_info != null) {
+			System.setProperty("erjang.path", runtime_info.erl_bootstrap_ebindir);
+		}
+	}
 }

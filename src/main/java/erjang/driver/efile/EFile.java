@@ -795,8 +795,7 @@ public class EFile extends EDriverInstance {
 				return;
 			}
 			
-			if (name.startsWith(RESOURCE_PREFIX)) {
-
+			if (ClassPathResource.isResource(name)) {
 				EBinary data = ClassPathResource.read_file(name);
 				if (data == null) {
 					reply_posix_error(Posix.ENOENT);
@@ -1516,7 +1515,7 @@ public class EFile extends EDriverInstance {
 			final String file_name = IO.strcpy(buf);
 			final File file = ERT.newFile(file_name);
 			
-			if (file_name.startsWith(RESOURCE_PREFIX)) {
+			if (ClassPathResource.isResource(file_name)) {
 				ClassPathResource.fstat(this, file_name);
 				return;
 			}
@@ -1961,13 +1960,6 @@ public class EFile extends EDriverInstance {
 	}
 	
 	/**
-	 * the new unicode driver interface is used since OTP version R14B01.
-	 * 
-	 * @see http://www.erlang.org/doc/apps/stdlib/unicode_usage.html#id60205
-	 */
-	static boolean unicodeDriverInterface = ("R14B".compareTo(erjang.Main.otp_version == null ? "" : erjang.Main.otp_version) < 0);
-	
-	/**
 	 * Determine whether to use the new unicode driver interface
 	 * from R14B01.
 	 * 
@@ -1978,6 +1970,6 @@ public class EFile extends EDriverInstance {
 	 * @see http://www.erlang.org/doc/apps/stdlib/unicode_usage.html#id60205
 	 */
 	private static boolean isUnicodeDriverInterface() {
-		return unicodeDriverInterface;
+		return ERT.runtime_info.unicodeDriverInterface;
 	}
 }

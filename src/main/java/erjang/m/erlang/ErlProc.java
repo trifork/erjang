@@ -34,7 +34,6 @@ import erjang.EAtom;
 import erjang.ECons;
 import erjang.EFun;
 import erjang.EHandle;
-import erjang.EInternalPID;
 import erjang.EModuleManager;
 import erjang.EObject;
 import erjang.EPID;
@@ -57,7 +56,6 @@ import erjang.FunID;
 import erjang.Import;
 import erjang.Main;
 import erjang.NotImplemented;
-import erjang.OTPMain;
 
 /**
  * 
@@ -300,7 +298,7 @@ public class ErlProc {
 		}
 		ERT.shutdown();
 		
-		throw new erjang.ErlangHalt();
+		throw new ErlangHalt();
 	}
 	
 	@BIF
@@ -412,10 +410,10 @@ public class ErlProc {
 	 */
 	@BIF
 	static public EObject demonitor(EProc self, EObject ref, EObject options) throws Pausable {
-		return demonitor((ETask)self, ref, options);
+		return demonitor((ETask<?>)self, ref, options);
 	}
 
-	static public EObject demonitor(ETask self, EObject ref, EObject options) throws Pausable {
+	static public EObject demonitor(ETask<?> self, EObject ref, EObject options) throws Pausable {
 		ERef r = ref.testReference();
 		
 		ESeq o = options.testSeq();
@@ -582,7 +580,6 @@ public class ErlProc {
 			return ERT.TRUE;
 			
 		} else if (type == am_thread_pool_size) {
-			
 			// TODO: hook up to thread pool
 			return new ESmall(ERT.threadPoolSize());
 			
@@ -598,12 +595,16 @@ public class ErlProc {
 			return ERT.TRUE;
 			
 		} else if (type == am_version) {
-			return EString.fromString( erjang.Main.erts_version().substring("erts-".length()) );
+			String erts_version = ERT.runtime_info.erts_version;
+			// remove prefix
+			String prefix = "erts-";
+			if (erts_version.startsWith(prefix)) {
+				erts_version = erts_version.substring(prefix.length());
+			}
+			return EString.fromString(erts_version);
 			
 		} else if (type == am_otp_release) {
-			// TODO: be smarter somehow
-			return new EString(Main.otp_version);
-			
+			return new EString(ERT.runtime_info.otp_version);
 		} else if (type == am_logical_processors) {
 			// TODO: be smarter somehow
 			return ERT.box(Runtime.getRuntime().availableProcessors());
@@ -631,7 +632,7 @@ public class ErlProc {
 			return am_undefined;
 			
 		} else if (type == am_system_version) {
-			return new EString("Erjang ["+ erjang.Main.erts_version()+"]");
+			return new EString("Erjang ["+ ERT.runtime_info.erts_version+"]");
 			
 		} else if ((tup=ETuple2.cast(type)) != null) {
 			

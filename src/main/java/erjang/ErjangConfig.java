@@ -36,9 +36,9 @@ public class ErjangConfig {
 
 	static {
 		String configFileName = System.getProperty("erjang.configfile");
-		if (configFileName != null) {
+		if (configFileName != null && configFileName.trim().length() > 0) {
 			try {
-				FileInputStream in = new FileInputStream(configFileName);
+				FileInputStream in = new FileInputStream(configFileName.trim());
 				try {
 					Properties properties = new Properties();
 					properties.load(in);
