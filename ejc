@@ -7,8 +7,6 @@ EJC_CMD=`which "$0"`
 while LINK=`readlink "$EJC_CMD"`; do EJC_CMD=$LINK; done
 ERJANG_DIR=`dirname "$EJC_CMD"`
 
-source "$ERJANG_DIR/env_cfg"
-
 ###########################################################
 # OS X - specific config
 if [[ $(uname) == "Darwin" ]]; then
@@ -24,14 +22,8 @@ exec java \
     -Xmx2g \
     $OSX_DOCK_ICON \
     $OSX_DOCK_NAME \
-    -Derjang.configfile="$PROP_FILE" \
-    -Derjang.erts.version="$ERTS_VSN" \
-    -Derjang.otp.version="$OTP_VSN" \
     -cp "$ERJANG_DIR/erjang-0.2.jar" erjang.console.ERLConsole \
 \
-    -root "$ERL_ROOT" \
     +A 10 \
     +S 1 \
-    +e "$ERTS_VSN" \
-    -home "$HOME" \
     "$@"
