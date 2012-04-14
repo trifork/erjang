@@ -21,6 +21,7 @@ package erjang;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.FileHandler;
 import java.util.logging.Handler;
@@ -50,31 +51,33 @@ public class OTPMain {
 	    new erjang.driver.js.EJSDriver()
 	};
 
-    public static void load_modules_and_drivers() throws ClassNotFoundException, InstantiationException, IllegalAccessException, IOException {
+    public static void load_modules_and_drivers(List<String> modules, List<EDriver> drivers) throws ClassNotFoundException, InstantiationException, IllegalAccessException, IOException {
 
-    	if (Main.erl_bootstrap_ebindir.startsWith(EFile.RESOURCE_PREFIX)) {
-
-    		for (String m : MODULES) {
-	    		String beam_path = Main.erl_bootstrap_ebindir + "/" + m + ".beam";
-				EBinary bin = ClassPathResource.read_file(beam_path);
-				if (bin == null) {
-					throw new FileNotFoundException(beam_path);
+    	if (modules != null) {
+	    	String erl_bootstrap_ebindir = ERT.runtime_info.erl_bootstrap_ebindir;
+	    	if (ClassPathResource.isResource(erl_bootstrap_ebindir)) {
+	
+	    		for (String m : modules) {
+		    		String beam_path = erl_bootstrap_ebindir + "/" + m + ".beam";
+					EBinary bin = ClassPathResource.read_file(beam_path);
+					if (bin == null) {
+						throw new FileNotFoundException(beam_path);
+					}
+		    		EModuleLoader.load_module(m, bin);
 				}
-	    		EModuleLoader.load_module(m, bin);
-			}
-    		
-    	} else {    	
-	    	for (String m : MODULES) {
-				ERT.load_module(EAtom.intern(m));
-			}
+	    		
+	    	} else {    	
+		    	for (String m : modules) {
+					ERT.load_module(EAtom.intern(m));
+				}
+	    	}
     	}
     	
-		for (EDriver d : DRIVERS) {
-			erjang.driver.Drivers.register(d);
-		}
-		for (EDriver d : extra_drivers) {
-			erjang.driver.Drivers.register(d);
-		}
+    	if (drivers != null) {
+			for (EDriver d : drivers) {
+				erjang.driver.Drivers.register(d);
+			}
+    	}
     }
 
     public static void start_otp_ring0(ESeq argv) {
@@ -111,6 +114,14 @@ public class OTPMain {
         return argv;
     }
 
+    /**
+     * {@link ERT#setRuntimeInfo(RuntimeInfo)} should have been called, before calling this method
+     * @param args
+     * @throws ClassNotFoundException
+     * @throws InstantiationException
+     * @throws IllegalAccessException
+     * @throws IOException
+     */
 	public static void main(String[] args) throws ClassNotFoundException, InstantiationException, IllegalAccessException, IOException {
 		ESeq argv = process_args(args);
 
@@ -119,10 +130,11 @@ public class OTPMain {
 	   // Logger.getLogger("erjang").setLevel(Level.FINE);
 	    // Logger.getLogger("kilim.Task").setLevel(Level.FINEST);
 
-		load_modules_and_drivers();
+		load_modules_and_drivers(Arrays.asList(MODULES), Arrays.asList(DRIVERS));
+		load_modules_and_drivers(null, extra_drivers);
         start_otp_ring0(argv);
 		
-		System.out.println("done.");
+		ERT.getOutputStream().println("done.");
 	}
 
 	static List<EDriver> extra_drivers = new ArrayList<EDriver>();

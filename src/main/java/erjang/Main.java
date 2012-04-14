@@ -18,171 +18,16 @@
 
 package erjang;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import erjang.driver.efile.EFile;
 
 public class Main {
 	public static final String SYSTEM_ARCHITECTURE = "java";
 	public static final String DRIVER_VERSION = "1.5";
-
-	// determine dynamically from $OTPROOT (and make therefore non-final), if unspecified
-	public static String otp_version = (ErjangConfig.hasString("erjang.otp.version") ? ErjangConfig.getString("erjang.otp.version", null) : null);
-	static String erts_version = (ErjangConfig.hasString("erjang.erts.version") ? "erts-"+ErjangConfig.getString("erjang.erts.version", null) : null);
-	static String erl_rootdir;
-	static String erl_bootstrap_ebindir;
 	
-	public static String erts_version() {
-		return erts_version;
-	}
-	
-	static String setup(String cmd_line_root) {
-		
-		erl_rootdir = cmd_line_root;
-		if (cmd_line_root == null)			
-			erl_rootdir = System.getenv("OTPROOT");
-				
-		if (erl_rootdir == null) {
-			erl_rootdir = guess_erl_root();
-		}
-		
-		File erlangRoot = new File(erl_rootdir);
-		if (!erlangRoot.isDirectory()) {
-			return null;
-		}
-		
-		if (erts_version == null) {
-			// guess erts version from directory $OTPROOT/lib/erts-<version>
-			File libDir = new File(erlangRoot, "lib");
-			String[] ertsDirs = libDir.list(new FilenameFilter() {
-				@Override
-				public boolean accept(File dir, String name) {
-					return name.startsWith("erts-");
-				}
-			});
-			if (ertsDirs != null) {
-				for (int d = 0; d < ertsDirs.length; d++) {
-					String dir = ertsDirs[d];
-					erts_version = dir;
-				}
-			}
-		}
-		
-		if (otp_version == null) {
-			// guess OTP version from directory $OTPROOT/bin/start.script
-			File startScript = new File(erlangRoot, "bin/start.script");
-			otp_version = guess_otp_version(startScript);
-		}
-		
-		if (otp_version == null) {
-			// guess OTP version from directory $OTPROOT/bin/start.script
-			File startScript = new File(erlangRoot, "releases/RELEASES");
-			otp_version = guess_otp_version(startScript);
-		}
-		
-		if (otp_version == null) {
-			ERT.log.severe("Cannot determine OTP version! Please specify system property 'erjang.otp.version'");
-			return null;
-		}
-		
-		erl_bootstrap_ebindir = System.getenv("ERL_BOOTSTRAP_EBIN");
-		if (erl_bootstrap_ebindir == null) {
-			erl_bootstrap_ebindir = erl_rootdir + File.separator + "lib" + File.separator
-				+ erts_version + File.separator + "ebin";
-		}
-		
-		return erl_rootdir;
-	}
-	
-	private static String guess_otp_version(File file) {
-		if ((file == null) || !file.exists() || !file.canRead()) {
-			return null;
-		}
-		
-		BufferedReader reader = null;
-		try {
-			Pattern pattern = Pattern.compile(".*\"(.*OTP[\\s]+APN.*)\",\"(R\\w+)\".*");
-			reader = new BufferedReader(new FileReader(file));
-			String line;
-			while ((line = reader.readLine()) != null) {
-				Matcher match = pattern.matcher(line);
-				if (!match.matches()) {
-					continue;
-				}
-				String otpVersion = match.group(2);
-				if ((otpVersion != null)
-					&& (otpVersion.length() > 0)) {
-					return otpVersion;
-				}
-			}
-			
-		}
-		catch (Throwable t) {
-			// ignore
-		}
-		finally {
-			// close reader
-			if (reader != null) {
-				try {
-					reader.close();
-				}
-				catch (Throwable t) {
-					// ignore
-				}
-			}
-		}
-		
-		return null;
-	}
-	
-	private static String guess_erl_root() {
-
-		if (Main.class.getClassLoader().getResource("bin/start.boot") != null) {
-			return EFile.RESOURCE_PREFIX.substring(0, EFile.RESOURCE_PREFIX.length()-1);
-		}
-		
-		// this logic works on Unixes ... what about windows?
-		String path = System.getenv("PATH");
-		List<String> paths = new ArrayList<String>();
-		paths.addAll(Arrays.asList(path.split(File.pathSeparator)));
-		// also check canonical locations /usr/local/lib/erlang and
-		// /opt/local/lib/erlang
-		paths.add("/usr/local/lib/erlang/bin");
-		paths.add("/opt/local/lib/erlang/bin");
-		for (String elem : paths) {
-			File dir = new File(elem);
-			// TODO check for some other file, which might not be s 
-			// symbolic link in a generic bin dir such as /usr/local/bin
-			File erl = new File(dir, "erl");
-			if (erl.exists()) {
-				
-				if (dir.getParent() == null)
-					continue;
-				
-				File lib = new File (dir.getParent(), "lib");
-				File root = new File(lib, "erlang");
-				
-				if (root.exists()) {
-					return root.getAbsolutePath();
-				}
-				
-			}
-		}
-		
-		ERT.log.severe("Cannot find OTPROOT directory\n"
-				+ "Pass -root <dir>, or set environment variable.");
-		
-		return null;
-	}
 
 	/**
 	 * @param args
@@ -197,6 +42,8 @@ public class Main {
 		ArrayList<String> ra = new ArrayList<String>();
 		
 		String cmd_line_root = null;
+		String otp_version = (ErjangConfig.hasString("erjang.otp.version") ? ErjangConfig.getString("erjang.otp.version", null) : null);
+		String erts_version = (ErjangConfig.hasString("erjang.erts.version") ? "erts-"+ErjangConfig.getString("erjang.erts.version", null) : null);
 		for (int i = 0; i < args.length; i++) {
 			if ("-root".equals(args[i]) && i < args.length) {
 				cmd_line_root = args[i+1];
@@ -207,12 +54,21 @@ public class Main {
 			}
 		}
 		
-		String root = setup(cmd_line_root);
-
-		if (cmd_line_root == null) {
-			ra.add("-root");
-			ra.add(root);
+		RuntimeInfo runtimeInfo = RuntimeInfo.setup(erts_version, otp_version, cmd_line_root);
+		try {
+			// verify we have a working configuration
+			runtimeInfo.verify();
 		}
+		catch (RuntimeException e) {
+			String reason = e.getMessage();
+			ERT.log.severe(reason);
+			System.err.println(reason);
+			return;
+		}
+
+		String root = runtimeInfo.erl_rootdir;
+		ra.add("-root");
+		ra.add(root);
 
 		arg_loop: 
 			for (int i = 0; i < args.length; i++) {
@@ -223,6 +79,12 @@ public class Main {
 					ra.add(args[ii]);
 				}
 				break;
+			}
+			
+			if ("-root".equals(args[i]) && i < args.length) {
+				// skip "-root <dir>" arg, was set above
+				i++;
+				continue;
 			}
 			
 			if (arg.startsWith("+")) {
@@ -253,14 +115,18 @@ public class Main {
 			ra.add(arg);
 		}
 		
-		System.setProperty("erjang.path", erl_bootstrap_ebindir);
+		if (!ra.contains("-home")) {
+			ra.add("-home");
+			ra.add(System.getProperty("user.home"));
+		}
 		
-		if (!(new File(erl_bootstrap_ebindir)).exists() && !erl_bootstrap_ebindir.startsWith(EFile.RESOURCE_PREFIX)) {
-			ERT.log.severe("No bootstrap classes at: "+erl_bootstrap_ebindir);
-			throw new IllegalArgumentException("No bootstrap classes at: "+erl_bootstrap_ebindir);
+		ERT.setRuntimeInfo(runtimeInfo);
+		
+		if (!(new File(runtimeInfo.erl_bootstrap_ebindir)).exists() && !runtimeInfo.erl_bootstrap_ebindir.startsWith(EFile.RESOURCE_PREFIX)) {
+			ERT.log.severe("No bootstrap classes at: "+runtimeInfo.erl_bootstrap_ebindir);
+			throw new IllegalArgumentException("No bootstrap classes at: "+runtimeInfo.erl_bootstrap_ebindir);
 		}
 		
 		OTPMain.main(ra.toArray(new String[ra.size()]));
 	}
-
 }

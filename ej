@@ -7,23 +7,15 @@ EJ_CMD=`which "$0"`
 while LINK=`readlink "$EJ_CMD"`; do EJ_CMD=$LINK; done
 ERJANG_DIR=`dirname "$EJ_CMD"`
 
-source "$ERJANG_DIR/env_cfg"
-
 ##      -Xdebug -Xnoagent -Xrunjdwp:transport=dt_socket,address=8787,server=n,suspend=n \
 
 exec java \
     -server \
     -Xmx1g -Xss50m \
     -XX:PermSize=128m \
-    -Derjang.configfile="$PROP_FILE" \
-    -Derjang.erts.version="$ERTS_VSN" \
-    -Derjang.otp.version="$OTP_VSN" \
     -jar $ERJANG_DIR/erjang-0.1.jar \
 \
     -progname ej \
-    -home "$HOME" \
-    -root "$ERL_ROOT" \
     +A 10 \
     +S 1 \
-    +e "$ERTS_VSN" \
     "$@"
