@@ -27,7 +27,7 @@ exec java \
     -Derjang.configfile="$PROP_FILE" \
     -Derjang.erts.version="$ERTS_VSN" \
     -Derjang.otp.version="$OTP_VSN" \
-    -cp "$ERJANG_DIR/erjang-0.1.jar" erjang.console.ERLConsole \
+    -cp "$ERJANG_DIR/erjang-0.2.jar" erjang.console.ERLConsole \
 \
     -root "$ERL_ROOT" \
     +A 10 \
