@@ -19,15 +19,34 @@ import erjang.EBinary;
 import erjang.driver.IO;
 
 public class ClassPathResource {
+	public static boolean isResource(String fileName) {
+		return fileName.startsWith(EFile.RESOURCE_PREFIX);
+	}
+	public static String getResourceName(String fileName) {
+		if (!isResource(fileName))
+			return fileName;
+		
+		fileName = fileName.substring(EFile.RESOURCE_PREFIX.length());
+		if (fileName.startsWith(File.separator) || fileName.startsWith("/")) {
+			fileName = fileName.substring(1);
+		}
+		
+		return fileName;
+	}
 
 	public static EBinary read_file(String name) {
 
 		if (!name.startsWith(EFile.RESOURCE_PREFIX))
 			return null;
-
+		
+		String fileName = getResourceName(name);
 		InputStream resource = ClassPathResource.class.getClassLoader()
-				.getResourceAsStream(
-						name.substring(EFile.RESOURCE_PREFIX.length()));
+				.getResourceAsStream(fileName);
+		if (resource == null) {
+			// fallback: check context class loader
+			resource = Thread.currentThread().getContextClassLoader()
+				.getResourceAsStream(fileName);
+		}
 
 		if (resource == null) {
 			return null;
@@ -196,8 +215,8 @@ public class ClassPathResource {
 	}
 
 	static ZipEntry get_entry(String path) throws IOException {
-		Enumeration<URL> out = ClassPathResource.class.getClassLoader()
-				.getResources(path.substring(EFile.RESOURCE_PREFIX.length()));
+		String fileName = getResourceName(path);
+		Enumeration<URL> out = ClassPathResource.class.getClassLoader().getResources(fileName);
 
 		while (out.hasMoreElements()) {
 			URL u = out.nextElement();

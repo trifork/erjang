@@ -21,6 +21,7 @@ package erjang;
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -28,7 +29,7 @@ import erjang.m.ets.EMatchContext;
 import erjang.m.ets.EPattern;
 import erjang.m.ets.ETermPattern;
 
-public abstract class ECons extends EObject {
+public abstract class ECons extends EObject implements Iterable<EObject> {
 
 	@Override
 	int cmp_order() {
@@ -241,4 +242,8 @@ public abstract class ECons extends EObject {
 		} else tail.collectCharList(out);
 	}
 
+	@Override
+	public Iterator<EObject> iterator() {
+		return new EObjectIterator(this);
+	}
 }

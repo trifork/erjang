@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<project name="erjang" default="weave">
+	<path id="erjang.classpath">
+		<pathelement location="target/classes/" />
+		<pathelement location="lib/js.jar" />
+		<pathelement location="lib/kilim-0.6-krab.jar" />
+		<pathelement location="lib/OtpErlang.jar" />
+		<pathelement location="lib/junit.jar" />
+		<pathelement location="lib/clj-ds.jar" />
+		<pathelement location="lib/antlr-3.2.jar" />
+		<pathelement path="${java.class.path}" />
+	</path>
+
+	<target name="weave" depends="">
+		<echo message="Weaving files ===================" />
+		<java classname="kilim.tools.Weaver" fork="yes">
+			<classpath refid="erjang.classpath" />
+			<assertions>
+				<enable />
+			</assertions>
+			<arg value="-d" />
+			<arg value="./target/classes" />
+			<arg line="./target/classes" />
+		</java>
+    </target>
+	
+	<target name="incremental-weave" depends="">
+		<echo message="Weaving files ===================" />
+		<java classname="kilim.tools.Weaver" fork="yes">
+			<classpath refid="erjang.classpath" />
+			<assertions>
+				<enable />
+			</assertions>
+			<arg value="-d" />
+			<arg value="./target/classes" />
+			<!--<arg line="${system.files}" />-->
+			<arg line="./target/classes" />
+		</java>
+    </target>
+</project>
