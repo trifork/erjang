@@ -127,8 +127,8 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 	 */
 	static final String ECOMPILEDMODULE_NAME = ECOMPILEDMODULE_TYPE.getInternalName();
 	static final Type ENUMBER_TYPE = Type.getType(ENumber.class);
-	static final Type EOBJECT_TYPE = Type.getType(EObject.class);
-	static final String EOBJECT_DESC = EOBJECT_TYPE.getDescriptor();
+	static final Type EOBJECT_TYPE;
+	static final String EOBJECT_DESC;
 	static final Type EPROC_TYPE = Type.getType(EProc.class);
 	static final String EPROC_NAME = EPROC_TYPE.getInternalName();
 	static final String EPROC_DESC = EPROC_TYPE.getDescriptor();
@@ -139,6 +139,11 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 	static final Type EEXCEPTION_TYPE = Type.getType(ErlangException.class);
 	static final String EEXCEPTION_DESC = EEXCEPTION_TYPE.getDescriptor();
 
+	static {
+		EOBJECT_TYPE = Type.getType(EObject.class);
+		EOBJECT_DESC = EOBJECT_TYPE.getDescriptor();
+	}
+	
 	/**/
 
 	static final String GO_DESC = "(" + EPROC_TYPE.getDescriptor() + ")"
@@ -636,24 +641,37 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			byte[] data = CompilerVisitor.make_invoker(module_name.getName(), fun_name.getName(), self_type, mname, mname,
 					arity, true, is_exported, lambda, EOBJECT_TYPE, funInfo.may_return_tail_marker, funInfo.is_pausable|funInfo.call_is_pausable);
 
+                        boolean debug = full_inner_name.indexOf("pathtype") != -1;
+                        if (debug) {
+                            System.out.println("debug...");
+                        }
+
 			ClassWeaver w = new ClassWeaver(data, new Compiler.ErjangDetector(
 					self_type.getInternalName(), non_pausable_methods));
-			if (w.getClassInfos().size() == 0) { // Class did not need weaving
-				try {
-					classRepo.store(full_inner_name, data);
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			} else {
+			w.weave();
+			
+				boolean written = false;
 				for (ClassInfo ci : w.getClassInfos()) {
-					try {
-					// System.out.println("> storing "+ci.className);
-						classRepo.store(ci.className, ci.bytes);
+					try {	
+						if (debug) System.out.println("> did weave "+ci.className);
+						
+						String iname = ci.className.replace('.', '/');
+						if (iname.equals(full_inner_name)) {
+							written = true;
+						}
+
+						classRepo.store(iname, ci.bytes);
 					} catch (IOException e) {
 						e.printStackTrace();
 					}
 				}
-			}
+				if (!written) {
+					try {
+						classRepo.store(full_inner_name, data);
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				}
 			
 			}
 
@@ -3066,7 +3084,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 		String inner_name = "FN_" + mname;
 		String full_inner_name = outer_name + "$" + inner_name;
 
-		ClassWriter cw = new ClassWriter(true);
+		ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES|ClassWriter.COMPUTE_MAXS);
 		int residual_arity = arity - freevars;
 		String super_class_name = EFUN_NAME + residual_arity +
 			(exported ? "Exported" : "");

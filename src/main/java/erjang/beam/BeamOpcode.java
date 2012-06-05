@@ -148,6 +148,8 @@ public enum BeamOpcode {
 	recv_mark           (0x96),
 	recv_set            (0x97),
 	
+	line				(0x99),
+	
 	// Opcode groups
 	
 	test,

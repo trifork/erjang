@@ -25,7 +25,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import org.objectweb.asm.ClassAdapter;
+import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -204,7 +204,7 @@ public abstract class ETuple extends EObject implements Cloneable /* , Indexed *
 	}
 
 	static byte[] make_tuple_class_data(int num_cells) {
-		ClassWriter cww = new ClassWriter(true);
+		ClassWriter cww = new ClassWriter(ClassWriter.COMPUTE_FRAMES|ClassWriter.COMPUTE_MAXS);
 
 		CheckClassAdapter cw = new CheckClassAdapter(cww);
 
@@ -247,7 +247,7 @@ public abstract class ETuple extends EObject implements Cloneable /* , Indexed *
 		return data;
 	}
 
-	private static void create_tuple_copy(int i, ClassAdapter cw,
+	private static void create_tuple_copy(int i, ClassVisitor cw,
 			String this_class_name, String super_class_name) {
 		MethodVisitor mv;
 		make_blank_bridge(cw, this_class_name, super_class_name);
@@ -266,7 +266,7 @@ public abstract class ETuple extends EObject implements Cloneable /* , Indexed *
 		mv.visitEnd();
 	}
 
-	private static void make_blank_bridge(ClassAdapter cw,
+	private static void make_blank_bridge(ClassVisitor cw,
 			String this_class_name, String super_class_name) {
 		MethodVisitor mv;
 		mv = cw.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC
@@ -281,7 +281,7 @@ public abstract class ETuple extends EObject implements Cloneable /* , Indexed *
 		mv.visitEnd();
 	}
 
-	private static void create_tuple_nth(int n_cells, ClassAdapter cw,
+	private static void create_tuple_nth(int n_cells, ClassVisitor cw,
 			String this_class_name) {
 		MethodVisitor mv;
 		mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "elm", "(I)"
@@ -321,7 +321,7 @@ public abstract class ETuple extends EObject implements Cloneable /* , Indexed *
 		mv.visitEnd();
 	}
 
-	private static void create_tuple_set(int n_cells, ClassAdapter cw,
+	private static void create_tuple_set(int n_cells, ClassVisitor cw,
 			String this_class_name) {
 		MethodVisitor mv;
 		mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "set", "(I"
@@ -368,7 +368,7 @@ public abstract class ETuple extends EObject implements Cloneable /* , Indexed *
 		throw ERT.badarg(this);
 	}
 
-	private static void create_count(ClassAdapter cw, int n) {
+	private static void create_count(ClassVisitor cw, int n) {
 		MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "arity", "()I",
 				null, null);
 		mv.visitCode();
@@ -383,7 +383,7 @@ public abstract class ETuple extends EObject implements Cloneable /* , Indexed *
 		mv.visitEnd();
 	}
 
-	private static void create_cast(ClassAdapter cw, int n) {
+	private static void create_cast(ClassVisitor cw, int n) {
 		MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PUBLIC
 				| Opcodes.ACC_STATIC, "cast", "(L" + ETUPLE_NAME + ";)L"
 				+ ETUPLE_NAME + n + ";", null, null);
@@ -414,7 +414,7 @@ public abstract class ETuple extends EObject implements Cloneable /* , Indexed *
 	}
 
 
-	private static void create_cast2(ClassAdapter cw, int n) {
+	private static void create_cast2(ClassVisitor cw, int n) {
 		MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PUBLIC
 				| Opcodes.ACC_STATIC, "cast", "(L" + Type.getInternalName(EObject.class) + ";)L"
 				+ ETUPLE_NAME + n + ";", null, null);
@@ -439,7 +439,7 @@ public abstract class ETuple extends EObject implements Cloneable /* , Indexed *
 		mv.visitEnd();
 	}
 
-	private static void create_constructor(ClassAdapter cw,
+	private static void create_constructor(ClassVisitor cw,
 			String super_class_name) {
 		MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "()V",
 				null, null);

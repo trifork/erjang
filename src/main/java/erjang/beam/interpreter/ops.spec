@@ -42,6 +42,9 @@ allocate slots:
 deallocate slots:
 	STACK_DEALLOC(GET(slots));
 
+line number:
+	{}
+
 %class II(i1:I, i2:I)
 allocate_zero slots _live:
 	STACK_ALLOC(GET(slots));

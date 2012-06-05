@@ -656,6 +656,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						
 					case recv_mark:
 					case recv_set:
+					case line: // ignore
 						break;
 
 					case call_ext_last:
@@ -1832,6 +1833,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						
 					case recv_mark:
 					case recv_set:
+					case line:
 						continue next_insn;
 
 						

@@ -16,46 +16,35 @@
  * limitations under the License.
  **/
 
+package erjang.m.init;
 
-package erjang.driver.efile;
+import java.lang.management.ManagementFactory;
+import java.lang.management.RuntimeMXBean;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.Map;
 
-import java.util.concurrent.locks.ReentrantLock;
-
-import erjang.Lock;
+import erjang.BIF;
+import erjang.EAtom;
+import erjang.ENative;
+import erjang.EObject;
+import erjang.ERT;
 import erjang.EString;
+import erjang.ETuple2;
+import erjang.ECons;
 import erjang.NotImplemented;
-import erjang.driver.EDriver;
-import erjang.driver.EDriverControl;
 
 /**
+ * Native methods (BIFs) for the Erlang module 'os'.
  * 
+ * The fact that this class represents the module os is deduced from the package
+ * name,
  */
-public class Driver implements EDriver {
+public class Native extends ENative {
 
-	private Lock lock;
-
-	@Override
-	public String driverName() {
-		return "efile";
-	}
-
-	@Override
-	public void finish() {
-	}
-
-	@Override
-	public EDriverControl start(EString command) {
-		return new EFile(command, this);
-	}
-
-	@Override
-	public boolean useDriverLevelLocking() {
-		return false;
-	}
-
-	@Override
-	public ReentrantLock getLock() {
-		throw new NotImplemented();
-	}
+    @BIF public static EObject run_on_load_handlers() {
+	return ERT.TRUE;
+    }
 
 }
+

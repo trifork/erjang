@@ -1,12 +1,12 @@
 <?xml version="1.0"?>
 <project name="erjang" default="all">
-	<property name="erjang.version" value="0.2" />
+	<property name="erjang.version" value="0.3" />
 	<property file="erjang_cfg.properties" />
 
 	<path id="erjang.classpath">
 		<pathelement location="target/classes/" />
 		<pathelement location="lib/js.jar" />
-		<pathelement location="lib/kilim-0.6-krab.jar" />
+		<pathelement location="lib/kilim.jar" />
 		<pathelement location="lib/OtpErlang.jar" />
 		<pathelement location="lib/junit.jar" />
 		<pathelement location="lib/clj-ds.jar" />
@@ -16,7 +16,7 @@
 	<path id="erjang.testwovenclasspath">
 		<pathelement location="target/classes/" />
 		<pathelement location="target/test-classes/" />
-		<pathelement location="lib/kilim-0.6-krab.jar" />
+		<pathelement location="lib/kilim.jar" />
 		<pathelement location="lib/OtpErlang.jar" />
 		<pathelement location="lib/clj-ds.jar" />
 		<pathelement location="lib/junit.jar" />
@@ -60,7 +60,15 @@
 
 	<target name="compile" depends="gen-interpreter,create-dirs">
 		<echo message="Compiling src ===================" />
-		<javac debug="true" srcdir="src/main/java" destdir="target/classes" classpathref="erjang.classpath" deprecation="on" debuglevel="lines,vars,source"/>
+		<javac debug="true"
+                       srcdir="src/main/java"
+                       destdir="target/classes"
+                       classpathref="erjang.classpath"
+                       deprecation="on"
+                       debuglevel="lines,vars,source"
+                       source="1.5"
+                       target="1.5"
+                       includeantruntime="false" />
 	</target>
 
 	<target name="testcompile" depends="compile">

@@ -27,7 +27,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import kilim.Mailbox;
 import kilim.Pausable;
 
 import com.trifork.clj_ds.IPersistentSet;
@@ -45,6 +44,11 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 			.intern("java_exception");
 	private static final EAtom am_DOWN = EAtom.intern("DOWN");
 	private static final EAtom am_process = EAtom.intern("process");
+
+        int priority;
+
+        public void setPriority(int pri) { priority = pri; }
+        public int getPriority() { return priority; }
 
 	/**
 	 * @return
@@ -248,8 +252,8 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 
 
 
-	static final int MAX_MAILBOX_SIZE = 1000;
-	protected final Mailbox<EObject> mbox = new Mailbox<EObject>(10, MAX_MAILBOX_SIZE);
+	public static final int MAX_MAILBOX_SIZE = 1000;
+	protected final EMailbox mbox = new EMailbox();
 
 	public static final int STATE_INIT = 0; // has not started yet
 	public static final int STATE_RUNNING = 1; // is live
@@ -382,7 +386,7 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 	/**
 	 * @return
 	 */
-	public Mailbox<EObject> mbox() {
+	public EMailbox mbox() {
 		return mbox;
 	}
 

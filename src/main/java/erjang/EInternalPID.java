@@ -20,7 +20,6 @@
 package erjang;
 
 import erjang.m.erlang.DistEntry;
-import kilim.Mailbox;
 import kilim.Pausable;
 import kilim.Task;
 
