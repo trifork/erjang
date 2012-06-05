@@ -2000,4 +2000,20 @@ public class ErlBif {
 	public static EAtom breakpoint() {
 		return ERT.am_ok;
 	}
+
+        @BIF
+        public static EObject dt_spread_tag(EObject o) {
+                return o;
+}
+
+        @BIF
+        public static EObject dt_append_vm_tag_data(EObject o) {
+                return o;
+        }
+
+        @BIF
+        public static EObject dt_restore_tag(EObject o) {
+                return o;
+        }
+
 }
