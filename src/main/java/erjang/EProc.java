@@ -533,7 +533,8 @@ public final class EProc extends ETask<EInternalPID> {
 			do_proc_termination(result);
 
 		} catch (ErlangHalt e) {
-			throw e;
+                    return;
+                    // throw e;
 
 		} catch (ThreadDeath e) {
 			throw e;
