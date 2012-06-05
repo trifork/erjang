@@ -68,13 +68,14 @@ public class ErlangError extends ErlangException {
 		
 		if (args != null && !trace.isNil()) {
 
-			ETuple3 first = ETuple3.cast(trace.head().testTuple());
+			ETuple4 first = ETuple4.cast(trace.head().testTuple());
 			ESeq res = trace.tail().testSeq();
 
-			ETuple3 fa = new ETuple3();
+			ETuple4 fa = new ETuple4();
 			fa.elem1 = first.elem1;
 			fa.elem2 = first.elem2;
 			fa.elem3 = args;
+			fa.elem4 = first.elem4;
 
 			trace = res.cons(fa);
 		}

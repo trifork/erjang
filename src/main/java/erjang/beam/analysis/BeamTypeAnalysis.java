@@ -656,7 +656,10 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						
 					case recv_mark:
 					case recv_set:
+						break;
+
 					case line: // ignore
+						vis.visitLine(((Insn.I)insn_).i1);
 						break;
 
 					case call_ext_last:

@@ -35,6 +35,8 @@ public abstract class ErlangException extends RuntimeException {
 	static final EAtom am_error = EAtom.intern("error");
 	static final EAtom am_throw = EAtom.intern("throw");
 	static final EAtom am_exit = EAtom.intern("exit");
+	static final EAtom am_file = EAtom.intern("file");
+	static final EAtom am_line = EAtom.intern("line");
 	private EObject reason;
 
 	public abstract EAtom getExClass();
@@ -141,8 +143,8 @@ public abstract class ErlangException extends RuntimeException {
 	// the rest of this file is a big hack to reconstruct erlang traces...
 	//
 
-	static Map<StackTraceElement, ETuple3> cache = Collections
-			.synchronizedMap(new WeakHashMap<StackTraceElement, ETuple3>());
+	static Map<StackTraceElement, ETuple4> cache = Collections
+			.synchronizedMap(new WeakHashMap<StackTraceElement, ETuple4>());
 
 	public ESeq getTrace() {
 		return decodeTrace(getStackTrace());
@@ -165,7 +167,7 @@ public abstract class ErlangException extends RuntimeException {
 
 			StackTraceElement st2 = st[i];
 
-			ETuple3 elem;
+			ETuple4 elem;
 
 			if ((elem = cache.get(st2)) != null) {
 				trace = trace.cons(elem);
@@ -187,7 +189,7 @@ public abstract class ErlangException extends RuntimeException {
 	 * @param st
 	 * @return
 	 */
-	private static ETuple3 decodeTraceElem(StackTraceElement st) {
+	private static ETuple4 decodeTraceElem(StackTraceElement st) {
 
 		String cname = st.getClassName();
 		String mname = st.getMethodName();
@@ -221,10 +223,11 @@ public abstract class ErlangException extends RuntimeException {
 		}
 
 		if (module != null && function != null && arity != -1) {
-			ETuple3 res = new ETuple3();
+			ETuple4 res = new ETuple4();
 			res.elem1 = module;
 			res.elem2 = function;
 			res.elem3 = new ESmall(arity);
+			res.elem4 = EList.make(new ETuple2(am_file, new EString(st.getFileName())),  new ETuple2(am_line, ERT.box(st.getLineNumber())));
 			return res;
 		}
 
@@ -257,7 +260,7 @@ public abstract class ErlangException extends RuntimeException {
 	 * @param ann
 	 * @return
 	 */
-	private static ETuple3 resolve(Class<?> c, Method m, BIF ann1) {
+	private static ETuple4 resolve(Class<?> c, Method m, BIF ann1) {
 
 		if (ann1 == null)
 			return null;
@@ -281,10 +284,11 @@ public abstract class ErlangException extends RuntimeException {
 		}
 
 		if (module != null && fun != null) {
-			ETuple3 res = new ETuple3();
+			ETuple4 res = new ETuple4();
 			res.elem1 = EAtom.intern(module);
 			res.elem2 = EAtom.intern(fun);
 			res.elem3 = ESmall.make(arity);
+			res.elem4 = ERT.NIL;
 			return res;
 		} else {
 			return null;

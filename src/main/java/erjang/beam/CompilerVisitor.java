@@ -218,7 +218,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 		add_module_annotation(cv);
 
-		cv.visitSource(name.getName()+".S", null);
+		cv.visitSource(name.getName()+".erl", null);
 	}
 
 	private void add_module_annotation(ClassVisitor cv) {
@@ -880,7 +880,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 			mv.visitLabel(blockLabel);
 			label_inserted.add(label);
-			mv.visitLineNumber(label & 0x7fff, blockLabel);
+//			mv.visitLineNumber(label & 0x7fff, blockLabel);
 			return new ASMBlockVisitor(label);
 		}
 
@@ -1194,6 +1194,13 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				}
 			}
 
+			@Override
+			public void visitLine(int line) {
+				Label here = new Label();
+				mv.visitLabel(here);
+				mv.visitLineNumber(line, here);
+			}
+			
 			@Override
 			public void visitBitStringTest(BeamOpcode test, int failLabel, Arg in, Arg bits, int unit, int flags, Arg dst) {
 				switch (test) {
