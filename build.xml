@@ -66,8 +66,8 @@
                        classpathref="erjang.classpath"
                        deprecation="on"
                        debuglevel="lines,vars,source"
-                       source="1.5"
-                       target="1.5"
+                       source="1.7"
+                       target="1.7"
                        includeantruntime="false" />
         </target>
 
