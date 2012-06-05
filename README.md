@@ -32,19 +32,20 @@ true
 krab$ 
 </pre>
 
-There are still things that doesn't work: a few BEAM instruction are missing some runtime support.  There are also BIFs missing, or only partially implemented; we're quite careful to throw @erjang.NotImplemented@ in BIFs (or branches thereof) which are not complete.  Many OTP modules need NIFs or linked-in drivers that are entirely missing or only partly implemented.
+There are still things that doesn't work: We known that some aspects of `crypto` which are often needed have not been implemented.  Many OTP modules need NIFs or linked-in drivers that are entirely missing or only partly implemented.  When this happens, you should be getting warnings like described below.
 
 ### Warnings
 
 When you run Erjang, you're likely to get warnings like this:
 
-<pre>Nov 10, 2010 5:15:56 PM erjang.EModuleManager$FunctionInfo$1 invoke
-INFO: MISSING mnesia_sup:prep_stop/1</pre>
+````
+Nov 10, 2010 5:15:56 PM erjang.EModuleManager$FunctionInfo$1 invoke
+INFO: MISSING mnesia_sup:prep_stop/1
+````
 
 Such warnings are perfectly OK so long as you don't see a crash that you think is related to that.  It's a hint that perhaps there is a missing BIF somewhere around this.  But it may also just be some optional callback API which has not been implemented.
 
 Until Erjang is a little more complete, I'd like to keep these warnings in there.
-
 
 ### What will it feel like to be running Erlang on the JVM?
 
@@ -72,7 +73,7 @@ values are "/usr/lib/erlang" and "/usr/local/lib/erlang").
 ## Running
 
 <pre>renaissance:erjang krab$ ./ej
-Eshell V5.7.5  (abort with ^G)
+Eshell V5.9.1 (abort with ^G)
 1> 3+4.
 7
 2> 
@@ -88,7 +89,7 @@ forcing Erjang to recompile next time it runs.
 
 ### Prerequisites
 
-I have only been testing this with Erlang/OTP R13.  ERJANG DOES NOT WORK WITH R14 since it introduced an incompatible API to the efile driver. 
+Erjang should run fine with any R14 or R15 release of OTP.
 
 If you run with a different erts (Erlang runtime system), then you can
 use the +e <ErtsVsn> flag, like this:
