@@ -2016,4 +2016,9 @@ public class ErlBif {
                 return o;
         }
 
+        @BIF
+        public static EObject dt_prepend_vm_tag_data(EObject o) {
+                return o;
+        }
+
 }

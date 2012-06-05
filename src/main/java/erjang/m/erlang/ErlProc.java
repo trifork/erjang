@@ -677,6 +677,18 @@ public class ErlProc {
 		throw new NotImplemented();
 	}
 	
+        @BIF
+            public static EAtom check_old_code(EObject mod_arg) {
+
+		EAtom mod = mod_arg.testAtom();
+
+		if (mod == null) { throw ERT.badarg(mod_arg); }
+
+		log.log(Level.FINE, "check_old_code not implemented (" + mod + ")");
+
+		return ERT.FALSE;
+        }
+
 	@BIF
 	public static EAtom check_process_code(EObject pid_arg, EObject mod_arg) {
 		EPID pid = pid_arg.testPID();
