@@ -358,6 +358,7 @@ public class EFile extends EDriverInstance {
 	public static final byte FILE_RESP_EOF = 8;
 	public static final byte FILE_RESP_FNAME = 9;
 	public static final byte FILE_RESP_ALL_DATA = 10;
+        public static final byte FILE_RESP_LFNAME = 11;
 	private static final byte[] FILE_RESP_ALL_DATA_HEADER = new byte[]{ FILE_RESP_ALL_DATA };
 
 	/* Options */
@@ -1571,7 +1572,7 @@ public class EFile extends EDriverInstance {
 						return;
 					}
 					
-					final int RESULT_SIZE = (1 + (29 * 4));
+					final int RESULT_SIZE = (1 + (17 * 4));
 					
 					ByteBuffer res = ByteBuffer.allocate(RESULT_SIZE);
 					res.order(ByteOrder.BIG_ENDIAN);
@@ -1580,9 +1581,13 @@ public class EFile extends EDriverInstance {
 					res.putLong(file_size);
 					res.putInt(file_type);
 					
-					put_time(res, file_access_time);
-					put_time(res, file_modify_time);
-					put_time(res, file_create_time);
+                                        res.putLong(file_access_time);
+                                        res.putLong(file_modify_time);
+                                        res.putLong(file_create_time);
+
+					//put_time(res, file_access_time);
+					//put_time(res, file_modify_time);
+					//put_time(res, file_create_time);
 					
 					res.putInt(file_mode);
 					res.putInt(1 /*file_links*/);
@@ -1929,7 +1934,19 @@ public class EFile extends EDriverInstance {
 
 	void reply_list_directory(String[] files) throws Pausable {
 		for (int i = 0; i < files.length; i++) {
-			if (isUnicodeDriverInterface()) {
+                    if (isLFNameDriverInterface()) {
+				// prim_file interface from R15 on
+				ByteBuffer reply = ByteBuffer.allocate(1);
+				reply.put(FILE_RESP_LFNAME);
+				
+				ByteBuffer data = ByteBuffer.allocate(2+files[i].length());
+				data.limit(data.capacity());
+				data.position(0);
+                                data.putShort((short)files[i].length());
+				IO.putstr(data, files[i], false);
+				
+				driver_output2(reply, data);
+                    } else if (isUnicodeDriverInterface()) {
 				// prim_file interface from R14 on
 				ByteBuffer reply = ByteBuffer.allocate(1);
 				reply.put(FILE_RESP_FNAME);
@@ -1970,6 +1987,10 @@ public class EFile extends EDriverInstance {
 	 * @see http://www.erlang.org/doc/apps/stdlib/unicode_usage.html#id60205
 	 */
 	private static boolean isUnicodeDriverInterface() {
+		return ERT.runtime_info.unicodeDriverInterface;
+	}
+
+	private static boolean isLFNameDriverInterface() {
 		return ERT.runtime_info.unicodeDriverInterface;
 	}
 }
