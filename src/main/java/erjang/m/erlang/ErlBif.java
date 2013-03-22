@@ -2007,4 +2007,34 @@ public class ErlBif {
 	public static EAtom breakpoint() {
 		return ERT.am_ok;
 	}
+
+        @BIF
+        public static EObject dt_spread_tag(EAtom bool) {
+            return new ETuple2(ERT.box(0), ERT.NIL);
+        }
+
+        @BIF
+        public static EObject dt_append_vm_tag_data(EObject val) {
+            return val;
+        }
+
+        @BIF
+        public static EObject dt_prepend_vm_tag_data(EObject o) {
+            return o;
+        }
+
+        @BIF
+        public static EObject dt_restore_tag(EObject val) {
+            return val;
+        }
+
+    @BIF
+    public static EAtom check_old_code(EObject obj) {
+        EAtom module = obj.testAtom();
+        if (module == null)
+            throw ERT.badarg(obj);
+
+        boolean result = EModuleManager.module_loaded(module);
+        return ERT.box(result);
+    }
 }
