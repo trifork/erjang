@@ -53,6 +53,10 @@ public abstract class EModule {
 		return ERT.NIL;
 	}
 
+	public ESeq compile() {
+		return ERT.NIL;
+	}
+
 	/**
 	 * This method is used by EModuleManager in function resolution.
 	 */

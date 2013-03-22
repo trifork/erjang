@@ -65,6 +65,8 @@ public class ModuleRepr implements BeamFileData {
 
 		visit_attributes(v);
 
+		visit_compile(v);
+
 		try {
 			for (FunctionRepr fun : functions) fun.declare(v);
 			for (FunctionRepr fun : functions) fun.accept(v);
@@ -81,6 +83,13 @@ public class ModuleRepr implements BeamFileData {
 		for (ESeq exp = (ESeq) attributes; exp != ERT.NIL; exp = exp.tail()) {
 			ETuple attr = (ETuple) exp.head();
 			v.visitAttribute((EAtom) attr.elm(1), attr.elm(2));
+		}
+	}
+
+	private void visit_compile(ModuleVisitor v) {
+		for (ESeq exp = (ESeq) compilation_info; exp != ERT.NIL; exp = exp.tail()) {
+			ETuple attr = (ETuple) exp.head();
+			v.visitCompile((EAtom) attr.elm(1), attr.elm(2));
 		}
 	}
 

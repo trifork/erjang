@@ -779,6 +779,7 @@ public class ERT {
 	static kilim.Scheduler async_scheduler = new kilim.Scheduler(asyncThreadPoolSize());
 	public static EAtom am_io = EAtom.intern("io");
 	public static EAtom am_attributes = EAtom.intern("attributes");
+	public static EAtom am_compile = EAtom.intern("compile");
 	public static EAtom am_exports = EAtom.intern("exports");
 	public static EAtom am_badfun = EAtom.intern("badfun");
 	public static EAtom am_badarity = EAtom.intern("badarity");

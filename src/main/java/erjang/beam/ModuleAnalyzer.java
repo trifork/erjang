@@ -131,6 +131,10 @@ public class ModuleAnalyzer implements ModuleVisitor {
 	}
 
 	@Override
+	public void visitCompile(EAtom att, EObject value) {
+	}
+
+	@Override
 	public void visitExport(EAtom fun, int arity, int entry) {
 		Label label = new Label(entry);
 		FunInfo fi = get(label);

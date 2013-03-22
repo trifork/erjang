@@ -102,6 +102,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 	public static final int ATOM_SELECT_IF_ELSE_LIMIT = 4;
 
 	ECons atts = ERT.NIL;
+	ECons compile_info = ERT.NIL;
 	private Set<String> exported = new HashSet<String>();
 
 	private final ClassVisitor cv;
@@ -251,6 +252,11 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 		atts = atts.cons(ETuple2.make(att, value));
 	}
 
+	@Override
+	public void visitCompile(EAtom att, EObject value) {
+		compile_info = compile_info.cons(ETuple2.make(att, value));
+	}
+
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -320,6 +326,13 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 		mv.visitFieldInsn(Opcodes.PUTSTATIC, self_type.getInternalName(),
 				"attributes", ESEQ_TYPE.getDescriptor());
 		
+		cv.visitField(ACC_STATIC|ACC_PRIVATE, 
+                               "compile", ESEQ_TYPE.getDescriptor(), null, null);
+		
+		compile_info.emit_const(mv);
+		mv.visitFieldInsn(Opcodes.PUTSTATIC, self_type.getInternalName(),
+				"compile", ESEQ_TYPE.getDescriptor());
+		
 		if (this.module_md5 != null) {
 			cv.visitField(ACC_STATIC, "module_md5", EBINARY_TYPE.getDescriptor(), null, null);
 			module_md5.emit_const(mv);
@@ -344,6 +357,16 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				"()" + ESEQ_TYPE.getDescriptor(), null, null);
 		mv.visitCode();
 		mv.visitFieldInsn(Opcodes.GETSTATIC, self_type.getInternalName(), "attributes", 
+				ESEQ_TYPE.getDescriptor());
+		mv.visitInsn(ARETURN);
+		mv.visitMaxs(1, 1);
+		mv.visitEnd();
+
+		// make the method attributes
+		mv = cv.visitMethod(ACC_PROTECTED, "compile",
+				"()" + ESEQ_TYPE.getDescriptor(), null, null);
+		mv.visitCode();
+		mv.visitFieldInsn(Opcodes.GETSTATIC, self_type.getInternalName(), "compile", 
 				ESEQ_TYPE.getDescriptor());
 		mv.visitInsn(ARETURN);
 		mv.visitMaxs(1, 1);

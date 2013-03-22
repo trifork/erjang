@@ -396,6 +396,9 @@ public class ErlBif {
 	static public ESeq get_module_info(EObject mod) {
 		// TODO: get all the attributes from the beam code
 		ESeq res = ERT.NIL;
+		res = res.cons(new ETuple2(ERT.am_compile, 
+				   get_module_info(mod, ERT.am_compile)));
+
 		res = res.cons(new ETuple2(ERT.am_attributes, 
 				   get_module_info(mod, ERT.am_attributes)));
 
@@ -417,6 +420,10 @@ public class ErlBif {
 
 		if (k == ERT.am_attributes) {
 			return EModuleManager.get_attributes(m);
+		}
+		
+		if (k == ERT.am_compile) {
+			return EModuleManager.get_compile(m);
 		}
 		
 		if (k == ERT.am_exports) {

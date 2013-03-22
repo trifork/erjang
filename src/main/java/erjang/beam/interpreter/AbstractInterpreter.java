@@ -77,6 +77,8 @@ public class AbstractInterpreter {
 
 		public void visitAttribute(EAtom att, EObject value) {}
 
+		public void visitCompile(EAtom att, EObject value) {}
+
 		public void visitEnd() {
  			log.fine("Interpreter code for module '"+moduleName+"':");
 

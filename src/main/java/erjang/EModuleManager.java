@@ -312,6 +312,17 @@ public class EModuleManager {
 			return res;
 		}
 
+		public synchronized ESeq get_compile() {
+			ESeq res;
+			
+			if (resident == null)
+				res = ERT.NIL;
+			else
+				res = resident.compile();
+			
+			return res;
+		}
+
 		/**
 		 * 
 		 */
@@ -485,6 +496,11 @@ public class EModuleManager {
 	public static ESeq get_attributes(EAtom mod) {
 		ModuleInfo mi = get_module_info(mod);
 		return mi.get_attributes();
+	}
+
+	public static ESeq get_compile(EAtom mod) {
+		ModuleInfo mi = get_module_info(mod);
+		return mi.get_compile();
 	}
 
 	/**
