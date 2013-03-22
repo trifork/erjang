@@ -203,6 +203,9 @@ call_fun arity:
 i_call_fun_last arity:
 	PRE_CALL(); int ary=GET(arity); return ((EFun)reg[ary]).invoke(proc, reg, 0, ary);
 
+line number:
+        /* current_line=number; */
+
 %class II(i1:I i2:I)
 apply_last arity dealloc:
 	STACK_DEALLOC(GET(dealloc)); int ary = GET(arity); EFun fun = ERT.resolve_fun(reg[ary], reg[ary+1], ary); PRE_CALL(); return fun.invoke(proc, REGS_AS_ARRAY(ary));
