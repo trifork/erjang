@@ -546,6 +546,7 @@ public class BeamLoader extends CodeTables {
 			case deallocate:
 			case call_fun:
 			case apply:
+            case line:
 			{
 				int i1 = readCodeInteger();
 				if (log.isLoggable(Level.FINE) && opcode==BeamOpcode.label) log.fine("DB| ### label "+i1+"###");

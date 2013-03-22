@@ -829,6 +829,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						break;
 					}
 
+                                        case line: // TODO!
 					case on_load: // ignore
 					case trim:
 						break;
@@ -2024,6 +2025,11 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						}
 						continue next_insn;
 					}
+
+                                        case line: {
+                                            // TODO: Implement LINE instruction!
+                                            continue next_insn;
+                                        }
 
 					default: {
 						ETuple insn = insn_.toSymbolicTuple();
