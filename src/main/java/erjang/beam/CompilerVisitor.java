@@ -101,8 +101,11 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 	// atom values is just encoded as an if-then-else-etc.
 	public static final int ATOM_SELECT_IF_ELSE_LIMIT = 4;
 
+        EAtom am_source = EAtom.intern("source");
+
 	ECons atts = ERT.NIL;
 	ECons compile_info = ERT.NIL;
+        String source = null;
 	private Set<String> exported = new HashSet<String>();
 
 	private final ClassVisitor cv;
@@ -214,7 +217,6 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 		add_module_annotation(cv);
 
-		cv.visitSource(name.getName()+".S", null);
 	}
 
 	private void add_module_annotation(ClassVisitor cv) {
@@ -254,8 +256,25 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 	@Override
 	public void visitCompile(EAtom att, EObject value) {
-		compile_info = compile_info.cons(ETuple2.make(att, value));
+            EString string;
+            if (att == am_source && (string = value.testString()) != null) {
+                source = string.stringValue();
+            }
+            compile_info = compile_info.cons(ETuple2.make(att, value));
 	}
+
+    String source() {
+        if (source == null) {
+            return module_name.getName() + ".erl";
+        } else {
+            int idx = source.lastIndexOf('/');
+            if (idx == -1) {
+                return source;
+            } else {
+                return source.substring(idx+1);
+            }
+        }
+    }
 
 	/*
 	 * (non-Javadoc)
@@ -264,6 +283,8 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 	 */
 	@Override
 	public void visitEnd() {
+
+                cv.visitSource(source(), null);
 
 		// wow, this is where we generate <clinit>
 
@@ -885,7 +906,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 			mv.visitLabel(blockLabel);
 			label_inserted.add(label);
-			mv.visitLineNumber(label & 0x7fff, blockLabel);
+//			mv.visitLineNumber(label & 0x7fff, blockLabel);
 			return new ASMBlockVisitor(label);
 		}
 
@@ -1199,6 +1220,13 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				}
 			}
 
+			@Override
+			public void visitLine(int line) {
+				Label here = new Label();
+				mv.visitLabel(here);
+				mv.visitLineNumber(line, here);
+			}
+			
 			@Override
 			public void visitBitStringTest(BeamOpcode test, int failLabel, Arg in, Arg bits, int unit, int flags, Arg dst) {
 				switch (test) {

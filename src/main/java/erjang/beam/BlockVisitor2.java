@@ -212,4 +212,6 @@ public interface BlockVisitor2 extends BlockVisitor {
 	void visitDecrement(Arg src, Arg out);
 
 	void visitInitWritable(Arg size, Arg dest);
+
+	void visitLine(int line);
 }

@@ -830,6 +830,8 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					}
 
                                         case line: // TODO!
+                                            vis.visitLine(((Insn.I)insn_).i1);
+                                            
 					case on_load: // ignore
 					case trim:
 						break;
