@@ -34,4 +34,5 @@ public class CodeAtoms {
 	public static final EAtom BIF_ATOM = EAtom.intern("bif");
 	public static final EAtom GCBIF_ATOM = EAtom.intern("gc_bif");
 	public static final EAtom ARITHFBIF_ATOM = EAtom.intern("arithfbif");
+	public static final EAtom NIF_ERROR_ATOM = EAtom.intern("nif_error");
 }

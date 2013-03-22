@@ -83,6 +83,7 @@ public class ErlBif {
 	private static EAtom am_reductions = EAtom.intern("reductions");
 	private static EAtom am_garbage_collection = EAtom.intern("garbage_collection");
 	private static EAtom am_runtime = EAtom.intern("runtime");
+	private static EAtom am_nif_error = EAtom.intern("nif_error");
 	private static final EAtom am_run_queue = EAtom.intern("run_queue");
 	
 	@BIF
@@ -2036,5 +2037,10 @@ public class ErlBif {
 
         boolean result = EModuleManager.module_loaded(module);
         return ERT.box(result);
+    }
+
+    @BIF
+    public static EObject nif_error(EObject err) {
+        throw new ErlangExit(err);
     }
 }

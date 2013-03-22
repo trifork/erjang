@@ -3010,6 +3010,8 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 						return true;
 					if (fun.fun == CodeAtoms.ERROR_ATOM &&  (fun.arity==1 || fun.arity==2))
 						return true;
+					if (fun.fun == CodeAtoms.NIF_ERROR_ATOM &&  (fun.arity==1))
+						return true;
 					if (fun.fun == CodeAtoms.THROW_ATOM && fun.arity==1)
 						return true;
 				}

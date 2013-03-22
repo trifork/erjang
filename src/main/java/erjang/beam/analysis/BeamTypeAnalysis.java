@@ -2114,8 +2114,13 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					if (ext_fun.mod == ERLANG_ATOM &&
 					    (ext_fun.fun == ERROR_ATOM 
 					    || ext_fun.fun == THROW_ATOM
-					    || ext_fun.fun == EXIT_ATOM) &&
+					    || ext_fun.fun == EXIT_ATOM
+                                            || ext_fun.fun == NIF_ERROR_ATOM) &&
 					    ext_fun.arity == 1) return true;
+
+					if (ext_fun.mod == ERLANG_ATOM &&
+					    ext_fun.fun == ERROR_ATOM &&
+					    ext_fun.arity == 2) return true;
 				}
 				return false;
 			}
