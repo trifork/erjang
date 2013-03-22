@@ -280,10 +280,11 @@ public abstract class EFun extends EObject implements Opcodes {
 
 			get_fun_class(arity);
 			
+                        String safe_module =  JAVA_ID.matcher(module).matches() ? module : make_valid_java_id(module);
 			String safe_function = JAVA_ID.matcher(function).matches() ? function : make_valid_java_id(function);
 			StringBuffer sb = new StringBuffer();
 			String self_type = sb.append(EFUN_TYPE.getInternalName())
-								.append(module).append(safe_function)
+								.append(safe_module).append(safe_function)
 								.append("Handler").append(arity).toString();
 
 			ClassWriter cw = new ClassWriter(true);
