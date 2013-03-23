@@ -2010,7 +2010,7 @@ public class ErlBif {
 	}
 
         @BIF
-        public static EObject dt_spread_tag(EAtom bool) {
+        public static EObject dt_spread_tag(EObject bool) {
             return new ETuple2(ERT.box(0), ERT.NIL);
         }
 
