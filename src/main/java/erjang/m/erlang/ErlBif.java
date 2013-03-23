@@ -61,6 +61,7 @@ import erjang.ETuple;
 import erjang.ETuple2;
 import erjang.ETuple3;
 import erjang.ErlangError;
+import erjang.ErlangExit;
 import erjang.ErlangException;
 import erjang.ErlangRaise;
 import erjang.ErlangThrow;
@@ -2041,6 +2042,11 @@ public class ErlBif {
 
     @BIF
     public static EObject nif_error(EObject err) {
-        throw new ErlangExit(err);
+
+        ErlangExit exit = new ErlangExit(err);
+
+        log.log(Level.INFO, "missing nif "+err, exit);
+
+        throw exit;
     }
 }
