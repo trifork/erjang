@@ -1970,10 +1970,18 @@ public class EFile extends EDriverInstance {
 				driver_output2(resbuf, null);
 			}
 		}
+
+                if (isLFNameDriverInterface()) {
+                    ByteBuffer resbuf = ByteBuffer.allocate(1);
+                    resbuf.put(FILE_RESP_LFNAME);
+                    driver_output2(resbuf, null);
+                } else {
 		
-		ByteBuffer resbuf = ByteBuffer.allocate(1);
-		resbuf.put(isUnicodeDriverInterface() ? FILE_RESP_FNAME : FILE_RESP_OK);
-		driver_output2(resbuf, null);
+                    ByteBuffer resbuf = ByteBuffer.allocate(1);
+                    resbuf.put(isUnicodeDriverInterface() ? FILE_RESP_FNAME : FILE_RESP_OK);
+                    driver_output2(resbuf, null);
+
+                }
 	}
 	
 	/**
