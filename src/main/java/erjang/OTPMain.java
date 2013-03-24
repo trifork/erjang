@@ -114,6 +114,18 @@ public class OTPMain {
         return argv;
     }
 
+
+    static void maybe_print_banner() {
+        RuntimeInfo info = ERT.runtime_info;
+        if (info != null && !Boolean.getBoolean("erjang.progress.suppress")) {
+            System.out.println("** Erjang " + info.otp_version + " ** "
+                               + " [root:" + info.erl_rootdir + "]"
+                               + " [erts:" + info.erts_version + "]"
+                               + (info.unicodeDriverInterface ? " [unicode]" : "")
+                               );
+        }
+    }
+
     /**
      * {@link ERT#setRuntimeInfo(RuntimeInfo)} should have been called, before calling this method
      * @param args
@@ -123,7 +135,8 @@ public class OTPMain {
      * @throws IOException
      */
 	public static void main(String[] args) throws ClassNotFoundException, InstantiationException, IllegalAccessException, IOException {
-		ESeq argv = process_args(args);
+            ESeq argv = process_args(args);
+            maybe_print_banner();
 
 	    Handler fh = new FileHandler("erjang.log");
 	    Logger.getLogger("").addHandler(fh);
