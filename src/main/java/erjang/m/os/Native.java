@@ -33,6 +33,7 @@ import erjang.EString;
 import erjang.ETuple2;
 import erjang.ETuple3;
 import erjang.ECons;
+import erjang.ErjangConfig;
 import erjang.NotImplemented;
 
 /**
@@ -69,7 +70,14 @@ public class Native extends ENative {
 		if (str == null)
 			throw ERT.badarg(o);
 
-		String value = System.getenv(str.stringValue());
+		String value;
+		
+		value = ErjangConfig.getenv(str.stringValue());
+		if (value != null) {
+			return EString.fromString(value);
+		}
+		
+		value = System.getenv(str.stringValue());
 
 		if (value == null) {
 			return ERT.FALSE;

@@ -48,6 +48,9 @@ public class Main {
 			if ("-root".equals(args[i]) && i < args.length) {
 				cmd_line_root = args[i+1];
 				i +=1;
+			} else if ("-env".equals(args[i]) && (i+1) < args.length) {
+				ErjangConfig.setenv(args[i+1], args[i+2]);
+				i += 2;
 			} else if ("+e".equals(args[i]) && i < args.length) {
 				erts_version = "erts-" + args[i+1];
 				i += 1;

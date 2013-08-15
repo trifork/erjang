@@ -18,6 +18,8 @@
 
 package erjang;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -34,6 +36,8 @@ import java.io.IOException;
 public class ErjangConfig {
 	static final Logger log = Logger.getLogger("erjang.config");
 
+	static final Map<String,String> extra_env = new HashMap<String, String>();
+	
 	static {
 		String configFileName = System.getProperty("erjang.configfile");
 		if (configFileName != null && configFileName.trim().length() > 0) {
@@ -79,5 +83,13 @@ public class ErjangConfig {
 	}
 	public static boolean hasString(String propname) {
 		return (System.getProperty(propname) != null);
+	}
+
+	public static void setenv(String env, String val) {
+		extra_env.put(env, val);
+	}
+	
+	public static String getenv(String env) {
+		return extra_env.get(env);
 	}
 }
