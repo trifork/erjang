@@ -66,12 +66,12 @@ abstract class ETable implements ExitHook {
 	protected final EAtom aname;
 	protected final boolean is_named;
 	protected final EAtom type;
-	protected final APersistentMap empty;
+	protected final APersistentMap<EObject,Object> empty;
 	private AtomicReference<IPersistentMap<EObject, Object>> mapRef;
 	private boolean is_fixed;
 
 	ETable(EProc owner, EAtom type, EInteger tid, EAtom aname, EAtom access, int keypos,
-			boolean is_named, EInternalPID heir_pid, EObject heir_data, APersistentMap map) {
+			boolean is_named, EInternalPID heir_pid, EObject heir_data, APersistentMap<EObject,Object> map) {
 		this.type = type;
 		this.is_named = is_named;
 		this.owner = new WeakReference<EProc>(owner);
@@ -218,29 +218,28 @@ abstract class ETable implements ExitHook {
 		return value.elm(keypos1);
 	}
 	
-	IPersistentMap deref() {
-		return (IPersistentMap) mapRef.get();
+	IPersistentMap<EObject,Object> deref() {
+		return mapRef.get();
 	}
 	
 
 	abstract class WithMap<T> implements Callable<T> {
 		
-		private IPersistentMap orig;
+		private IPersistentMap<EObject,Object> orig;
 		
 		@Override
 		public final T call() {
-			return run(orig = (IPersistentMap)mapRef.get());
+			return run(orig = mapRef.get());
 		}
 
-		protected abstract T run(IPersistentMap map);
+		protected abstract T run(IPersistentMap<EObject,Object> map);
 
-		protected void set(IPersistentMap map) {
+		protected void set(IPersistentMap<EObject,Object> map) {
 			mapRef.compareAndSet(orig, map);
 		}
 		
 	}
 	
-	@SuppressWarnings("unchecked")
 	<X> X in_tx(WithMap<X> run) {
 		try {
 			synchronized (ETable.this) {
@@ -280,7 +279,7 @@ abstract class ETable implements ExitHook {
 		in_tx(new WithMap<Object>() {
 
 			@Override
-			protected Object run(IPersistentMap map) {
+			protected Object run(IPersistentMap<EObject,Object> map) {
 				set(empty);
 				return null;
 			}
@@ -290,28 +289,29 @@ abstract class ETable implements ExitHook {
 	protected abstract EObject first();
 
 	protected EObject next(EObject from) {
-		IPersistentMap map = deref();
+		IPersistentMap<EObject,Object> map = deref();
 
 		if (map instanceof PersistentTreeMap) {
-			PersistentTreeMap ptm = (PersistentTreeMap) map;
-			ISeq seq = ptm.seqFrom(from, true);
+			PersistentTreeMap<EObject,Object> ptm = (PersistentTreeMap<EObject,Object>) map;
+			@SuppressWarnings("unchecked")
+			ISeq<IMapEntry<EObject,Object>> seq = ptm.seqFrom(from, true);
 			if (seq == null) return Native.am_$end_of_table;
 			seq = seq.next();
 			if (seq == null) return Native.am_$end_of_table;
-			IMapEntry ent = (IMapEntry) seq.first();
+			IMapEntry<EObject,Object> ent = (IMapEntry<EObject,Object>) seq.first();
 			if (ent == null) return Native.am_$end_of_table;
 			return (EObject) ent.getKey();
 			
 		} else {
 			
-			for (ISeq seq = map.seq();seq != null;seq = seq.next()) {
-				IMapEntry ent = (IMapEntry) seq.first(); 
+			for (ISeq<IMapEntry<EObject,Object>> seq = map.seq();seq != null;seq = seq.next()) {
+				IMapEntry<EObject,Object> ent = (IMapEntry<EObject,Object>) seq.first(); 
 				if (ent == null) return Native.am_$end_of_table;
 				EObject key = (EObject) ent.getKey();
 				if (key.equalsExactly(from)) {
 					seq = seq.next();
 					if (seq == null) return Native.am_$end_of_table;
-					ent = (IMapEntry) seq.first(); 
+					ent = (IMapEntry<EObject,Object>) seq.first(); 
 					if (ent == null) return Native.am_$end_of_table;
 					return (EObject) ent.getKey();
 				}

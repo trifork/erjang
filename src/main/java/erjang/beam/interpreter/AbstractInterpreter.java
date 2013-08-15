@@ -123,7 +123,7 @@ public class AbstractInterpreter {
 		}
 
 		List<FunIDWithEntry> convertExports(List<FunctionInfo> org) {
-			List<FunIDWithEntry> res = new ArrayList(org.size());
+			List<FunIDWithEntry> res = new ArrayList<FunIDWithEntry>(org.size());
 			for (FunctionInfo fi : org) {
 				res.add(new FunIDWithEntry(fi.mod, fi.fun, fi.arity,
 										   label_map.get(fi.label)));

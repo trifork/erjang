@@ -64,9 +64,8 @@ public class BIFUtil {
 	}
 
 	static class Args {
-		Class[] args;
+		Class<?>[] args;
 		private Args generic;
-		private int hashCode;
 		private int code;
 
 		Args(Type[] types) {
@@ -97,7 +96,7 @@ public class BIFUtil {
 			}
 		}
 
-		public Args(Class[] a) {
+		public Args(Class<?>[] a) {
 			this.args = a;
 		}
 
@@ -108,7 +107,7 @@ public class BIFUtil {
 			for (int i = 0; i < args.length; i++) {
 				code += args[i].getName().hashCode();
 			}
-			for (Class c : args) {
+			for (Class<?> c : args) {
 				code += c.hashCode();
 			}
 			return code;
@@ -136,7 +135,7 @@ public class BIFUtil {
 		public String toString() {
 			StringBuilder sb = new StringBuilder("(");
 			boolean first = true;
-			for (Class c : args) {
+			for (Class<?> c : args) {
 				if (!first)
 					sb.append(",");
 				else
@@ -150,7 +149,7 @@ public class BIFUtil {
 		public Args generic() {
 
 			if (generic == null) {
-				Class[] a = new Class[args.length];
+				Class<?>[] a = new Class[args.length];
 				for (int i = 0; i < args.length; i++) {
 					a[i] = EObject.class;
 				}
@@ -166,19 +165,19 @@ public class BIFUtil {
 		public List<Args> generalize() {
 			ArrayList<Args> res = new ArrayList<Args>();
 
-			Class[] aa = this.args.clone();
+			Class<?>[] aa = this.args.clone();
 
 			for (int i = 0; i < args.length; i++) {
 				// aa = this.args.clone();
 
 				// vary over arg[i]'s super types
-				for (Class c = args[i]; !c.equals(Object.class); c = super_class(c)) {
+				for (Class<?> c = args[i]; !c.equals(Object.class); c = super_class(c)) {
 					aa[i] = c;
 					res.add(new Args(aa.clone()));
 
 					for (int j = i + 1; j < args.length; j++) {
 
-						for (Class cc = args[j]; !cc.equals(Object.class); cc = super_class(cc)) {
+						for (Class<?> cc = args[j]; !cc.equals(Object.class); cc = super_class(cc)) {
 							aa[j] = cc;
 							res.add(new Args(aa.clone()));
 						}
@@ -189,7 +188,7 @@ public class BIFUtil {
 			return res;
 		}
 
-		private Class super_class(Class c) {
+		private Class<?> super_class(Class<?> c) {
 			if (c.isPrimitive()) {
 				if (c == double.class)
 					return EDouble.class;
@@ -244,7 +243,7 @@ public class BIFUtil {
 			Class<?>[] pt = method.getParameterTypes();
 			
 			if (!Modifier.isStatic(method.getModifiers())) {
-				Class[] all = new Class[pt.length + 1];
+				Class<?>[] all = new Class[pt.length + 1];
 				all[0] = method.getDeclaringClass();
 				System.arraycopy(pt, 0, all, 1, pt.length);
 				a = new Args(all);
@@ -329,7 +328,7 @@ public class BIFUtil {
 				(Class<ENative>) Class.forName("erjang.m." + mod + ".Native");
 			registerBifs(mod, en);
 			ENative enative = en.newInstance();
-			for (Class c : enative.getNativeClasses()) {
+			for (Class<?> c : enative.getNativeClasses()) {
 				if (c != en) {
 					registerBifs(mod, c);
 				}
