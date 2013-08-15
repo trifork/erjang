@@ -626,7 +626,7 @@ public class ERT {
 				
 				final EFun pfun = EModuleManager.resolve(new FunID(pmod, f, arity+1));
 				
-				return EFun.get_fun_with_handler(pmod.toString(), f.toString(), arity, new EFunHandler() {
+				return EFun.get_fun_with_handler(pmod.getName(), f.getName(), arity, new EFunHandler() {
 					@Override
 					public EObject invoke(EProc proc, EObject[] args) throws Pausable {
 						EObject[] real_args = new EObject[args.length+1];
