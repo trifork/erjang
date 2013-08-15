@@ -206,9 +206,10 @@ public class IO {
 
 	public static String getstr(ByteBuffer buf, boolean term) {
 		if (term) {
+                    /* TODO: charset! */
 			StringBuilder sb = new StringBuilder();
 			byte b;
-			while ((b=buf.get()) != 0) {
+			while (buf.hasRemaining() && (b=buf.get()) != 0) {
 				sb.append((char)(0xff & b));
 			}
 			return sb.toString();

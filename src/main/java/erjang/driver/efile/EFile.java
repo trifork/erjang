@@ -789,7 +789,7 @@ public class EFile extends EDriverInstance {
 			}
 
 			ByteBuffer last = ev[ev.length - 1];
-			final String name = IO.getstr(last, false);
+			final String name = IO.getstr(last, true);
 
 			if (name.length() == 0) {
 				reply_posix_error(Posix.ENOENT);
@@ -801,7 +801,12 @@ public class EFile extends EDriverInstance {
 				if (data == null) {
 					reply_posix_error(Posix.ENOENT);
 				} else {
+                                    if (isUnicodeDriverInterface()) {
+
+					task.output_from_driver(new EBinList(FILE_RESP_ALL_DATA_HEADER, data));
+                                    } else {
 					task.output_from_driver(new EBinList(FILE_RESP_OK_HEADER, data));
+                                    }
 				}
 
 				return;
