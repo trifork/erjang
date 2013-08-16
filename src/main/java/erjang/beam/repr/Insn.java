@@ -955,6 +955,9 @@ public class Insn implements BeamInstruction {
 		public GcBif(BeamOpcode opcode, Label label, ExtFun ext_fun, int i, SourceOperand src1, SourceOperand src2, DestinationOperand dest) {
 			this(opcode, label, ext_fun, i, new SourceOperand[]{src1,src2}, dest);
 		}
+		public GcBif(BeamOpcode opcode, Label label, ExtFun ext_fun, int i, SourceOperand src1, SourceOperand src2, SourceOperand src3, DestinationOperand dest) {
+			this(opcode, label, ext_fun, i, new SourceOperand[]{src1,src2,src3}, dest);
+		}
 
 		public SourceOperand[] argList() {return args;}
 

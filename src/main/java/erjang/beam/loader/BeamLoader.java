@@ -1022,6 +1022,16 @@ public class BeamLoader extends CodeTables {
 				DestinationOperand dest = readDestination();
 				return new Insn.GcBif(opcode, optLabel, extFun(ext_fun_ref), save, arg1, arg2, dest);
 			}
+			case gc_bif3: {
+				Label optLabel = readOptionalLabel();
+				int save = readCodeInteger();
+				int ext_fun_ref = readCodeInteger();
+				SourceOperand arg1 = readSource();
+				SourceOperand arg2 = readSource();
+				SourceOperand arg3 = readSource();
+				DestinationOperand dest = readDestination();
+				return new Insn.GcBif(opcode, optLabel, extFun(ext_fun_ref), save, arg1, arg2, arg3, dest);
+			}
 
 			default:
 				throw new IOException("Unknown instruction: "+opcode);

@@ -524,6 +524,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
  					case gc_bif1:
  					case gc_bif2:
+ 					case gc_bif3:
 					{
 						Insn.GcBif insn = (Insn.GcBif)insn_;
 						EAtom name = insn.ext_fun.fun;
@@ -1524,6 +1525,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
  					case gc_bif1:
  					case gc_bif2:
+ 					case gc_bif3:
 					{
 						// {gc_bif,BifName,F,Live,[A1,A2?],Reg};
 
