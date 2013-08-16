@@ -203,6 +203,8 @@ public final class EProc extends ETask<EInternalPID> {
 
 	public int midx = 0;
 
+	private int priority = 2;
+
 	protected void link_failure(EHandle h) throws Pausable {
 		if (trap_exit == ERT.TRUE || h.testLocalHandle()==null) {
 			send_exit(h, ERT.am_noproc, false);
@@ -437,6 +439,14 @@ public final class EProc extends ETask<EInternalPID> {
 		}
 
 		throw new NotImplemented("process_flag flag="+flag+", value="+value);
+	}
+
+	private int getPriority() {
+		return this.priority;
+	}
+
+	private void setPriority(int i) {
+		this.priority  = i;
 	}
 
 	@Override

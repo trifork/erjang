@@ -6,7 +6,8 @@
 	<path id="erjang.classpath">
 		<pathelement location="target/classes/" />
 		<pathelement location="lib/js.jar" />
-		<pathelement location="lib/kilim-0.6-krab.jar" />
+		<pathelement location="lib/kilim.jar" />
+		<pathelement location="lib/asm-all-4.1.jar" />
 		<pathelement location="lib/OtpErlang.jar" />
 		<pathelement location="lib/junit.jar" />
 		<pathelement location="lib/clj-ds.jar" />

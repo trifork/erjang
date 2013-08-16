@@ -18,6 +18,8 @@
 
 package erjang.beam;
 
+import java.util.Collection;
+
 /**
  * 
  */

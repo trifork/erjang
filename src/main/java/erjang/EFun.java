@@ -219,7 +219,7 @@ public abstract class EFun extends EObject implements Opcodes {
 
 		String self_type = EFUN_TYPE.getInternalName() + arity;
 
-		ClassWriter cw = new ClassWriter(true);
+		ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES|ClassWriter.COMPUTE_MAXS);
 		cw.visit(Opcodes.V1_5, Opcodes.ACC_PUBLIC | Opcodes.ACC_ABSTRACT,
 				self_type, null, EFUN_TYPE.getInternalName(), null);
 
@@ -273,6 +273,7 @@ public abstract class EFun extends EObject implements Opcodes {
 	static final Pattern JAVA_ID = Pattern.compile("([a-z]|[A-Z]|$|_|[0-9])*"); // valid java identifier
 
     public static EFun get_fun_with_handler(String module, String function, int arity, EFunHandler handler, ClassLoader loader) {
+
     	String signature = module + function + arity;
 		Constructor<? extends EFun> h = handlers.get(signature);
 
@@ -287,7 +288,7 @@ public abstract class EFun extends EObject implements Opcodes {
 								.append(safe_module).append(safe_function)
 								.append("Handler").append(arity).toString();
 
-			ClassWriter cw = new ClassWriter(true);
+			ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES|ClassWriter.COMPUTE_MAXS);
 			String super_class_name = EFUN_TYPE.getInternalName() + arity;
 			cw.visit(Opcodes.V1_4, ACC_PUBLIC, self_type, null,
 					super_class_name, null);
@@ -555,7 +556,7 @@ public abstract class EFun extends EObject implements Opcodes {
 		String super_type = EFUN_TYPE.getInternalName() + arity;
 		String self_type = super_type + "Exported";
 
-		ClassWriter cw = new ClassWriter(true);
+		ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES|ClassWriter.COMPUTE_MAXS);
 		cw.visit(Opcodes.V1_5, Opcodes.ACC_PUBLIC | Opcodes.ACC_ABSTRACT,
 				self_type, null, super_type, null);
 
@@ -633,6 +634,7 @@ public abstract class EFun extends EObject implements Opcodes {
 
 	public static byte[] weave(byte[] data) {
 		ClassWeaver w = new ClassWeaver(data, new Compiler.ErjangDetector("/xx/", (Set<String>)Collections.EMPTY_SET));
+		w.weave();
 		for (ClassInfo ci : w.getClassInfos()) {
 			// ETuple.dump(ci.className, ci.bytes);
 			

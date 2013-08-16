@@ -682,6 +682,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 			ClassWeaver w = new ClassWeaver(data, new Compiler.ErjangDetector(
 					self_type.getInternalName(), non_pausable_methods));
+			w.weave();
 			if (w.getClassInfos().size() == 0) { // Class did not need weaving
 				try {
 					classRepo.store(full_inner_name, data);
@@ -3119,7 +3120,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 		String inner_name = "FN_" + mname;
 		String full_inner_name = outer_name + "$" + inner_name;
 
-		ClassWriter cw = new ClassWriter(true);
+		ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES|ClassWriter.COMPUTE_MAXS);
 		int residual_arity = arity - freevars;
 		String super_class_name = EFUN_NAME + residual_arity +
 			(exported ? "Exported" : "");

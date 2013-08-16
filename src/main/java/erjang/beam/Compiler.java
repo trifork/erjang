@@ -32,7 +32,7 @@ import java.util.zip.CheckedInputStream;
 
 import kilim.analysis.ClassInfo;
 import kilim.analysis.ClassWeaver;
-import kilim.analysis.Detector;
+import kilim.mirrors.Detector;
 import kilim.mirrors.ClassMirrorNotFoundException;
 import kilim.mirrors.Mirrors;
 
@@ -70,7 +70,7 @@ public class Compiler implements Opcodes {
 		ClassWeaver.reset();
 		
 		// class writer, phase 4
-		ClassWriter cw = new ClassWriter(true);
+		ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
 
 		// class checker, optional phase
 		//CheckClassAdapter ca = new CheckClassAdapter(cw);
@@ -102,6 +102,7 @@ public class Compiler implements Opcodes {
 		boolean written = false;
 		ClassWeaver cwe = new ClassWeaver(byteArray, new ErjangDetector(
 				cv.getInternalClassName(), cv.non_pausable_methods));
+		cwe.weave();
 		for (ClassInfo ci : cwe.getClassInfos()) {
 			String name = ci.className;
 			byte[] bytes = ci.bytes;
@@ -137,7 +138,7 @@ public class Compiler implements Opcodes {
 		 * @param mirrors
 		 */
 		public ErjangDetector(String className, Set<String> nonPausableMethods) {
-			super(Mirrors.getRuntimeMirrors());
+			super(Detector.DEFAULT.mirrors);
 			this.className = className;
 			this.nonPausableMethods = nonPausableMethods;
 		}
