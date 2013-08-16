@@ -119,8 +119,8 @@ public class Main {
 		}
 		
 		if (!ra.contains("-home")) {
-			ra.add("-home");
-			ra.add(System.getProperty("user.home"));
+			ra.add(0, "-home");
+			ra.add(1, System.getProperty("user.home"));
 		}
 		
 		ERT.setRuntimeInfo(runtimeInfo);
