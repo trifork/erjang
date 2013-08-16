@@ -6,8 +6,9 @@
 	<classpathentry kind="lib" path="lib/OtpErlang.jar"/>
 	<classpathentry kind="lib" path="lib/antlr-3.2.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/3"/>
-	<classpathentry kind="lib" path="lib/kilim-0.6-krab.jar" sourcepath="/kilim-erjang/src"/>
 	<classpathentry kind="lib" path="lib/js.jar"/>
 	<classpathentry kind="lib" path="lib/clj-ds.jar"/>
+	<classpathentry kind="lib" path="lib/asm-all-4.1.jar"/>
+	<classpathentry kind="lib" path="lib/kilim.jar" sourcepath="/kilim"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>

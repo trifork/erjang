@@ -11,3 +11,5 @@ src/test/java/erjang/*_TEST.java
 otp-*.jar
 erjang.log*
 *.launch
+*.rej
+*.orig

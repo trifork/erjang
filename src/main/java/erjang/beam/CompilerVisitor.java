@@ -701,7 +701,8 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				for (ClassInfo ci : w.getClassInfos()) {
 					try {
 					// System.out.println("> storing "+ci.className);
-						classRepo.store(ci.className, ci.bytes);
+						String iname = ci.className.replace('.', '/');
+						classRepo.store(iname, ci.bytes);
 					} catch (IOException e) {
 						e.printStackTrace();
 					}
