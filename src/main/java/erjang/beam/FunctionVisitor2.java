@@ -27,6 +27,6 @@ import java.util.Collection;
 public interface FunctionVisitor2 extends FunctionVisitor {
 
 	public void visitMaxs(Collection<Integer> maxXreg, int y_count, int fp_count,
-			boolean isTailRecursive);
-	
+			boolean isTailRecursive, Collection<Integer> dead_blocks);
+
 }

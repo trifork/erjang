@@ -531,6 +531,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 		private int bit_string_save;
 		private FunInfo funInfo;
+		private Collection<Integer> deadBlocks;
 
 		Label getLabel(int i) {
 			if (i <= 0)
@@ -565,11 +566,12 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 		@Override
 		public void visitMaxs(Collection<Integer> x_regs, int y_count, int fp_count,
-				boolean isTailRecursive) {
+				boolean isTailRecursive, Collection<Integer> dead_blocks) {
 
 			FunID me = new FunID(module_name, fun_name, arity);
 			this.funInfo = funInfos.get(me);
 			this.isTailRecursive = isTailRecursive;
+			this.deadBlocks = dead_blocks;
 			
 			Lambda lambda = get_lambda_freevars(fun_name, arity);
 			final int freevars = 
@@ -612,6 +614,12 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			for (EXHandler h : ex_handlers) {
 				if (! label_inserted.contains(h.handler_beam_label))
 					throw new InternalError("Exception handler not inserted: "+h.handler_beam_label);
+				
+				if (deadBlocks.contains(h.handler_beam_label)) {
+					System.out.println("skipping dead ex handler "+ fun_name + ", label #"+h.handler_beam_label);
+					continue;
+				}
+				
 				mv.visitTryCatchBlock(h.begin, h.end, h.target,
 						      Type.getType(ErlangException.class).getInternalName());
 			}

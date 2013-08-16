@@ -261,10 +261,13 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 				}
 			}
 
+			List<Integer> dead = new ArrayList<Integer>();
+			
 			boolean has_unreachable_code = false;
 			for (int i : labels) {
 				lb = lbs.get(i);
 				if (lb.isDeadCode()) {
+					dead.add(i);
 					if (lb.insns.get(0).opcode() == BeamOpcode.func_info) {
 						// ignore this
 					} else {
@@ -277,15 +280,15 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 				this.dump();
 			}
 
-			function_visit_end();
+			function_visit_end(dead);
 
 		}
 
-		private void function_visit_end() {
+		private void function_visit_end(List<Integer> dead) {
 
 			if (fv instanceof FunctionVisitor2) {
 				((FunctionVisitor2) fv).visitMaxs((Collection<Integer>) this.all_xregs  ,
-						this.max_stack, this.max_freg, this.is_tail_recursive);
+						this.max_stack, this.max_freg, this.is_tail_recursive, dead);
 			}
 
 			for (LabeledBlock block : this.lbs.values()) {
