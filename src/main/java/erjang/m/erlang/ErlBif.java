@@ -2049,4 +2049,23 @@ public class ErlBif {
 
         throw exit;
     }
+    
+    @BIF
+    public static EObject binary_part(EObject bin, EObject start, EObject length) {
+    	EBinary bin1 = bin.testBinary();
+    	ESmall start1 = start.testSmall();
+    	ESmall length1 = length.testSmall();
+    	
+    	if (bin1 == null || start1 == null || length == null) {
+    		throw ERT.badarg(bin, start, length);
+    	}
+    	
+    	if (start1.value < 0
+    			&& (start1.value + length1.value) > bin1.byteSize()
+				&& length1.value < 0) {
+    		throw ERT.badarg(bin, start, length);    		
+    	}
+	
+    	return bin1.substring(start1.value * 8, length1.value * 8);
+    }
 }
