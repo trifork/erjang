@@ -198,8 +198,8 @@ public abstract class ErlangException extends RuntimeException {
 		if (cname.startsWith(ERJANG_MODULES_DOT)) {
 
 			int last = cname.lastIndexOf('.');
-			module = EAtom.intern(cname.substring(ERJANG_MODULES_DOT.length(),
-					last));
+			String moduleName = cname.substring(ERJANG_MODULES_DOT.length(), last);
+			module = EAtom.intern(EUtil.decodeJavaName(moduleName));
 		}
 
 		EAtom function = null;
