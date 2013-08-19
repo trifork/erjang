@@ -769,6 +769,15 @@ public class ErlBif {
 
 	// arithmetic
 
+	@BIF(name = "+")
+	static public ENumber not_neg(EObject v1) {
+		ENumber n1;
+		if ((n1 = v1.testNumber()) != null) {
+			return n1;
+		}
+		throw ERT.badarg(v1);
+	}
+	
 	@BIF(name = "-")
 	static public ENumber neg(EObject v1) {
 		ENumber n1;
