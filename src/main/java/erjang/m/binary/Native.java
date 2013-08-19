@@ -1,5 +1,10 @@
 package erjang.m.binary;
 
+import java.util.Arrays;
+import java.util.Comparator;
+
+import com.trifork.clj_ds.PersistentTreeMap.Seq;
+
 import erjang.*;
 import erjang.m.erlang.ErlBif;
 import erjang.m.erlang.ErlConvert;
@@ -8,6 +13,7 @@ import erjang.m.erlang.ErlConvert;
  * The implementation of Erlang's binary module
  * 
  * @author Pavlo Baron (pb@pbit.org)
+ * @author Kresten Krab Thorup (krab@trifork.com)
  * 
  * TODO: port implementation (as far as possible) from erts/emulator/beam/erl_bif_binary.c
  * TODO: extend signature with EProc where necessary (acc. to the corresponding C code)
@@ -21,6 +27,8 @@ import erjang.m.erlang.ErlConvert;
  *
  */
 public class Native extends ENative {
+	
+	static final EAtom am_scope = EAtom.intern("scope");
 
 	/**
 	 * at(Subject, Pos) -> int()
@@ -206,7 +214,7 @@ public class Native extends ENative {
 	 */
 	@BIF
 	public static EObject matches(EObject subject, EObject pattern) {
-		throw new NotImplemented();
+		return matches(subject, pattern, ERT.NIL);
 	}
 	
 	/**
@@ -214,7 +222,109 @@ public class Native extends ENative {
 	 */
 	@BIF
 	public static EObject matches(EObject subject, EObject pattern, EObject options) {
-		throw new NotImplemented();
+		EBinary haystack = subject.testBinary();
+		EBinary needle = pattern.testBinary();
+		ESeq needles = pattern.testSeq();
+		ESeq opts = options.testSeq();
+		
+		if (opts == null || haystack == null || (needle == null && needles==null)) {
+			throw ERT.badarg(subject, pattern, options);
+		}
+		
+		if (needles != null && needles.isNil()) {
+			throw ERT.badarg(subject, pattern, options);
+		}
+		
+		if (needle != null && needle.byteSize() == 0) {
+			throw ERT.badarg(subject, pattern, options);
+		}
+		
+		if (needle != null) {
+			needles = ERT.NIL.cons(needle);
+		}
+
+		EObject[] neddleArr = needles.toArray();
+		
+		int offset = 0;
+		int length = haystack.byteSize();
+		if (!options.isNil()) {
+			ETuple2 opt = ETuple2.cast( opts.head() );
+			ETuple2 range = null;
+			ESmall from = null, len = null;
+			if (opt == null 
+					|| opt.elm(1) != am_scope
+					|| (range = ETuple2.cast( opt.elm(2) )) == null
+					|| (from = range.elem1.testSmall()) == null
+					|| (len = range.elem2.testSmall()) == null
+					) {
+				throw ERT.badarg(subject, pattern, options);
+			}
+			
+			offset = from.value;
+			length = len.value;
+			
+			if (offset < 0 || (offset + length) > haystack.byteSize()) {
+				throw ERT.badarg(subject, pattern, options);
+			}
+		}
+		
+		byte[] hay = haystack.getByteArray();
+		byte[][] needlesArr = new byte[neddleArr.length][];
+		for (int i = 0; i < neddleArr.length; i++) {
+			needlesArr[i] = neddleArr[i].testBinary().getByteArray();
+		}
+		
+		Arrays.sort(needlesArr, new Comparator<byte[]>() {
+			// sort longest-first
+			@Override
+			public int compare(byte[] arg0, byte[] arg1) {
+				return arg1.length - arg0.length;
+			}			
+		});
+		
+		int orig_len = length;
+		int[] len = new int[1];
+		ESeq result = ERT.NIL;
+		ESeq last_result;
+		do {
+			last_result = result;
+			len[0] = length;
+			int found = indexof(hay, needlesArr, offset, len);
+			if (found != -1) {
+				offset = found+len[0];
+				length = (orig_len - offset);
+				result = result.cons(new ETuple2(ERT.box(found), ERT.box(len[0])));
+			}
+			
+		} while(result != last_result);
+		
+		return result.reverse();
+	}
+	
+	static int indexof(byte[] haystack, byte[][] needles, int from, int[] len)
+	{
+		for (int pos = from; pos < haystack.length; pos++) {
+			for (int i = 0; i < needles.length; i++) {
+				if (needles[i].length <= len[0] && looking_at(haystack, pos, needles[i])) {
+					len[0] = needles[i].length;
+					return pos;
+				}
+			}
+		}
+		
+		return -1;
+	}
+	
+	static boolean looking_at(byte[] haystack, int off, byte[] needle) {
+		if (off + needle.length > haystack.length)
+			return false;
+
+		for (int i = 0; i < needle.length; i++) {
+			if (haystack[off+i] != needle[i])
+				return false;
+		}
+
+		return true;
 	}
 	
 	/**
