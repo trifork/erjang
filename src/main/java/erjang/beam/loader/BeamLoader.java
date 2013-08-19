@@ -39,6 +39,7 @@ import erjang.EBinary;
 import erjang.EInputStream;
 import erjang.EObject;
 import erjang.ESeq;
+import erjang.EString;
 import erjang.beam.BeamOpcode;
 import erjang.beam.repr.AnonFun;
 import erjang.beam.repr.CodeTables;
@@ -46,6 +47,7 @@ import erjang.beam.repr.ExtFun;
 import erjang.beam.repr.FunctionInfo;
 import erjang.beam.repr.FunctionRepr;
 import erjang.beam.repr.Insn;
+import erjang.beam.repr.LineRecord;
 import erjang.beam.repr.ModuleRepr;
 import erjang.beam.repr.Operands;
 import erjang.beam.repr.Operands.AllocList;
@@ -54,6 +56,7 @@ import erjang.beam.repr.Operands.BitString;
 import erjang.beam.repr.Operands.ByteString;
 import erjang.beam.repr.Operands.DestinationOperand;
 import erjang.beam.repr.Operands.FReg;
+import erjang.beam.repr.Operands.Int;
 import erjang.beam.repr.Operands.Label;
 import erjang.beam.repr.Operands.Literal;
 import erjang.beam.repr.Operands.Operand;
@@ -62,6 +65,7 @@ import erjang.beam.repr.Operands.SourceOperand;
 import erjang.beam.repr.Operands.TableLiteral;
 import erjang.beam.repr.Operands.XReg;
 import erjang.beam.repr.Operands.YReg;
+import erjang.driver.IO;
 
 public class BeamLoader extends CodeTables {
 	static Logger log = Logger.getLogger("erjang.beam");
@@ -129,11 +133,12 @@ public class BeamLoader extends CodeTables {
     static final int ATTR  = 0x41747472; // "Attr"
     static final int C_INF = 0x43496e66; // "CInf"
     static final int ABST  = 0x41627374; // "Abst"
+    static final int LINE  = 0x4c696e65; // "Line"
 
 	static final int[] SECTION_READING_ORDER = {
 		ATOM, STR_T, LIT_T,		// Have no dependencies.
 		IMP_T, EXP_T, FUN_T, LOC_T,	// Function tables - depend on atom table.
-		CODE,					// Depends on virtually all tables.
+		LINE, CODE,					// Depends on virtually all tables.
 		C_INF, ATTR, ABST		// Less vital sections.
 	};
 
@@ -319,6 +324,7 @@ public class BeamLoader extends CodeTables {
 			case ATTR:  readAttributeSection(); break;
 			case C_INF: readCompilationInfoSection(); break;
 			case ABST:  readASTSection(); break;
+			case LINE:  readLineSection(); break;
 			default:
 				if (log.isLoggable(Level.WARNING)) log.warning("Unrecognized section tag: "+Integer.toHexString(section.tag));
 			} // switch
@@ -368,6 +374,47 @@ public class BeamLoader extends CodeTables {
 		return new String(sym);
 	}
 
+	public void readLineSection() throws IOException {
+		int version = in.read4BE();
+		int flags = in.read4BE();
+		int count = in.read4BE();
+		int records = in.read4BE();
+		int fnames = in.read4BE();
+
+        /*
+		System.err.println("Line section"
+                           +"; version="+version
+                           +"; flags="+flags
+                           +"; count="+count
+                           +"; records="+records
+                           +"; fnames="+fnames);
+        */
+
+		lineRecords = new LineRecord[records+1];
+        int fnameNo = 0;
+		for (int i = 0; i < records; ) {
+
+            int d1 = in.read1();
+            switch (d1 & 0x07) {
+            case ATOM4_TAG:
+            case ATOM12_TAG:
+                fnameNo = readSmallIntValue(d1);
+                break;
+
+            default:
+                Int val = readOperand(d1).testInt();
+                lineRecords[++i] = new LineRecord(fnameNo, val.value);
+                //                System.err.println("line["+(i)+"] = "+val.value + " ["+fnameNo+"]");
+            }
+		}
+
+		filenames = new EString[fnames+1];
+		for (int i = 0; i < fnames; i++) {
+			String filename = new String(readBinary(in.read2BE()), IO.UTF8);
+            //			System.err.println("file: "+filename);
+			filenames[i+1] = EString.fromString(filename);
+		}
+	}
 
 	public void readAtomSection() throws IOException {
 		if (log.isLoggable(Level.FINE)) log.fine("readAtomSection");
@@ -542,11 +589,23 @@ public class BeamLoader extends CodeTables {
 				return new Insn(opcode); // TODO: use static set of objects
 
 				//---------- 1-ary ----------
+            case line: {
+				int i1 = readCodeInteger();
+                int lineNo = -1;
+                if (lineRecords != null && lineRecords[i1] != null) {
+                    lineNo = lineRecords[i1].lineNo;
+                }
+				if (log.isLoggable(Level.FINE))
+                    log.fine("DB| ### line #"+i1+"="+lineNo+"###");
+                
+				return new Insn.I(BeamOpcode.line, lineNo);
+			}
+
+
 			case label:
 			case deallocate:
 			case call_fun:
 			case apply:
-            case line:
 			{
 				int i1 = readCodeInteger();
 				if (log.isLoggable(Level.FINE) && opcode==BeamOpcode.label) log.fine("DB| ### label "+i1+"###");

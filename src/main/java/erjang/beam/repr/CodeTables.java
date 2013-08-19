@@ -13,7 +13,9 @@ public class CodeTables {
 	protected EObject[] literals;
 	protected ExtFun[]  externalFuns;
 	protected AnonFun[] anonymousFuns;
+	protected EString[]   filenames;
 	protected byte[]    stringpool;
+	protected LineRecord[] lineRecords;
 
  	protected Map<Integer,FunctionInfo> functionMap = new HashMap<Integer, FunctionInfo>();
 
