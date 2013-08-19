@@ -393,6 +393,24 @@ public class ErlConvert {
 		return new EBinary(data);
 	}
 
+	@BIF
+	public static EAtom binary_to_atom(EObject obj, EObject enc) {
+		EBinary bi = obj.testBinary();
+		EAtom en = enc.testAtom();
+		if (bi == null || en == null) {
+			throw ERT.badarg(obj, enc);
+		}
+
+		byte[] data = bi.getByteArray();
+		if (en == ERT.am_latin1) {
+			return EAtom.intern( new String(data, IO.ISO_LATIN_1) );
+		} else if (en == ERT.am_utf8 || en == ERT.am_unicode) {
+			return EAtom.intern( new String(data, IO.UTF8) );
+		} else {
+			throw ERT.badarg(obj, enc);
+		}
+	}
+
     @BIF
     public static ETuple2 posixtime_to_universaltime(EObject time)
     {
