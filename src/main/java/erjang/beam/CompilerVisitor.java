@@ -616,7 +616,6 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					throw new InternalError("Exception handler not inserted: "+h.handler_beam_label);
 				
 				if (deadBlocks.contains(h.handler_beam_label)) {
-					System.out.println("skipping dead ex handler "+ fun_name + ", label #"+h.handler_beam_label);
 					continue;
 				}
 				
