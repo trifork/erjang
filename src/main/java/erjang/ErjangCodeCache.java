@@ -140,8 +140,11 @@ public class ErjangCodeCache {
 	for (int i=0; i<s.length(); i++) {
 	    char c = s.charAt(i);
 	    if (('a' <= c && c <= 'z') ||
-		('0' <= c && c <= '9') ||
-		c == '_')
+	    		('A' <= c && c <= 'Z') ||
+	    		('0' <= c && c <= '9') ||
+	    		c == '-' ||
+	    	    c == '.' ||
+	    		c == '_')
 		sb.append(c);
 	    else
 		sb.append('$').append(Integer.toHexString(c)).append('$');
