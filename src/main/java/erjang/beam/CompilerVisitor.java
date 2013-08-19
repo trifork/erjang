@@ -741,7 +741,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 					ex_handlers.add(h);
 					mv.visitLabel(h.begin);
-					mv.visitInsn(NOP); // To avoid potentially-empty exception block; Kilim can't handle those.
+	//				mv.visitInsn(NOP); // To avoid potentially-empty exception block; Kilim can't handle those.
 					activeExceptionHandler = h;
 				}
 			}
@@ -927,8 +927,10 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			@Override
 			public void visitBegin(BeamExceptionHandler exh) {
 				active_beam_exh = exh;
-				if (exh==null || (exh.getHandlerLabel() != beam_label))
+				if (exh==null || (exh.getHandlerLabel() != beam_label)) {
 					adjust_exception_handlers(exh, false);
+					mv.visitInsn(NOP);
+				}
 			}
 
 			/*
@@ -1428,10 +1430,10 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			}
 
 			public void visitUnreachablePoint() {
-				mv.visitLdcInsn("Reached unreachable point.");
-				mv.visitInsn(DUP);
-				mv.visitMethodInsn(INVOKESPECIAL, "java/lang/RuntimeException", "<init>", "(Ljava/lang/String;)V");
-				mv.visitInsn(ATHROW);
+			//	mv.visitLdcInsn("Reached unreachable point.");
+			//	mv.visitInsn(DUP);
+			//	mv.visitMethodInsn(INVOKESPECIAL, "java/lang/RuntimeException", "<init>", "(Ljava/lang/String;)V");
+			//	mv.visitInsn(ATHROW);
 			}
 
 			public void visitCatchBlockStart(BeamOpcode opcode, int label, Arg out, BeamExceptionHandler exh) {
