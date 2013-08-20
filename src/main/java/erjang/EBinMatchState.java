@@ -127,7 +127,7 @@ public class EBinMatchState extends EPseudoTerm {
 	public static void bs_restore2_start (EObject obj) {
 		EBinMatchState bms;
 		if ((bms=obj.testBinMatchState()) != null) {
-			bms.offset = bms.save_offset(0);
+			bms.offset = bms.start_offset;
 		} else {
 			throw new Error("BADARG: be called with EBinMatchState");
 		}
