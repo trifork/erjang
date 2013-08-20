@@ -181,6 +181,15 @@ public class ErlConvert {
 	}
 	
 	@BIF
+	public static EBinary integer_to_binary(EObject arg) {
+		EInteger i = arg.testInteger();
+		if (i == null) throw ERT.badarg(arg);
+
+		byte[] bin = i.toString().getBytes(IO.ISO_LATIN_1);
+		return EBinary.make(bin);
+	}
+
+	@BIF
 	public static EInteger list_to_integer(EObject obj) {
 		EString seq;
 		if ((seq = obj.testString()) == null)
