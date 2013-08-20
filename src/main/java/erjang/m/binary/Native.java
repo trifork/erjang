@@ -332,17 +332,50 @@ public class Native extends ENative {
 	 */
 	@BIF
 	public static EBinary part(EObject subject, EObject poslen) {
-		throw new NotImplemented();
+		EBinary sub = subject.testBinary();
+		ETuple2 pl = ETuple2.cast(poslen);
+		ESmall pos, len;
+		if (sub == null 
+				|| pl == null
+				|| (pos=pl.elem1.testSmall()) == null
+				|| (len=pl.elem2.testSmall()) == null
+				) {
+			throw ERT.badarg(subject, poslen);
+		}
+		
+		return part(sub, pos.value, len.value, false);
 	}
 	
 	/**
 	 * part(Subject, Pos, Len) -> binary()
 	 */
 	@BIF
-	public static EBinary part(EObject subject, EObject pos, EObject len) {
-		throw new NotImplemented();
+	public static EBinary part(EObject subject, EObject opos, EObject olen) {
+		EBinary sub = subject.testBinary();
+		ESmall pos, len;
+		if (sub == null 
+				|| (pos=opos.testSmall()) == null
+				|| (len=olen.testSmall()) == null
+				) {
+			throw ERT.badarg(subject, opos, olen);
+		}
+		
+		return part(sub, pos.value, len.value, false);
 	}
 	
+	private static EBinary part(EBinary sub, int pos, int len, boolean as_guard) {
+		if (len < 0) {
+			pos = pos + len;
+			len = -len;
+		}
+		
+		if (pos < 0 || (pos + len) > sub.byteSize()) {
+			throw ERT.badarg(sub, ERT.box(pos), ERT.box(len));
+		}
+		
+		return sub.sub_binary(pos, len);
+	}
+
 	/**
 	 * referenced_byte_size(binary()) -> int()
 	 */
