@@ -77,6 +77,7 @@ import erjang.ERef;
 import erjang.ESeq;
 import erjang.ESmall;
 import erjang.EString;
+import erjang.ETask;
 import erjang.ETuple;
 import erjang.ETuple2;
 import erjang.ErlangException;
@@ -133,6 +134,8 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 	static final Type ENUMBER_TYPE = Type.getType(ENumber.class);
 	static final Type EOBJECT_TYPE = Type.getType(EObject.class);
 	static final String EOBJECT_DESC = EOBJECT_TYPE.getDescriptor();
+	static final Type ETASK_TYPE = Type.getType(ETask.class);
+	static final String ETASK_NAME = ETASK_TYPE.getInternalName();
 	static final Type EPROC_TYPE = Type.getType(EProc.class);
 	static final String EPROC_NAME = EPROC_TYPE.getInternalName();
 	static final String EPROC_DESC = EPROC_TYPE.getDescriptor();
@@ -2154,7 +2157,11 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					push_immediate(ERT.NIL, ENIL_TYPE);
 					for (int i=f.arity-1; i>=0; i--) {
 						push(new Arg(Kind.X, i), EOBJECT_TYPE);
-						mv.visitMethodInsn(INVOKEVIRTUAL, ESEQ_NAME, "cons", SEQ_CONS_SIG);
+						String base = ESEQ_NAME;
+						if (i==f.arity-1) {
+							base = ENIL_NAME;
+						}
+						mv.visitMethodInsn(INVOKEVIRTUAL, base, "cons", SEQ_CONS_SIG);
 					}
 
 					mv.visitMethodInsn(INVOKESTATIC, ERT_NAME, "func_info", FUNC_INFO_SIG);
@@ -2980,7 +2987,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 							&& fun.fun == ASMFunctionAdapter.this.fun_name) {
 
 						mv.visitVarInsn(ALOAD, 0);
-						mv.visitMethodInsn(INVOKEVIRTUAL, EPROC_NAME,
+						mv.visitMethodInsn(INVOKEVIRTUAL, ETASK_NAME,
 								"check_exit", "()V");
 
 						// System.out.println("self-recursive in " + fun);
