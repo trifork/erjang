@@ -143,7 +143,28 @@ public class Native extends ENative {
 				
 		if (o2.global) {
 			
-			throw new NotImplemented("global option to re:run");
+			ESeq result = ERT.NIL;
+			
+			while (matcher.find()) {
+				MatchResult mr = matcher.toMatchResult();
+			
+				if (o2.capture_spec == am_all) {
+					ESeq l = ERT.NIL;
+					for (int i = mr.groupCount(); i >= 0; i--) {
+						l = l.cons( capture (subject, mr, i, o2) );
+					}
+					
+					result = result.cons(l);
+				} else {
+					throw new NotImplemented("global and not all");
+				}
+			}
+			
+			if (result == ERT.NIL) {
+				return am_nomatch;
+			} else {
+				 return new ETuple2(am_match, result.reverse());
+			}
 			
 		} else {
 			
@@ -184,7 +205,7 @@ public class Native extends ENative {
 						 out = out.cons(val);
 					 }
 					 
-					 return new ETuple2(am_match, out);
+					 return new ETuple2(am_match, out.reverse());
 					
 				} else {
 					throw ERT.badarg(subj, re, opts);
@@ -417,6 +438,11 @@ public class Native extends ENative {
 
 		String decode(EObject io_or_char_list) {
 
+			if (io_or_char_list instanceof ECompiledRE) {
+				ECompiledRE cr = (ECompiledRE)io_or_char_list;
+				return cr.patt.pattern();
+			}
+			
 			String pattern;
 			if (unicode) {
 				CharArrayWriter out = new CharArrayWriter();
@@ -468,11 +494,21 @@ public class Native extends ENative {
 
 			return pattern;
 		}
+
+		public boolean isUnicode() {
+			return unicode;
+		}
 	}
 
 	@BIF
 	static public ETuple2 compile(EObject obj1, EObject obj2) {
 
+		if (obj1 instanceof ECompiledRE) {
+			return new ETuple2(ERT.am_ok,
+					obj1
+			);
+		}
+		
 		ESeq opts = obj2.testSeq();
 
 		Options o = new Options();
@@ -481,6 +517,10 @@ public class Native extends ENative {
 		}
 
 		String pattern = o.decode(obj1);
+		
+		if (pattern == null) {
+			throw ERT.badarg(obj1, obj2);
+		}
 
 		try {
 			Pattern c = Pattern.compile(pattern, o.flags);
