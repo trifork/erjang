@@ -632,10 +632,10 @@ public class ErlBif {
 		throw ERT.badarg(list);
 	}
 
-	@BIF
-	static public int length(ESeq list) {
-		return list.length();
-	}
+//	@BIF
+//	static public int length(ESeq list) {
+//		return list.length();
+//	}
 
 	@BIF(name = "length", type = Type.GUARD)
 	static public ESmall length$p(EObject list) {
