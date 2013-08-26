@@ -66,6 +66,7 @@ public class ErlProc {
 
 	private static final EAtom am_smp_support = EAtom.intern("smp_support");
 	private static final EAtom am_schedulers = EAtom.intern("schedulers");
+	private static final EAtom am_schedulers_online = EAtom.intern("schedulers_online");
 	private static final EAtom am_break_ignored = EAtom.intern("break_ignored");
 	private static final EAtom am_threads = EAtom.intern("threads");
 	public static final EAtom am_process = EAtom.intern("process");
@@ -517,6 +518,8 @@ public class ErlProc {
 			return ERT.TRUE;
 		} else if (type == am_schedulers) {
 			return ERT.box(ERT.threadPoolSize());
+		} else if (type == am_schedulers_online) {
+			return ERT.box(Math.min(1, ERT.threadPoolSize()/2));
 		} else if (type == am_threads) {
 			return ERT.box(true);
 		} else if (type == am_thread_pool_size) {
