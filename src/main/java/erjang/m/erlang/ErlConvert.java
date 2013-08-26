@@ -256,6 +256,14 @@ public class ErlConvert {
 	}
 
 	@BIF
+	public static EObject bitstring_to_list(EObject obj) {
+		EBitString bin = obj.testBitString();
+		if (bin == null)
+			throw ERT.badarg(obj);
+		return bin.toList();
+	}
+
+	@BIF
 	public static EString binary_to_list(EObject obj, EObject start, EObject stop) {
 		EBinary bin = obj.testBinary();
 		ESmall s = start.testSmall();

@@ -624,6 +624,24 @@ public class EBitString extends EObject {
 		return res;
 	}
 
+	public EObject toList() {
+		EObject res = ERT.NIL;
+		int extra = (int) ((bitSize() % 8));
+		long pos;
+		if ((bitSize() % 8) == 0) {
+			pos = bitSize() - 8;
+		} else {
+			res = res.cons( substring(bitSize() - extra) );
+			pos = bitSize() - extra - 8;
+		}
+		
+		while (pos >= 0) {
+			res = res.cons(ERT.box(octetAt((int)(pos/8))));
+			pos -= 8;
+		}
+		return res;
+	}
+	
 	@Override
 	public String toString() {
 
