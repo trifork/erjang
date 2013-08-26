@@ -512,6 +512,8 @@ public abstract class ETuple extends EObject implements Cloneable /* , Indexed *
 		return false;
 	}
 
+	static final EAtom am_Elixir_Regex = EAtom.intern("Elixir.Regex");
+	
 	@Override
 	public Type emit_const(MethodVisitor fa) {
 
@@ -525,8 +527,15 @@ public abstract class ETuple extends EObject implements Cloneable /* , Indexed *
 		for (int i = 0; i < arity(); i++) {
 			fa.visitInsn(Opcodes.DUP);
 
-			((EObject) elm(i + 1)).emit_const(fa);
-
+			if (i == 1 && arity() == 5 && elm(1) == am_Elixir_Regex) {
+				elm(3).emit_const(fa);
+				elm(4).emit_const(fa);
+				fa.visitMethodInsn(Opcodes.INVOKESTATIC, "erjang/ERT", "compile_elixir_regex", 
+									"(Lerjang/EObject;Lerjang/EObject;)Lerjang/EObject;");
+			} else {
+				((EObject) elm(i + 1)).emit_const(fa);
+			}
+			
 			fa.visitFieldInsn(Opcodes.PUTFIELD, type.getInternalName(), "elem"
 					+ (i + 1), ETERM_TYPE.getDescriptor());
 		}

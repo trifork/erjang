@@ -1156,4 +1156,20 @@ public class ERT {
 			System.setProperty("erjang.path", runtime_info.erl_bootstrap_ebindir);
 		}
 	}
+	
+	public static EObject compile_elixir_regex(EObject patt, EObject opts) {
+		byte[] ops = opts.testBinary().getByteArray();
+		ECons l = ERT.NIL;
+		for (int i = 0; i < ops.length; i++) {
+			switch(ops[i]) {
+			case 'g': l = l.cons(EAtom.intern("global")); break;
+			case 'u': l = l.cons(EAtom.intern("unicode")); break;
+			case 'i': l = l.cons(EAtom.intern("caseless")); break;
+			case 'f': l = l.cons(EAtom.intern("firstline")); break;
+			default: throw new RuntimeException("unsupported regex option "+((char)ops[i])+" in "+patt);
+			}
+		}
+		EObject tup = erjang.m.re.Native.compile(patt, l);
+		return tup.testTuple().elm(2);
+	}
 }
