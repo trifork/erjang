@@ -117,7 +117,7 @@ public class ErlConvert {
 	@BIF
 	public static EBinary term_to_binary(EObject obj, EObject spec) {
 		int compression = 0;
-		int minor = 0;
+		int minor = 1;
 		
 		ESeq opts;
 		if ((opts=spec.testSeq()) == null) {
