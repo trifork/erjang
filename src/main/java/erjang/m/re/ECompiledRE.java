@@ -29,6 +29,7 @@ import erjang.ERT;
 import erjang.ETuple;
 import erjang.ETuple2;
 import erjang.ETuple4;
+import erjang.driver.IO;
 import erjang.m.re.Native.Options;
 
 /**
@@ -49,7 +50,8 @@ public class ECompiledRE extends ETuple4 {
 		this.elem1 = am_re_pattern;
 		this.elem2 = ERT.box(countGroups(patt.pattern()));
 		this.elem3 = options.isUnicode() ? ERT.box(1) : ERT.box(0);
-		this.elem4 = EBinary.EMPTY;
+		String p = "/" + patt.pattern();
+		this.elem4 = EBinary.make(p.getBytes(IO.UTF8));
 	}
 
 	private int countGroups(String pattern) {

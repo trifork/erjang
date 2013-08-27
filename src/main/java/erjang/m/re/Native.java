@@ -24,6 +24,7 @@ import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
@@ -43,10 +44,12 @@ import erjang.ESmall;
 import erjang.EString;
 import erjang.ETuple;
 import erjang.ETuple2;
+import erjang.ETuple4;
 import erjang.NotImplemented;
 import erjang.CharCollector.CollectingException;
 import erjang.CharCollector.InvalidElementException;
 import erjang.CharCollector.PartialDecodingException;
+import erjang.driver.IO;
 
 public class Native extends ENative {
 	
@@ -516,7 +519,19 @@ public class Native extends ENative {
 			throw ERT.badarg(obj1, obj2);
 		}
 
-		String pattern = o.decode(obj1);
+		String pattern;
+		ETuple4 tup = ETuple4.cast(obj1);
+		if (tup != null && tup.elem1 == ECompiledRE.am_re_pattern) {
+			EBinary b = tup.elem4.testBinary();
+			if (b != null && b.byteAt(0) == '/') {
+				byte[] raw = b.getByteArray();
+				pattern = new String(raw, 1, raw.length-1, IO.UTF8);
+			} else {
+				throw ERT.badarg(obj1, obj2);
+			}
+		} else {
+			pattern = o.decode(obj1);
+		}
 		
 		if (pattern == null) {
 			throw ERT.badarg(obj1, obj2);
