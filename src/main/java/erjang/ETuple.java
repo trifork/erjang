@@ -454,10 +454,16 @@ public abstract class ETuple extends EObject implements Cloneable /* , Indexed *
 
 	public static void dump(String name, byte[] data) {
 
+		name = name.replace('.'	, '/');
+		File out_dir;
+		
+		int idx = name.lastIndexOf('/');
+		if (idx == -1) {
+			out_dir = new File("target/woven");
+		} else {
 		String pkg = name.substring(0, name.lastIndexOf('/'));
-
-		File out_dir = new File(new File("target/woven"), pkg);
-
+		out_dir = new File(new File("target/woven"), pkg);
+		}
 		out_dir.mkdirs();
 
 		FileOutputStream fo;
