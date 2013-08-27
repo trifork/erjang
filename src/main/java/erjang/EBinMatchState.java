@@ -341,7 +341,7 @@ public class EBinMatchState extends EPseudoTerm {
 		}
 		
 		EInteger count;
-		if ((count = count_o.testInteger()) == null) {
+		if ((count = count_o.testInteger()) == null || count.intValue() < 0) {
 			
 			// throw badarg?
 			return null;
