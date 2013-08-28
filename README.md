@@ -1,5 +1,7 @@
 # Welcome to Erjang!  
 
+[![Build Status](https://travis-ci.org/trifork/erjang.png)](https://travis-ci.org/trifork/erjang)
+
 Erjang is a virtual machine for Erlang, which runs on Java(tm).  
 
 * For comments and questions please use the [Erjang Google Group](http://groups.google.com/group/erjang)
