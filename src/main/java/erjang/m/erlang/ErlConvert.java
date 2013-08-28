@@ -190,6 +190,35 @@ public class ErlConvert {
 	}
 
 	@BIF
+	public static EInteger list_to_integer(EObject obj, EObject radix) {
+		EString seq;
+		ESmall rdx;
+		if ((seq = obj.testString()) == null 
+				|| ((rdx = radix.testSmall()) == null))
+			throw ERT.badarg(obj, radix);
+
+		// remove leading +
+		if (!seq.isNil()) {
+		if (seq.head().equalsExactly(PLUS_SIGN)) {
+				seq = seq.tail().testString();
+				
+				if (seq == null) {
+					throw ERT.badarg(obj);
+				}
+			}
+		}		
+
+		try {
+			BigInteger val = new BigInteger(seq.stringValue(), rdx.value);
+			return ERT.box(val);
+			
+		} catch (NumberFormatException e) {
+			throw ERT.badarg(obj);
+		}
+		
+	}
+
+	@BIF
 	public static EInteger list_to_integer(EObject obj) {
 		EString seq;
 		if ((seq = obj.testString()) == null)
