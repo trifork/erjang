@@ -228,6 +228,8 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 	public static final int INET_REQ_IFGET = 22;
 	public static final int INET_REQ_IFSET = 23;
 	public static final int INET_REQ_SUBSCRIBE = 24;
+	public static final int INET_REQ_ACCEPT = 26;
+	public static final int INET_REQ_LISTEN = 27;
 	/* TCP requests */
 	public static final int TCP_REQ_ACCEPT = 40;
 	public static final int TCP_REQ_LISTEN = 41;
@@ -1510,9 +1512,13 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 		case INET_REQ_NAME:
 			return inet_name(buf);
 
+		case INET_REQ_LISTEN:
+			return tcp_listen(buf);
+
 		case TCP_REQ_LISTEN:
 			return tcp_listen(buf);
 
+		case INET_REQ_ACCEPT:
 		case TCP_REQ_ACCEPT:
 			return tcp_accept(caller, buf);
 
@@ -2908,10 +2914,11 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 	}
 
 	private ByteBuffer inet_open(ByteBuffer cmd) {
-		if (cmd.remaining() == 1) {
+		if (cmd.remaining() == 2) {
 			byte family = cmd.get();
+			byte type = cmd.get();
 
-			if (family == INET_AF_INET || family == INET_AF_INET6) {
+			if ((family == INET_AF_INET || family == INET_AF_INET6) && type == INET_TYPE_STREAM) {
 				return inet_ctl_open(decode_proto_family(family),
 						ProtocolType.STREAM);
 			}
@@ -2979,6 +2986,8 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 
 		if (state != INET_STATE_OPEN)
 			return ctl_xerror(EXBADSEQ);
+		
+		ProtocolFamily family = ProtocolFamily.fromOrdinal(cmd.get());
 
 		InetSocketAddress addr = inet_set_address(sfamily, cmd);
 		if (addr == null)
