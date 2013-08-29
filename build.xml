@@ -45,11 +45,11 @@
 		<mkdir dir="target/compiled" />
     </target>
 
-    <target name="untar">
+    <target name="untar_mini_release">
       <untar src="erl-r16b01-mini.tgz2" dest="." compression="bzip2" overwrite="false" />
     </target>
 
-    <target name="gen-test-classes" description="generate test classes based on a generic one" depends="create-dirs,untar">
+    <target name="gen-test-classes" description="generate test classes based on a generic one" depends="create-dirs,untar_mini_release">
       <echo message="generating test classes ===================" />
       <java classname="erjang.AllTests"
             failonerror="true"
@@ -185,7 +185,7 @@
 		</jar>
 	</target>
 
-	<target name="otpjar,untar">
+	<target name="otpjar" depends="untar_mini_release">
 	  <jar jarfile="otp-${erjang.otp.version}.jar" basedir="${erjang.otp.root}">
 	     <exclude name="**/*.so" />
 	     <exclude name="**/*.dll" />
