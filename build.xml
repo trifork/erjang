@@ -45,19 +45,23 @@
 		<mkdir dir="target/compiled" />
     </target>
 
-    <target name="gen-test-classes" description="generate test classes based on a generic one" depends="create-dirs">
-		<echo message="generating test classes ===================" />
-		<java classname="erjang.AllTests"
-              failonerror="true"
-              fork="true">
-            <jvmarg value="-Derjang.configfile=erjang_cfg.properties" />
-            <arg value="src/test/java/erjang/"/>
-            <classpath>
-                <pathelement location="target/test-classes" />
-            </classpath>
-            <classpath refid="erjang.classpath" />
-        </java>
-	</target>
+    <target name="untar">
+      <untar src="erl-r16b01-mini.tgz2" dest="." compression="bzip2" overwrite="false" />
+    </target>
+
+    <target name="gen-test-classes" description="generate test classes based on a generic one" depends="create-dirs,untar">
+      <echo message="generating test classes ===================" />
+      <java classname="erjang.AllTests"
+            failonerror="true"
+            fork="true">
+        <jvmarg value="-Derjang.configfile=erjang_cfg.properties" />
+        <arg value="src/test/java/erjang/"/>
+        <classpath>
+          <pathelement location="target/test-classes" />
+        </classpath>
+        <classpath refid="erjang.classpath" />
+      </java>
+    </target>
 
 	<target name="compile" depends="gen-interpreter,create-dirs">
 		<echo message="Compiling src ===================" />
@@ -181,7 +185,7 @@
 		</jar>
 	</target>
 
-	<target name="otpjar">
+	<target name="otpjar,untar">
 	  <jar jarfile="otp-${erjang.otp.version}.jar" basedir="${erjang.otp.root}">
 	     <exclude name="**/*.so" />
 	     <exclude name="**/*.dll" />

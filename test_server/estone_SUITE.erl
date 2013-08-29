@@ -43,6 +43,8 @@
 	 links/1,lproc/1,
 	 run_micro/3,p1/1,ppp/3,macro/2,micros/0]).
 
+-export([very_big/1]).
+
 
 -include("test_server.hrl").
 

@@ -1,15 +1,1 @@
-bin
-*.class
-*~
-erjang-*.jar
-.erj
-classes
 target
-*.beam
-src/main/java/erjang/beam/interpreter/Interpreter.java
-src/test/java/erjang/*_TEST.java
-otp-*.jar
-erjang.log*
-*.launch
-*.rej
-*.orig
