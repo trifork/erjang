@@ -1,12 +1,12 @@
 # Welcome to Erjang!  
 
-[![Build Status](https://travis-ci.org/trifork/erjang.png)](https://travis-ci.org/trifork/erjang)
+[![Build Status](https://travis-ci.org/trifork/erjang.png)](https://travis-ci.org/trifork/erjang)  Doesn't build on Travis-CI, because there's not Erlang + Java image.
 
 Erjang is a virtual machine for Erlang, which runs on Java(tm).  
 
 * For comments and questions please use the [Erjang Google Group](http://groups.google.com/group/erjang)
-* Check the [[README]] before you try to run this.
-* I am also posting updates at my blog, [Java Limit](http://javalimit.com)
+* Check the [README](https://github.com/trifork/erjang/wiki/README) before you try to run this.
+* I am also occasionally posting updates at my blog, [Java Limit](http://javalimit.com)
 
 ### How does it work?
 
@@ -25,25 +25,38 @@ Yes!  It does actually work.
 - Larger systems like `rabbitmq` and `riak` can boot; and works for basic cases ... but it's not ready for prime time yet.
 - Etc. etc.  Lot's of stuff work.
 
-<pre> krab$ ./ej 
-Eshell V5.7.5  (abort with ^G)
-1> erlang:display("hello world!").
-"hello world!"
-true
-2> q().
-krab$ 
-</pre>
+````erlang
+./ej
+** Erjang R16B01 **  [root:/Users/krab/erlang/r16b01] [erts:5.10.2] [unicode]
+Eshell V5.10.2  (abort with ^G)
+1> 2+3.
+5
+2> 1/0.
+** exception error: an error occurred when evaluating an arithmetic expression
+     in operator  '/'/2
+        called as 1 / 0
+     in call from apply/3 
+     in call from shell:apply_fun/3 (shell.erl, line 883)
+     in call from erl_eval:do_apply/6 (erl_eval.erl, line 573)
+     in call from shell:exprs/7 (shell.erl, line 674)
+     in call from shell:eval_exprs/7 (shell.erl, line 629)
+     in call from shell:eval_loop/3 (shell.erl, line 614)
+     in call from apply/3 
+3>
+````
 
-There are still things that doesn't work: a few BEAM instruction are missing some runtime support.  There are also BIFs missing, or only partially implemented; we're quite careful to throw @erjang.NotImplemented@ in BIFs (or branches thereof) which are not complete.  Many OTP modules need NIFs or linked-in drivers that are entirely missing or only partly implemented.
+There are still things that doesn't work: a few BEAM instruction are missing some runtime support.  There are also BIFs missing, or only partially implemented; we're quite careful to throw `erjang.NotImplemented` in BIFs (or branches thereof) which are not complete.  Many OTP modules need NIFs or linked-in drivers that are entirely missing or only partly implemented.
 
 ### Warnings
 
 When you run Erjang, you're likely to get warnings like this:
 
-<pre>Nov 10, 2010 5:15:56 PM erjang.EModuleManager$FunctionInfo$1 invoke
-INFO: MISSING mnesia_sup:prep_stop/1</pre>
+````
+Nov 10, 2010 5:15:56 PM erjang.EModuleManager$FunctionInfo$1 invoke
+INFO: MISSING mnesia_sup:prep_stop/1
+````
 
-Such warnings are perfectly OK so long as you don't see a crash that you think is related to that.  It's a hint that perhaps there is a missing BIF somewhere around this.  But it may also just be some optional callback API which has not been implemented.
+Such warnings are perfectly OK so long as you don't see a crash that you think is related to that.  It's a hint that perhaps there is a missing BIF somewhere around this.  But it may also just be some optional callback API which has not been implemented in the named erlang module.
 
 Until Erjang is a little more complete, I'd like to keep these warnings in there.
 
@@ -66,42 +79,25 @@ You should be able to do `ant jar`.  You need Perl version 5.10 or later, or you
 
 ## Configuring
 
-Adapt the file "erjang_cfg.properties" so that "erjang.otp.root"
-points to the location of OTP (it is assumed to be an installed OTP
-image, not just the source directory after running `make`; typical
-values are "/usr/lib/erlang" and "/usr/local/lib/erlang").
+The only configuration you really need is to have an plain-old erlang installed, then Erjang will pick up the beam files using the `$PATH` to locate the `erl` binary, and then infer location of the beam files from there.  For instance when booting `ej`
+
+````
+./ej
+** Erjang R16B01 **  [root:/Users/krab/erlang/r16b01] [erts:5.10.2] [unicode]
+Eshell V5.10.2  (abort with ^G)
+1> 
+````
+
+You can see that it picked up the root from `/Users/krab/erlang/r16b01`.  Alternatively you can pass an explicit `-root /some/path` to point erjang to a specific alternative erlang root.
+
 
 ## Running
 
-<pre>renaissance:erjang krab$ ./ej
-Eshell V5.7.5  (abort with ^G)
-1> 3+4.
-7
-2> 
-</pre>
-
-
-When running, it writes files named `~/.erjang/${module}-${CRC}.jar`.  These
-files are written in response to erlang:load_module(Module,Binary).
+When running, it writes files named `~/.erjang/${module}-${CRC}.jar`.  Each of these contain the JVM equivalent of an erlang module loaded into Erjang.
 
 These files also serve as a cache of files translated from beam -> jar.
-If something goes astray, it may help to remove the .erjang directory
+If something goes astray, it may help to remove the `~/.erjang` directory
 forcing Erjang to recompile next time it runs.
-
-### Prerequisites
-
-I have only been testing this with Erlang/OTP R13.  ERJANG DOES NOT WORK WITH R14 since it introduced an incompatible API to the efile driver. 
-
-If you run with a different erts (Erlang runtime system), then you can
-use the +e <ErtsVsn> flag, like this:
-
-   ./ej +e 5.7.5
-
-to run with erts-5.7.5; alternatively, set the "erjang.erts.version"
-property in the erjang_cfg.properties file.
-Under normal circumstances, however, this should not be necessary;
-Erjang should infer the correct version.
-
 
 
 Cheers!
