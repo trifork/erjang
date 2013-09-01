@@ -48,8 +48,23 @@ public abstract class TestUtil {
         return ej;
     }
 
-
+    // ./ej -noshell -noinput -eval '{ok, _} = c:c("triq/src/triq.erl", [{outdir,"triq/ebin"}]), erlang:halt(0).'
+    
 	public static void erl_compile(String fileName) throws Exception {
+		execGetOutput(new String[] {EJ_PRG,
+						"-noshell",
+						"-noinput",
+						"-root", OTP_HOME,
+					    "-pa", TRIQ_HOME + File.separator + "ebin",
+						"-eval",
+						"{ok,_} = c:c(\"" + fileName + "\", "
+						  + "[{outdir, \"" + TEST_BEAM_DIR + "\"}, "
+						  +  "{i, \""+ TRIQ_HOME + File.separator + "include" + "\"}]),"
+						  + "erlang:halt(0)."
+						});
+	}
+    
+	public static void erl_compile0(String fileName) throws Exception {
 		execGetOutput(new String[] {ERLC_PRG,
 					    "-o", TEST_BEAM_DIR,
 					    "-pa", TRIQ_HOME + File.separator + "ebin",
