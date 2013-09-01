@@ -1,1 +1,4 @@
 target
+*_TEST.java
+x86_64-apple-darwin12.4.0
+test-outputs

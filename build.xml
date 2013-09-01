@@ -160,6 +160,7 @@
       </classpath>
       <classpath refid="erjang.classpath" />
       <assertions><enable /></assertions>
+      <env key="OTPROOT" file="${erjang.otp.root}"/>
       <jvmarg value="-Xmx700m"/>
       <jvmarg value="-Xss50m"/>
       <jvmarg value="-XX:PermSize=128m"/>
