@@ -1,226 +1,228 @@
 <?xml version="1.0"?>
 <project name="erjang" default="all">
-	<property name="erjang.version" value="0.2" />
-	<property file="erjang_cfg.properties" />
+  <property name="erjang.version" value="0.2" />
+  <property file="erjang_cfg.properties" />
 
-	<path id="erjang.classpath">
-		<pathelement location="target/classes/" />
-		<pathelement location="lib/js.jar" />
-		<pathelement location="lib/kilim.jar" />
-		<pathelement location="lib/asm-all-4.1.jar" />
-		<pathelement location="lib/OtpErlang.jar" />
-		<pathelement location="lib/junit.jar" />
-		<pathelement location="lib/clj-ds.jar" />
-		<pathelement location="lib/antlr-3.2.jar" />
-		<pathelement path="${java.class.path}" />
-	</path>
-	<path id="erjang.testwovenclasspath">
-		<pathelement location="target/classes/" />
-		<pathelement location="target/test-classes/" />
-		<pathelement location="lib/kilim-0.6-krab.jar" />
-		<pathelement location="lib/OtpErlang.jar" />
-		<pathelement location="lib/clj-ds.jar" />
-		<pathelement location="lib/junit.jar" />
-		<pathelement location="lib/antlr-3.2.jar" />
-		<pathelement path="${java.class.path}" />
-	</path>
+  <path id="erjang.classpath">
+    <pathelement location="target/classes/" />
+    <pathelement location="lib/js.jar" />
+    <pathelement location="lib/kilim.jar" />
+    <pathelement location="lib/asm-all-4.1.jar" />
+    <pathelement location="lib/OtpErlang.jar" />
+    <pathelement location="lib/junit.jar" />
+    <pathelement location="lib/clj-ds.jar" />
+    <pathelement location="lib/antlr-3.2.jar" />
+    <pathelement path="${java.class.path}" />
+  </path>
+  <path id="erjang.testwovenclasspath">
+    <pathelement location="target/classes/" />
+    <pathelement location="target/test-classes/" />
+    <pathelement location="lib/kilim.jar" />
+    <pathelement location="lib/OtpErlang.jar" />
+    <pathelement location="lib/clj-ds.jar" />
+    <pathelement location="lib/junit.jar" />
+    <pathelement location="lib/antlr-3.2.jar" />
+    <pathelement path="${java.class.path}" />
+  </path>
 
-	<target name="all" depends="clean,weave,jar" />
-    <target name="all_with_test" depends="all,weavetest" />
-	<target name="test" depends="all_with_test,testwoven,perf_test" />
+  <target name="all" depends="clean,weave,jar" />
+  <target name="all_with_test" depends="all,weavetest" />
+  <target name="test" depends="all_with_test,testwoven,perf_test" />
 
-	<target name="gen-interpreter">
-		<echo message="generating interpreter code ===================" />
-		<exec dir="src/main/java/erjang/beam/interpreter" executable="perl" input="src/main/java/erjang/beam/interpreter/ops.spec" failonerror="yes">
-		    <arg value="-W"/>
-		    <arg value="ErjIG_Main.pl"/>
-		</exec>
-	</target>
+  <target name="gen-interpreter">
+    <echo message="generating interpreter code ===================" />
+    <exec dir="src/main/java/erjang/beam/interpreter"
+          executable="perl"
+          input="src/main/java/erjang/beam/interpreter/ops.spec" failonerror="yes">
+      <arg value="-W"/>
+      <arg value="ErjIG_Main.pl"/>
+    </exec>
+  </target>
 
-    <target name="create-dirs">
-        <mkdir dir="target" />
-		<mkdir dir="target/classes" />
-		<mkdir dir="target/test-classes" />
-		<mkdir dir="target/test-beam" />
-		<mkdir dir="target/compiled" />
-    </target>
+  <target name="create-dirs">
+    <mkdir dir="target" />
+    <mkdir dir="target/classes" />
+    <mkdir dir="target/test-classes" />
+    <mkdir dir="target/test-beam" />
+    <mkdir dir="target/compiled" />
+  </target>
 
-    <target name="untar_mini_release">
-      <untar src="erl-r16b01-mini.tgz2" dest="." compression="bzip2" overwrite="false" />
-    </target>
+  <target name="untar_mini_release">
+    <untar src="erl-r16b01-mini.tgz2" dest="." compression="bzip2" overwrite="false" />
+  </target>
 
-    <target name="gen-test-classes" description="generate test classes based on a generic one" depends="create-dirs,untar_mini_release">
-      <echo message="generating test classes ===================" />
-      <java classname="erjang.AllTests"
-            failonerror="true"
-            fork="true">
-        <jvmarg value="-Derjang.configfile=erjang_cfg.properties" />
-        <arg value="src/test/java/erjang/"/>
-        <classpath>
-          <pathelement location="target/test-classes" />
-        </classpath>
-        <classpath refid="erjang.classpath" />
-      </java>
-    </target>
+  <target name="gen-test-classes" description="generate test classes based on a generic one" depends="create-dirs,untar_mini_release">
+    <echo message="generating test classes ===================" />
+    <java classname="erjang.AllTests"
+          failonerror="true"
+          fork="true">
+      <jvmarg value="-Derjang.configfile=erjang_cfg.properties" />
+      <arg value="src/test/java/erjang/"/>
+      <classpath>
+        <pathelement location="target/test-classes" />
+      </classpath>
+      <classpath refid="erjang.classpath" />
+    </java>
+  </target>
 
-	<target name="compile" depends="gen-interpreter,create-dirs">
-		<echo message="Compiling src ===================" />
-		<javac debug="true" srcdir="src/main/java" destdir="target/classes" classpathref="erjang.classpath" deprecation="on" debuglevel="lines,vars,source" target="1.7" fork="true"/>
-	</target>
+  <target name="compile" depends="gen-interpreter,create-dirs">
+    <echo message="Compiling src ===================" />
+    <javac debug="true" srcdir="src/main/java" destdir="target/classes" classpathref="erjang.classpath" deprecation="on" debuglevel="lines,vars,source" target="1.7" fork="true"/>
+  </target>
 
-	<target name="testcompile" depends="compile">
-		<echo message="Compiling test ===================" />
-		<javac debug="true" srcdir="src/test/java" destdir="target/test-classes" debuglevel="lines,vars,source" target="1.7">
-            <classpath>
-                <pathelement location="target/test-classes" />
-            </classpath>
-            <classpath refid="erjang.classpath" />
-        </javac>
-	</target>
+  <target name="testcompile" depends="compile">
+    <echo message="Compiling test ===================" />
+    <javac debug="true" srcdir="src/test/java" destdir="target/test-classes" debuglevel="lines,vars,source" target="1.7">
+      <classpath>
+        <pathelement location="target/test-classes" />
+      </classpath>
+      <classpath refid="erjang.classpath" />
+    </javac>
+  </target>
 
-    <target name="gen-test-compile" depends="testcompile,gen-test-classes">
-		<echo message="Compiling generated test classes ===================" />
-		<javac debug="true" srcdir="src/test/java" destdir="target/test-classes" debuglevel="lines,vars,source" target="1.7">
-            <classpath>
-                <pathelement location="target/test-classes" />
-            </classpath>
-            <classpath refid="erjang.classpath" />
-        </javac>
-	</target>
+  <target name="gen-test-compile" depends="testcompile,gen-test-classes">
+    <echo message="Compiling generated test classes ===================" />
+    <javac debug="true" srcdir="src/test/java" destdir="target/test-classes" debuglevel="lines,vars,source" target="1.7">
+      <classpath>
+        <pathelement location="target/test-classes" />
+      </classpath>
+      <classpath refid="erjang.classpath" />
+    </javac>
+  </target>
 
-	<target name="weave" depends="compile">
-		<echo message="Weaving files ===================" />
-		<java classname="kilim.tools.Weaver" fork="yes">
-			<classpath refid="erjang.classpath" />
-			<assertions>
-				<enable />
-			</assertions>
-			<arg value="-d" />
-			<arg value="./target/classes" />
-			<arg line="./target/classes" />
-		</java>
-    </target>
+  <target name="weave" depends="compile">
+    <echo message="Weaving files ===================" />
+    <java classname="kilim.tools.Weaver" fork="yes">
+      <classpath refid="erjang.classpath" />
+      <assertions>
+	<enable />
+      </assertions>
+      <arg value="-d" />
+      <arg value="./target/classes" />
+      <arg line="./target/classes" />
+    </java>
+  </target>
 
-    <target name="weavetest" depends="gen-test-compile">
-		<echo message="Weaving test classes ==============" />
-		<java classname="kilim.tools.Weaver" fork="yes">
-            <classpath refid="erjang.classpath" />
-			<assertions>
-				<enable />
-			</assertions>
-			<arg value="-d" />
-			<arg value="./target/test-classes" />
-			<arg line="./target/test-classes" />
-		</java>
-	</target>
+  <target name="weavetest" depends="gen-test-compile">
+    <echo message="Weaving test classes ==============" />
+    <java classname="kilim.tools.Weaver" fork="yes">
+      <classpath refid="erjang.classpath" />
+      <assertions>
+	<enable />
+      </assertions>
+      <arg value="-d" />
+      <arg value="./target/test-classes" />
+      <arg line="./target/test-classes" />
+    </java>
+  </target>
 
-	<target name="clean">
-		<echo message="deleting files ===================" />
-		<delete>
-			<fileset defaultexcludes="no" dir="." includes="*~,#*,foo,bar,x,y" />
-		</delete>
-		<delete dir="./target" />
-		<delete dir="./.erj" />
-        <delete>
-            <fileset dir="src/test/java/erjang" includes="**/*_TEST.java" />
-        </delete>
-	</target>
+  <target name="clean">
+    <echo message="deleting files ===================" />
+    <delete>
+      <fileset defaultexcludes="no" dir="." includes="*~,#*,foo,bar,x,y" />
+    </delete>
+    <delete dir="./target" />
+    <delete dir="./.erj" />
+    <delete>
+      <fileset dir="src/test/java/erjang" includes="**/*_TEST.java" />
+    </delete>
+  </target>
 
-	<!-- This runs those tests depend on generated classes in testclasses-->
-	<target name="testwoven" depends="weavetest">
-	  <echo message="Testing Tasks ======================" />
-          <mkdir dir="test-outputs" />
-	  <junit fork="yes" showoutput="yes" printsummary="true">
-	    <formatter type="xml"/> <!-- For CI server use. -->
-<!-- <formatter type="brief" usefile="false"/> -->
-	    <classpath>
-              <pathelement location="target/test-classes" />
-              <pathelement location="target/test-classes/generated/classes" />
-            </classpath>
-            <classpath refid="erjang.classpath" />
-			<assertions><enable /></assertions>
-			<jvmarg value="-Xmx700m"/>
-            <jvmarg value="-Xss50m"/>
-            <jvmarg value="-XX:PermSize=128m"/>
-            <jvmarg value="-XX:MaxPermSize=700m"/>
-            <jvmarg value="-Derjang.configfile=erjang_cfg.properties" />
-	        <batchtest todir="test-outputs">
-                <fileset dir="target/test-classes" includes="**/*_TEST.class" />
-                <!-- <fileset dir="target/test-classes" includes="**/float_tests_erl_TEST.class" />-->
-            </batchtest>
-	  </junit>
-	</target>
+  <!-- This runs those tests depend on generated classes in testclasses-->
+  <target name="testwoven" depends="weavetest">
+    <echo message="Testing Tasks ======================" />
+    <mkdir dir="test-outputs" />
+    <junit fork="yes" showoutput="yes" printsummary="true">
+      <formatter type="xml"/> <!-- For CI server use. -->
+      <!-- <formatter type="brief" usefile="false"/> -->
+      <classpath>
+        <pathelement location="target/test-classes" />
+        <pathelement location="target/test-classes/generated/classes" />
+      </classpath>
+      <classpath refid="erjang.classpath" />
+      <assertions><enable /></assertions>
+      <jvmarg value="-Xmx700m"/>
+      <jvmarg value="-Xss50m"/>
+      <jvmarg value="-XX:PermSize=128m"/>
+      <jvmarg value="-XX:MaxPermSize=700m"/>
+      <jvmarg value="-Derjang.configfile=erjang_cfg.properties" />
+      <batchtest todir="test-outputs">
+        <fileset dir="target/test-classes" includes="**/*_TEST.class" />
+        <!-- <fileset dir="target/test-classes" includes="**/float_tests_erl_TEST.class" />-->
+      </batchtest>
+    </junit>
+  </target>
 
-	<target name="perf_test" depends="estone_test,boot_stat_test"/>
-	<target name="estone_test">
-		<exec dir="." executable="bash" failonerror="no">
-		    <arg value="src/test/shell/run-estone.sh"/>
-		    <arg value="test-outputs/estone"/>
-		</exec>
-	</target>
-	<target name="boot_stat_test">
-		<exec dir="." executable="bash" failonerror="no">
-		    <arg value="src/test/shell/run-boot.sh"/>
-		    <arg value="test-outputs/boot-stats"/>
-		</exec>
-	</target>
+  <target name="perf_test" depends="estone_test,boot_stat_test"/>
+  <target name="estone_test">
+    <exec dir="." executable="bash" failonerror="no">
+      <arg value="src/test/shell/run-estone.sh"/>
+      <arg value="test-outputs/estone"/>
+    </exec>
+  </target>
+  <target name="boot_stat_test">
+    <exec dir="." executable="bash" failonerror="no">
+      <arg value="src/test/shell/run-boot.sh"/>
+      <arg value="test-outputs/boot-stats"/>
+    </exec>
+  </target>
 
 
-	<target name="jar" description="generate the distribution" depends="clean,weave">
-        <echo message="Packaging ======================" />
-		<copy file="LICENSE" todir="classes/erjang" />
-		<copy file="NOTICE" todir="classes/erjang" />
-		<copy file="erjang_logo4.png" todir="classes/erjang" />
-		<jar jarfile="erjang-${erjang.version}.jar" basedir="target/classes">
-			<zipgroupfileset dir="lib" includes="*.jar">
-				<exclude name="junit.jar" />
-				<exclude name="asm-all-2.2.3.jar" />
-			</zipgroupfileset>
-			<exclude name="erjang/test/**" />
-			<exclude name="erjang/examples/**" />
-			<exclude name="erjang/bench/**" />
-			<manifest>
-				<attribute name="Main-Class" value="erjang.Main" />
-			</manifest>
-		</jar>
-	</target>
+  <target name="jar" description="generate the distribution" depends="clean,weave">
+    <echo message="Packaging ======================" />
+    <copy file="LICENSE" todir="classes/erjang" />
+    <copy file="NOTICE" todir="classes/erjang" />
+    <copy file="erjang_logo4.png" todir="classes/erjang" />
+    <jar jarfile="erjang-${erjang.version}.jar" basedir="target/classes">
+      <zipgroupfileset dir="lib" includes="*.jar">
+	<exclude name="junit.jar" />
+	<exclude name="asm-all-2.2.3.jar" />
+      </zipgroupfileset>
+      <exclude name="erjang/test/**" />
+      <exclude name="erjang/examples/**" />
+      <exclude name="erjang/bench/**" />
+      <manifest>
+	<attribute name="Main-Class" value="erjang.Main" />
+      </manifest>
+    </jar>
+  </target>
 
-	<target name="otpjar" depends="untar_mini_release">
-	  <jar jarfile="otp-${erjang.otp.version}.jar" basedir="${erjang.otp.root}">
-	     <exclude name="**/*.so" />
-	     <exclude name="**/*.dll" />
-	     <exclude name="**/*.a" />
-	     <exclude name="**/*.erl" />
-	     <exclude name="**/bin/beam" />
-	     <exclude name="**/bin/beam.smp" />
-	     <exclude name="lib/megaco-*/**" />
-	     <exclude name="lib/wx-*/**" />
-	     <exclude name="lib/hipe-*/**" />
-	     <exclude name="lib/jinterface-*/**" />
-	     <exclude name="lib/erl_interface-*/**" />
-	     <exclude name="lib/ic-*/java_src/**" />
-	     <exclude name="usr/include/**" />
-	     <exclude name="**/examples/**" />
-	  </jar>
-	</target>
+  <target name="otpjar" depends="untar_mini_release">
+    <jar jarfile="otp-${erjang.otp.version}.jar" basedir="${erjang.otp.root}">
+      <exclude name="**/*.so" />
+      <exclude name="**/*.dll" />
+      <exclude name="**/*.a" />
+      <exclude name="**/*.erl" />
+      <exclude name="**/bin/beam" />
+      <exclude name="**/bin/beam.smp" />
+      <exclude name="lib/megaco-*/**" />
+      <exclude name="lib/wx-*/**" />
+      <exclude name="lib/hipe-*/**" />
+      <exclude name="lib/jinterface-*/**" />
+      <exclude name="lib/erl_interface-*/**" />
+      <exclude name="lib/ic-*/java_src/**" />
+      <exclude name="usr/include/**" />
+      <exclude name="**/examples/**" />
+    </jar>
+  </target>
 
-	<target name="alljar" depends="jar,otpjar">
-	  <jar jarfile="erjang-${erjang.version}-otp-${erjang.otp.version}.jar" basedir="${erjang.otp.root}">
-	     <!-- include all of erjang -->
-	     <zipgroupfileset dir="." includes="erjang-${erjang.version}.jar" />
-	     <!-- include all of OTP -->
-	     <zipgroupfileset dir="." includes="otp-${erjang.otp.version}.jar" />
+  <target name="alljar" depends="jar,otpjar">
+    <jar jarfile="erjang-${erjang.version}-otp-${erjang.otp.version}.jar" basedir="${erjang.otp.root}">
+      <!-- include all of erjang -->
+      <zipgroupfileset dir="." includes="erjang-${erjang.version}.jar" />
+      <!-- include all of OTP -->
+      <zipgroupfileset dir="." includes="otp-${erjang.otp.version}.jar" />
 
-	     <manifest>
-	       <attribute name="Main-Class" value="erjang.Main" />
-	     </manifest>
-	  </jar>
-	</target>
+      <manifest>
+	<attribute name="Main-Class" value="erjang.Main" />
+      </manifest>
+    </jar>
+  </target>
 
-	<target name="javadoc" description="generate Javadoc documentation">
-		<javadoc destdir="target/doc">
-			<fileset dir="src"><include name="**/*.java"/></fileset>
-		</javadoc>
-	</target>
+  <target name="javadoc" description="generate Javadoc documentation">
+    <javadoc destdir="target/doc">
+      <fileset dir="src"><include name="**/*.java"/></fileset>
+    </javadoc>
+  </target>
 
 </project>
