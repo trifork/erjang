@@ -1,5 +1,7 @@
 #!/bin/bash
 
+echo "OTPROOT is $OTPROOT"
+
 OUTPUT_BASE="$1" # A base name
 
 BASE_DIR=`dirname "$BASH_SOURCE"`"/../../.."

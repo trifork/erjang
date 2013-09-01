@@ -25,6 +25,25 @@
     <pathelement path="${java.class.path}" />
   </path>
 
+  <!-- set the operating system test properties -->
+  <condition property="isMac">
+    <os family="mac" />
+  </condition>
+
+  <condition property="isWindows">
+    <os family="windows" />
+  </condition>
+
+  <condition property="isLinux">
+    <and>
+      <os family="unix" />
+
+      <not>
+        <os family="mac"/>
+      </not>
+    </and>
+  </condition>
+
   <target name="all" depends="clean,weave,jar" />
   <target name="all_with_test" depends="all,weavetest" />
   <target name="test" depends="all_with_test,testwoven" />
@@ -51,12 +70,12 @@
     <untar src="erl-r16b01-mini.tgz2" dest="." compression="bzip2" overwrite="false" />
   </target>
 
-  <target name="gen-test-classes" description="generate test classes based on a generic one" depends="create-dirs,untar_mini_release">
+  <target name="gen-test-classes" description="generate test classes based on a generic one" depends="create-dirs,ensure_otp">
     <echo message="generating test classes ===================" />
     <java classname="erjang.AllTests"
           failonerror="true"
           fork="true">
-      <jvmarg value="-Derjang.configfile=erjang_cfg.properties" />
+      <jvmarg value="-Derjang.otp.root=${erjang.otp.root}" />
       <arg value="src/test/java/erjang/"/>
       <classpath>
         <pathelement location="target/test-classes" />
@@ -129,7 +148,7 @@
   </target>
 
   <!-- This runs those tests depend on generated classes in testclasses-->
-  <target name="testwoven" depends="weavetest">
+  <target name="testwoven" depends="weavetest,ensure_otp">
     <echo message="Testing Tasks ======================" />
     <mkdir dir="test-outputs" />
     <junit fork="yes" showoutput="yes" printsummary="true">
@@ -145,7 +164,7 @@
       <jvmarg value="-Xss50m"/>
       <jvmarg value="-XX:PermSize=128m"/>
       <jvmarg value="-XX:MaxPermSize=700m"/>
-      <jvmarg value="-Derjang.configfile=erjang_cfg.properties" />
+      <jvmarg value="-Derjang.otp.root=${erjang.otp.root}"/>
       <batchtest todir="test-outputs">
         <fileset dir="target/test-classes" includes="**/*_TEST.class" />
         <!-- <fileset dir="target/test-classes" includes="**/float_tests_erl_TEST.class" />-->
@@ -153,17 +172,80 @@
     </junit>
   </target>
 
+  <target name="arch_linux" if="isLinux">
+    <property name="otp_arch" value="i686-pc-linux-gnu" />
+  </target>
+
+  <target name="arch_macos" if="isMac">
+    <property name="otp_arch" value="x86_64-apple-darwin12.4.0" />
+  </target>
+
+  <target name="arch" depends="arch_linux,arch_macos" />
+
+  <target name="test_otp">
+    <available property="has_otp" value="true"
+               file="${erjang.otp.root}"
+               type="dir" />
+    <available property="otp_downloaded"
+               file="otp_r16b01.tgz"
+               type="file" />
+  </target>
+
+
+  <target name="download_otp_unix" if="isLinux" depends="test_otp" unless="otp_downloaded">
+    <echo message="Downloading Erlang/OTP for Linux..."/>
+    <exec dir="." executable="curl">
+      <arg value="-s"/>
+      <arg value="-o"/>
+      <arg value="otp_r16b01.tgz"/>
+      <arg value="https://dl.dropboxusercontent.com/u/1360473/otp_r16b01_linux.tgz"/>
+    </exec>
+  </target>
+
+  <target name="download_otp_macos" if="isMac" depends="test_otp" unless="otp_downloaded">
+    <echo message="Downloading Erlang/OTP for MacOS X..."/>
+    <exec dir="." executable="curl">
+      <arg value="-s"/>
+      <arg value="-o"/>
+      <arg value="otp_r16b01.tgz"/>
+      <arg value="https://dl.dropboxusercontent.com/u/1360473/otp_r16b01_macos.tgz"/>
+    </exec>
+  </target>
+
+  <target name="ensure_otp"
+          depends="test_otp,arch,download_otp_unix,download_otp_macos"
+          unless="has_otp">
+
+        <exec dir="." executable="tar">
+          <arg value="xzpf" />
+          <arg value="otp_r16b01.tgz" />
+        </exec>
+
+        <property name="erjang.otp.root" value="${basedir}/${otp_arch}" />
+
+        <exec dir="." executable="${erjang.otp.root}/Install">
+          <arg value="-minimal" />
+          <arg value="${erjang.otp.root}" />
+        </exec>
+
+        <echo message="Did install erlang in ${erjang.otp.root}" />
+  </target>
+
+
   <target name="perf_test" depends="estone_test,boot_stat_test"/>
-  <target name="estone_test">
+  <target name="estone_test" depends="ensure_otp">
+    <echo message="running estone with root=${erjang.otp.root}" />
     <exec dir="." executable="bash" failonerror="no">
       <arg value="src/test/shell/run-estone.sh"/>
       <arg value="test-outputs/estone"/>
+      <env key="OTPROOT" file="${erjang.otp.root}"/>
     </exec>
   </target>
   <target name="boot_stat_test">
     <exec dir="." executable="bash" failonerror="no">
       <arg value="src/test/shell/run-boot.sh"/>
       <arg value="test-outputs/boot-stats"/>
+      <env key="OTPROOT" file="${erjang.otp.root}"/>
     </exec>
   </target>
 
