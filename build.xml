@@ -230,6 +230,16 @@
           <arg value="${erjang.otp.root}" />
         </exec>
 
+        <exec dir="." executable="ls">
+          <arg value="-l" />
+          <arg value="${erjang.otp.root}" />
+        </exec>
+
+        <exec dir="." executable="ls">
+          <arg value="-l" />
+          <arg value="${erjang.otp.root}/bin" />
+        </exec>
+
         <echo message="Did install erlang in ${erjang.otp.root}" />
   </target>
 
