@@ -405,7 +405,7 @@ public abstract class EAbstractNode {
 
 	
 	
-	public static EAbstractNode get_or_connect(ETask proc, EAtom n) throws Pausable {
+	public static EAbstractNode get_or_connect(ETask<?> proc, EAtom n) throws Pausable {
 		EAbstractNode res = EPeer.get(n);
 		if (res == null && (proc instanceof EProc)) {			
 			if (ErlDist.net_kernel__connect__1.invoke((EProc) proc, new EObject[] { n }) == ERT.TRUE) {

@@ -60,7 +60,7 @@ public class BuiltInFunction {
 					Type.getArgumentTypes(m));
 		isVirtual = !Modifier.isStatic(m.getModifiers());
 		boolean p = false;
-		for (Class c : m.getExceptionTypes()) {
+		for (Class<?> c : m.getExceptionTypes()) {
 			if (Pausable.class.equals(c)) {
 				p = true;
 				break;

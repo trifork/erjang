@@ -192,7 +192,7 @@ public class ETableBag extends ETable {
 			return Native.am_$end_of_table;
 		} else {
 			ISeq entseq = map.seq();
-			IMapEntry ent = (IMapEntry) entseq.first();
+			IMapEntry<EObject, EObject> ent = (IMapEntry<EObject, EObject>) entseq.first();
 			return (EObject) ent.getKey();
 		}
 	}

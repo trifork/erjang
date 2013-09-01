@@ -119,7 +119,7 @@ public class ExceptionHandler implements BeamExceptionHandler {
 		final Set<BeamExceptionHandler> exhs;
 		public Ambiguous(ExceptionHandler src1, ExceptionHandler src2) {
 			super(-1, null);
-			exhs = new HashSet();
+			exhs = new HashSet<BeamExceptionHandler>();
 			add_to_set(exhs, src1);
 			add_to_set(exhs, src2);
 		}
@@ -129,7 +129,7 @@ public class ExceptionHandler implements BeamExceptionHandler {
 		}
 
 		public static Ambiguous make(ExceptionHandler src1, ExceptionHandler src2) {
-			HashSet<BeamExceptionHandler> exhs = new HashSet();
+			HashSet<BeamExceptionHandler> exhs = new HashSet<BeamExceptionHandler>();
 			add_to_set(exhs, src1);
 			add_to_set(exhs, src2);
 			Ambiguous a;

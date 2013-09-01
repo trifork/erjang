@@ -211,7 +211,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 		public int max_stack;
 
-		public HashSet<Integer> all_xregs = new HashSet();
+		public HashSet<Integer> all_xregs = new HashSet<Integer>();
 
 		public int max_freg;
 

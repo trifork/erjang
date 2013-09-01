@@ -186,10 +186,10 @@ public abstract class ETuple extends EObject implements Cloneable /* , Indexed *
 	 */
 
 	@SuppressWarnings("unchecked")
-	static public Class get_tuple_class(int num_cells) {
+	static public Class<? extends ETuple> get_tuple_class(int num_cells) {
 
 		try {
-			return Class.forName(ETuple.class.getName() + num_cells);
+			return (Class<? extends ETuple>) Class.forName(ETuple.class.getName() + num_cells);
 		} catch (ClassNotFoundException e) {
 			// make it!
 		}

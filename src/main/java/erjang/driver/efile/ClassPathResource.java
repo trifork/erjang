@@ -40,12 +40,12 @@ public class ClassPathResource {
 			return null;
 		
 		String fileName = getResourceName(name);
-		InputStream resource = ClassPathResource.class.getClassLoader()
-				.getResourceAsStream(fileName);
+                ClassLoader loader = ClassPathResource.class.getClassLoader();
+		InputStream resource = loader.getResourceAsStream(fileName);
 		if (resource == null) {
-			// fallback: check context class loader
-			resource = Thread.currentThread().getContextClassLoader()
-				.getResourceAsStream(fileName);
+                    // fallback: check context class loader
+                    loader = Thread.currentThread().getContextClassLoader();
+                    resource = loader.getResourceAsStream(fileName);
 		}
 
 		if (resource == null) {

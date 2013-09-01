@@ -52,7 +52,7 @@ abstract class Converter<T> {
  */
 public class OtpConverter {
 
-	static Map<Class, Converter> conv = new HashMap<Class, Converter>();
+	static Map<? super Class<?>, ? super Converter<?>> conv = new HashMap<Class, Converter>();
 
 	static <T> void add(Class<T> c, Converter<T> co) {
 		conv.put(c, co);
@@ -125,7 +125,7 @@ public class OtpConverter {
 	public static EObject convert(OtpErlangObject value) {
 
 		Class<? extends OtpErlangObject> c = value.getClass();
-		Converter cc = conv.get(c);
+		Converter<OtpErlangObject> cc = (Converter<OtpErlangObject>) conv.get(c);
 		if (cc == null) {
 			throw new Error("cannot convert " + c);
 		} else {

@@ -218,7 +218,7 @@ public class JavaObject extends EPseudoTerm {
 			return EAtom.existing_atom(s);
 		}
 		if (real_object instanceof Class) {
-			return EAtom.intern(((Class) real_object).getName());
+			return EAtom.intern(((Class<?>) real_object).getName());
 		}
 		return null;
 	}

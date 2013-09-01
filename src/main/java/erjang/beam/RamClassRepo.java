@@ -27,7 +27,7 @@ import java.util.Collection;
  * 
  */
 public class RamClassRepo implements ClassRepo {
-    private final HashMap<String, byte[]> map = new HashMap();
+    private final HashMap<String, byte[]> map = new HashMap<String, byte[]>();
 
 
     public RamClassRepo() {

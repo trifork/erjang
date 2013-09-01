@@ -36,7 +36,7 @@ public abstract class ETimerTask extends TimerTask implements ExitHook {
 	// for now, we will live with the risk of having a 
 	// blocking send in a timer...
 
-	static ConcurrentHashMap<ERef, ETimerTask> timer_refs = new ConcurrentHashMap();
+	static ConcurrentHashMap<ERef, ETimerTask> timer_refs = new ConcurrentHashMap<ERef, ETimerTask>();
 	static Timer send_timer = new Timer();
 	
 	final ERef ref;

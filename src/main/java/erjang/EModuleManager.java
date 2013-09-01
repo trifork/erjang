@@ -138,7 +138,7 @@ public class EModuleManager {
 								log.log(Level.FINER, "resolving"+fun);
 							}
 
-							Class c = null;
+							Class<?> c = null;
 							try {
 								c = Class.forName(fun.module.getName());
 							} catch (ClassNotFoundException e) {

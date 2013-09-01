@@ -27,7 +27,7 @@ import erjang.EString;
 /** The collection of known drivers.
  */
 public class Drivers {
-    public static final HashMap<String, EDriver> drivers = new HashMap();
+    public static final HashMap<String, EDriver> drivers = new HashMap<String, EDriver>();
 
     public static synchronized void register(EDriver driver) {
 		drivers.put(driver.driverName(), driver);

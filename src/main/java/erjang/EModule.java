@@ -84,13 +84,13 @@ public abstract class EModule {
 					+ module_name(), e);
 		}
 
-		for (Class nat : en.getNativeClasses()) {
+		for (Class<?> nat : en.getNativeClasses()) {
 			process_native_annotations(nat);
 		}
 
     }
 
-        protected void process_native_annotations(Class nat) throws Exception {
+        protected void process_native_annotations(Class<?> nat) throws Exception {
 		for (Field field : nat.getDeclaredFields()) {
 			if (!Modifier.isStatic(field.getModifiers()))
 				continue;

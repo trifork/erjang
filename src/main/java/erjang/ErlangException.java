@@ -238,7 +238,7 @@ public abstract class ErlangException extends RuntimeException {
 			mname.equals("invoke"))
 			return null;
 
-		Class clazz = null;
+		Class<?> clazz = null;
 		try {
 			clazz = Class.forName(cname);
 		} catch (ClassNotFoundException e) {
@@ -369,6 +369,11 @@ public abstract class ErlangException extends RuntimeException {
 		@Override
 		public int hashCode() { // Shouldn't be called.
 			return System.identityHashCode(this);
+		}
+		
+		@Override
+		public String toString() {
+			return ErlangException.this.toString();
 		}
 	}
 }
