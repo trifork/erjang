@@ -1741,7 +1741,7 @@ public class ErlBif {
 		// yield?
 		Task.yield();
 		Task.getCurrentTask().checkKill();
-		return ERT.box(1);
+		return ERT.TRUE;
 	}
 	
 	@BIF
