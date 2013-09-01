@@ -82,6 +82,7 @@ public class ErlBif {
 	private static Logger log = Logger.getLogger("erlang");
 	private static EAtom am_wall_clock = EAtom.intern("wall_clock");
 	private static EAtom am_reductions = EAtom.intern("reductions");
+	private static EAtom am_exact_reductions = EAtom.intern("exact_reductions");
 	private static EAtom am_garbage_collection = EAtom.intern("garbage_collection");
 	private static EAtom am_runtime = EAtom.intern("runtime");
 	private static EAtom am_nif_error = EAtom.intern("nif_error");
@@ -657,6 +658,7 @@ public class ErlBif {
 	// TODO: figure out if this needs to be stored in the current process
 	static long last_wall_clock = wall_clock0;
 	static long last_reductions = 0;
+	static long last_exact_reductions = 0;
 	static long last_runtime = 0;
 
 	@BIF
@@ -669,10 +671,17 @@ public class ErlBif {
 			last_wall_clock = now;
 			return ETuple.make(ERT.box(since_epoch), ERT.box(since_last));
 
-		} else if (spec == am_reductions) {
+		} else if (spec == am_reductions || spec == am_exact_reductions) {
 			long current_reds = proc.reds;
 			long since_last = current_reds - last_reductions;
 			last_reductions = current_reds;
+			
+			return new ETuple2(ERT.box(current_reds),ERT.box(since_last));			
+
+		} else if (spec == am_exact_reductions) {
+			long current_reds = proc.reds;
+			long since_last = current_reds - last_reductions;
+			last_exact_reductions = current_reds;
 			
 			return new ETuple2(ERT.box(current_reds),ERT.box(since_last));			
 
