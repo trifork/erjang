@@ -650,7 +650,7 @@ public final class EProc extends ETask<EInternalPID> {
 	}
 	
 	
-	private	static ConcurrentHashMap<Integer,EProc> all_tasks 
+	public static ConcurrentHashMap<Integer,EProc> all_tasks 
 		= new ConcurrentHashMap<Integer,EProc> ();
 	
 	/**

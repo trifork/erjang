@@ -672,7 +672,7 @@ public class ErlBif {
 			last_wall_clock = now;
 			return ETuple.make(ERT.box(since_epoch), ERT.box(since_last));
 
-		} else if (spec == am_reductions || spec == am_exact_reductions) {
+		} else if (spec == am_reductions) {
 			long current_reds = proc.reds;
 			long since_last = current_reds - last_reductions;
 			last_reductions = current_reds;
@@ -680,8 +680,12 @@ public class ErlBif {
 			return new ETuple2(ERT.box(current_reds),ERT.box(since_last));			
 
 		} else if (spec == am_exact_reductions) {
-			long current_reds = proc.reds;
-			long since_last = current_reds - last_reductions;
+			
+			long current_reds = 0L;
+			for (EProc p : EProc.all_tasks.values()) {
+				current_reds += p.reds;
+			}
+			long since_last = current_reds - last_exact_reductions;
 			last_exact_reductions = current_reds;
 			
 			return new ETuple2(ERT.box(current_reds),ERT.box(since_last));			
