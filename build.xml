@@ -46,7 +46,7 @@
 
   <target name="all" depends="clean,weave,jar" />
   <target name="all_with_test" depends="all,weavetest" />
-  <target name="test" depends="all_with_test,testwoven" />
+  <target name="test" depends="all_with_test,testwoven,perf_test" />
 
   <target name="gen-interpreter">
     <echo message="generating interpreter code ===================" />

@@ -47,9 +47,15 @@ server() ->
 call(Node,Mod,Fun,Args) ->
     case rpc:call(Node, Mod,Fun,Args) of
 	{badrpc,{'EXIT',{Reason,[FirstTrace|_]}}} ->
-	    {badrpc, {'EXIT',{Reason,[FirstTrace]}}};
+	    {badrpc, {'EXIT',{Reason,[simplify_trace(FirstTrace)]}}};
 	Value -> Value
     end.    
+
+simplify_trace({Mod,Fun,Arity,_Attributes}) ->
+    {Mod, Fun, Arity, []};
+simplify_trace(Any) ->
+    Any.
+
 
 %% ===========================================
 %% Run Mod:Fun(Args) on beam

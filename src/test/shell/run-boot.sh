@@ -10,6 +10,7 @@ OUTPUT_REL_FILE="$OUTPUT_BASE-relative.csv"
 EJ_EXE="$BASE_DIR/ej"
 
 CACHE_DIR="$BASE_DIR/boot-test-cache"
+mkdir $CACHE_DIR
 
 # Special cache location:
 export ERJ_CACHE_DIR="$CACHE_DIR"
