@@ -165,6 +165,7 @@
       <jvmarg value="-XX:PermSize=128m"/>
       <jvmarg value="-XX:MaxPermSize=700m"/>
       <jvmarg value="-Derjang.otp.root=${erjang.otp.root}"/>
+      <jvmarg value="-Derjang.triq.root=triq"/>
       <batchtest todir="test-outputs">
         <fileset dir="target/test-classes" includes="**/*_TEST.class" />
         <!-- <fileset dir="target/test-classes" includes="**/float_tests_erl_TEST.class" />-->

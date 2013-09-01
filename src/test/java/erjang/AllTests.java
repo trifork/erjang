@@ -102,9 +102,9 @@ public class AllTests {
             throw new IllegalArgumentException("need at least one command line argument (path)");
         }
 
-        Map<File, List<File>> testsOTP = new HashMap<File, List<File>>();
-		find_files(testsOTP, new File(OTP_HOME), ".beam");
-        generateTestClasses(args[0], testsOTP, TestCompileFile.class);
+//        Map<File, List<File>> testsOTP = new HashMap<File, List<File>>();
+//		find_files(testsOTP, new File(OTP_HOME), ".beam");
+//        generateTestClasses(args[0], testsOTP, TestCompileFile.class);
 
         Map<File, List<File>> testsDet = new HashMap<File, List<File>>();
 		find_files(testsDet, new File("src/test/erl/deterministic"), ".erl");
