@@ -21,6 +21,7 @@ package erjang.m.erlang;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
+import java.lang.management.ThreadMXBean;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
@@ -687,15 +688,19 @@ public class ErlBif {
 
 		} else if (spec == am_runtime) {
 			
-			// TODO: should return cpu time spent; can do?
-			
-			RuntimeMXBean b = ManagementFactory.getRuntimeMXBean();
-			
-			long current_runtime = b.getUptime();
-			long since_last = current_runtime - last_runtime;
+			ThreadMXBean b = ManagementFactory.getThreadMXBean();
+			long[] ts = b.getAllThreadIds();
+			long current_runtime = 0;
+			for (int i = 0; i < ts.length; i++) {
+				long thread_time = b.getThreadCpuTime(ts[i]);
+				if (thread_time != -1) { // it died in the mean time...
+					current_runtime += thread_time;
+				}
+			}
+			long since_last = (current_runtime - last_runtime) / 1000000;
 			last_runtime = current_runtime;
 			
-			return new ETuple2(ERT.box(current_runtime),ERT.box(since_last));	
+			return new ETuple2(ERT.box(current_runtime / 1000000),ERT.box(since_last));	
 			
 		} else if (spec == am_garbage_collection) {
 			
