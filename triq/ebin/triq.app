@@ -1,0 +1,10 @@
+{application,triq,
+             [{description,"Trifork QuickCheck"},
+              {vsn,"0.1.0"},
+              {registered,[]},
+              {applications,[kernel,stdlib]},
+              {build_dependencies,[]},
+              {env,[]},
+              {modules,[triq,triq_app,triq_autoexport,triq_dom,triq_expr,
+                        triq_fsm,triq_fsm_stub,triq_statem,triq_statem_fsm,
+                        triq_sup]}]}.
