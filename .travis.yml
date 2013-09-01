@@ -1,2 +1,3 @@
 language: java
 after_script: cat test-outputs/TEST-erjang.arith_guard_tests_erl_TEST.xml
+before_script: uname -a
