@@ -32,7 +32,7 @@ import junit.framework.Assert;
 import junit.framework.AssertionFailedError;
 
 /**
- * @author Erik Søe Sørensen <eriksoe@gmail.com>
+ * @author Erik Soe Soerensen <eriksoe@gmail.com>
  */
 public class TestCaseWithErlangNodeAccess extends AbstractErjangTestCase {
 	static final String RUN_WRAPPER_HOME = "src/test/erl";
@@ -70,7 +70,7 @@ public class TestCaseWithErlangNodeAccess extends AbstractErjangTestCase {
 		result.startTest(this);
 		String rawOutput = null;
 		try {
-			String hostName = java.net.InetAddress.getLocalHost().getCanonicalHostName();
+			String hostName = "127.0.0.1";
 			TestUtil.erl_compile(RUN_WRAPPER_HOME + File.separator +"run_wrapper.erl");
 			TestUtil.erl_compile(file.getAbsolutePath());
 			Process erl_process = TestUtil.startErlProcess(ERL_NODE_NAME, hostName);
