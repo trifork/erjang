@@ -124,6 +124,7 @@ public class EBinList extends ECons {
 	@Override
 	public ECons cons(EObject h) {
 		ESmall sm;
+		ESeq seqTail;
 		if ((sm = h.testSmall()) != null && sm.value >= 0 && sm.value < 256) {
 
 			byte[] res_data = data;
@@ -143,6 +144,8 @@ public class EBinList extends ECons {
 			res_data[--res_off] = (byte) sm.value;
 			return new EBinList(res_data, res_off, res_len, tail, res_data==data);
 
+		} else if ((seqTail=this.testSeq()) != null) {
+			return new EList(h, seqTail);
 		} else {
 			return new EPair(h, this);
 		}
