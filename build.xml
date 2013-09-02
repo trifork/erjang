@@ -175,7 +175,7 @@
   </target>
 
   <target name="arch_linux" if="isLinux">
-    <property name="otp_arch" value="i686-pc-linux-gnu" />
+    <property name="otp_arch" value="x86_64-unknown-linux-gnu" />
   </target>
 
   <target name="arch_macos" if="isMac">
