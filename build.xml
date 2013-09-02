@@ -167,7 +167,7 @@
       <jvmarg value="-XX:PermSize=128m"/>
       <jvmarg value="-XX:MaxPermSize=700m"/>
       <jvmarg value="-Derjang.otp.root=${erjang.otp.root}"/>
-      <jvmarg value="-Derjang.triq.root=triq"/>
+      <jvmarg value="-Derjang.triq.root=${erjang.triq.root}"/>
       <batchtest todir="test-outputs">
         <fileset dir="target/test-classes" includes="**/*_TEST.class" />
         <!-- <fileset dir="target/test-classes" includes="**/float_tests_erl_TEST.class" />-->
@@ -192,6 +192,7 @@
     <available property="otp_downloaded"
                file="otp_r16b01.tgz"
                type="file" />
+    <property name="erjang.triq.root" value="${basedir}/triq" />
   </target>
 
 

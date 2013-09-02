@@ -36,6 +36,11 @@ report(_, Result) ->
 strip({'EXIT', {EX, [{M,F,A} |_Rest]}}) ->
     {'EXIT', {EX, [{M,F,A}]}};
 
+strip([{line,_}|Rest]) ->
+    strip(Rest);
+strip([{file,_}|Rest]) ->
+    strip(Rest);
+
 strip([H|T]) ->
     [strip(H) | strip(T)];
 
