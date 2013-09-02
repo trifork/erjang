@@ -50,7 +50,7 @@ public abstract class TestUtil {
 
     // ./ej -noshell -noinput -eval '{ok, _} = c:c("triq/src/triq.erl", [{outdir,"triq/ebin"}]), erlang:halt(0).'
     
-	public static void erl_compile(String fileName) throws Exception {
+	public static void erl_compile0(String fileName) throws Exception {
 		execGetOutput(new String[] {EJ_PRG,
 						"-noshell",
 						"-noinput",
@@ -64,7 +64,7 @@ public abstract class TestUtil {
 						});
 	}
     
-	public static void erl_compile0(String fileName) throws Exception {
+	public static void erl_compile(String fileName) throws Exception {
 		execGetOutput(new String[] {ERLC_PRG,
 					    "-o", TEST_BEAM_DIR,
 					    "-pa", TRIQ_HOME + File.separator + "ebin",
