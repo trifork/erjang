@@ -170,6 +170,8 @@
       <jvmarg value="-Derjang.triq.root=${erjang.triq.root}"/>
       <batchtest todir="test-outputs">
         <fileset dir="target/test-classes" includes="**/*_TEST.class">
+          <exclude name="**/arith_tests_erl_TEST.class" />
+          <exclude name="**/arith_guard_tests_erl_TEST.class" />
           <exclude name="**/utf_tests_erl_TEST.class" />
           <exclude name="**/ets_test_erl_TEST.class" />
           <exclude name="**/erjang_test_erl_TEST.class" />
