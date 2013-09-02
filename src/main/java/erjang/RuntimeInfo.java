@@ -110,6 +110,10 @@ public class RuntimeInfo {
 			}
 		}
 		
+		if (erl_rootdir == null) {
+			return null;
+		}
+		
 		if (isNullOrEmpty(erts_version)) {
 			erts_version = guess_erts_version(erl_rootdir);
 		}

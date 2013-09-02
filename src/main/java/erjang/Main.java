@@ -58,6 +58,14 @@ public class Main {
 		}
 		
 		RuntimeInfo runtimeInfo = RuntimeInfo.setup(erts_version, otp_version, cmd_line_root);
+		
+		
+		if (runtimeInfo == null) {
+			System.err.println("Erjang cannot find it's BEAM files.");
+			System.err.println("- You can set OTPROOT, pass -root /path/to/erlang, or put 'erl' in your PATH.");
+			System.exit(1);
+		}
+		
 		try {
 			// verify we have a working configuration
 			runtimeInfo.verify();
