@@ -22,7 +22,7 @@ test() ->
 	      ?Catch(A band B), ?Catch(A bor B), ?Catch(A bxor B),
 	      if B >  200->skipped; true -> ?Catch(A bsl B) end,
               %% known bug in Erlang
-              if B < -200 orelse B == 123456789123456789123456789 ->skipped; true -> ?Check(A bsr B) end};
+              if B < -200 orelse B == 123456789123456789123456789 ->skipped; true -> ?Catch(A bsr B) end};
 	true -> {binop, A, B, skipped}
      end
      || A <- Operands,
