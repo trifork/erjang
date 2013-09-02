@@ -86,12 +86,12 @@
 
   <target name="compile" depends="gen-interpreter,create-dirs">
     <echo message="Compiling src ===================" />
-    <javac debug="true" srcdir="src/main/java" destdir="target/classes" classpathref="erjang.classpath" deprecation="on" debuglevel="lines,vars,source" target="1.7" fork="true"/>
+    <javac includeantruntime="false" debug="true" srcdir="src/main/java" destdir="target/classes" classpathref="erjang.classpath" deprecation="on" debuglevel="lines,vars,source" target="1.7" fork="true"/>
   </target>
 
   <target name="testcompile" depends="compile">
     <echo message="Compiling test ===================" />
-    <javac debug="true" srcdir="src/test/java" destdir="target/test-classes" debuglevel="lines,vars,source" target="1.7">
+    <javac includeantruntime="false" debug="true" srcdir="src/test/java" destdir="target/test-classes" debuglevel="lines,vars,source" target="1.7">
       <classpath>
         <pathelement location="target/test-classes" />
       </classpath>
@@ -101,7 +101,7 @@
 
   <target name="gen-test-compile" depends="testcompile,gen-test-classes">
     <echo message="Compiling generated test classes ===================" />
-    <javac debug="true" srcdir="src/test/java" destdir="target/test-classes" debuglevel="lines,vars,source" target="1.7">
+    <javac includeantruntime="false" debug="true" srcdir="src/test/java" destdir="target/test-classes" debuglevel="lines,vars,source" target="1.7">
       <classpath>
         <pathelement location="target/test-classes" />
       </classpath>
@@ -152,6 +152,7 @@
     <echo message="Testing Tasks ======================" />
     <mkdir dir="test-outputs" />
     <junit fork="yes" showoutput="yes" printsummary="true">
+      <formatter type="plain" usefile="false" />
       <formatter type="xml"/> <!-- For CI server use. -->
       <!-- <formatter type="brief" usefile="false"/> -->
       <classpath>
@@ -228,16 +229,6 @@
         <exec dir="." executable="${erjang.otp.root}/Install">
           <arg value="-minimal" />
           <arg value="${erjang.otp.root}" />
-        </exec>
-
-        <exec dir="." executable="ls">
-          <arg value="-l" />
-          <arg value="${erjang.otp.root}" />
-        </exec>
-
-        <exec dir="." executable="ls">
-          <arg value="-l" />
-          <arg value="${erjang.otp.root}/bin" />
         </exec>
 
         <echo message="Did install erlang in ${erjang.otp.root}" />
