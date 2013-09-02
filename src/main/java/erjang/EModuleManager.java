@@ -48,6 +48,7 @@ public class EModuleManager {
 	static private Map<EAtom, ModuleInfo> infos = new ConcurrentHashMap<EAtom, ModuleInfo>();
 
 	static FunctionInfo undefined_function = null;
+	static EAtom am_prep_stop = EAtom.intern("prep_stop");
 
 	static {
 		FunID uf = new FunID("error_handler", "undefined_function", 3);
@@ -133,7 +134,8 @@ public class EModuleManager {
 
 							/** this is just some debugging info to help understand downstream errors */
 							if (get_module_info(fun.module).is_loaded()) {
-								log.log(Level.INFO, "MISSING "+fun);
+								if (fun.function != am_prep_stop)
+									log.log(Level.INFO, "MISSING "+fun);
 							} else {
 								log.log(Level.FINER, "resolving"+fun);
 							}

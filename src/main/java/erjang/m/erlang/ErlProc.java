@@ -290,6 +290,7 @@ public class ErlProc {
 			}
 		}
 		
+		/*
 		// TODO: create crash file
 		if (message != null) {
 			log.severe("halting system: " + message);
@@ -297,6 +298,7 @@ public class ErlProc {
 		else {
 			log.info("halting system");
 		}
+		*/
 		ERT.shutdown();
 		
 		throw new ErlangHalt();
