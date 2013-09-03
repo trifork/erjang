@@ -145,6 +145,7 @@ public final class ESmall extends EInteger {
 		return false;
 	}
 
+	@Override
 	public int intValue() {
 		return value;
 	}

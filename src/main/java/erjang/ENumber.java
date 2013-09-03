@@ -44,6 +44,7 @@ public abstract class ENumber extends EObject {
 
 	public abstract double doubleValue();
 	public abstract int intValue();
+	public abstract long longValue();
 
 	public static ENumber parseInt(String str) {
         try {     

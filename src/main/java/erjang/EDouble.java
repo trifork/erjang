@@ -85,6 +85,11 @@ public class EDouble extends ENumber {
 		return (int) value;
 	}
 
+	@Override
+	public long longValue() {
+		return (long) value;
+	}
+
 	public static EObject parseDouble(String string) {
 		return new EDouble(Double.parseDouble(string));
 	}

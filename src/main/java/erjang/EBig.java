@@ -95,6 +95,11 @@ public final class EBig extends EInteger {
 	}
 
 	@Override
+	public long longValue() {
+		return value.longValue();
+	}
+
+	@Override
 	public String toString() {
 		return value.toString();
 	}
