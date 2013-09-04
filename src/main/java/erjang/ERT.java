@@ -975,16 +975,6 @@ public class ERT {
 		throw new ErlangError(am_function_clause, args);
 	}
 
-	static void load_module(EAtom module) throws IOException {
-		EModuleLoader.find_and_load_module(module.getName());
-	}
-
-	public static void load_module(EAtom module, EBinary bin)
-			throws IOException
-	{
-		EModuleLoader.load_module(module.getName(), bin);
-	}
-
 	/**
 	 * @param command
 	 * @return

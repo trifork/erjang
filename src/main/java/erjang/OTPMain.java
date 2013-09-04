@@ -27,6 +27,7 @@ import java.util.logging.FileHandler;
 import java.util.logging.Handler;
 import java.util.logging.Logger;
 
+import kilim.Pausable;
 import erjang.driver.EDriver;
 import erjang.driver.efile.ClassPathResource;
 import erjang.driver.efile.EFile;
@@ -63,12 +64,12 @@ public class OTPMain {
 					if (bin == null) {
 						throw new FileNotFoundException(beam_path);
 					}
-		    		EModuleLoader.load_module(m, bin);
+		    		EModuleLoader.load_module0(m, bin);
 				}
 	    		
 	    	} else {    	
 		    	for (String m : modules) {
-					ERT.load_module(EAtom.intern(m));
+		    		EModuleLoader.find_and_load_module0(m);
 				}
 	    	}
     	}

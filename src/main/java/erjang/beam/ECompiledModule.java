@@ -52,7 +52,7 @@ public abstract class ECompiledModule extends EModule {
 			 * Annotation[] ann = field.getAnnotations(); for (Annotation a :
 			 * ann) { System.err.println(" -> "+field.getName()+" : "+a); }
 			 */
-
+/*
 			Import imp = field.getAnnotation(Import.class);
 			if (imp != null) {
 				FunID f = new FunID(imp);
@@ -64,7 +64,7 @@ public abstract class ECompiledModule extends EModule {
 
 				continue;
 			}
-
+*/
 			Export exp = field.getAnnotation(Export.class);
 			if (exp != null) {
 				field.setAccessible(true);

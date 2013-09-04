@@ -174,5 +174,8 @@ public abstract class EModule {
 		}
 	}
 
+	public void on_load(EProc proc) {
+	}
+
 
 }

@@ -46,6 +46,7 @@ import erjang.ECons;
 import erjang.EDouble;
 import erjang.EFun;
 import erjang.EInteger;
+import erjang.EModuleLoader;
 import erjang.EModuleManager;
 import erjang.ENode;
 import erjang.ENumber;
@@ -1503,12 +1504,12 @@ public class ErlBif {
 	}
 
 	@BIF
-	public static ETuple2 load_module(EProc proc, EAtom mod, EBinary bin) {
+	public static ETuple2 load_module(EProc proc, EAtom mod, EBinary bin) throws Pausable {
 		if (mod == null || bin == null)
 			throw ERT.badarg(mod, bin);
 
 		try {
-			ERT.load_module(mod, bin);
+			EModuleLoader.load_module(proc, mod.getName(), bin);
 		} catch (ErlangException e) {
 			log.log(Level.FINE, "cannot load module", e);
 			return new ETuple2(ERT.am_error, e.reason());

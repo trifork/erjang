@@ -32,6 +32,7 @@ public class ModuleAnalyzer implements ModuleVisitor {
 		protected boolean is_called_locally_in_tail_position;
 		protected boolean is_anon_fun;
 		protected boolean is_called_locally_in_nontail_position;
+		protected boolean call_on_load;
 
 		boolean mustHaveFun() {
 			return exported 
@@ -183,6 +184,10 @@ public class ModuleAnalyzer implements ModuleVisitor {
 
 						BeamOpcode op;
 						switch (op = insn.opcode()) {
+
+						case on_load:
+							self.call_on_load = true;
+							break;
 
 						case send: {
 							if (log.isLoggable(Level.FINE) && !self.is_pausable) {

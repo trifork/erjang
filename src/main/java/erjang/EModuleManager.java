@@ -158,7 +158,7 @@ public class EModuleManager {
 							if (uf == null) {
 								if (!module_loaded(fun.module)) {
 									try {
-										EModuleLoader.find_and_load_module(fun.module.getName());
+										EModuleLoader.find_and_load_module(proc, fun.module.getName());
 									} catch (IOException e) {
 										// we don't report this separately; it ends up causing an undefined below...
 									}

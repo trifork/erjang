@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import kilim.Pausable;
 import erjang.beam.BeamFileData;
 import erjang.beam.BeamLoader;
 import erjang.beam.EUtil;
@@ -44,27 +45,37 @@ import erjang.util.Progress;
  *  - Beam parsing: From raw beam data to beam representation (BeamFileData).
  *  - Module creation: From beam representation to executable module (EModule).
  */
-class EModuleLoader {
+public class EModuleLoader {
 	static final Logger log = Logger.getLogger("erjang.module.load");
 
 	final static BeamLoader beamParser = new ErjangBeamDisLoader();
 
 	/*==================== API ====================*/
 
-	public static EModule find_and_load_module(String moduleName) throws IOException {
+	public static EModule find_and_load_module(EProc proc, String moduleName) throws Pausable, IOException {
 		File input = findBeamFile(moduleName);
 		if (input == null)
 			throw new FileNotFoundException(moduleName); // Is this the right error message?
-		return load_module(moduleName, input);
+		return load_module(proc, moduleName, EUtil.readFile(input));
 	}
 
-	public static EModule load_module(String moduleName, File beamFile) throws IOException {
-		return load_module(moduleName, EUtil.readFile(beamFile));
+	public static EModule find_and_load_module0(String moduleName) throws IOException {
+		File input = findBeamFile(moduleName);
+		if (input == null)
+			throw new FileNotFoundException(moduleName); // Is this the right error message?
+		return load_module0(moduleName, EUtil.readFile(input));
 	}
+
 
 	static long acc_int_load = 0;
 	static long acc_load = 0;
-	public static EModule load_module(String moduleName, EBinary beamBin) throws IOException {
+	public static EModule load_module(EProc proc, String moduleName, EBinary beamBin) throws IOException, Pausable {
+		EModule mod = load_module0(moduleName, beamBin);
+		mod.on_load(proc);
+		return mod;
+	}
+		
+	public static EModule load_module0(String moduleName, EBinary beamBin) throws IOException {
 		// This is where the module creation mode is selected.
 		boolean use_interpreter = ErjangConfig.getBoolean("erjang.beam.option.i");
 		long before = System.currentTimeMillis();

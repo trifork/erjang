@@ -86,6 +86,7 @@ import erjang.FunID;
 import erjang.Import;
 import erjang.LocalFunID;
 import erjang.Module;
+import erjang.OnLoad;
 import erjang.beam.Arg.Kind;
 import erjang.beam.ModuleAnalyzer.FunInfo;
 import erjang.beam.repr.ExtFun;
@@ -192,7 +193,10 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 	static final Type MODULE_ANN_TYPE = Type.getType(Module.class);
 	static final Type IMPORT_ANN_TYPE = Type.getType(Import.class);
 	static final Type EXPORT_ANN_TYPE = Type.getType(Export.class);
+	static final Type ONLOAD_ANN_TYPE = Type.getType(OnLoad.class);
 	private final ClassRepo classRepo;
+
+	private boolean uses_on_load;
 
 	/**
 	 * @param classRepo
@@ -210,6 +214,17 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 	 */
 	@Override
 	public void visitModule(EAtom name) {
+
+		// If any of the contained functions uses on_load, then we
+		// need to do module-local calls differently, because they
+		// may need to be replaced by a NIF call.
+		if (funInfos != null) {
+			for (FunInfo fi : funInfos.values()) {
+				if (fi.call_on_load == true) {
+					this.uses_on_load = true;
+				}
+			}
+		}
 
 		this.module_name = name;
 
@@ -627,6 +642,14 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			}
 
 			mv.visitMaxs(20, scratch_reg + 3);
+			
+			// mark this function to be called "on load"
+			if (funInfo.call_on_load) {
+				AnnotationVisitor an = mv.visitAnnotation(ONLOAD_ANN_TYPE
+						.getDescriptor(), true);
+				an.visitEnd();
+			}
+			
 			mv.visitEnd();
 
 			int arity_plus = arity;
