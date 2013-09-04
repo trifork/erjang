@@ -79,4 +79,7 @@ void initialize_jnif_atom(JavaVM* vm, JNIEnv *je);
 // jnif_tuple.cc
 void initialize_jnif_tuple(JavaVM* vm, JNIEnv *je);
 
+// jnif_list.cc
+void initialize_jnif_list(JavaVM* vm, JNIEnv *je);
+
 #endif

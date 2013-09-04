@@ -23,6 +23,38 @@ JNIEXPORT jobject JNICALL Java_erjang_NIF_jni_1invoke
 JNIEXPORT jlong JNICALL Java_erjang_NIF_jni_1load
   (JNIEnv *, jclass, jstring, jobject);
 
+/*
+ * Class:     erjang_NIF
+ * Method:    jni_module_name
+ * Signature: (J)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_erjang_NIF_jni_1module_1name
+  (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     erjang_NIF
+ * Method:    jni_fun_count
+ * Signature: (J)I
+ */
+JNIEXPORT jint JNICALL Java_erjang_NIF_jni_1fun_1count
+  (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     erjang_NIF
+ * Method:    jni_fun_name
+ * Signature: (JI)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_erjang_NIF_jni_1fun_1name
+  (JNIEnv *, jclass, jlong, jint);
+
+/*
+ * Class:     erjang_NIF
+ * Method:    jni_fun_arity
+ * Signature: (JI)I
+ */
+JNIEXPORT jint JNICALL Java_erjang_NIF_jni_1fun_1arity
+  (JNIEnv *, jclass, jlong, jint);
+
 #ifdef __cplusplus
 }
 #endif

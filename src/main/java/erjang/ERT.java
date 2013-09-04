@@ -261,6 +261,10 @@ public class ERT {
 		return ESmall.make(res.intValue());
 	}
 
+	public static EInteger box_parse(String str) {
+		return box(new BigInteger(str));
+	}
+	
 	/**
 	 * @param b
 	 * @return
