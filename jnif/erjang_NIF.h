@@ -21,7 +21,7 @@ JNIEXPORT jobject JNICALL Java_erjang_NIF_jni_1invoke
  * Signature: (Ljava/lang/String;Lerjang/EObject;)J
  */
 JNIEXPORT jlong JNICALL Java_erjang_NIF_jni_1load
-  (JNIEnv *, jobject, jstring, jobject);
+  (JNIEnv *, jclass, jstring, jobject);
 
 #ifdef __cplusplus
 }

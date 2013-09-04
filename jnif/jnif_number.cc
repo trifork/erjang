@@ -24,7 +24,7 @@ void initialize_jnif_number(JavaVM* vm, JNIEnv *je)
                                               "()I");
   m_enumber__longValue      = je->GetMethodID(enumber_class,
                                               "longValue",
-                                              "()L");
+                                              "()J");
 
 }
 

@@ -13,10 +13,10 @@ void initialize_jnif_string(JavaVM* vm, JNIEnv *je)
                                               "testString",
                                               "()Lerjang/EString;");
 
-  jclass estring_class      = je->FindClass("erjang/Estring");
+  jclass estring_class      = je->FindClass("erjang/EString");
   m_estring__stringValue    = je->GetMethodID(estring_class,
                                               "stringValue",
-                                              "()java/lang/String");
+                                              "()Ljava/lang/String;");
 
 }
 

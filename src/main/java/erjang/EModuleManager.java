@@ -35,7 +35,6 @@ import java.util.logging.Logger;
 
 import erjang.beam.Compiler;
 import erjang.m.java.JavaObject;
-
 import kilim.Pausable;
 
 /**
@@ -411,6 +410,26 @@ public class EModuleManager {
 			old_map.put((((long)fun_id.index) << 32) | (long)fun_id.uniq , maker);
 		}
 
+		public void bind_nif(FunID id, EFunHandler handler) throws Exception {
+			
+			ClassLoader loader = this.getClass().getClassLoader();
+			if (is_loaded()) {
+				loader = resident.getModuleClassLoader();
+			}
+			
+            EFun fun = EFun.get_fun_with_handler(
+            		id.module.getName(), 
+            		id.function.getName(), 
+            		id.arity, 
+            		handler, 
+            		loader);
+            
+            FunctionInfo fi = get_function_info(id);
+            
+            fi.add_export(resident, id, fun);
+            
+		}
+
 	}
 
 	public static void add_import(FunID fun, FunctionBinder ref) throws Exception {
@@ -453,7 +472,10 @@ public class EModuleManager {
 		get_module_info(lambda_id.module).register(lambda_id, new EClassEFunMaker(fun));
 	}
 
-
+	public static void bind_nif(FunID id, EFunHandler handler) throws Exception
+	{
+		get_module_info(id.module).bind_nif(id, handler);
+	}
 
 	/**
 	 * @param start

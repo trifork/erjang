@@ -44,9 +44,9 @@ void initialize_jnif_resource(JavaVM* vm, JNIEnv *je)
   eresource_class = je->FindClass("erjang/EResource");
   eresource_class = (jclass)je->NewGlobalRef(eresource_class);
 
-  m_eresource__make  = je->GetStaticMethodID(eresource_class, "make", "(L)Lerjang/EResource;");
+  m_eresource__make  = je->GetStaticMethodID(eresource_class, "make", "(J)Lerjang/EResource;");
 
-  f_eresource__handle  = je->GetFieldID(eresource_class, "handle", "L");
+  f_eresource__handle  = je->GetFieldID(eresource_class, "handle", "J");
 }
 
 

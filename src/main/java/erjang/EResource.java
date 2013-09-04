@@ -3,8 +3,14 @@ package erjang;
 public class EResource extends EPseudoTerm {
 
 	long handle;
-	long type;
-	long cleanup_callback_fn;
+
+	private EResource(long handle) {
+		this.handle = handle;
+	}
+	
+	private static EResource make(long handle) {
+		return new EResource(handle);
+	}
 	
 	@Override
 	public int hashCode() {

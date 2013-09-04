@@ -177,6 +177,9 @@ public final class EAtom extends EObject implements CharSequence {
 		return res;
 	}
 
+	public static EAtom existing_atom_or_null(String name) {
+		return interns.get(name);
+	}
 
 	@Override
 	public char charAt(int index) {

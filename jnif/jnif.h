@@ -73,4 +73,10 @@ void initialize_jnif_string(JavaVM* vm, JNIEnv *je);
 // jnif_number.cc
 void initialize_jnif_number(JavaVM* vm, JNIEnv *je);
 
+// jnif_atom.cc
+void initialize_jnif_atom(JavaVM* vm, JNIEnv *je);
+
+// jnif_tuple.cc
+void initialize_jnif_tuple(JavaVM* vm, JNIEnv *je);
+
 #endif

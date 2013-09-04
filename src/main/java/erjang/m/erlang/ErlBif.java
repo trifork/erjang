@@ -68,6 +68,7 @@ import erjang.ErlangRaise;
 import erjang.ErlangThrow;
 import erjang.FunID;
 import erjang.Module;
+import erjang.NIF;
 import erjang.NotImplemented;
 import erjang.BIF.Type;
 import erjang.m.java.JavaObject;
@@ -88,6 +89,7 @@ public class ErlBif {
 	private static EAtom am_runtime = EAtom.intern("runtime");
 	private static EAtom am_nif_error = EAtom.intern("nif_error");
 	private static final EAtom am_run_queue = EAtom.intern("run_queue");
+	private static EAtom am_load_failed = EAtom.intern("load_failed");
 	
 	@BIF
 	static EObject apply(EProc proc, EObject fun, EObject args) throws Pausable {
@@ -1463,6 +1465,22 @@ public class ErlBif {
 	@BIF(name="is_port", type=Type.GUARD)
 	public static EAtom is_port$g(EObject obj) {
 		return ERT.guard(obj.testPort() != null);
+	}
+	
+	@BIF
+	public static EObject load_nif(EObject path, EObject info)
+	{
+		EString str = path.testString();
+		if (str == null) { throw ERT.badarg(path, info); }
+		
+		NIF nif = NIF.load(str.stringValue(), info);
+		if (nif == null) {
+			return new ETuple2(ERT.am_error, 
+						new ETuple2(am_load_failed, ERT.am_undefined)
+					);
+		} else {
+			return ERT.am_ok;
+		}
 	}
 	
 	@BIF

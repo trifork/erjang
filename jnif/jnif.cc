@@ -1,20 +1,18 @@
 
-extern "C" {
-#include "erl_nif.h"
-};
-
 #include "jnif.h"
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 #include <list>
 #include <dlfcn.h>
+#include <errno.h>
+
+#include "erjang_NIF.h"
 
 /** global data */
 
 static JavaVM *jvm;
 
-static jmethodID m_eobject__testAtom;
 static jmethodID m_eobject__testReference;
 
 static jclass    ERT_class;
@@ -29,13 +27,6 @@ void *enif_alloc(size_t size)
 void enif_free(void *data)
 {
   free(data);
-}
-
-int enif_is_atom(ErlNifEnv* ee, ERL_NIF_TERM term)
-{
-  JNIEnv *je = ee->je;
-  jobject ok = je->CallObjectMethod((jobject)term, m_eobject__testAtom);
-  return ok != JVM_NULL;
 }
 
 int enif_is_ref(ErlNifEnv* ee, ERL_NIF_TERM term)
@@ -58,23 +49,26 @@ int enif_is_exception(ErlNifEnv *env, ERL_NIF_TERM term)
 
 typedef ErlNifEntry* (*nif_init_t)();
 
-
-extern "C"
-jlong Java_erjang_NIF_load__java_lang_String_2 (JNIEnv* je, jobject self, jstring library)
+JNIEXPORT jlong JNICALL Java_erjang_NIF_jni_1load
+  (JNIEnv * je, jclass self, jstring library, jobject term)
 {
   jboolean isCopy;
   const char *path = je->GetStringUTFChars(library, &isCopy);
   if (path == NULL)
     return 0;
-  void * so_handle = dlopen( path, RTLD_LAZY | RTLD_FIRST);
-  je->ReleaseStringUTFChars(library, path);
+  void * so_handle = dlopen( path, /* RTLD_LAZY | */ RTLD_FIRST);
 
   if (so_handle == NULL) {
+    fprintf(stderr, "did not load %s (err: %i)\n", path, errno);
+    je->ReleaseStringUTFChars(library, path);
     return 0;
   }
 
+  je->ReleaseStringUTFChars(library, path);
+
   void *address =  dlsym( so_handle, "nif_init" );
   if (address == NULL) {
+    fprintf(stderr, "did not find nif_init (err: %i)\n", errno);
     dlclose(so_handle);
     return 0L;
   }
@@ -92,8 +86,15 @@ jlong Java_erjang_NIF_load__java_lang_String_2 (JNIEnv* je, jobject self, jstrin
   // durin onload are retained until we unload.
   jnif_init_env(mod->global, je, mod);
   if (entry->load != 0) {
-    int success = (*entry->load)( mod->global, &mod->priv_data, 0);
-    if (!success) {
+    int success = (*entry->load)( mod->global,
+                                  &mod->priv_data,
+                                  J2E(term));
+
+    if (success != 0) {
+      fprintf(stderr, "%s:load returned %i\n",
+              mod->entry->name,
+              success);
+
       dlclose( so_handle );
       jnif_release_env(mod->global);
       delete mod;
@@ -105,9 +106,68 @@ jlong Java_erjang_NIF_load__java_lang_String_2 (JNIEnv* je, jobject self, jstrin
   return reinterpret_cast<jlong>(mod);
 }
 
+/*
+ * Class:     erjang_NIF
+ * Method:    jni_module_name
+ * Signature: (J)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_erjang_NIF_jni_1module_1name
+  (JNIEnv * je, jclass self, jlong mod_ptr)
+{
+    struct jnif_module *mod =
+    reinterpret_cast<struct jnif_module *>(mod_ptr);
 
-extern "C"
-jobject Java_erjang_NIF_invoke__II_3erjang_EObject_2 (JNIEnv* je, jobject self, jlong mod_addr, jint index, jobjectArray args)
+    return je->NewStringUTF(mod->entry->name);
+}
+
+/*
+ * Class:     erjang_NIF
+ * Method:    jni_fun_count
+ * Signature: (J)I
+ */
+JNIEXPORT jint JNICALL Java_erjang_NIF_jni_1fun_1count
+  (JNIEnv * je, jclass self, jlong mod_ptr)
+{
+    struct jnif_module *mod =
+    reinterpret_cast<struct jnif_module *>(mod_ptr);
+
+    return mod->entry->num_of_funcs;
+}
+
+/*
+ * Class:     erjang_NIF
+ * Method:    jni_fun_name
+ * Signature: (JI)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_erjang_NIF_jni_1fun_1name
+  (JNIEnv *je, jclass self, jlong mod_ptr, jint idx)
+{
+    struct jnif_module *mod =
+    reinterpret_cast<struct jnif_module *>(mod_ptr);
+
+    return je->NewStringUTF(mod->entry->funcs[idx].name);
+}
+
+/*
+ * Class:     erjang_NIF
+ * Method:    jni_fun_arity
+ * Signature: (JI)I
+ */
+JNIEXPORT jint JNICALL Java_erjang_NIF_jni_1fun_1arity
+  (JNIEnv *je, jclass self, jlong mod_ptr, jint idx)
+{
+    struct jnif_module *mod =
+    reinterpret_cast<struct jnif_module *>(mod_ptr);
+
+    return mod->entry->funcs[idx].arity;
+}
+
+JNIEXPORT jobject JNICALL Java_erjang_NIF_jni_1invoke
+   (JNIEnv* je,
+    jobject self,
+    jlong mod_addr,
+    jint index,
+    jobjectArray args)
 {
   struct jnif_module *mod =
     reinterpret_cast<struct jnif_module *>(mod_addr);
@@ -149,7 +209,6 @@ static void init_jvm_data(JavaVM *vm, JNIEnv* je)
   jvm = vm;
 
   jclass eobject_class      = je->FindClass("erjang/EObject");
-  m_eobject__testAtom       = je->GetMethodID(eobject_class, "testAtom", "()Lerjang/EAtom;");
   m_eobject__testReference  = je->GetMethodID(eobject_class, "testReference", "()Lerjang/ERef;");
 
   ERT_class = je->FindClass("erjang/ERT");
@@ -168,6 +227,8 @@ extern "C" jint JNI_OnLoad(JavaVM *vm, void *reserved)
     initialize_jnif_resource(vm,je);
     initialize_jnif_string(vm,je);
     initialize_jnif_number(vm,je);
+    initialize_jnif_atom(vm,je);
+    initialize_jnif_tuple(vm,je);
   }
   return JNI_VERSION_1_4;
 }
