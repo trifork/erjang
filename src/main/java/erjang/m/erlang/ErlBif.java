@@ -1473,7 +1473,7 @@ public class ErlBif {
 		EString str = path.testString();
 		if (str == null) { throw ERT.badarg(path, info); }
 		
-		NIF nif = NIF.load(str.stringValue(), info);
+		NIF nif = NIF.load(str.stringValue() + ".so", info);
 		if (nif == null) {
 			return new ETuple2(ERT.am_error, 
 						new ETuple2(am_load_failed, ERT.am_undefined)
