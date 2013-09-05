@@ -78,14 +78,15 @@ extern ERL_NIF_TERM enif_make_list (ErlNifEnv* ee, unsigned cnt, ...)
   }
 
   va_list vl;
-  va_start(vl,cnt);
   jobjectArray arr = je->NewObjectArray(cnt, eobject_class, NULL);
 
+  va_start(vl,cnt);
   for (int i = 0; i < cnt; i++)
     {
       ERL_NIF_TERM val=va_arg(vl,ERL_NIF_TERM);
       ee->je->SetObjectArrayElement(arr, i, E2J(val));
     }
+  va_end(vl);
 
   jobject list = ee->je->CallStaticObjectMethod(elist_class, m_elist__make, cnt);
   return jnif_retain(ee, list);

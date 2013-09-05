@@ -17,8 +17,10 @@ jnif_retain(ErlNifEnv* ee, jobject obj)
     jobject global = ee->je->NewGlobalRef(obj);
     ee->globals.push_back(global);
     return J2E(global);
-  } else {
+  } else if (ee->type == enif_environment_t::STACK) {
     return J2E(obj);
+  } else {
+    abort();
   }
 }
 
@@ -30,11 +32,12 @@ jnif_retain(ErlNifEnv* ee, ERL_NIF_TERM term)
 
 
 void
-jnif_init_env( ErlNifEnv * ee, JNIEnv *je, struct jnif_module *mod )
+jnif_init_env( ErlNifEnv * ee, JNIEnv *je, struct jnif_module *mod, enif_environment_t::TYPE type )
 {
   assert (je != NULL);
   ee->je = je;
   ee->module = mod;
+  ee->type = type;
 }
 
 void *enif_priv_data(ErlNifEnv *ee)
@@ -78,8 +81,7 @@ enif_alloc_env()
   jvm->AttachCurrentThreadAsDaemon((void**)&je, NULL);
 
   enif_environment_t *ee = new enif_environment_t();
-  ee->type = enif_environment_t::ALLOC;
-  jnif_init_env( ee, je, NULL );
+  jnif_init_env( ee, je, NULL, enif_environment_t::ALLOC );
   return ee;
 }
 
@@ -95,7 +97,7 @@ void enif_clear_env(ErlNifEnv* ee)
 {
   JNIEnv *je = ee->je;
   jnif_release_env(ee);
-  jnif_init_env(ee,je,ee->module);
+  jnif_init_env(ee,je,ee->module,ee->type);
 }
 
 ERL_NIF_TERM enif_make_copy(ErlNifEnv* ee, ERL_NIF_TERM src_term)

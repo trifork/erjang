@@ -23,4 +23,12 @@ public class EResource extends EPseudoTerm {
 	}
 	
 	private static native void jni_finalize(long handle);
+	private static native String jnif_module(long handle);
+	private static native String jnif_type_name(long handle);
+	
+	public String toString()
+	{
+		return "#Resource<" + jnif_module(handle) + ":'" + jnif_type_name(handle) + "':16#" + Long.toHexString(handle)+ ">";
+	}
+
 }

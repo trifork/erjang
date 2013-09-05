@@ -84,7 +84,7 @@ JNIEXPORT jlong JNICALL Java_erjang_NIF_jni_1load
 
   // Call the on-load callback. Terms allocated
   // durin onload are retained until we unload.
-  jnif_init_env(mod->global, je, mod);
+  jnif_init_env(mod->global, je, mod, enif_environment_t::ALLOC);
   if (entry->load != 0) {
     int success = (*entry->load)( mod->global,
                                   &mod->priv_data,
@@ -165,6 +165,7 @@ JNIEXPORT jint JNICALL Java_erjang_NIF_jni_1fun_1arity
 JNIEXPORT jobject JNICALL Java_erjang_NIF_jni_1invoke
    (JNIEnv* je,
     jobject self,
+    jobject proc,
     jlong mod_addr,
     jint index,
     jobjectArray args)
@@ -187,8 +188,8 @@ JNIEXPORT jobject JNICALL Java_erjang_NIF_jni_1invoke
   }
 
   struct enif_environment_t ee;
-  ee.type = enif_environment_t::STACK;
-  jnif_init_env ( &ee, je, mod );
+  jnif_init_env ( &ee, je, mod, enif_environment_t::STACK );
+  ee.self = proc;
 
   ERL_NIF_TERM result = (*func->fptr)(&ee, size, nif_args);
 

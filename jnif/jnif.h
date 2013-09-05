@@ -5,6 +5,7 @@
 #include <jni.h>
 #include <list>
 #include <assert.h>
+#include <stdarg.h>
 
 extern "C" {
 #include "erl_nif.h"
@@ -31,7 +32,8 @@ struct jnif_bin_data {
 
 struct enif_environment_t {
   JNIEnv *je;
-  enum { ALLOC, STACK } type;
+  typedef enum { ALLOC, STACK } TYPE;
+  TYPE type;
 
   // globals to DeleteGlobalRef
   std::list< jobject > globals;
@@ -40,6 +42,14 @@ struct enif_environment_t {
   std::list< jnif_bin_data * > binaries;
 
   struct jnif_module *module;
+  jobject self;
+
+  enif_environment_t() { type = ALLOC; self = NULL; module = NULL; }
+
+  const char* module_name() {
+    if (module == NULL) return NULL;
+    return module->entry->name;
+  }
 };
 
 inline ERL_NIF_TERM J2E(jobject o) {
@@ -56,7 +66,7 @@ inline jobject E2J(ERL_NIF_TERM o) {
 void initialize_jnif_env(JavaVM* vm, JNIEnv *je);
 ERL_NIF_TERM jnif_retain(ErlNifEnv* ee, jobject obj);
 ERL_NIF_TERM jnif_retain(ErlNifEnv* ee, ERL_NIF_TERM term);
-void jnif_init_env( ErlNifEnv * ee, JNIEnv *je, struct jnif_module *mod );
+void jnif_init_env( ErlNifEnv * ee, JNIEnv *je, struct jnif_module *mod, enif_environment_t::TYPE type );
 void jnif_release_env( ErlNifEnv * ee);
 
 // jnif_binary.cc

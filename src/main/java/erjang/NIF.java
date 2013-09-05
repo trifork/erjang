@@ -38,7 +38,7 @@ public class NIF {
             	@Override
             	public EObject invoke(EProc proc, EObject[] args)
             			throws Pausable {
-            		return NIF.this.jni_invoke(ptr, idx, args);
+            		return NIF.this.jni_invoke(proc, ptr, idx, args);
             	}
 
             	@Override
@@ -57,7 +57,7 @@ public class NIF {
     }
 
     /** call NIF function number <code>index</code>, with <code>args</code>. */
-    private native EObject jni_invoke(long module_ptr, int index, EObject[] args);
+    private native EObject jni_invoke(EProc proc, long module_ptr, int index, EObject[] args);
 
     /** load NIF */
     private static native long jni_load(String path, EObject info);

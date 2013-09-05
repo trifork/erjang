@@ -35,6 +35,22 @@ extern "C" {
 JNIEXPORT void JNICALL Java_erjang_EResource_jni_1finalize
   (JNIEnv *, jclass, jlong);
 
+/*
+ * Class:     erjang_EResource
+ * Method:    jnif_module
+ * Signature: (J)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_erjang_EResource_jnif_1module
+  (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     erjang_EResource
+ * Method:    jnif_type_name
+ * Signature: (J)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_erjang_EResource_jnif_1type_1name
+  (JNIEnv *, jclass, jlong);
+
 #ifdef __cplusplus
 }
 #endif

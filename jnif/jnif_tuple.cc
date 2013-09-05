@@ -8,6 +8,7 @@ static jmethodID m_etuple__make;
 static jmethodID m_etuple__set;
 static jmethodID m_etuple__elm;
 static jmethodID m_etuple__arity;
+static jmethodID m_object__toString;
 
 extern int enif_is_tuple (ErlNifEnv* ee, ERL_NIF_TERM term)
 {
@@ -45,15 +46,31 @@ extern int enif_get_tuple (ErlNifEnv* ee, ERL_NIF_TERM tpl, int* arity, ERL_NIF_
 
 extern ERL_NIF_TERM enif_make_tuple (ErlNifEnv* ee, unsigned cnt, ...)
 {
+  ERL_NIF_TERM args[cnt];
+
+  if (cnt > 0) {
   va_list vl;
   va_start(vl,cnt);
-
-  jobject tup = ee->je->CallStaticObjectMethod(etuple_class, m_etuple__make, cnt);
   for (int i = 0; i < cnt; i++)
     {
-      ERL_NIF_TERM val=va_arg(vl,ERL_NIF_TERM);
-      ee->je->CallVoidMethod(tup, m_etuple__set, i+1, E2J(val));
+      args[i]  = va_arg(vl,ERL_NIF_TERM);
     }
+  va_end(vl);
+  }
+
+  jobject tup;
+  tup = ee->je->CallStaticObjectMethod(etuple_class, m_etuple__make, cnt);
+
+  for (int i = 0; i < cnt; i++) {
+    ee->je->CallVoidMethod(tup, m_etuple__set, (jint)(i+1), (jobject)E2J(args[i]));
+  }
+
+#ifdef DEBUG
+  jstring str = (jstring) ee->je->CallObjectMethod(tup, m_object__toString);
+  const char *path = str == NULL ? NULL : ee->je->GetStringUTFChars(str, NULL);
+  fprintf(stderr, "created: %s\n", path);
+  ee->je->ReleaseStringUTFChars(str, path);
+#endif
 
   return jnif_retain(ee, tup);
 }
@@ -80,5 +97,9 @@ void initialize_jnif_tuple(JavaVM* vm, JNIEnv *je)
                                      "arity",
                                      "()I");
 
+  jclass object_class = je->FindClass("java/lang/String");
+  m_object__toString = je->GetMethodID(object_class,
+                                       "toString",
+                                       "()Ljava/lang/String;");
 
 }

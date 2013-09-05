@@ -53,7 +53,7 @@ void initialize_jnif_resource(JavaVM* vm, JNIEnv *je)
 
 
 
-ErlNifResourceType* enif_open_resource_type(ErlNifEnv*,
+ErlNifResourceType* enif_open_resource_type(ErlNifEnv* ee,
                                             const char* module_str,
                                             const char* name_str,
                                             void (*dtor)(ErlNifEnv*,void *),
@@ -67,6 +67,7 @@ ErlNifResourceType* enif_open_resource_type(ErlNifEnv*,
   res->name_str = name_str == NULL ? NULL : strdup(name_str);
   res->dtor = dtor;
   res->flags = flags;
+  res->module = ee->module;
   if (tried != NULL) {
     *tried = ERL_NIF_RT_CREATE;
   }
@@ -87,12 +88,12 @@ void* enif_alloc_resource(ErlNifResourceType* type, size_t size)
 }
 
 
-static void enif_release_resource2(JNIEnv *je, void* obj)
+static int enif_release_resource2(JNIEnv *je, void* obj)
 {
   struct jnif_resource_hdr *hdr = get(obj);
 
   if (hdr == NULL) {
-    return;
+    return 0;
   }
 
   hdr->refcount -= 1;
@@ -100,15 +101,17 @@ static void enif_release_resource2(JNIEnv *je, void* obj)
   if (hdr->refcount == 0) {
 
     struct enif_environment_t ee;
-    ee.type = enif_environment_t::STACK;
-    jnif_init_env ( &ee, je, hdr->type->module );
+    jnif_init_env ( &ee, je, hdr->type->module, enif_environment_t::STACK  );
 
     hdr->type->dtor( &ee, obj );
 
     jnif_release_env( &ee );
 
     free(hdr);
+    return 1;
   }
+
+  return 0;
 }
 
 void enif_release_resource(void* obj)
@@ -174,7 +177,60 @@ ERL_NIF_TERM enif_make_resource_binary(ErlNifEnv* ee,
 JNIEXPORT void JNICALL Java_erjang_EResource_jni_1finalize
   (JNIEnv *je, jclass _, jlong handle)
 {
-  fprintf(stderr, "finalize(%p)\n", (void*)handle);
-  enif_release_resource2(je, (void*)handle);
-  fprintf(stderr, " -> done\n");
+#ifdef DEBUG
+  fprintf(stderr, "... finalize ...");
+  struct jnif_resource_hdr *hdr = get((void*)handle);
+  const char *mod  = hdr->type->module_str;
+  const char *rnam = hdr->type->name_str;
+  fprintf(stderr, "finalize(%p) %s:%s\n", (void*)handle, mod, rnam);
+#endif
+  int did_free = enif_release_resource2(je, (void*)handle);
+#ifdef DEBUG
+  fprintf(stderr, " -> done (%s)\n", did_free ? "feed" : "retained");
+#endif
+}
+
+
+/*
+ * Class:     erjang_EResource
+ * Method:    jnif_module
+ * Signature: (J)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_erjang_EResource_jnif_1module
+  (JNIEnv *je, jclass _, jlong handle)
+{
+  struct jnif_resource_hdr *hdr = get((void*)handle);
+  if (hdr == NULL || hdr->type == NULL) return NULL;
+
+  const char *mod_name = hdr->type->module_str;
+
+  if (mod_name == NULL
+      && hdr->type != NULL
+      && hdr->type->module != NULL
+      && hdr->type->module->entry != NULL) {
+    mod_name = hdr->type->module->entry->name;
+  }
+
+  if (mod_name != NULL)
+    return je->NewStringUTF(mod_name);
+
+  return NULL;
+}
+
+/*
+ * Class:     erjang_EResource
+ * Method:    jnif_type_name
+ * Signature: (J)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_erjang_EResource_jnif_1type_1name
+  (JNIEnv *je, jclass _, jlong handle)
+{
+  struct jnif_resource_hdr *hdr = get((void*)handle);
+  if (hdr == NULL) return NULL;
+
+  const char *rnam = hdr->type->name_str;
+  if (rnam != NULL)
+    return je->NewStringUTF(rnam);
+
+  return NULL;
 }

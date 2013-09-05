@@ -10,10 +10,10 @@ extern "C" {
 /*
  * Class:     erjang_NIF
  * Method:    jni_invoke
- * Signature: (JI[Lerjang/EObject;)Lerjang/EObject;
+ * Signature: (Lerjang/EProc;JI[Lerjang/EObject;)Lerjang/EObject;
  */
 JNIEXPORT jobject JNICALL Java_erjang_NIF_jni_1invoke
-  (JNIEnv *, jobject, jlong, jint, jobjectArray);
+  (JNIEnv *, jobject, jobject, jlong, jint, jobjectArray);
 
 /*
  * Class:     erjang_NIF
