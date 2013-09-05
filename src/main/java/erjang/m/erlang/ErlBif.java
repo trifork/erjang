@@ -22,6 +22,7 @@ import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.lang.management.ThreadMXBean;
+import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
@@ -33,6 +34,7 @@ import java.util.List;
 import java.util.TimeZone;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.zip.CRC32;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicStampedReference;
 
@@ -45,6 +47,7 @@ import erjang.EBitString;
 import erjang.ECons;
 import erjang.EDouble;
 import erjang.EFun;
+import erjang.EIOListVisitor;
 import erjang.EInteger;
 import erjang.EModule;
 import erjang.EModuleLoader;
@@ -93,6 +96,7 @@ public class ErlBif {
 	private static final EAtom am_run_queue = EAtom.intern("run_queue");
 	private static EAtom am_load_failed = EAtom.intern("load_failed");
 	private static EAtom am_on_load = EAtom.intern("on_load");
+	private static Field CRC32_crc;
 	
 	@BIF
 	static EObject apply(EProc proc, EObject fun, EObject args) throws Pausable {
@@ -173,6 +177,41 @@ public class ErlBif {
 		return new EBinary(all);
 	}
 
+	@BIF
+	static ENumber crc32(EObject io_list) {
+		CRC32 crc = new CRC32();
+		EIOListVisitor.update(io_list, crc);
+		return ERT.box(crc.getValue());
+	}
+	
+	static {
+		try {
+			CRC32_crc = CRC32.class.getDeclaredField("crc");
+			CRC32_crc.setAccessible(true);
+		} catch (NoSuchFieldException | SecurityException e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	@BIF
+	static ENumber crc32(EObject num, EObject io_list) {
+		EInteger init;
+		long val;
+		if (((init=num.testInteger()) == null)
+				|| (val = init.longValue()) != (val & 0xffffffffL)) {
+			throw ERT.badarg(num, io_list);
+		}
+		
+		CRC32 crc = new CRC32();
+		try {
+			CRC32_crc.setInt(crc, (int)val);
+		} catch (IllegalArgumentException | IllegalAccessException e) {
+			throw new RuntimeException(e);
+		}
+		EIOListVisitor.update(io_list, crc);
+		return ERT.box(crc.getValue());
+	}
+	
 	@BIF
 	static ESmall iolist_size(EObject val) {
 
