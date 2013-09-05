@@ -25,6 +25,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import erjang.driver.IO;
 import erjang.m.ets.EMatchContext;
 import erjang.m.ets.EPattern;
 import erjang.m.ets.ETermPattern;
@@ -165,7 +166,7 @@ public abstract class ECons extends EObject implements Iterable<EObject> {
 			EBinary binary;
 			ECons sublist;
 			if ((intval = head.testSmall()) != null) {
-				ByteArrayOutputStream barr = new ByteArrayOutputStream();
+				IO.BARR barr = new IO.BARR();
 
 				byte_loop: do {
 					int byteValue = intval.value & 0xff;
