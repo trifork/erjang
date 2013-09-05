@@ -20,7 +20,9 @@ OFILES= jnif.o \
 	jnif_string.o \
 	jnif_atom.o \
 	jnif_tuple.o \
-	jnif_list.o
+	jnif_list.o \
+	jnif_errno.o
+
 
 all: $(OFILES)
 	c++ -dynamiclib -o libjnif.jnilib $(OFILES) -framework JavaVM

@@ -275,7 +275,7 @@ public class ModuleAnalyzer implements ModuleVisitor {
 							
 							if (mod.equals("erlang")
 								&& arity == 1
-								&& (fun.equals("throw") || fun.equals("error") || fun.equals("exit"))) {
+								&& (fun.equals("throw") || fun.equals("error") || fun.equals("exit") || fun.equals("nif_error"))) {
 								break;
 							}
 						}							

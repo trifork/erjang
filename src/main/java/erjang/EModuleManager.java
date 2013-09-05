@@ -66,6 +66,8 @@ public class EModuleManager {
 
 		EModule defining_module;
 		EFun resolved_value;
+		boolean is_exported;
+		
 		Collection<FunctionBinder> resolve_points = new HashSet<FunctionBinder>();
 		private EFun error_handler;
 
@@ -84,13 +86,17 @@ public class EModuleManager {
 		 */
 		synchronized void add_import(final FunctionBinder ref) throws Exception {
 			resolve_points.add(ref);
-			if (resolved_value != null) {
+			if (is_exported && resolved_value != null) {
 				// System.out.println("binding "+fun+" "+resolved_value+" -> "+ref);
 				ref.bind(resolved_value);
 			} else {
 				EFun h = getFunErrorHandler();
 				ref.bind(h);
 			}
+		}
+		
+		synchronized void add_internal(final FunctionBinder ref) throws Exception {
+			resolve_points.add(ref);
 		}
 		
 		synchronized void unbind() throws Exception {
@@ -158,7 +164,7 @@ public class EModuleManager {
 							if (uf == null) {
 								if (!module_loaded(fun.module)) {
 									try {
-										EModuleLoader.find_and_load_module(proc, fun.module.getName());
+										EModuleLoader.find_and_load_module(fun.module.getName());
 									} catch (IOException e) {
 										// we don't report this separately; it ends up causing an undefined below...
 									}
@@ -190,9 +196,13 @@ public class EModuleManager {
 		 */
 		synchronized void add_export(EModule definer, FunID fun2, EFun value)
 				throws Exception {
-			this.resolved_value = value;
+			this.is_exported = true;
 			this.defining_module = definer;
-
+			bind(value);
+		}
+		
+		void bind(EFun value) throws Exception {
+			this.resolved_value = value;
 			for (FunctionBinder f : resolve_points) {
 				// System.out.println("binding " + fun2 + " " + value + " -> " + f);
 				f.bind(value);
@@ -211,7 +221,7 @@ public class EModuleManager {
 		 * @return
 		 */
 		public boolean exported() {
-			return resolved_value != null;
+			return resolved_value != null && is_exported;
 		}
 	}
 
@@ -239,6 +249,11 @@ public class EModuleManager {
 		public void add_import(FunID fun, FunctionBinder ref) throws Exception {
 			FunctionInfo info = get_function_info(fun);
 			info.add_import(ref);
+		}
+
+		public void add_internal(FunID fun, FunctionBinder ref) throws Exception {
+			FunctionInfo info = get_function_info(fun);
+			info.add_internal(ref);
 		}
 
 		private synchronized FunctionInfo get_function_info(FunID fun) {
@@ -330,7 +345,7 @@ public class EModuleManager {
 		public void warn_about_unresolved() {
 			if (resident != null) {
 				for (FunctionInfo fi : binding_points.values()) {
-					if (fi.resolved_value == null) {
+					if ((fi.resolved_value == null) && (fi.fun.module != this.module)) {
 						log.log(Level.INFO, "unresolved after load: "+fi.fun);
 					}
 				}
@@ -426,7 +441,7 @@ public class EModuleManager {
             
             FunctionInfo fi = get_function_info(id);
             
-            fi.add_export(resident, id, fun);
+            fi.bind(fun);
             
 		}
 
@@ -434,6 +449,10 @@ public class EModuleManager {
 
 	public static void add_import(FunID fun, FunctionBinder ref) throws Exception {
 		get_module_info(fun.module).add_import(fun, ref);
+	}
+
+	public static void add_internal(FunID fun, FunctionBinder ref) throws Exception {
+		get_module_info(fun.module).add_internal(fun, ref);
 	}
 
 	private static ModuleInfo get_module_info(EAtom module) {
@@ -563,6 +582,11 @@ public class EModuleManager {
 			throw new ErlangError(e);
 		}
 		return ERT.am_ok;
+	}
+
+	public static EModule get_loaded_module(EAtom module) {
+		ModuleInfo mi = get_module_info(module);
+		return mi.resident;
 	}
 
 }

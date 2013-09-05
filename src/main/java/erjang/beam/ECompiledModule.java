@@ -28,6 +28,7 @@ import erjang.EProc;
 import erjang.Export;
 import erjang.Import;
 import erjang.BIF;
+import erjang.Internal;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -52,19 +53,19 @@ public abstract class ECompiledModule extends EModule {
 			 * Annotation[] ann = field.getAnnotations(); for (Annotation a :
 			 * ann) { System.err.println(" -> "+field.getName()+" : "+a); }
 			 */
-/*
-			Import imp = field.getAnnotation(Import.class);
+
+			Internal imp = field.getAnnotation(Internal.class);
 			if (imp != null) {
 				FunID f = new FunID(imp);
 
-				EModuleManager.add_import(f, new FieldBinder(field, f, module_name()));
+				EModuleManager.add_internal(f, new FieldBinder(field, f, module_name()));
 
 				// System.out.println("  import " + f
 				// + (resolved ? "resolved" : ""));
 
 				continue;
 			}
-*/
+
 			Export exp = field.getAnnotation(Export.class);
 			if (exp != null) {
 				field.setAccessible(true);

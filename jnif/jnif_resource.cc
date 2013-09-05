@@ -87,7 +87,7 @@ void* enif_alloc_resource(ErlNifResourceType* type, size_t size)
 }
 
 
-void enif_release_resource(void* obj)
+static void enif_release_resource2(JNIEnv *je, void* obj)
 {
   struct jnif_resource_hdr *hdr = get(obj);
 
@@ -98,9 +98,6 @@ void enif_release_resource(void* obj)
   hdr->refcount -= 1;
 
   if (hdr->refcount == 0) {
-
-    JNIEnv *je;
-    jvm->AttachCurrentThreadAsDaemon((void**)je, NULL);
 
     struct enif_environment_t ee;
     ee.type = enif_environment_t::STACK;
@@ -113,6 +110,15 @@ void enif_release_resource(void* obj)
     free(hdr);
   }
 }
+
+void enif_release_resource(void* obj)
+{
+    JNIEnv *je;
+    jvm->AttachCurrentThreadAsDaemon((void**)&je, NULL);
+    enif_release_resource2(je, obj);
+}
+
+
 
 ERL_NIF_TERM enif_make_resource(ErlNifEnv* ee, void* obj)
 {
@@ -168,5 +174,7 @@ ERL_NIF_TERM enif_make_resource_binary(ErlNifEnv* ee,
 JNIEXPORT void JNICALL Java_erjang_EResource_jni_1finalize
   (JNIEnv *je, jclass _, jlong handle)
 {
-  enif_release_resource((void*)handle);
+  fprintf(stderr, "finalize(%p)\n", (void*)handle);
+  enif_release_resource2(je, (void*)handle);
+  fprintf(stderr, " -> done\n");
 }

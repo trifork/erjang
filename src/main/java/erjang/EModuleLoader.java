@@ -52,30 +52,18 @@ public class EModuleLoader {
 
 	/*==================== API ====================*/
 
-	public static EModule find_and_load_module(EProc proc, String moduleName) throws Pausable, IOException {
+	public static EModule find_and_load_module(String moduleName) throws IOException {
 		File input = findBeamFile(moduleName);
 		if (input == null)
 			throw new FileNotFoundException(moduleName); // Is this the right error message?
-		return load_module(proc, moduleName, EUtil.readFile(input));
-	}
-
-	public static EModule find_and_load_module0(String moduleName) throws IOException {
-		File input = findBeamFile(moduleName);
-		if (input == null)
-			throw new FileNotFoundException(moduleName); // Is this the right error message?
-		return load_module0(moduleName, EUtil.readFile(input));
+		return load_module(moduleName, EUtil.readFile(input));
 	}
 
 
 	static long acc_int_load = 0;
 	static long acc_load = 0;
-	public static EModule load_module(EProc proc, String moduleName, EBinary beamBin) throws IOException, Pausable {
-		EModule mod = load_module0(moduleName, beamBin);
-		mod.on_load(proc);
-		return mod;
-	}
 		
-	public static EModule load_module0(String moduleName, EBinary beamBin) throws IOException {
+	public static EModule load_module(String moduleName, EBinary beamBin) throws IOException {
 		// This is where the module creation mode is selected.
 		boolean use_interpreter = ErjangConfig.getBoolean("erjang.beam.option.i");
 		long before = System.currentTimeMillis();
@@ -173,5 +161,14 @@ public class EModuleLoader {
 		}
 
 		return mi;
+	}
+
+	public static EObject call_on_load_function(EProc proc, EAtom modName) throws Pausable {
+		EModule mod = EModuleManager.get_loaded_module(modName);
+		if (mod == null) {
+			throw ERT.badarg(modName);
+		}
+
+		return mod.on_load(proc);
 	}
 }

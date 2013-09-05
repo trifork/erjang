@@ -22,6 +22,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
+import kilim.Pausable;
+
 
 public abstract class EModule {
 
@@ -174,8 +176,12 @@ public abstract class EModule {
 		}
 	}
 
-	public void on_load(EProc proc) {
+	public EObject on_load(EProc proc) throws Pausable {
+		return ERT.am_ok;
 	}
 
+	public boolean has_on_load() {
+		return false;
+	}
 
 }

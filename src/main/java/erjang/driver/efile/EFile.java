@@ -278,7 +278,7 @@ public class EFile extends EDriverInstance {
 	public static final int EFILE_MODE_READ_WRITE = 3;
 	public static final int EFILE_MODE_APPEND = 4;
 	public static final int EFILE_COMPRESSED = 8;
-	public static final int EFILE_NO_TRUNCATE = 16; /*
+	public static final int EFILE_MODE_EXCL = 16; /*
 													 * Special for reopening on
 													 * VxWorks
 													 */
@@ -1449,8 +1449,8 @@ public class EFile extends EDriverInstance {
 						log.fine("EFile.open_compressed "+file_name);
 					}
 					boolean append = (mode & EFILE_MODE_APPEND) > 0;
-					if ((mode & ~(EFILE_MODE_APPEND | EFILE_MODE_READ_WRITE)) > 0) {
-						log.warning("ONLY APPEND AND READ_WRITE OPTIONS ARE IMPLEMENTED!");
+					if ((mode & ~(EFILE_MODE_APPEND | EFILE_MODE_READ_WRITE | EFILE_MODE_EXCL)) > 0) {
+						log.warning("ONLY APPEND AND READ_WRITE OPTIONS ARE IMPLEMENTED!  mode="+mode);
 						throw new NotImplemented();
 					}
 					try {
@@ -1463,6 +1463,9 @@ public class EFile extends EDriverInstance {
 							log.warning("COMPRESSED NOT IMPLEMENTED!");
 							throw new NotImplemented();
 						} else {
+							if ((mode & EFILE_MODE_EXCL) == EFILE_MODE_EXCL) {
+								file.createNewFile();	
+							}
 							switch (mode & EFILE_MODE_READ_WRITE) {
 							case EFILE_MODE_READ: {
 								FileInputStream fo = new FileInputStream(file);

@@ -46,6 +46,7 @@ import erjang.ECons;
 import erjang.EDouble;
 import erjang.EFun;
 import erjang.EInteger;
+import erjang.EModule;
 import erjang.EModuleLoader;
 import erjang.EModuleManager;
 import erjang.ENode;
@@ -91,6 +92,7 @@ public class ErlBif {
 	private static EAtom am_nif_error = EAtom.intern("nif_error");
 	private static final EAtom am_run_queue = EAtom.intern("run_queue");
 	private static EAtom am_load_failed = EAtom.intern("load_failed");
+	private static EAtom am_on_load = EAtom.intern("on_load");
 	
 	@BIF
 	static EObject apply(EProc proc, EObject fun, EObject args) throws Pausable {
@@ -1496,20 +1498,44 @@ public class ErlBif {
 		return EModuleManager.delete_module(mod);
 	}
 	
+	@BIF
+	public static EObject call_on_load_function(EProc proc, EObject mod) throws Pausable {
+		EAtom name;
+		if ((name=mod.testAtom()) == null) {
+			throw ERT.badarg(mod);
+		}
+		
+		return EModuleLoader.call_on_load_function(proc, name);
+	}
+	
+	@BIF
+	public static EObject finish_after_on_load(EObject mod, EObject keep)
+	{
+		if (keep != ERT.TRUE) {
+			System.err.println("NIF unloading not implemented...");
+		} 
+		return ERT.am_ok;
+	}
+	
 	@BIF	
-	public static ETuple2 load_module(EProc proc, EObject mod, EObject bin) throws Pausable {
+	public static ETuple2 load_module(EObject mod, EObject bin) {
 		EAtom name = mod.testAtom();
 		EBinary binary = bin.testBinary();
-		return load_module(proc, name, binary);
+		return load_module(name, binary);
 	}
 
 	@BIF
-	public static ETuple2 load_module(EProc proc, EAtom mod, EBinary bin) throws Pausable {
+	public static ETuple2 load_module(EAtom mod, EBinary bin) {
 		if (mod == null || bin == null)
 			throw ERT.badarg(mod, bin);
 
 		try {
-			EModuleLoader.load_module(proc, mod.getName(), bin);
+			EModule module = EModuleLoader.load_module(mod.getName(), bin);
+			if (module.has_on_load()) {
+				return new ETuple2(ERT.am_error, am_on_load);
+			} else {
+				return new ETuple2(ERT.am_module, mod);
+			}
 		} catch (ErlangException e) {
 			log.log(Level.FINE, "cannot load module", e);
 			return new ETuple2(ERT.am_error, e.reason());
@@ -1524,7 +1550,6 @@ public class ErlBif {
 			return result;
 		} 
 		
-		return new ETuple2(ERT.am_module, mod);
 	}
 	
 	@BIF

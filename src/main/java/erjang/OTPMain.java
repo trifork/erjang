@@ -64,12 +64,12 @@ public class OTPMain {
 					if (bin == null) {
 						throw new FileNotFoundException(beam_path);
 					}
-		    		EModuleLoader.load_module0(m, bin);
+		    		EModuleLoader.load_module(m, bin);
 				}
 	    		
 	    	} else {    	
 		    	for (String m : modules) {
-		    		EModuleLoader.find_and_load_module0(m);
+		    		EModuleLoader.find_and_load_module(m);
 				}
 	    	}
     	}

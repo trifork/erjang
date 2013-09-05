@@ -43,6 +43,10 @@ public class FunID implements Comparable<FunID> {
 		this(imp.module(), imp.fun(), imp.arity());
 	}
 
+	public FunID(Internal internal) {
+		this(internal.module(), internal.fun(), internal.arity());
+	}
+
 	/**
 	 * @param exp
 	 */
