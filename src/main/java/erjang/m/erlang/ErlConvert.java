@@ -457,33 +457,4 @@ public class ErlConvert {
 		}
 	}
 
-    @BIF
-    public static ETuple2 posixtime_to_universaltime(EObject time)
-    {
-        long millis;
-        ESmall small = time.testSmall();
-        EBig big = time.testBig();
-
-        if (small != null) {
-            millis = small.intValue();
-        } else if (big != null) {
-            millis = big.longValue();
-        } else {
-            throw ERT.badarg();
-        }
-
-        Calendar c = GregorianCalendar.getInstance();
-        c.setTimeInMillis(millis);
-					
-        int year = c.get(Calendar.YEAR);
-        int month = c.get(Calendar.MONTH) - Calendar.JANUARY + 1;
-        int day_of_month = c.get(Calendar.DAY_OF_MONTH);
-
-        int hour_of_day = c.get(Calendar.HOUR_OF_DAY);
-        int minute_of_hour = c.get(Calendar.MINUTE);
-        int seconds = c.get(Calendar.SECOND);
-
-        return new ETuple2( ETuple.make( ERT.box(year), ERT.box(month), ERT.box(day_of_month) ),
-                            ETuple.make( ERT.box(hour_of_day), ERT.box(minute_of_hour), ERT.box(seconds) ));
-    }
 }

@@ -1561,7 +1561,7 @@ public class EFile extends EDriverInstance {
 
 					// this is as good as it gets...
 					file_access_time = file_create_time = 
-						file_modify_time = file.lastModified();
+						file_modify_time = file.lastModified() / 1000L;
 
 					file_mode   |= file.canExecute() ? 0000100 : 0;
 					file_mode   |= file.canWrite() ? 0000200 : 0;

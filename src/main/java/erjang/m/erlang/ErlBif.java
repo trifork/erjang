@@ -1983,6 +1983,69 @@ public class ErlBif {
 	}
 	
 	@BIF
+	static public EObject posixtime_to_universaltime(EObject a1)
+	{
+		EInteger num = a1.testInteger();
+		if (num == null) throw ERT.badarg(a1);
+		
+		Calendar out_date = GregorianCalendar.getInstance(UTC_TIME_ZONE);
+		out_date.setTimeInMillis(num.longValue() * 1000L);
+		
+		ETuple3 date2 = new ETuple3();
+		date2.set(1, ERT.box(out_date.get(Calendar.YEAR)));
+		date2.set(2, ERT.box(out_date.get(Calendar.MONTH)-Calendar.JANUARY+1));
+		date2.set(3, ERT.box(out_date.get(Calendar.DAY_OF_MONTH)));
+		
+		ETuple3 time2 = new ETuple3();
+		time2.set(1, ERT.box(out_date.get(Calendar.HOUR_OF_DAY)));
+		time2.set(2, ERT.box(out_date.get(Calendar.MINUTE)));
+		time2.set(3, ERT.box(out_date.get(Calendar.SECOND)));
+		
+		return new ETuple2(date2, time2);		
+	}
+	
+	@BIF
+	static public EObject universaltime_to_posixtime(EObject a1)
+	{
+		ETuple2 dt;
+		if ((dt=ETuple2.cast(a1)) != null) {
+			ETuple3 date;
+			ETuple3 time;
+			ESmall year;
+			ESmall month;
+			ESmall day;
+			ESmall hour;
+			ESmall minute;
+			ESmall sec;
+			if (   (date=ETuple3.cast( dt.elem1 )) != null
+				&& (year = date.elem1.testSmall()) != null
+				&& (month = date.elem2.testSmall()) != null
+				&& (day = date.elem3.testSmall()) != null
+				
+				&& (time=ETuple3.cast( dt.elem2 )) != null
+				&& (hour = time.elem1.testSmall()) != null
+				&& (minute = time.elem2.testSmall()) != null
+				&& (sec = time.elem3.testSmall()) != null
+				
+			) {
+
+				Calendar in_date = GregorianCalendar.getInstance(UTC_TIME_ZONE);
+				in_date.set(Calendar.YEAR, year.value);
+				in_date.set(Calendar.MONTH, month.value-1+Calendar.JANUARY);
+				in_date.set(Calendar.DAY_OF_MONTH, day.value);
+				
+				in_date.set(Calendar.HOUR_OF_DAY, hour.value);
+				in_date.set(Calendar.MINUTE, minute.value);
+				in_date.set(Calendar.SECOND, sec.value);
+				
+				return ERT.box(in_date.getTimeInMillis() / 1000L);
+			}
+		}
+
+		throw ERT.badarg(a1);
+	}
+	
+	@BIF
 	static public EObject system_flag(EObject flag_arg, EObject value)
 	{
 		throw new NotImplemented();
