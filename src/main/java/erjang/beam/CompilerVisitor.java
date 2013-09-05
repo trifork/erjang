@@ -229,6 +229,13 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				}
 			}
 		}
+		
+		if (uses_on_load) {
+			for (FunInfo fi : funInfos.values()) {
+				fi.is_pausable = true;
+				fi.call_is_pausable = true;
+			}
+		}
 
 		this.module_name = name;
 
@@ -3057,16 +3064,43 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 				ensure_exception_handler_in_place();
 
+				// are we self-recursive?
+				boolean is_local_self_recursion = 
+						is_tail
+						&& !isExternal
+						&& fun.arity == ASMFunctionAdapter.this.arity
+						&& fun.mod == CompilerVisitor.this.module_name
+						&& fun.fun == ASMFunctionAdapter.this.fun_name;
+
+				if (is_local_self_recursion) {
+
+					mv.visitVarInsn(ALOAD, 0);
+					mv.visitMethodInsn(INVOKEVIRTUAL, ETASK_NAME,
+							"check_exit", "()V");
+
+					// System.out.println("self-recursive in " + fun);
+					mv.visitJumpInsn(GOTO,
+							getLabel(ASMFunctionAdapter.this.startLabel));
+					return;
+
+				}
+
 				BuiltInFunction bif = null;
 
 				bif = BIFUtil.getMethod(fun.mod.getName(), fun.fun.getName(),
 						args, false, false);
 
-				if (bif != null || isExternal) {
+
+				if (bif != null || isExternal || uses_on_load) {
 
 					if (bif == null) {
-						String field = CompilerVisitor.this
+						String field;
+						
+						if (isExternal)
+							field = CompilerVisitor.this
 								.getExternalFunction(fun);
+						else /* local w/ on_load */
+							field = EUtil.getJavaName(fun.fun, fun.arity);
 
 						String funTypeName = EFUN_NAME + args.length;
 						EFun.ensure(args.length);
@@ -3131,21 +3165,6 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					}
 
 				} else {
-
-					// are we self-recursive?
-					if (is_tail && fun.arity == ASMFunctionAdapter.this.arity
-							&& fun.fun == ASMFunctionAdapter.this.fun_name) {
-
-						mv.visitVarInsn(ALOAD, 0);
-						mv.visitMethodInsn(INVOKEVIRTUAL, ETASK_NAME,
-								"check_exit", "()V");
-
-						// System.out.println("self-recursive in " + fun);
-						mv.visitJumpInsn(GOTO,
-								getLabel(ASMFunctionAdapter.this.startLabel));
-						return;
-
-					}
 
 					mv.visitVarInsn(ALOAD, 0);
 					for (int i = 0; i < args.length; i++) {
