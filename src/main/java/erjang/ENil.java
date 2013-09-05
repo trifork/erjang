@@ -53,6 +53,10 @@ public class ENil extends ESeq {
 		throw new UnsupportedOperationException();
 	}
 	
+	@Override
+	public void visitIOList(EIOListVisitor out) {
+	}
+	
 	public boolean collectIOList(List<ByteBuffer> out) {
 		return true;
 	}

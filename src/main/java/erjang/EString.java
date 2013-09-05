@@ -475,6 +475,11 @@ public class EString extends ESeq implements CharSequence {
 		}
 		return true;
 	}
+	
+	@Override
+	public void visitIOList(EIOListVisitor out) throws ErlangError {
+		out.visit(data, off, data.length - off);
+	}
 
 	public void collectCharList(CharCollector out)
 		throws CharCollector.CollectingException, IOException

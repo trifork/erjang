@@ -290,6 +290,12 @@ public class EBinList extends ECons {
 	}
 	
 	@Override
+	public void visitIOList(EIOListVisitor out) throws ErlangError {
+		out.visit(data, off, len);
+		tail.visitIOList(out);
+	}
+	
+	@Override
 	public boolean collectIOList(List<ByteBuffer> out) {
 		out.add(ByteBuffer.wrap(data, off, len));
 		return tail.collectIOList(out);

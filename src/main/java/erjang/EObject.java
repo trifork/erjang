@@ -34,7 +34,7 @@ import erjang.m.ets.ETermPattern;
 import erjang.m.java.JavaObject;
 
 /** The base class for representing Erlang values.
- * This class embodíes in particular (the base of) the following concerns:
+ * This class embodies in particular (the base of) the following concerns:
  * - Dynamic value kind testing;
  * - Erlang value ordering (incl. "compare-same") and "exact equality"
  *   (as used in matching).
@@ -173,6 +173,10 @@ public abstract class EObject {
 	 */
 	public EDouble testFloat() {
 		return null;
+	}
+	
+	public void visitIOList(EIOListVisitor out) throws ErlangError {
+		throw ERT.badarg();
 	}
 	
 	public boolean collectIOList(List<ByteBuffer> out) {

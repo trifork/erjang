@@ -80,6 +80,14 @@ public final class ESmall extends EInteger {
 	public boolean is_zero() { return value==0; }
 
 	@Override
+	public void visitIOList(EIOListVisitor out) throws ErlangError {
+		if ((value & 0xff) != value)
+			throw ERT.badarg();
+		
+		out.visit(value);
+	}
+	
+	@Override
 	public boolean collectIOList(List<ByteBuffer> out) {
 		ByteBuffer b = ByteBuffer.allocate(1);
 		b.put(0, (byte) value);

@@ -687,6 +687,16 @@ public class EBitString extends EObject {
 		return result;
 	}
 
+	@Override
+	public void visitIOList(EIOListVisitor out) throws ErlangError {
+		if (extra_bits != 0) 
+			throw ERT.badarg();
+		
+		if (byteSize() > 0) {
+			out.visit(data, byteOffset(), byteSize());
+		}
+	}
+	
 	/**
 	 * @return true if successful
 	 */

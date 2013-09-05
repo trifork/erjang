@@ -282,6 +282,12 @@ public class EStringList extends ESeq {
 	}
 	
 	@Override
+	public void visitIOList(EIOListVisitor out) throws ErlangError {
+		out.visit(bytes.data, off, len); //?
+		tail.visitIOList(out);
+	}
+	
+	@Override
 	public boolean collectIOList(List<ByteBuffer> out) {
 		out.add(ByteBuffer.wrap(bytes.data, off, len)); //?
 		return tail.collectIOList(out);

@@ -155,6 +155,12 @@ public abstract class ECons extends EObject implements Iterable<EObject> {
 		
 		return r;
 	}
+	
+	@Override
+	public void visitIOList(EIOListVisitor out) throws ErlangError {
+		head().visitIOList(out);
+		tail().visitIOList(out);
+	}
 
 	public boolean collectIOList(List<ByteBuffer> out) {
 		ECons list;
@@ -185,7 +191,7 @@ public abstract class ECons extends EObject implements Iterable<EObject> {
 					}
 				} while ((intval = head.testSmall()) != null);
 
-				out.add(ByteBuffer.wrap(barr.toByteArray()));
+				out.add(barr.wrap());
 			}
 
 			if ((binary = head.testBinary()) != null) {
