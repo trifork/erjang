@@ -21,6 +21,8 @@ package erjang;
 
 import java.math.BigInteger;
 
+import erjang.driver.IO;
+
 /**
  * 
  */
@@ -357,7 +359,58 @@ public class EBitStringBuilder {
 	}
 	
 	public void put_utf8(EObject value, int flags) {
-		throw new NotImplemented("val="+value+";flags="+flags);
+		
+		ESmall sm;
+		if ((sm=value.testSmall()) != null && sm.value >= 0 && sm.value <= 0x10FFFF) {
+
+			byte[] raw = new String(new char[]{ (char) sm.value }).getBytes(IO.UTF8);
+			
+			for (int i = 0; i < raw.length; i++) {
+				put_byte(raw[i]);
+			}
+			
+			return;
+			
+			/*
+			if (sm.value < 0x80) {
+				put_byte((byte) sm.value); 
+				return;
+			}
+			
+			if (sm.value < 0x0800) {
+				put_byte((byte) (0xc0 | ((sm.value >> 6) & 0x1f)));
+				put_byte((byte) (0x80 | (sm.value & 0x3f)));
+				return;
+			}
+	
+			if (sm.value < 0x10000) {
+				put_byte((byte) (0xe0 | ((sm.value >> 12) & 0x0f)));
+				put_byte((byte) (0x80 | ((sm.value >> 6) & 0x3f)));
+				put_byte((byte) (0x80 | (sm.value & 0x3f)));
+				return;
+			}
+
+			if (sm.value < 0x20000) {
+				put_byte((byte) (0xf0 | ((sm.value >> 18) & 0x7)));
+				put_byte((byte) (0x80 | ((sm.value >> 12) & 0x3f)));
+				put_byte((byte) (0x80 | ((sm.value >> 6) & 0x3f)));
+				put_byte((byte) (0x80 | (sm.value & 0x3f)));
+				return;
+			}
+
+			if (sm.value < 0x4000000) {
+				put_byte((byte) (0xf8 | ((sm.value >> 24) & 0x3)));
+				put_byte((byte) (0x80 | ((sm.value >> 18) & 0x3f)));
+				put_byte((byte) (0x80 | ((sm.value >> 12) & 0x3f)));
+				put_byte((byte) (0x80 | ((sm.value >> 6) & 0x3f)));
+				put_byte((byte) (0x80 | (sm.value & 0x3f)));
+				return;
+			}
+			*/
+		}
+
+		
+		throw new NotImplemented("val="+value);
 	}
 
 	public void put_utf16(EObject value, int flags) {
@@ -372,12 +425,18 @@ public class EBitStringBuilder {
 	static public ESmall bs_utf8_size(EObject value) {
 		ESmall sm;
 		if ((sm=value.testSmall()) != null) {
+			
+			byte[] raw = new String(new char[]{ (char) sm.value }).getBytes(IO.UTF8);
+			return ERT.box(raw.length);
+
+			/*
 			if (sm.value < 0x80) return ERT.box(1);
 			if (sm.value < 0x0800) return ERT.box(2);
 			if (sm.value < 0x10000) return ERT.box(3);
 			if (sm.value < 0x200000) return ERT.box(4);
 			if (sm.value < 0x4000000) return ERT.box(5);
 			return ERT.box(6);
+			*/
 		}
 		
 		throw new NotImplemented("val="+value);
