@@ -10,6 +10,20 @@ Erjang is a virtual machine for Erlang, which runs on Java 7.
 * Check the [README](https://github.com/trifork/erjang/wiki/README) before you try to run this.
 * I am also occasionally posting updates at my blog, [Java Limit](http://javalimit.com)
 
+### Building...
+
+````
+> ant alljar
+...
+
+alljar:
+      [jar] Building jar: erjang-R16B01.jar
+
+BUILD SUCCESSFUL
+Total time: 20 seconds
+````
+Then, just run `java -jar erjang-R16B01.jar`
+
 ### How does it work?
 
 It loads Erlang's binary `.beam` file format, compiles it into Java's `.class` file format, and loads it into the JVM.   It will eventually have it's own implementation of all Erlang's BIFs (built-in-functions) written in Java.  
@@ -28,7 +42,7 @@ Yes!  It does actually work.
 - Etc. etc.  Lot's of stuff work.
 
 ````erlang
-./ej
+> java -jar erjang-R16B01.jar
 ** Erjang R16B01 **  [root:/Users/krab/erlang/r16b01] [erts:5.10.2] [unicode]
 Eshell V5.10.2  (abort with ^G)
 1> 2+3.
