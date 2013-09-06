@@ -280,13 +280,33 @@ public class ModuleAnalyzer implements ModuleVisitor {
 							}
 						}							
 							
+						{
 							if (log.isLoggable(Level.FINE) && !self.call_is_pausable) {
 								log.fine("call_pausable: " + op);
 							}
 
+							Insn.IE e = (IE) insn;
+							String mod = e.ext_fun.mod.getName();
+							String fun = e.ext_fun.fun.getName();
+							int arity = e.ext_fun.arity;
+							BuiltInFunction bif = BIFUtil.getMethod(mod,
+									fun, arity, false, false);
+							
+							if (bif != null) {
+								
+								if (log.isLoggable(Level.FINE) && !self.is_pausable && bif.isPausable()) {
+									log.fine("pausable: calls " + bif.javaMethod);
+								}
+
+								
+								self.is_pausable |= bif.isPausable();
+								break;
+							} 
+							
 							self.may_return_tail_marker = true;
 							self.call_is_pausable = true;
 							/* FALL THRU */
+						}
 
 						case call_ext:
 							if (self.is_pausable) {
