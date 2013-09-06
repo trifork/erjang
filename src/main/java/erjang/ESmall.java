@@ -34,8 +34,8 @@ public final class ESmall extends EInteger {
 	public static final ESmall ONE = new ESmall(1);
 	public final int value;
 
-	final static int PREALLOC_COUNT = 256; // Must be at least 256.
-	static final ESmall[] little = new ESmall[PREALLOC_COUNT];
+	final static int PREALLOC_COUNT = 0xff; // Must be at least 256.
+	static final ESmall[] little = new ESmall[PREALLOC_COUNT+1];
 	static {
 		for (int i = 0; i < little.length; i++) {
 			little[i] = new ESmall(i);
@@ -65,7 +65,7 @@ public final class ESmall extends EInteger {
 		if (value==Integer.MAX_VALUE) { 
 			return ERT.box((long)Integer.MAX_VALUE + 1L); 
 		} else {
-			return new ESmall(value+1);
+			return ERT.box(value+1);
 		}
 	}
 	
@@ -73,7 +73,7 @@ public final class ESmall extends EInteger {
 		if (value==Integer.MIN_VALUE) { 
 			return ERT.box((long)Integer.MIN_VALUE - 1L); 
 		} else {
-			return new ESmall(value-1);
+			return ERT.box(value-1);
 		}
 	}
 
@@ -188,7 +188,7 @@ public final class ESmall extends EInteger {
 	 * @return
 	 */
 	public static ESmall make(int v) {
-		if (v >= 0 && v < PREALLOC_COUNT) return little[v];
+		if ((v & PREALLOC_COUNT)==v) return little[v];
 		else return new ESmall(v);
 	}
 
