@@ -57,19 +57,19 @@ public class EBinMatchState extends EPseudoTerm {
 	//long[] save_offset = new long[0];
 	private long save_offset(int n) {
 		if (n==0) return save_offset0;
-		return save_offsetN[n-1];
+		return save_offsetN[n];
 	}
 	
 	private void save_offset(int n, long off) {
 		if (n==0) save_offset0=off;
-		else save_offsetN[n+1] = off;
+		else save_offsetN[n] = off;
 	}
 	
 	private int slots() {
 		if (save_offsetN==null) 
 			return 1;
 		else
-			return save_offsetN.length+1;
+			return save_offsetN.length;
 	}
 	
 	public long bitsLeft() {
@@ -136,29 +136,33 @@ public class EBinMatchState extends EPseudoTerm {
 	public static EBinMatchState bs_start_match2(EObject obj, int slots) {
 		EBinMatchState ms;
 		if ((ms=obj.testBinMatchState()) != null) {
-			int actual_slots = ms.slots();
-			ms.save_offset(0, ms.offset);
-			ms.start_offset = ms.offset;
-			if (actual_slots < slots) {
+//			int actual_slots = ms.slots();
+//			ms.save_offset(0, ms.offset);
+//			ms.start_offset = ms.offset;
+//			if (actual_slots < slots) {
 				EBinMatchState res = new EBinMatchState(ms.bin, slots);
 				res.offset = ms.offset;
-				res.save_offset(0, ms.save_offset(0));
+				for (int i = 0; i < Math.min(slots,  ms.slots()); i++) {
+					res.save_offset(i, ms.save_offset(i));
+				}
 				res.start_offset = ms.offset;
 				return res;
-			}
-			return ms;
+//			}
+//			return ms;
 		}
 		EBitString bs;
 		if ((bs = obj.testBitString()) != null)
 			return new EBinMatchState(bs, slots);
 		return null;
 	}
+	
+	static final long[] EMPTY_LONG_ARRAY = new long[0];
 
 	public EBinMatchState(EBitString binary, int slots) {
 		this.bin = binary;
 		this.offset = 0;
-		if (slots>1) {
-			save_offsetN = new long[slots-1];
+		if (slots != 1) {
+			save_offsetN = new long[slots];
 		}
 	}
 
