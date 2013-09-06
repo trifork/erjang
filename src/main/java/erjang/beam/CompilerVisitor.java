@@ -1515,6 +1515,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				case gc_bif2:
 				case gc_bif3:
 
+				case fnegate:
 				case fadd:
 				case fsub:
 				case fmul:

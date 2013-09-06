@@ -1509,6 +1509,18 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						continue next_insn;
 					}
 
+					case fnegate: {
+						Insn.LSD insn = (Insn.LSD)insn_;
+						EAtom name = insn.opcode().symbol;
+						SourceOperand[] parms = new SourceOperand[] {
+							insn.src
+						};
+						Type type = getBifResult("erlang", name.getName(),
+												 parmTypes(current, parms), false);
+						current = setType(current, insn.dest, type);
+
+						continue next_insn;
+					}
 					case fadd:
 					case fsub:
 					case fmul:
