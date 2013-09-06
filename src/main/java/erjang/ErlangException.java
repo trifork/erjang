@@ -79,6 +79,11 @@ public abstract class ErlangException extends RuntimeException {
 	public EObject getCatchValue() {
 		return new ExceptionTuple(this);
 	}
+	
+	@Override
+	public String toString() {
+		return (ETuple.make(ERT.am_error, reason(), getTrace())).toString();
+	}
 
 	/**
 	 * 
@@ -155,6 +160,10 @@ public abstract class ErlangException extends RuntimeException {
 			@Override
 			protected ESeq initialValue() {
 				return getTrace();
+			}
+			@Override
+			public String toString() {
+				return getTrace().toString();
 			}
 		};
 	}
