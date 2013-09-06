@@ -29,6 +29,7 @@ import erjang.m.erlang.ErlConvert;
 public class Native extends ENative {
 	
 	static final EAtom am_scope = EAtom.intern("scope");
+	static final EAtom am_nomatch = EAtom.intern("nomatch");
 
 	/**
 	 * at(Subject, Pos) -> int()
@@ -198,7 +199,7 @@ public class Native extends ENative {
 	 */
 	@BIF
 	public static EObject match(EObject subject, EObject pattern) {
-		throw new NotImplemented();
+		return match(subject, pattern, ERT.NIL);
 	}
 	
 	/**
@@ -206,7 +207,11 @@ public class Native extends ENative {
 	 */
 	@BIF
 	public static EObject match(EObject subject, EObject pattern, EObject options) {
-		throw new NotImplemented();
+		ESeq result = matches(subject, pattern, options);
+		if (result.length() == 0)
+			return am_nomatch;
+		else
+			return result.head();
 	}
 	
 	/**
@@ -221,7 +226,7 @@ public class Native extends ENative {
 	 * matches(Subject,Pattern,Options) -> Found
 	 */
 	@BIF
-	public static EObject matches(EObject subject, EObject pattern, EObject options) {
+	public static ESeq matches(EObject subject, EObject pattern, EObject options) {
 		EBinary haystack = subject.testBinary();
 		EBinary needle = pattern.testBinary();
 		ESeq needles = pattern.testSeq();
