@@ -47,13 +47,8 @@ public class EModuleManager {
 	
 	static private Map<EAtom, ModuleInfo> infos = new ConcurrentHashMap<EAtom, ModuleInfo>();
 
-	static FunctionInfo undefined_function = null;
+	// static FunctionInfo undefined_function = null;
 	static EAtom am_prep_stop = EAtom.intern("prep_stop");
-
-	static {
-		FunID uf = new FunID("error_handler", "undefined_function", 3);
-		undefined_function = get_module_info(uf.module).get_function_info(uf);
-	}
 
 	static class FunctionInfo {
 		private final FunID fun;
@@ -136,7 +131,8 @@ public class EModuleManager {
 								throws Pausable {
 							
 							/** Get reference to error_handler:undefined_function/3 */
-							EFun uf = undefined_function.resolved_value;
+						
+							EFun uf = proc.undefined_function.resolved_value;
 
 							/** this is just some debugging info to help understand downstream errors */
 							if (get_module_info(fun.module).is_loaded()) {
@@ -176,7 +172,7 @@ public class EModuleManager {
 								}
 								
 								/** this is just some debugging info to help understand downstream errors */
-								log.log(Level.INFO, "failed to load "+fun+" (error_handler:undefined_function/3 not found)");
+								log.log(Level.INFO, "failed to load "+fun+" ("+proc.undefined_function+" not found)");
 								
 								throw new ErlangUndefined(fun.module,
 										fun.function, fun.arity);
@@ -258,7 +254,7 @@ public class EModuleManager {
 			info.add_internal(ref);
 		}
 
-		private synchronized FunctionInfo get_function_info(FunID fun) {
+		synchronized FunctionInfo get_function_info(FunID fun) {
 			FunctionInfo info = binding_points.get(fun);
 			if (info == null) {
 				binding_points.put(fun, info = new FunctionInfo(fun));
@@ -457,7 +453,7 @@ public class EModuleManager {
 		get_module_info(fun.module).add_internal(fun, ref);
 	}
 
-	private static ModuleInfo get_module_info(EAtom module) {
+	static ModuleInfo get_module_info(EAtom module) {
 		ModuleInfo mi;
 		synchronized (infos) {
 			mi = infos.get(module);

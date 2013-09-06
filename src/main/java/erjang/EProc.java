@@ -58,6 +58,7 @@ public final class EProc extends ETask<EInternalPID> {
 	public static final EAtom am_monitor_nodes = EAtom.intern("monitor_nodes");
 	public static final EAtom am_registered_name = EAtom.intern("registered_name");
 	public static final EAtom am_error_handler = EAtom.intern("error_handler");
+	public static final EAtom am_undefined_function = EAtom.intern("undefined_function");
 
 	public static final EAtom am_max = EAtom.intern("max");
 	public static final EAtom am_normal = EAtom.intern("normal");
@@ -205,6 +206,14 @@ public final class EProc extends ETask<EInternalPID> {
 	public int midx = 0;
 
 	private int priority = 2;
+
+	private EAtom error_handler = am_error_handler;
+	EModuleManager.FunctionInfo undefined_function;
+	
+	{
+		   FunID uf = new FunID(error_handler, am_undefined_function, 3); 
+		   undefined_function = EModuleManager.get_module_info(error_handler).get_function_info(uf);
+	}
 
 	protected void link_failure(EHandle h) throws Pausable {
 		if (trap_exit == ERT.TRUE || h.testLocalHandle()==null) {
@@ -404,6 +413,21 @@ public final class EProc extends ETask<EInternalPID> {
 				}
 			}
 			throw ERT.badarg(flag, value);
+		}
+		
+		if (flag == am_error_handler) {
+			EAtom val;
+			if ((val = value.testAtom()) != null) {
+				EAtom old = this.error_handler;
+				this.error_handler = val;
+				
+				FunID uf = new FunID(error_handler, am_undefined_function, 3); 
+				undefined_function = EModuleManager.get_module_info(error_handler).get_function_info(uf);
+
+				return old;
+			} else {
+				throw ERT.badarg(flag,  value);
+			}
 		}
 		
 		if (flag == am_monitor_nodes) {
