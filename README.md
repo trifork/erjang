@@ -1,4 +1,4 @@
-<img src="https://raw.github.com/trifork/erjang/master/erjang_logo4.png" width="128px" align="right">
+<img src="https://raw.github.com/trifork/erjang/master/erjang_logo4.png" width="96px" align="right">
 
 # Welcome to Erjang!  
 
