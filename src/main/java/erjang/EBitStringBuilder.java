@@ -370,6 +370,16 @@ public class EBitStringBuilder {
 
 	// compute size of utf8 char
 	static public ESmall bs_utf8_size(EObject value) {
+		ESmall sm;
+		if ((sm=value.testSmall()) != null) {
+			if (sm.value < 0x80) return ERT.box(1);
+			if (sm.value < 0x0800) return ERT.box(2);
+			if (sm.value < 0x10000) return ERT.box(3);
+			if (sm.value < 0x200000) return ERT.box(4);
+			if (sm.value < 0x4000000) return ERT.box(5);
+			return ERT.box(6);
+		}
+		
 		throw new NotImplemented("val="+value);
 	}
 	
