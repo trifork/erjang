@@ -117,6 +117,8 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 	private static final EObject ATOM_field_flags = EAtom.intern("field_flags");
 	private static final EObject ATOM_start = EAtom.intern("start");
+	private static final EObject am_erlang = EAtom.intern("erlang");
+	private static final EObject am_apply = EAtom.intern("apply");
 
 	static final String[] PAUSABLE_EX = new String[] { Type.getType(
 			Pausable.class).getInternalName() };
@@ -3153,9 +3155,15 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 							push(args[i], bif.getArgumentTypes()[off + i]);
 						}
 
+						if (is_tail && fun.mod == am_erlang && fun.fun == am_apply && fun.arity == 3) {
+							
+							mv.visitMethodInsn(INVOKESTATIC, "erjang/ERT", "apply_last", "(Lerjang/EProc;Lerjang/EObject;Lerjang/EObject;Lerjang/EObject;)Lerjang/EObject;");
+							
+						} else {
 						mv.visitMethodInsn(INVOKESTATIC,
 								bif.owner.getInternalName(), bif.getName(),
 								bif.getDescriptor());
+						}
 
 					}
 

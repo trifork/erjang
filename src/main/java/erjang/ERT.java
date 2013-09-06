@@ -661,6 +661,12 @@ public class ERT {
 		return efun.apply(proc, a);
 	}
 
+	public static EObject apply_last(EProc proc, EObject mod, EObject fun, EObject args) throws Pausable {
+		ESeq seq = args.testSeq();
+		if (seq == null) { throw ERT.badarg(mod, fun, args); }
+		return apply_list_last(proc, mod, fun, seq, seq.length());
+	}
+	
 	public static EObject apply_list_last(EProc proc, EObject mod, EObject fun,
 			ESeq seq, int len) throws Pausable {
 		EAtom f = fun.testAtom();
