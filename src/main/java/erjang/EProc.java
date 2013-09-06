@@ -57,6 +57,7 @@ public final class EProc extends ETask<EInternalPID> {
 	public static final EAtom am_memory = EAtom.intern("memory");
 	public static final EAtom am_monitor_nodes = EAtom.intern("monitor_nodes");
 	public static final EAtom am_registered_name = EAtom.intern("registered_name");
+	public static final EAtom am_error_handler = EAtom.intern("error_handler");
 
 	public static final EAtom am_max = EAtom.intern("max");
 	public static final EAtom am_normal = EAtom.intern("normal");
@@ -633,6 +634,9 @@ public final class EProc extends ETask<EInternalPID> {
 			
 		} else if (spec == am_memory) {
 			return new ETuple2(am_memory, ERT.box(50000));
+			
+		} else if (spec == am_error_handler) {
+			return new ETuple2(am_error_handler, am_error_handler);
 			
 		} else {
 			log.warning("NotImplemented: process_info("+spec+")");
