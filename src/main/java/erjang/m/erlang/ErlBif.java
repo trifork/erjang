@@ -264,7 +264,7 @@ public class ErlBif {
 		return res;
 	}
 
-	private static EObject apply_last(EProc proc, EFun fun, ESeq args)
+	public static EObject apply_last(EProc proc, EFun fun, ESeq args)
 			throws Pausable {
 		ESeq rargs = args.reverse();
 		int len = args.length();

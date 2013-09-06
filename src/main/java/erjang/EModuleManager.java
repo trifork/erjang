@@ -34,6 +34,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import erjang.beam.Compiler;
+import erjang.m.erlang.ErlBif;
 import erjang.m.java.JavaObject;
 import kilim.Pausable;
 
@@ -183,7 +184,8 @@ public class EModuleManager {
 								ESeq arg_list = ESeq.fromArray(args);
 								ESeq ufa = ESeq.fromArray(new EObject[] {
 										fun.module, fun.function, arg_list });
-								return uf.apply(proc, ufa);
+								return ErlBif.apply_last(proc, uf, ufa);
+							//	return uf.apply(proc, ufa);
 							}
 						}
 					},
