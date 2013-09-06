@@ -39,7 +39,7 @@ public final class EProc extends ETask<EInternalPID> {
 	
 	static Logger log = Logger.getLogger("erjang.proc");
 	
-	public static final EObject TAIL_MARKER = new ETailMarker();
+	public static final EObject TAIL_MARKER = null; //new ETailMarker();
 	
 	public static final EAtom am_trap_exit = EAtom.intern("trap_exit");
 	public static final EAtom am_sensitive = EAtom.intern("sensitive");
