@@ -1,3 +1,5 @@
+<img src="https://raw.github.com/trifork/erjang/master/erjang_logo4.png" width="128px" align="right">
+
 # Welcome to Erjang!  
 
 [![Build Status](https://travis-ci.org/trifork/erjang.png)](https://travis-ci.org/trifork/erjang) 
