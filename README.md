@@ -1,8 +1,8 @@
 # Welcome to Erjang!  
 
-[![Build Status](https://travis-ci.org/trifork/erjang.png)](https://travis-ci.org/trifork/erjang)  Doesn't build on Travis-CI, because there's not Erlang + Java image.
+[![Build Status](https://travis-ci.org/trifork/erjang.png)](https://travis-ci.org/trifork/erjang) 
 
-Erjang is a virtual machine for Erlang, which runs on Java(tm).  
+Erjang is a virtual machine for Erlang, which runs on Java 7.  
 
 * For comments and questions please use the [Erjang Google Group](http://groups.google.com/group/erjang)
 * Check the [README](https://github.com/trifork/erjang/wiki/README) before you try to run this.
@@ -10,7 +10,7 @@ Erjang is a virtual machine for Erlang, which runs on Java(tm).
 
 ### How does it work?
 
-It loads Erlang's binary `.beam` file format, converts it into Java's `.class` file format, and loads it into the JVM.   It will eventually have it's own implementation of all Erlang's BIFs (built-in-functions) written in Java.  
+It loads Erlang's binary `.beam` file format, compiles it into Java's `.class` file format, and loads it into the JVM.   It will eventually have it's own implementation of all Erlang's BIFs (built-in-functions) written in Java.  
 
 ### Does it work?
 
@@ -45,20 +45,8 @@ Eshell V5.10.2  (abort with ^G)
 3>
 ````
 
-There are still things that doesn't work: a few BEAM instruction are missing some runtime support.  There are also BIFs missing, or only partially implemented; we're quite careful to throw `erjang.NotImplemented` in BIFs (or branches thereof) which are not complete.  Many OTP modules need NIFs or linked-in drivers that are entirely missing or only partly implemented.
+There are still things that doesn't work: There are BIFs missing, or only partially implemented; we're quite careful to throw `erjang.NotImplemented` in BIFs (or branches thereof) which are not complete.  Many OTP modules need NIFs or linked-in drivers that are entirely missing or only partly implemented.  We do have experimental support for NIFs, so that may be improving soon.
 
-### Warnings
-
-When you run Erjang, you're likely to get warnings like this:
-
-````
-Nov 10, 2010 5:15:56 PM erjang.EModuleManager$FunctionInfo$1 invoke
-INFO: MISSING mnesia_sup:prep_stop/1
-````
-
-Such warnings are perfectly OK so long as you don't see a crash that you think is related to that.  It's a hint that perhaps there is a missing BIF somewhere around this.  But it may also just be some optional callback API which has not been implemented in the named erlang module.
-
-Until Erjang is a little more complete, I'd like to keep these warnings in there.
 
 
 ### What will it feel like to be running Erlang on the JVM?
@@ -68,7 +56,7 @@ Here is what to expect:
 * In Erjang, every node runs on a single heap, and so global GC will sometimes happen.
 * On the other hand, Erjang does not copy messages between processes -- they are simply shared, so sending large messages is significantly cheaper.
 * Over all, you will loose the predictability in behavior that Erlang has with regard to GC pauses, because Erlang can GC each process individually.  Java GC continues to improve, so this might become less of an issue over time; but it will likely never go away.
-* My current tests indicate, that you can get better throughput in Erjang than BEAM, see "this blog post":http://www.javalimit.com/2010/06/erjang-running-micro-benchmarks.html
+* My current tests indicate, that you can get better throughput in Erjang than BEAM, see [this blog post](http://www.javalimit.com/2010/06/erjang-running-micro-benchmarks.html), the graphs from google charts broke.
 * Erjang can run the "ring problem" at-par with BEAM, the Erlang virtual machine.  If you let the JIT warm up, Erjang looks like it is faster than beam.
 * The big win is that Erjang is running on a VM that does dynamic compilation, selective inlining, and all the performance that comes from that.  
 
