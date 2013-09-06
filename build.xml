@@ -241,6 +241,19 @@
         <echo message="Did install erlang in ${erjang.otp.root}" />
   </target>
 
+  <target name="get_otp_version" depends="ensure_otp">
+    <exec outputproperty="erjang.otp.version"
+          dir="."
+          executable="${erjang.otp.root}/bin/erl">
+      <arg value="-noshell"/>
+      <arg value="-eval"/>
+      <arg value='io:format("~s", [erlang:system_info(otp_release)]), erlang:halt().'/>
+    </exec>
+
+    <echo message="Erlang version is ${erjang.otp.version}" />
+
+  </target>
+
 
   <target name="perf_test" depends="estone_test,boot_stat_test"/>
   <target name="estone_test" depends="ensure_otp">
@@ -279,7 +292,7 @@
     </jar>
   </target>
 
-  <target name="otpjar" depends="untar_mini_release">
+  <target name="otpjar" depends="get_otp_version">
     <jar jarfile="otp-${erjang.otp.version}.jar" basedir="${erjang.otp.root}">
       <exclude name="**/*.so" />
       <exclude name="**/*.dll" />
@@ -299,7 +312,7 @@
   </target>
 
   <target name="alljar" depends="jar,otpjar">
-    <jar jarfile="erjang-${erjang.version}-otp-${erjang.otp.version}.jar" basedir="${erjang.otp.root}">
+    <jar jarfile="erjang-${erjang.otp.version}.jar" basedir="${erjang.otp.root}">
       <!-- include all of erjang -->
       <zipgroupfileset dir="." includes="erjang-${erjang.version}.jar" />
       <!-- include all of OTP -->
