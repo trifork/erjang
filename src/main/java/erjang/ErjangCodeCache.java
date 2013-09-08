@@ -190,6 +190,7 @@ public class ErjangCodeCache {
 		File tmpFile = File.createTempFile(file.getName(), "tmp",
 						   file.getParentFile());
 		JarOutputStream jo = new JarOutputStream(new FileOutputStream(tmpFile));
+		jo.setLevel(0);
 		for (Map.Entry<String,byte[]> e : repo.entrySet()) {
 		    String classFilename = e.getKey() + ".class";
 		    byte[] classContents = e.getValue();

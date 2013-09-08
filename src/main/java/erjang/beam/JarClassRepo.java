@@ -24,6 +24,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.jar.JarOutputStream;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 /**
  * 
@@ -35,6 +36,7 @@ public class JarClassRepo implements ClassRepo {
 	public JarClassRepo(File jarFile) throws IOException {
 		FileOutputStream fo = new FileOutputStream(jarFile);
 		jo = new JarOutputStream(fo);
+		jo.setLevel(ZipOutputStream.STORED);
 	}
 	
 	/* (non-Javadoc)
@@ -54,7 +56,8 @@ public class JarClassRepo implements ClassRepo {
 		
 		//System.out.println("# "+out);
 		
-		jo.putNextEntry(new ZipEntry(out));
+		ZipEntry ze = new ZipEntry(out);
+		jo.putNextEntry(ze);
 		jo.write(data);
 		jo.closeEntry();
 	}
