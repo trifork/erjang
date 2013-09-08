@@ -414,11 +414,25 @@ public class EBitStringBuilder {
 	}
 
 	public void put_utf16(EObject value, int flags) {
-		throw new NotImplemented("val="+value+";flags="+flags);
+		ESmall num = value.testSmall();
+		if (num == null || !Character.isDefined(num.value))
+			throw ERT.badarg(value); // TODO: throw what?
+		String val = new String(new char[] { (char) num.value });
+		byte[] bytes = val.getBytes(IO.UTF16);
+		for (int i = 0; i < bytes.length; i++) {
+			put_byte(bytes[i]);
+		}
 	}
 
 	public void put_utf32(EObject value, int flags) {
-		throw new NotImplemented("val="+value+";flags="+flags);
+		ESmall num = value.testSmall();
+		if (num == null || !Character.isDefined(num.value))
+			throw ERT.badarg(value); // TODO: throw what?
+		String val = new String(new char[] { (char) num.value });
+		byte[] bytes = val.getBytes(IO.UTF32);
+		for (int i = 0; i < bytes.length; i++) {
+			put_byte(bytes[i]);
+		}
 	}
 
 	// compute size of utf8 char
