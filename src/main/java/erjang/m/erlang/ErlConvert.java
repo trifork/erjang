@@ -220,6 +220,33 @@ public class ErlConvert {
 	}
 
 	@BIF
+	public static EInteger binary_to_integer(EObject obj) {
+		EBinary bin;
+		if ((bin = obj.testBinary()) == null)
+			throw ERT.badarg(obj);
+
+		// remove leading +
+		int off = 0;
+		if (bin.byteSize() > 0) {
+			if (bin.byteAt(0) == '+') {
+				off += 1;
+			}
+		}
+		
+		try {
+			byte[] bytes = bin.getByteArray();
+			String sval = new String(bytes, off, bytes.length-off, IO.ISO_LATIN_1);
+			return ERT.box_parse(sval);
+			
+		} catch (NumberFormatException e) {
+			throw ERT.badarg(obj);
+		}
+		
+	}
+
+	
+	
+	@BIF
 	public static EInteger list_to_integer(EObject obj) {
 		EString seq;
 		if ((seq = obj.testString()) == null)
