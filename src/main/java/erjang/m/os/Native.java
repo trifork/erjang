@@ -63,6 +63,20 @@ public class Native extends ENative {
 			am_windows);
 	private static final ETuple2 OS_TYPE_WINNT = new ETuple2(am_win32, am_nt);
 
+	
+	/** os:putenv(string(), string()) -> true */
+	@BIF
+	public static EObject putenv(EObject o1, EObject o2) {
+		EString str1 = o1.testString();
+		EString str2 = o2.testString();
+		if (str1 == null || str2 == null)
+			throw ERT.badarg(o1, o2);
+		
+		ErjangConfig.setenv(str1.stringValue(), str2.stringValue());
+		
+		return ERT.TRUE;
+	}
+	
 	/** os:getenv(string()) -> string() | false */
 	@BIF
 	public static EObject getenv(EObject o) {
