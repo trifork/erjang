@@ -93,6 +93,7 @@ import erjang.beam.ModuleAnalyzer.FunInfo;
 import erjang.beam.repr.ExtFun;
 import erjang.beam.repr.Insn;
 import erjang.m.erlang.ErlBif;
+import erjang.m.erlang.ErlConvert;
 
 /**
  * 
@@ -374,6 +375,23 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 		return;
 	}
 	
+	
+	Type getConstantType(EObject term) {
+		Type type = Type.getType(term.getClass());
+
+		if (type.equals(ESTRING_TYPE))
+			return type;
+		
+		if (type.equals(ENIL_TYPE))
+			return type;
+		
+		if (term.testSeq() != null) {
+			type = ESEQ_TYPE;
+		}
+
+		return type;
+	}
+	
 	/**
 	 * 
 	 */
@@ -396,35 +414,50 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 		}
 
+		cv.visitField(ACC_STATIC, "attributes", ESEQ_DESC, 
+				null, null).visitEnd();
+		constants.put(atts, "attributes");
+
+		cv.visitField(ACC_STATIC, "compile", ESEQ_DESC, 
+				null, null).visitEnd();
+		constants.put(compile_info, "compile");
+		
+		if (this.module_md5 != null) {
+
+			cv.visitField(ACC_STATIC, "module_md5", EBINARY_TYPE.getDescriptor(), 
+					null, null).visitEnd();
+
+			constants.put(module_md5, "module_md5");
+		}
+
 		for (Map.Entry<EObject, String> ent : constants.entrySet()) {
 
 			EObject term = ent.getKey();
-			term.emit_const(mv);
+			Type type = getConstantType(term);
+
+			ETuple tup;
+			if (((tup=term.testTuple()) != null || term.testCons() != null)  
+					&& term != ERT.NIL
+					&& !type.equals(ESTRING_TYPE)
+					&& !( tup != null && tup.arity()==5 && tup.elm(1) == ETuple.am_Elixir_Regex)
+					) {
+				EBinary bin = ErlConvert.term_to_binary(term, EList.make(ErlConvert.am_compressed));
+				bin.emit_const(mv);
+				
+				mv.visitMethodInsn(INVOKESTATIC, 
+						Type.getType(ErlConvert.class).getInternalName(),
+						"binary_to_term",
+						EUtil.getSignature(1, false));
+				
+				mv.visitTypeInsn(CHECKCAST, type.getInternalName());
+				
+			} else {		
+				term.emit_const(mv);
+			}
+			
 			mv.visitFieldInsn(Opcodes.PUTSTATIC, self_type.getInternalName(),
-					ent.getValue(), Type.getType(term.getClass())
+					ent.getValue(), type
 							.getDescriptor());
-		}
-
-		cv.visitField(ACC_STATIC | ACC_PRIVATE, "attributes",
-				ESEQ_TYPE.getDescriptor(), null, null);
-
-		atts.emit_const(mv);
-		mv.visitFieldInsn(Opcodes.PUTSTATIC, self_type.getInternalName(),
-				"attributes", ESEQ_TYPE.getDescriptor());
-
-		cv.visitField(ACC_STATIC | ACC_PRIVATE, "compile",
-				ESEQ_TYPE.getDescriptor(), null, null);
-
-		compile_info.emit_const(mv);
-		mv.visitFieldInsn(Opcodes.PUTSTATIC, self_type.getInternalName(),
-				"compile", ESEQ_TYPE.getDescriptor());
-
-		if (this.module_md5 != null) {
-			cv.visitField(ACC_STATIC, "module_md5",
-					EBINARY_TYPE.getDescriptor(), null, null);
-			module_md5.emit_const(mv);
-			mv.visitFieldInsn(PUTSTATIC, self_type.getInternalName(),
-					"module_md5", EBINARY_TYPE.getDescriptor());
 		}
 
 		mv.visitInsn(RETURN);
@@ -1922,9 +1955,9 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				}
 
 				String known = constants.get(value);
+				Type type = getConstantType(value);
 
 				if (known == null) {
-					Type type = Type.getType(value.getClass());
 
 					String cn = getConstantName(value, constants.size());
 
@@ -1936,7 +1969,6 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				}
 
 				if (known != null) {
-					Type type = Type.getType(value.getClass());
 					mv.visitFieldInsn(GETSTATIC, self_type.getInternalName(),
 							known, type.getDescriptor());
 					return type;

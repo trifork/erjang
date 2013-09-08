@@ -59,7 +59,7 @@ public class ErlConvert {
 	 * 
 	 */
 	private static final ESmall PLUS_SIGN = ERT.box((int)'+');
-	private static final EAtom am_compressed = EAtom.intern("compressed");
+	public static final EAtom am_compressed = EAtom.intern("compressed");
 	private static final EAtom am_minor_version = EAtom.intern("minor_version");
 
 	@BIF

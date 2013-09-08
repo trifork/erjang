@@ -166,13 +166,11 @@ public final class ESmall extends EInteger {
 	@Override
 	public org.objectweb.asm.Type emit_const(MethodVisitor fa) {
 
-		Type type = ESMALL_TYPE;
-
-		fa.visitTypeInsn(Opcodes.NEW, type.getInternalName());
-		fa.visitInsn(Opcodes.DUP);
 		fa.visitLdcInsn(new Integer(value));
-		fa.visitMethodInsn(Opcodes.INVOKESPECIAL, type.getInternalName(),
-				"<init>", "(I)V");
+		fa.visitMethodInsn(Opcodes.INVOKESTATIC, ESMALL_TYPE.getInternalName(), 
+				"make", "(I)Lerjang/ESmall;");
+		
+		Type type = ESMALL_TYPE;
 
 		return type;
 	}

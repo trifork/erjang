@@ -518,7 +518,7 @@ public abstract class ETuple extends EObject implements Cloneable /* , Indexed *
 		return false;
 	}
 
-	static final EAtom am_Elixir_Regex = EAtom.intern("Elixir.Regex");
+	public static final EAtom am_Elixir_Regex = EAtom.intern("Elixir.Regex");
 	
 	@Override
 	public Type emit_const(MethodVisitor fa) {
