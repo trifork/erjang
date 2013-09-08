@@ -19,6 +19,8 @@
 
 package erjang.m.lists;
 
+import java.util.ArrayList;
+
 import kilim.Pausable;
 import erjang.BIF;
 import erjang.EAtom;
@@ -33,9 +35,14 @@ import erjang.ESeq;
 import erjang.ESmall;
 import erjang.ETuple;
 import erjang.ETuple2;
+import erjang.ErlangError;
 import erjang.NotImplemented;
 
 public class Native extends ENative {
+	
+	public static final EAtom am_badmatch = EAtom.intern("badmatch");
+	public static final EAtom am_lists = EAtom.intern("lists");
+	public static final EAtom am_mapfoldl = EAtom.intern("mapfoldl");
 	
 	@BIF
 	public static EObject keymember(EObject key, EObject nth_arg, EObject list_arg) {
@@ -113,6 +120,47 @@ public class Native extends ENative {
 		return ERT.FALSE;
 	}
 
+	// reimplement this to be iterative, not recursive...
+	@BIF
+	public static ETuple2 mapfoldl(EProc proc, EObject fun0, EObject acc, EObject list0) throws Pausable {
+		EFun fun = fun0.testFunction2(2);
+		ESeq list = list0.testSeq();
+		
+		if (fun == null || list == null) {
+			ERT.func_info(am_lists, am_mapfoldl, 3);
+		}
+		
+		ArrayList<EObject> map = new ArrayList<>();
+		while (!list.isNil()) {
+			
+			EObject pair0;
+			
+			proc.arg0 = list.head();
+			proc.arg1 = acc;
+			proc.tail = fun;			
+			do {
+				pair0 = proc.tail.go(proc);
+			} while (pair0 == EProc.TAIL_MARKER);
+			
+			ETuple2 out = ETuple2.cast(pair0);
+			
+			if (out == null) {
+				throw new ErlangError(am_badmatch, pair0);
+			}
+			
+			map.add(out.elem1);
+			acc = out.elem2;
+			
+			list = list.tail();
+		}
+		
+		ESeq res = ERT.NIL;
+		for (int i = map.size()-1; i >= 0; i--) {
+			res = res.cons(map.get(i));
+		}
+		
+		return new ETuple2(res, acc);
+	}
 	
 	@BIF
 	public static ESeq reverse(EObject hd, EObject tl) {
