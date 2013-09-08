@@ -76,6 +76,7 @@ import erjang.Module;
 import erjang.NIF;
 import erjang.NotImplemented;
 import erjang.BIF.Type;
+import erjang.driver.IO;
 import erjang.m.java.JavaObject;
 
 /** bifs for the module erlang */
@@ -409,8 +410,7 @@ public class ErlBif {
 		throw ERT.badarg(obj);
 	}
 
-	@BIF
-	
+	@BIF	
 	static public EString float_to_list(EObject obj) {
 		EDouble value;
 		if ((value = obj.testFloat()) != null) {
@@ -419,6 +419,29 @@ public class ErlBif {
 		throw ERT.badarg(obj);
 	}
 
+	@BIF	
+	static public EBinary float_to_binary(EObject obj) {
+		EDouble value;
+		if ((value = obj.testFloat()) != null) {
+			return value.to_binary();
+		}
+		throw ERT.badarg(obj);
+	}
+
+	@BIF 
+	public static EDouble binary_to_float(EObject obj) {
+		EBinary bin = obj.testBinary();
+		if (bin != null) {
+			try {
+				double d = Double.parseDouble( new String(bin.getByteArray(), IO.ISO_LATIN_1) );
+				return new EDouble(d);
+			} catch (NumberFormatException e) {
+				// ignore //
+			}
+		}
+		throw ERT.badarg(obj);
+	}
+	
 	@BIF
 	
 	static public EObject error(EObject reason) {
