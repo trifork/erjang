@@ -458,6 +458,11 @@ public class EBitStringBuilder {
 	
 	// compute size of utf16 char
 	static public ESmall bs_utf16_size(EObject value) {
-		throw new NotImplemented("val="+value);
+		ESmall num = value.testSmall();
+		if (num == null || !Character.isDefined(num.value))
+			throw ERT.badarg(value); // TODO: throw what?
+		String val = new String(new char[] { (char) num.value });
+		byte[] bytes = val.getBytes(IO.UTF16);
+		return ERT.box(bytes.length);
 	}
 }
