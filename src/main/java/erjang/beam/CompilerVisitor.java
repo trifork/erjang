@@ -769,8 +769,9 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				} else {
 					fun_type = full_inner_name;
 				}
-
-				if (funInfo.is_called_locally_in_nontail_position)
+				
+				if (!Boolean.getBoolean("erjang.inline_calls") 
+						&& funInfo.is_called_locally_in_nontail_position)
 					generate_invoke_call_self();
 
 				if (funInfo.is_called_locally_in_tail_position)
@@ -3215,6 +3216,51 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					FunInfo target = funInfos.get(new FunID(fun.mod,
 							fun.name(), fun.arity));
 
+					
+					if (!is_tail && 
+						target.may_return_tail_marker &&
+						Boolean.getBoolean("erjang.inline_calls") ) {
+						
+						
+						mv.visitMethodInsn(INVOKESTATIC, self_type.getInternalName(),
+								EUtil.getJavaName(fun.fun, fun.arity),
+								EUtil.getSignature(fun.arity, true));
+
+							Label done = new Label();
+							Label loop = new Label();
+							// - val
+							mv.visitLabel(loop);
+							// - val
+							mv.visitInsn(DUP);
+							// - val val
+							if (EProc.TAIL_MARKER == null) {
+								mv.visitJumpInsn(IFNONNULL, done);
+							} else {
+								mv.visitFieldInsn(GETSTATIC, EPROC_NAME, "TAIL_MARKER",
+										EOBJECT_DESC);
+								mv.visitJumpInsn(IF_ACMPNE, done);
+							}
+							// - val
+							mv.visitInsn(POP);
+							// -
+							mv.visitVarInsn(ALOAD, 0);
+							// - proc
+							mv.visitFieldInsn(GETFIELD, EPROC_NAME, "tail", EFUN_DESCRIPTOR);
+							// - fun
+							mv.visitVarInsn(ALOAD, 0);
+							// - fun proc
+
+							mv.visitMethodInsn(INVOKEVIRTUAL, EFUN_NAME, (funInfo.is_pausable ? "go"
+									: "go2"), GO_DESC);
+							// - val
+							mv.visitJumpInsn(GOTO, loop);
+
+							mv.visitLabel(done);
+							// - val
+							mv.visitVarInsn(ASTORE, xregs[0]);
+
+					} else {
+					
 					mv.visitMethodInsn(
 							INVOKESTATIC,
 							self_type.getInternalName(),
@@ -3229,6 +3275,9 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					} else {
 						mv.visitVarInsn(ASTORE, xregs[0]);
 					}
+
+					}
+					
 
 				}
 			}
