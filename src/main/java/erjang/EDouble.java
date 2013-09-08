@@ -26,6 +26,8 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
+import erjang.driver.IO;
+
 public class EDouble extends ENumber {
 
 	private static final Type EDOUBLE_TYPE = Type.getType(EDouble.class);
@@ -135,6 +137,16 @@ public class EDouble extends ENumber {
 		form = form.format("%.20e", value);
 		String value = form.toString();
 		return new EString(value);
+	}
+
+	/**
+	 * @return
+	 */
+	public EBinary to_binary() {
+		Formatter form = new Formatter();
+		form = form.format("%.20e", value);
+		String value = form.toString();
+		return new EBinary(value.getBytes(IO.ISO_LATIN_1));
 	}
 
 	public ENumber add(EObject other, boolean guard) {

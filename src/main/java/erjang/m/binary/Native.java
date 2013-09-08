@@ -1,11 +1,14 @@
 package erjang.m.binary;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Comparator;
 
 import com.trifork.clj_ds.PersistentTreeMap.Seq;
 
 import erjang.*;
+import erjang.driver.IO;
+import erjang.driver.IO.BARR;
 import erjang.m.erlang.ErlBif;
 import erjang.m.erlang.ErlConvert;
 
@@ -111,7 +114,7 @@ public class Native extends ENative {
 	 */
 	@BIF
 	public static EBinary copy(EObject subject) {
-		throw new NotImplemented();
+		return copy(subject, ERT.box(1));
 	}
 	
 	/**
@@ -119,7 +122,22 @@ public class Native extends ENative {
 	 */
 	@BIF
 	public static EBinary copy(EObject subject, EObject n) {
-		throw new NotImplemented();
+		ESmall count;
+		EBinary bin;
+		if ((bin=subject.testBinary()) == null || (count=n.testSmall()) == null) {
+			throw ERT.badarg(subject, n);
+		}
+		
+		BARR b = new BARR();
+		for (int i = 0; i < count.value; i++) {
+			try {
+				bin.writeTo(b);
+			} catch (IOException e) {
+				throw new ErlangError(new EString(e.getMessage()));
+			}
+		}
+		
+		return new EBinary(b.toByteArray());		
 	}
 	
 	/**
