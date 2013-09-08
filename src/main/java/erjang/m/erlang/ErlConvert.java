@@ -32,6 +32,7 @@ import erjang.EBinary;
 import erjang.EBitString;
 import erjang.ECons;
 import erjang.EExternal;
+import erjang.EIOListVisitor;
 import erjang.EInputStream;
 import erjang.EInteger;
 import erjang.EDouble;
@@ -309,6 +310,11 @@ public class ErlConvert {
 		return EString.make(bin, idx0start, len);
 	}
 
+	@BIF
+	public static EBitString list_to_bitstring(EObject list) {
+		return EIOListVisitor.collect_bitstring(list);
+	}
+	
 	static private class BARR extends ByteArrayOutputStream {
 		EBinary asBinary() {
 			return new EBinary(super.buf, 0, super.count);

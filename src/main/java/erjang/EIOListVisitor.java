@@ -23,6 +23,10 @@ public abstract class EIOListVisitor {
 			visit(array[off + i]);
 		}
 	}
+	
+	public void visitBits(int bits, int bitCount) {
+		throw new IllegalArgumentException();
+	}
 
 	abstract void visit(int aByte);
 	
@@ -129,7 +133,50 @@ public abstract class EIOListVisitor {
 		});
 		return out.wrap();
 	}
+
+	public static EBitString collect_bitstring( EObject io_list ) {
+		
+		EBitString bin;
+		if ((bin = io_list.testBitString()) != null) {
+			return bin;
+		}
+		
+		final int[] extra_bits = new int[1];
+		
+		@SuppressWarnings("resource")
+		final BARR out = new BARR();
+		io_list.visitIOList( new EIOListVisitor() {
+			
+			@Override
+			public void visit(byte[] array, int off, int len) {
+				if (extra_bits[0] != 0) throw ERT.badarg();
+				out.write(array, off, len);
+			}
+			
+			@Override
+			void visit(int aByte) {
+				if (extra_bits[0] != 0) throw ERT.badarg();
+				out.write(aByte);
+			}
+			
+			@Override
+			public void visitBits(int bits, int bitCount) {
+				out.write( bits << (8-bitCount) );
+				extra_bits[0] = bitCount;
+			}
+			
+		});
+		
+		ByteBuffer bb = out.wrap();
+		
+		if (extra_bits[0] == 0) {
+			return new EBinary(bb.array(), 0, bb.limit());
+		} else {
+			return EBitString.make(bb.array(), 0, bb.limit()-1, extra_bits[0]);
+		}
+	}
 	
+
 	public static void update( EObject io_list, final Checksum checksum ) {
 		io_list.visitIOList( new EIOListVisitor() {
 			
@@ -145,4 +192,5 @@ public abstract class EIOListVisitor {
 			
 		});
 	}
+
 }
