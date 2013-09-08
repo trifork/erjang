@@ -272,20 +272,20 @@ public abstract class EFun extends EObject implements Opcodes {
 	static Map<String, Constructor<? extends EFun>> handlers = new HashMap<String, Constructor<? extends EFun>>();
 	static final Pattern JAVA_ID = Pattern.compile("([a-z]|[A-Z]|$|_|[0-9])*"); // valid java identifier
 
-    public static EFun get_fun_with_handler(String module, String function, int arity, EFunHandler handler, ClassLoader loader) {
+    public static EFun get_fun_with_handler(String module0, String function0, int arity, EFunHandler handler, ClassLoader loader) {
 
-    	String signature = module + function + arity;
+    	String signature = "EFunHandler" + arity;
 		Constructor<? extends EFun> h = handlers.get(signature);
 
 		if (h == null) {
 
 			get_fun_class(arity);
 			
-                        String safe_module =  JAVA_ID.matcher(module).matches() ? module : make_valid_java_id(module);
-			String safe_function = JAVA_ID.matcher(function).matches() ? function : make_valid_java_id(function);
+            //String safe_module =  JAVA_ID.matcher(module).matches() ? module : make_valid_java_id(module);
+			//String safe_function = JAVA_ID.matcher(function).matches() ? function : make_valid_java_id(function);
 			StringBuffer sb = new StringBuffer();
 			String self_type = sb.append(EFUN_TYPE.getInternalName())
-								.append(safe_module).append(safe_function)
+								// .append(safe_module).append(safe_function)
 								.append("Handler").append(arity).toString();
 
 			ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES|ClassWriter.COMPUTE_MAXS);
@@ -304,7 +304,10 @@ public abstract class EFun extends EObject implements Opcodes {
 
 			// make constructor
 			MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", "("
-					+ EFUNHANDLER_TYPE.getDescriptor() + ")V", null, null);
+					+ EFUNHANDLER_TYPE.getDescriptor() 
+					+ EATOM_DESC
+					+ EATOM_DESC
+					+ ")V", null, null);
 			mv.visitCode();
 
 			mv.visitVarInsn(ALOAD, 0);
@@ -316,18 +319,14 @@ public abstract class EFun extends EObject implements Opcodes {
 			mv.visitFieldInsn(PUTFIELD, self_type, "handler", EFUNHANDLER_TYPE
 					.getDescriptor());
 			mv.visitVarInsn(ALOAD, 0);
-			mv.visitLdcInsn(module);
-			mv.visitMethodInsn(INVOKESTATIC, EATOM_TYPE.getInternalName(),
-							   "intern", "(Ljava/lang/String;)Lerjang/EAtom;");
+			mv.visitVarInsn(ALOAD, 2);
 			mv.visitFieldInsn(PUTFIELD, self_type, "module_name", EATOM_DESC);
 			mv.visitVarInsn(ALOAD, 0);
-			mv.visitLdcInsn(function);
-			mv.visitMethodInsn(INVOKESTATIC, EATOM_TYPE.getInternalName(),
-							   "intern", "(Ljava/lang/String;)Lerjang/EAtom;");
+			mv.visitVarInsn(ALOAD, 3);
 			mv.visitFieldInsn(PUTFIELD, self_type, "function_name", EATOM_DESC);
 
 			mv.visitInsn(RETURN);
-			mv.visitMaxs(3, 3);
+			mv.visitMaxs(4, 4);
 			mv.visitEnd();
 
 			/** forward toString to handler */
@@ -354,7 +353,7 @@ public abstract class EFun extends EObject implements Opcodes {
 			Class<? extends EFun> clazz = ERT.defineClass(loader, self_type.replace('/', '.'), data);
 
 			try {
-				h = clazz.getConstructor(EFunHandler.class);
+				h = clazz.getConstructor(EFunHandler.class, EAtom.class, EAtom.class);
 			} catch (Exception e) {
 				throw new Error(e);
 			}
@@ -363,7 +362,7 @@ public abstract class EFun extends EObject implements Opcodes {
 		}
 
 		try {
-			return h.newInstance(handler);
+			return h.newInstance(handler, EAtom.intern(module0), EAtom.intern(function0));
 		} catch (Exception e) {
 			throw new Error(e);
 		}
