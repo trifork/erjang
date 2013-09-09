@@ -65,5 +65,10 @@ public abstract class ELazySeq extends ESeq {
 	public ESeq testSeq() {
 		return value().testSeq();
 	}
+	
+	@Override
+	public ECons testNonEmptyList() {
+		return value().testNonEmptyList();
+	}
 
 }
