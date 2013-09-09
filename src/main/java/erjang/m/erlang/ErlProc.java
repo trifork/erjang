@@ -510,6 +510,8 @@ public class ErlProc {
 	static EAtom am_heap_type = EAtom.intern("heap_type");
 	static EAtom am_shared = EAtom.intern("shared");
 
+	private static EAtom am_build_type = EAtom.intern("build_type");
+
 	@BIF
 	static EObject system_info(EProc proc, EObject type) {
 
@@ -635,6 +637,9 @@ public class ErlProc {
 			 
 		} else if (type == am_hipe_architecture) {
 			return am_undefined;
+			
+		} else if (type == am_build_type) {
+			return EAtom.intern("opt");
 			
 		} else if (type == am_system_version) {
 			return new EString("Erjang ["+ ERT.runtime_info.erts_version+"]");
