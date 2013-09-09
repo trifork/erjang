@@ -422,6 +422,8 @@ public class Native extends ENative {
 				flags |= Pattern.UNICODE_CASE;
 			}
 
+			newline_any |= (newline_lf & newline_cr & newline_crlf);
+			
 			if (newline_any == true) {
 				// great, this is the Java default
 
