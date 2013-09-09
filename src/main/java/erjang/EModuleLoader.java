@@ -71,7 +71,7 @@ public class EModuleLoader {
 
 		EModule loaded_module;
 		Progress.activity("loading "+moduleName+"...");
-		if (use_interpreter) {
+		if (use_interpreter || moduleName.startsWith("elixir_compiler_")) {
 			BeamFileData bfd = beamParser.load(beamBin.toByteArray());
 			loaded_module = erjang.beam.interpreter.Interpreter.beamFileToEModule(bfd);
 			after = System.currentTimeMillis();
