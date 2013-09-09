@@ -11,7 +11,7 @@ ERJANG_DIR=`dirname "$EJ_CMD"`
 
 exec java \
     -server \
-    -XX:MaxJavaStackTraceDepth=1000 \
+    -XX:MaxJavaStackTraceDepth=100000 \
     -Derjang.inline_calls=true \
     -Xmx1g -Xss50m \
     -XX:PermSize=128m \
