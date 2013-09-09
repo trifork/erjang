@@ -83,8 +83,7 @@ public class ETableBag extends ETable {
 
 			// normal bag; there can be several elements with the
 			// same key, but no duplicates (i.e. == each other)
-			// maybe use EPersistentInsertionOrderedSet.EMPTY
-			? PersistentHashSet.EMPTY 
+			? EPersistentInsertionOrderedSet.EMPTY 
 					
 			// duplicate bag, allows duplicate elements with the
 			// same key; just hold values as a list
