@@ -27,6 +27,7 @@ import com.trifork.clj_ds.IPersistentMap;
 import com.trifork.clj_ds.ISeq;
 import com.trifork.clj_ds.PersistentHashMap;
 import com.trifork.clj_ds.PersistentTreeMap;
+
 import erjang.EAtom;
 import erjang.ECons;
 import erjang.EInteger;
@@ -56,7 +57,7 @@ public class ETableSet extends ETable {
 		super(owner, type, tid, aname, access, keypos,
 				is_named, heirPID, heirData,
 				type == Native.am_set
-			  ? PersistentHashMap.EMPTY
+			  ? EPersistentInsertionOrderedMap.EMPTY
 			  : new PersistentTreeMap(null, EObject.ERLANG_ORDERING));
 		this.ordered = type != Native.am_set;
 	}
