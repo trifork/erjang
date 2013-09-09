@@ -1167,6 +1167,7 @@ public class ERT {
 			case 'i': l = l.cons(EAtom.intern("caseless")); break;
 			case 'f': l = l.cons(EAtom.intern("firstline")); break;
 			case 'm': l = l.cons(EAtom.intern("multiline")); break;
+			case 's': l = l.cons(EAtom.intern("dotall")); break;
 			default: throw new RuntimeException("unsupported regex option "+((char)ops[i])+" in "+patt);
 			}
 		}
