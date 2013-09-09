@@ -19,7 +19,8 @@ extern int enif_is_tuple (ErlNifEnv* ee, ERL_NIF_TERM term)
   }
 }
 
-extern int enif_get_tuple (ErlNifEnv* ee, ERL_NIF_TERM tpl, int* arity, ERL_NIF_TERM** array)
+
+int enif_get_tuple(ErlNifEnv* ee, ERL_NIF_TERM tpl, int* arity, const ERL_NIF_TERM** a0)
 {
   JNIEnv *je = ee->je;
   jobject tup = je->CallObjectMethod(E2J(tpl), m_eobject__testTuple);
@@ -28,6 +29,8 @@ extern int enif_get_tuple (ErlNifEnv* ee, ERL_NIF_TERM tpl, int* arity, ERL_NIF_
 
   int count = *arity = je->CallIntMethod(tup, m_etuple__arity);
   if (count == 0) { return NIF_TRUE; }
+
+  ERL_NIF_TERM** array = (ERL_NIF_TERM**) a0;
 
   // ok ... check arity
   if (array == NULL)
