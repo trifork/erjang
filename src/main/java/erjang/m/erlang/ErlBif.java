@@ -77,6 +77,7 @@ import erjang.NIF;
 import erjang.NotImplemented;
 import erjang.BIF.Type;
 import erjang.driver.IO;
+import erjang.m.ets.EMatchSpec;
 import erjang.m.java.JavaObject;
 
 /** bifs for the module erlang */
@@ -2264,4 +2265,36 @@ public class ErlBif {
 	
     	return bin1.substring(start1.value * 8, length1.value * 8);
     }
+    
+	@BIF
+	static public EObject match_spec_test(EObject term, EObject matchSpec, EObject how)
+	{
+		EMatchSpec spec;
+		ESeq seq;
+		if ((matchSpec instanceof EMatchSpec)) {
+			spec = (EMatchSpec) matchSpec;
+		} else if ((seq=matchSpec.testSeq()) != null) {
+			try {
+				spec = EMatchSpec.compile(seq);
+			} catch (ErlangError e) {
+				if (e.reason() == ERT.am_badarg) {
+					throw ERT.badarg(term, matchSpec, how);
+				} else {
+					throw e;
+				}
+			}
+		} else {
+			throw ERT.badarg(term, matchSpec, how);
+		}
+		
+		EObject res = spec.match(term);
+		if (res == null) {
+			return ETuple.make(ERT.am_ok, ERT.FALSE, ERT.NIL, ERT.NIL);
+		} else {
+			return ETuple.make(ERT.am_ok, ERT.TRUE, ERT.NIL, ERT.NIL);
+		}
+
+	}
+	
+    
 }
