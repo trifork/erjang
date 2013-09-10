@@ -137,7 +137,7 @@ public class EModuleManager {
 
 							/** this is just some debugging info to help understand downstream errors */
 							if (get_module_info(fun.module).is_loaded()) {
-								if (fun.function != am_prep_stop && fun.function != am___info__)
+								if (Boolean.getBoolean("erjang.declare_missing_imports") && fun.function != am_prep_stop && fun.function != am___info__)
 									log.log(Level.INFO, "MISSING "+fun);
 							} else {
 								log.log(Level.FINER, "resolving"+fun);
