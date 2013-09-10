@@ -183,14 +183,16 @@ public class Native extends ENative {
 				if (o2.capture_spec == am_all) {
 					ESeq l = ERT.NIL;
 					for (int i = mr.groupCount(); i >= 0; i--) {
-						l = l.cons( capture (subject, mr, i, o2) );
+						if (mr.start(i) != -1)
+							l = l.cons( capture (subject, mr, i, o2) );
 					}
 					return new ETuple2(am_match, l);
 					
 				} else if (o2.capture_spec == am_all_but_first) {
 					ESeq l = ERT.NIL;
 					for (int i = mr.groupCount(); i > 0; i--) {
-						l = l.cons( capture (subject, mr, i, o2) );
+						if (mr.start(i) != -1)
+							l = l.cons( capture (subject, mr, i, o2) );
 					}
 					return new ETuple2(am_match, l);
 					
@@ -204,8 +206,10 @@ public class Native extends ENative {
 					
 					 for (; !il.isNil(); il = il.tail()) {
 						 ESmall idx = il.head().testSmall();
-						 EObject val = capture (subject, mr, idx.value, o2);
-						 out = out.cons(val);
+						 if (mr.start(idx.value) != -1) {
+							 EObject val = capture (subject, mr, idx.value, o2);
+							 out = out.cons(val);
+						 }
 					 }
 					 
 					 return new ETuple2(am_match, out.reverse());
