@@ -2249,23 +2249,44 @@ public class ErlBif {
     
     @BIF
     public static EObject binary_part(EObject bin, EObject start, EObject length) {
+    	EObject result = binary_part_guard(bin, start, length);
+    	if (result == null) {
+    		throw ERT.badarg(bin, start, length);    		
+    	}
+    	return result;
+    }
+    
+    @BIF(name="binary_part", type=Type.GUARD)
+    public static EObject binary_part_guard(EObject bin, EObject start) {
+    	EBinary bin1 = bin.testBinary();
+    	ESmall start1 = start.testSmall();
+    	if (bin1 == null || start1 == null) {
+    		return null;
+    	}
+    	
+    	return binary_part_guard(bin, start, ERT.box( bin1.byteSize() - start1.value ));
+    }
+    
+    @BIF(name="binary_part", type=Type.GUARD)
+    public static EObject binary_part_guard(EObject bin, EObject start, EObject length) {
     	EBinary bin1 = bin.testBinary();
     	ESmall start1 = start.testSmall();
     	ESmall length1 = length.testSmall();
     	
     	if (bin1 == null || start1 == null || length == null) {
-    		throw ERT.badarg(bin, start, length);
+    		return null;
     	}
     	
     	if (start1.value < 0
     			&& (start1.value + length1.value) > bin1.byteSize()
 				&& length1.value < 0) {
-    		throw ERT.badarg(bin, start, length);    		
+    		return null;
     	}
 	
     	return bin1.substring(start1.value * 8, length1.value * 8);
     }
     
+
 	@BIF
 	static public EObject match_spec_test(EObject term, EObject matchSpec, EObject how)
 	{
