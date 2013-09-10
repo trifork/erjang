@@ -148,7 +148,7 @@ public class OTPMain {
 		load_modules_and_drivers(null, extra_drivers);
         start_otp_ring0(argv);
 		
-		ERT.getOutputStream().println("done.");
+        // ERT.getOutputStream().println("done.");
 	}
 
 	static List<EDriver> extra_drivers = new ArrayList<EDriver>();
