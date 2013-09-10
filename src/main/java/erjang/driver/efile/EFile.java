@@ -31,10 +31,19 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
 import java.nio.channels.SelectableChannel;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.PosixFileAttributes;
+import java.nio.file.attribute.PosixFilePermission;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -1538,8 +1547,14 @@ public class EFile extends EDriverInstance {
 				long file_modify_time;
 				long file_create_time;
 				
+				int file_inode;
+				int file_gid;
+				int file_uid;
 				int file_access;
 				int file_mode;
+				int file_nlink;
+				int file_dev;
+				int file_rdev;
 				
 				/** emulate fstat as close as possible */
 				@Override
@@ -1550,26 +1565,114 @@ public class EFile extends EDriverInstance {
 						return;
 					}
 					
-					file_size = file.length();
-					if (file.isDirectory()) {
-						file_type = FT_DIRECTORY;
-					} else if (file.isFile()) {
-						file_type = FT_REGULAR;
-					} else {
-						file_type = FT_OTHER;
+					Path path = file.toPath();
+					PosixFileAttributes attrs;
+					try {
+						attrs = Files.readAttributes(path, PosixFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+
+					} catch (IOException e) {
+						posix_errno = IO.exception_to_posix_code(e);
+						result_ok = false;
+						return;
 					}
 
-					// this is as good as it gets...
-					file_access_time = file_create_time = 
-						file_modify_time = file.lastModified() / 1000L;
+					file_size = attrs.size();
+					
+					if (attrs.isDirectory()) {
+						file_type = FT_DIRECTORY;
+					} else if (attrs.isRegularFile()) {
+						file_type = FT_REGULAR;
+					} else if (attrs.isSymbolicLink()) {
+						file_type = FT_SYMLINK;
+					} else if (attrs.isOther()) {
+						file_type = FT_OTHER;
+					} else {
+						file_type = FT_DEVICE;
+					}
+					
+				    file_access_time = attrs.lastAccessTime().to(TimeUnit.SECONDS);
+				    file_create_time = attrs.creationTime().to(TimeUnit.SECONDS);
+				    file_modify_time = attrs.lastModifiedTime().to(TimeUnit.SECONDS);
 
-					file_mode   |= file.canExecute() ? 0000100 : 0;
-					file_mode   |= file.canWrite() ? 0000200 : 0;
-					file_mode   |= file.canRead() ? 0000400 : 0;
+				    file_access = 0;
+				    if (Files.isReadable(path)) file_access |= FILE_ACCESS_READ;
+				    if (Files.isWritable(path)) file_access |= FILE_ACCESS_WRITE;
+
+					Map<String,Object> unix_attrs = null;
+					try {
+						unix_attrs = Files.readAttributes(path, "unix:mode,ino,uid,gid,nlink,dev,rdev", LinkOption.NOFOLLOW_LINKS);
+					} catch (UnsupportedOperationException e) {
+						// ok //
+					} catch (IOException e) {
+						posix_errno = IO.exception_to_posix_code(e);
+						result_ok = false;
+						return;
+					}
 					
-					file_access |= file.canRead() ? FA_READ : 0;
-					file_access |= file.canWrite() ? FA_WRITE : 0;
-					
+					if (unix_attrs != null && unix_attrs.containsKey("mode")) {
+						
+						file_mode = att(unix_attrs, "mode", 0);
+						file_inode = att(unix_attrs, "ino", 0);
+						file_uid = att(unix_attrs, "uid", 0);
+						file_gid = att(unix_attrs, "gid", 0);
+						file_nlink = att(unix_attrs, "nlink", 1);
+						file_dev = att(unix_attrs, "dev", 0);
+						file_rdev = att(unix_attrs, "rdev", 0);
+						
+					} else {
+						file_inode = file.hashCode();
+						file_nlink = 1;
+						
+						file_mode = 0;
+						for (PosixFilePermission p : attrs.permissions()) {
+							switch (p) {
+							case OTHERS_READ:
+								file_mode |= 0000004;
+								break;
+							case OTHERS_WRITE:
+								file_mode |= 0000002;
+								break;
+							case OTHERS_EXECUTE:
+								file_mode |= 0000001;
+								break;
+
+							case GROUP_READ:
+								file_mode |= 0000040;
+								break;
+							case GROUP_WRITE:
+								file_mode |= 0000020;
+								break;
+							case GROUP_EXECUTE:
+								file_mode |= 0000010;
+								break;
+
+							case OWNER_READ:
+								file_mode |= 0000400;
+								break;
+							case OWNER_WRITE:
+								file_mode |= 0000200;
+								break;
+							case OWNER_EXECUTE:
+								file_mode |= 0000100;
+								break;
+							}
+						}
+
+						switch (file_type) {
+						case FT_DIRECTORY:
+							file_mode |= 0040000;
+							break;
+						case FT_REGULAR:
+							file_mode |= 0100000;
+							break;
+						case FT_SYMLINK:
+							file_mode |= 0120000;
+							break;
+						}
+						
+					}
+				    
+				    
 					result_ok = true;
 				}
 				
@@ -1589,43 +1692,28 @@ public class EFile extends EDriverInstance {
 					res.putLong(file_size);
 					res.putInt(file_type);
 					
-                                        res.putLong(file_access_time);
-                                        res.putLong(file_modify_time);
-                                        res.putLong(file_create_time);
+                    res.putLong(file_access_time);
+                    res.putLong(file_modify_time);
+                    res.putLong(file_create_time);
 
-					//put_time(res, file_access_time);
-					//put_time(res, file_modify_time);
-					//put_time(res, file_create_time);
-					
 					res.putInt(file_mode);
-					res.putInt(1 /*file_links*/);
-					res.putInt(0 /*file_major_device*/);
-					res.putInt(0 /*file_minor_device*/);
-					res.putInt(file_name.hashCode() /*file_inode*/);
-					res.putInt(0 /*file_uid*/);
-					res.putInt(0 /*file_gid*/);
+					res.putInt(file_nlink);
+					res.putInt(file_dev);
+					res.putInt(file_rdev);
+					res.putInt(file_inode);
+					res.putInt(file_uid);
+					res.putInt(file_gid);
 					res.putInt(file_access);
 					
 					driver_output2(res, null);
 				}
 
-				private void put_time(ByteBuffer res, long time) {
-					Calendar c = GregorianCalendar.getInstance();
-					c.setTimeInMillis(time);
-					
-					int year = c.get(Calendar.YEAR);
-					res.putInt(year);
-					int month = c.get(Calendar.MONTH) - Calendar.JANUARY + 1;
-					res.putInt(month);
-					int day_of_month = c.get(Calendar.DAY_OF_MONTH);
-					res.putInt(day_of_month);
-					int hour_of_day = c.get(Calendar.HOUR_OF_DAY);
-					res.putInt(hour_of_day);
-					int minute_of_hour = c.get(Calendar.MINUTE);
-					res.putInt(minute_of_hour);
-					int seconds = c.get(Calendar.SECOND);
-					res.putInt(seconds);
+				int att(Map<String,Object> atts, String name, int defaultValue) {
+					Number att = (Number)atts.get(name);
+					if (att == null) return defaultValue;
+					return att.intValue();
 				}
+
 			};
 			
 			break;
