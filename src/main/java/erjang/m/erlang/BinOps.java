@@ -13,6 +13,30 @@ import erjang.BIF.Type;
 
 public class BinOps {
 
+	@BIF(name="andalso",type=Type.GUARD)
+	static public EAtom andalso_guard(EObject o1, EObject o2)
+	{
+		if (o1 == ERT.TRUE && o2 == ERT.TRUE)
+			return ERT.TRUE;
+		
+		if (o1.testBoolean() == null || o2.testBoolean() == null)
+			return null;
+		
+		return ERT.FALSE;
+	}
+	
+	@BIF(name="orelse",type=Type.GUARD)
+	static public EAtom orelse_guard(EObject o1, EObject o2)
+	{
+		if (o1 == ERT.TRUE || o2 == ERT.TRUE)
+			return ERT.TRUE;
+		
+		if (o1.testBoolean() == null || o2.testBoolean() == null)
+			return null;
+		
+		return ERT.FALSE;
+	}
+	
 	@BIF(name="band",type=Type.GUARD)
 	static public ENumber band_guard(EObject o1, EObject o2)
 	{
