@@ -35,6 +35,7 @@ import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
 import java.nio.file.attribute.PosixFileAttributes;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.Calendar;
@@ -511,11 +512,17 @@ public class EFile extends EDriverInstance {
 				this.result_ok = false;
 				run();
 			} catch (OutOfMemoryError e) {
+				this.result_ok = false;
 				posix_errno = Posix.ENOMEM;
 			} catch (SecurityException e) {
+				this.result_ok = false;
 				posix_errno = Posix.EPERM;
+			} catch (IOException e) {
+				this.result_ok = false;
+				posix_errno = IO.exception_to_posix_code(e);
 			} catch (Throwable e) {
 				e.printStackTrace();
+				this.result_ok = false;
 				posix_errno = Posix.EUNKNOWN;
 			}
 		}
@@ -523,7 +530,7 @@ public class EFile extends EDriverInstance {
 		/**
 		 * This is what does the real operation
 		 */
-		protected abstract void run();
+		protected abstract void run() throws IOException;
 
 		public void ready() throws Pausable {
 			reply(EFile.this);
@@ -1526,7 +1533,59 @@ public class EFile extends EDriverInstance {
 
 			};
 		} break;
+		
+		case FILE_WRITE_INFO: {
+			final int file_mode = buf.getInt();
+			final int file_uid = buf.getInt();
+			final int file_gid = buf.getInt();
+			
+			final FileTime file_atime = FileTime.from( buf.getLong(), TimeUnit.SECONDS );
+			final FileTime file_mtime = FileTime.from( buf.getLong(), TimeUnit.SECONDS );
+			final FileTime file_ctime = FileTime.from( buf.getLong(), TimeUnit.SECONDS );
+			
+			final String file_name = IO.strcpy(buf);
 
+			if (ClassPathResource.isResource(file_name)) {
+				reply_posix_error(Posix.EPERM);
+				return;
+			} 
+			
+			d = new SimpleFileAsync(cmd, file_name) {
+				
+				@Override
+				protected void run() throws IOException {
+					Path path = file.toPath();
+					
+					Files.setLastModifiedTime(path, file_mtime);
+
+					Map<String,Object> atts = Files.readAttributes(path, "unix:mode,gid,uid", LinkOption.NOFOLLOW_LINKS);
+					
+					if (att(atts, "mode", file_mode) != file_mode) {
+						Files.setAttribute(path, "unix:mode", new Integer(file_mode), LinkOption.NOFOLLOW_LINKS);
+					}
+					
+					if (att(atts, "gid", file_gid) != file_gid) {
+						Files.setAttribute(path, "unix:gid", new Integer(file_gid), LinkOption.NOFOLLOW_LINKS);
+					}
+					
+					if (att(atts, "uid", file_uid) != file_uid) {
+						Files.setAttribute(path, "unix:uid", new Integer(file_uid), LinkOption.NOFOLLOW_LINKS);
+					}
+					
+					this.result_ok = true;
+				}
+				
+				int att(Map<String,Object> atts, String name, int defaultValue) {
+					Number att = (Number)atts.get(name);
+					if (att == null) return defaultValue;
+					return att.intValue();
+				}
+
+
+			};
+				
+		} break;
+		
 		case FILE_FSTAT: 
 		case FILE_LSTAT: {
 			
