@@ -116,6 +116,7 @@
       <assertions>
 	<enable />
       </assertions>
+      <arg value="-q" />
       <arg value="-d" />
       <arg value="./target/classes" />
       <arg line="./target/classes" />
@@ -129,6 +130,7 @@
       <assertions>
 	<enable />
       </assertions>
+      <arg value="-q" />
       <arg value="-d" />
       <arg value="./target/test-classes" />
       <arg line="./target/test-classes" />
