@@ -34,6 +34,7 @@ import static erjang.EPort.am_out;
 import static erjang.EPort.am_packet;
 import static erjang.EPort.am_stream;
 import static erjang.EPort.am_use_stdio;
+import erjang.ETask.STATE; 
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -311,7 +312,7 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 	@Override
 	public Task start() {
 		Task result = super.start();
-		this.pstate = STATE_RUNNING;
+		this.pstate = STATE.RUNNING;
 		return result;
 	}
 	
@@ -355,7 +356,7 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 
 			} finally {
 				// this.runner = null;
-				this.pstate = STATE_DONE;
+				this.pstate = STATE.DONE;
 			}
 
 			// System.err.println("task "+this+" exited with "+result);
@@ -494,7 +495,7 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 	 */
 	public EObject control(EProc caller, int op, ByteBuffer cmd2) throws Pausable {
 
-		if (pstate == STATE_RUNNING || pstate == STATE_INIT) {
+		if (pstate == STATE.RUNNING || pstate == STATE.INIT) {
 			// ok
 		} else {
 			log.warning("port "+this.self_handle()+" in state: "+pstate);
@@ -564,7 +565,7 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 	 * @throws Pausable 
 	 */
 	public EObject call(EProc caller, int op, EObject data) throws Pausable {
-		if (pstate != STATE_RUNNING) {
+		if (pstate != STATE.RUNNING) {
 			throw ERT.badarg();
 		}
 
@@ -595,11 +596,12 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 	}
 	
 	public void close() throws Pausable {
+		final Throwable t = new Throwable();
 		mbox.put(new EPortControl() {
 			
 			@Override
 			public void execute() throws Exception, Pausable {
-				throw new ErlangExitSignal(am_normal);
+				throw new ErlangExitSignal(am_normal, t);
 			}
 			
 		});

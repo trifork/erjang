@@ -209,7 +209,7 @@ public final class EProc extends ETask<EInternalPID> {
 
 	private EAtom error_handler = am_error_handler;
 	EModuleManager.FunctionInfo undefined_function;
-	
+
 	{
 		   FunID uf = new FunID(error_handler, am_undefined_function, 3); 
 		   undefined_function = EModuleManager.get_module_info(error_handler).get_function_info(uf);
@@ -252,7 +252,7 @@ public final class EProc extends ETask<EInternalPID> {
 	
 	protected void process_incoming_exit(EHandle from, EObject reason, boolean is_erlang_exit2) throws Pausable
 	{
-		if (pstate == STATE_EXIT_SIG || pstate == STATE_SENDING_EXIT) {
+		if (pstate == STATE.EXIT_SIG || pstate == STATE.SENDING_EXIT) {
 			if (log.isLoggable(Level.FINE)) {
 				log.fine("Ignoring incoming exit reason="+reason+", as we're already exiting reason="+exit_reason);
 			}
@@ -279,7 +279,8 @@ public final class EProc extends ETask<EInternalPID> {
 				this.exit_reason = reason;
 			}
 			
-			this.pstate = STATE_EXIT_SIG;
+			this.pstate = STATE.EXIT_SIG;
+			this.killer = new Throwable();
 			this.resume();
 			return;
 		}
@@ -299,14 +300,16 @@ public final class EProc extends ETask<EInternalPID> {
 			
 		} else if (reason == am_kill) {
 			this.exit_reason = am_killed;
-			this.pstate = STATE_EXIT_SIG;
+			this.pstate = STATE.EXIT_SIG;
+			this.killer = new Throwable();
 			this.resume();
 
 		} else if (reason != am_normal) {
 			// System.err.println("kill signal: " +reason + " from "+from);
 			// try to kill this thread
 			this.exit_reason = reason;
-			this.pstate = STATE_EXIT_SIG;
+			this.pstate = STATE.EXIT_SIG;
+			this.killer = new Throwable();
 			this.resume();
 		}
 	}
@@ -476,96 +479,11 @@ public final class EProc extends ETask<EInternalPID> {
 
 	@Override
 	public void execute() throws Pausable {
-		Throwable death = null;
+		Throwable[] death = new Throwable[1];
 		EObject result = null;
 		try {
 
-			try {
-				this.check_exit();
-				
-//					synchronized(this) {
-						this.pstate = STATE_RUNNING;
-//					}
-				
-					boolean live = true;
-					while (live) {
-						try {
-							while(this.tail.go(this) == TAIL_MARKER) {
-								/* skip */
-							}
-						live = false;
-					} catch (ErjangHibernateException e) {
-						// noop, live = true //
-					}
-					
-					if (live == true) {
-
-						mbox_wait();
-
-					}
-				}
-				 
-				result = am_normal;
-
-			} catch (NotImplemented e) {
-				log.log(Level.SEVERE, "[fail] exiting "+self_handle(), e);
-				result = e.reason();
-				death = e;
-				
-			} catch (ErlangException e) {
-				log.log(Level.FINE, "[erl] exiting "+self_handle(), e);
-				last_exception = e;
-				result = e.reason();
-				death = e;
-
-			} catch (ErlangExitSignal e) {
-				log.log(Level.FINE, "[signal] exiting "+self_handle(), e);
-				result = e.reason();
-				death = e;
-				
-			} catch (ErlangHalt e) {
-				throw e;
-
-			} catch (Throwable e) {
-
-				log.log(Level.SEVERE, "[java] exiting "+self_handle()+" with: ", e);
-
-				ESeq erl_trace = ErlangError.decodeTrace(e.getStackTrace());
-				ETuple java_ex = ETuple.make(am_java_exception, EString
-						.fromString(ERT.describe_exception(e)));
-
-				result = ETuple.make(java_ex, erl_trace);
-				death = e;
-
-			} finally {
-				// this.runner = null;
-				this.pstate = STATE_DONE;
-			}
-			
-			if (result != am_normal && monitors.isEmpty() && has_no_links() && !(death instanceof ErlangExitSignal)) {
-					
-					EFun fun = EModuleManager.resolve(new FunID(am_error_logger, am_info_report, 1));
-					
-					String msg = "Process " +self_handle()+ " exited abnormally without links/monitors\n"
-						+ "exit reason was: " + result + "\n"
-						+ (death == null ? "" : ERT.describe_exception(death));
-					
-					try {
-						fun.invoke(this, new EObject[] { EString.fromString(msg) });
-					} catch (ErlangHalt e) {
-						throw e;
-					} catch (ThreadDeath e) {
-						throw e;
-					} catch (Throwable e) {
-						e.printStackTrace();
-						// ignore //
-					}
-
-			}
-
-			//System.err.println("task "+this+" exited with "+result);
-			
-			do_proc_termination(result);
+			execute0(death, result);
 
 		} catch (ErlangHalt e) {
                         return;
@@ -576,6 +494,108 @@ public final class EProc extends ETask<EInternalPID> {
 		} catch (Throwable e) {
 			e.printStackTrace();
 		}
+	}
+
+	private void execute0(Throwable[] death, EObject result) throws ErlangHalt,
+			ThreadDeath, Pausable {
+		try {
+			result = execute1();
+
+		} catch (NotImplemented e) {
+			e.printStackTrace();
+			log.log(Level.SEVERE, "[fail] exiting "+self_handle(), e);
+			result = e.reason();
+			death[0] = e;
+			
+		} catch (ErlangException e) {
+			// e.printStackTrace();
+			log.log(Level.FINE, "[erl] exiting "+self_handle(), e);
+			last_exception = e;
+			result = e.reason();
+			death[0] = e;
+
+		} catch (ErlangExitSignal e) {
+			//e.printStackTrace();
+			log.log(Level.FINE, "[signal] exiting "+self_handle(), e);
+			result = e.reason();
+			death[0] = e;
+			
+		} catch (ErlangHalt e) {
+			//e.printStackTrace();
+			throw e;
+
+		} catch (Throwable e) {
+
+			e.printStackTrace();
+			
+			log.log(Level.SEVERE, "[java] exiting "+self_handle()+" with: ", e);
+
+			ESeq erl_trace = ErlangError.decodeTrace(e.getStackTrace());
+			ETuple java_ex = ETuple.make(am_java_exception, EString
+					.fromString(ERT.describe_exception(e)));
+
+			result = ETuple.make(java_ex, erl_trace);
+			death[0] = e;
+
+		} finally {
+			// this.runner = null;
+			this.pstate = STATE.DONE;
+		}
+		
+		if (result != am_normal && monitors.isEmpty() && has_no_links() && !(death[0] instanceof ErlangExitSignal)) {
+				
+				EFun fun = EModuleManager.resolve(new FunID(am_error_logger, am_info_report, 1));
+				
+				String msg = "Process " +self_handle()+ " exited abnormally without links/monitors\n"
+					+ "exit reason was: " + result + "\n"
+					+ (death[0] == null ? "" : ERT.describe_exception(death[0]));
+				
+				try {
+					fun.invoke(this, new EObject[] { EString.fromString(msg) });
+				} catch (ErlangHalt e) {
+					throw e;
+				} catch (ThreadDeath e) {
+					throw e;
+				} catch (Throwable e) {
+					e.printStackTrace();
+					// ignore //
+				}
+
+		}
+
+	//	System.err.println("task "+this+" exited with "+result);
+		
+		do_proc_termination(result);
+	}
+
+	private EObject execute1() throws Pausable {
+		EObject result;
+		this.check_exit();
+		
+//					synchronized(this) {
+				this.pstate = STATE.RUNNING;
+//					}
+		
+			boolean live = true;
+			while (live) {
+				try {
+					while(this.tail.go(this) == TAIL_MARKER) {
+						/* skip */
+					}
+				live = false;
+			} catch (ErjangHibernateException e) {
+				// noop, live = true //
+			}
+			
+			if (live == true) {
+
+				mbox_wait();
+
+			}
+		}
+		 
+		result = am_normal;
+		return result;
 	}
 
 	/**
@@ -710,8 +730,8 @@ public final class EProc extends ETask<EInternalPID> {
 	 * @return
 	 */
 	public boolean is_alive() {
-		int ps = pstate;
-		return ps == STATE_INIT || ps == STATE_RUNNING;
+		erjang.ETask.STATE ps = pstate;
+		return ps == STATE.INIT || ps == STATE.RUNNING;
 	}
 
 	List<ExitHook> exit_hooks = new ArrayList<ExitHook>();

@@ -251,16 +251,16 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 	static final int MAX_MAILBOX_SIZE = 1000;
 	protected final Mailbox<EObject> mbox = new Mailbox<EObject>(10, MAX_MAILBOX_SIZE);
 
-	public static final int STATE_INIT = 0; // has not started yet
-	public static final int STATE_RUNNING = 1; // is live
-	public static final int STATE_EXIT_SIG = 2; // received exit signal
-	public static final int STATE_SENDING_EXIT = 3;
-	public static final int STATE_DONE = 4; // done
+	public enum STATE {
+		INIT, RUNNING, EXIT_SIG, SENDING_EXIT, DONE
+	};
 
-	protected volatile int pstate = STATE_INIT;
+	protected volatile STATE  pstate = STATE.INIT;
 	protected EObject exit_reason;
 
 	public int reds;
+
+	protected Throwable killer;
 
 	/**
 	 * @throws Pausable
@@ -317,30 +317,30 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 			switch (pstate) {
 
 			// process is already "done", just ignore exit signal
-			case STATE_DONE:
+			case DONE:
 				return;
 
 				// we have already received one exit signal, ignore
 				// subsequent ones...
-			case STATE_EXIT_SIG:
-			case STATE_SENDING_EXIT:
+			case EXIT_SIG:
+			case SENDING_EXIT:
 				// TODO: warn that this process is not yet dead. why?
 				return;
 
 				// the process is not running yet, this should not happen
-			case STATE_INIT:
+			case INIT:
 				if (reason == EProc.am_kill) {
 					this.exit_reason = EProc.am_killed;
 				} else {
 					this.exit_reason = reason;
 				}
-				this.pstate = STATE_EXIT_SIG;
+				this.pstate = STATE.EXIT_SIG;
 				return;
 
 			default:
 				throw new Error("unknown state? "+pstate);
 
-			case STATE_RUNNING:
+			case RUNNING:
 			}
 		}
 
@@ -356,7 +356,7 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 	 * trapping)
 	 */
 	public final void check_exit() {
-		if (this.pstate == STATE_EXIT_SIG) {
+		if (this.pstate == STATE.EXIT_SIG) {
 			do_check_exit();
 		}
 	}
@@ -364,9 +364,13 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 	/** because the above is called a bazillion times, we split this out to make it easier to inline */
 	private void do_check_exit() throws ErlangExitSignal {
 		if (exit_reason != null) {
-			this.pstate = STATE_SENDING_EXIT;
+			this.pstate = STATE.SENDING_EXIT;
 			EObject reason = exit_reason;
-			throw new ErlangExitSignal(reason);
+			//System.err.println("---- [" + killer + "]");
+			ErlangExitSignal e = new ErlangExitSignal(reason, killer);
+			//e.printStackTrace();
+			//System.err.println("---- [ ... ]");
+			throw e;
 		}
 	}
 	
@@ -390,7 +394,7 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 	 * @return
 	 */
 	public boolean exists() {
-		return pstate == STATE_INIT || pstate == STATE_RUNNING;
+		return pstate == STATE.INIT || pstate == STATE.RUNNING;
 	}
 
 }

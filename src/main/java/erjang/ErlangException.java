@@ -80,10 +80,10 @@ public abstract class ErlangException extends RuntimeException {
 		return new ExceptionTuple(this);
 	}
 	
-	@Override
-	public String toString() {
-		return (ETuple.make(ERT.am_error, reason(), getTrace())).toString();
-	}
+//	@Override
+//	public String toString() {
+//		return (ETuple.make(ERT.am_EXIT, reason(), getTrace())).toString();
+//	}
 
 	/**
 	 * 

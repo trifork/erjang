@@ -22,14 +22,15 @@ package erjang;
 /**
  * Used in erlang when an thread receives an untrapped exit signal
  */
-public class ErlangExitSignal extends ThreadDeath {
+public class ErlangExitSignal extends Error {
 
 	private final EObject exitReason;
 
 	/**
 	 * @param exitReason
 	 */
-	public ErlangExitSignal(EObject exitReason) {
+	public ErlangExitSignal(EObject exitReason, Throwable killer) {
+		super(killer);
 		this.exitReason = exitReason;
 	}
 

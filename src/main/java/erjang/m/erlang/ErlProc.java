@@ -468,7 +468,7 @@ public class ErlProc {
 			throw ERT.badarg(p, reason);
 	
 		if (pid == proc.self_handle()) {
-			throw new ErlangExit(reason);
+			throw new ErlangExit(reason, proc.self_handle());
 		}
 		
 		pid.exit_signal(proc.self_handle(), reason, true);
@@ -477,8 +477,8 @@ public class ErlProc {
 	}
 
 	@BIF
-	public static EObject exit(EObject a1) {
-		throw new ErlangExit(a1);
+	public static EObject exit(EProc self, EObject a1) {
+		throw new ErlangExit(a1, self.self_handle());
 	}
 
 	@BIF

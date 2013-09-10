@@ -25,6 +25,8 @@ package erjang;
  */
 public class ErlangExit extends ErlangException {
 
+	private EHandle handle;
+
 	/**
 	 * @param reason
 	 */
@@ -39,6 +41,16 @@ public class ErlangExit extends ErlangException {
 		super(ETuple.make(EString.fromString(e.getMessage()), decodeTrace(e.getStackTrace())));
 	}
 
+	public ErlangExit(EObject reason, EHandle handle) {
+		super(reason);
+		this.handle = handle;
+	}
+
+	@Override
+	public String getMessage() {
+		return super.getMessage() + " in " + handle;
+	}
+	
 	public EAtom getExClass() { return am_exit; }
 
 	
