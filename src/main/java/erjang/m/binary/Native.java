@@ -177,7 +177,10 @@ public class Native extends ENative {
 	 */
 	@BIF
 	public static EInteger first(EObject subject) {
-		throw new NotImplemented();
+		EBinary bin = subject.testBinary();
+		if (bin == null || bin.byteSize() == 0)
+			throw ERT.badarg(subject);
+		return ERT.box( bin.intBitsAt( 0, 8 ) );
 	}
 	
 	/**
@@ -185,7 +188,10 @@ public class Native extends ENative {
 	 */
 	@BIF
 	public static EInteger last(EObject subject) {
-		throw new NotImplemented();
+		EBinary bin = subject.testBinary();
+		if (bin == null || bin.byteSize() == 0)
+			throw ERT.badarg(subject);
+		return ERT.box( bin.intBitsAt( (bin.bitSize()-8), 8 ) );
 	}
 	
 	/**
