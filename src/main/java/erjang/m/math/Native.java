@@ -31,6 +31,16 @@ import erjang.ERT;
  */
 public class Native extends ENative {
 
+
+	@BIF
+	static public ENumber pow(EObject o1, EObject o2)
+	{
+		ENumber n1 = o1.testNumber();
+		ENumber n2 = o2.testNumber();
+		
+		double res = Math.pow(n1.doubleValue(), n2.doubleValue());
+		return ERT.box(res);
+	}
 	
 	@BIF
 	public static ENumber sin(EObject val)
