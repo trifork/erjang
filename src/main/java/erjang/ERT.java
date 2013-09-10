@@ -50,7 +50,7 @@ public class ERT {
 	public static EAtom am_badsig = EAtom.intern("badsig");
 
 	public static EObject raise(EObject trace, EObject value) throws ErlangException {
-		log.warning("raise "+trace);
+		// log.warning("raise "+trace);
 		if (trace instanceof ErlangException.ExceptionAsObject) {
 			ErlangException etrace = ((ErlangException.ExceptionAsObject) trace).getException();
 			EAtom clazz = etrace.getExClass();
