@@ -201,7 +201,39 @@ public class Native extends ENative {
 	 */
 	@BIF
 	public static EInteger longest_common_prefix(EObject binaries) {
-		throw new NotImplemented();
+		ESeq seq = binaries.testSeq();
+		if (seq == null) throw ERT.badarg(binaries);
+		EObject[] vals = seq.toArray();
+		
+		if (vals.length == 0)
+			return ERT.box(0);
+		
+		EBinary first = vals[0].testBinary();
+		if (first == null) throw ERT.badarg(binaries);
+		
+		if (vals.length == 1)
+			return ERT.box(first.byteSize());
+
+		for (int pos = 0; true; pos++) {
+			
+			if (first.byteSize() == pos)
+				return ERT.box(pos);
+			
+			byte ch_first = first.byteAt(pos*8);
+			for (int i = 1; i < vals.length; i++) {
+				EBinary bin = vals[i].testBinary();
+				if (bin == null) throw ERT.badarg(binaries);	
+				
+				if (bin.byteSize() == pos)
+					return ERT.box(pos);
+				
+				byte ch_this = bin.byteAt(pos*8);
+
+				if (ch_first != ch_this) {
+					return ERT.box(pos);
+				}
+			}
+		}
 	}
 	
 	/**
