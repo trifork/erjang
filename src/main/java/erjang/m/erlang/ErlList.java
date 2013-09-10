@@ -24,6 +24,8 @@ import erjang.EObject;
 import erjang.ECons;
 import erjang.ESeq;
 import erjang.ERT;
+import erjang.ESmall;
+import erjang.ETuple;
 
 import java.util.LinkedList;
 
@@ -69,4 +71,24 @@ public class ErlList {
 		// Step 3: Convert back into list
 		return ESeq.fromArraySkippingNulls(tmp, tmp_start, tmp.length);
 	}
+	
+	@BIF
+	public static EObject delete_element(EObject idx0, EObject tup0)
+	{
+		ESmall idx = idx0.testSmall();
+		ETuple tup = tup0.testTuple();
+		if (idx == null || tup == null || idx.value < 1 || idx.value > tup.arity())
+			throw ERT.badarg(idx0, tup0);
+		
+		EObject[] vals = new EObject[tup.arity()-1];
+		int target = 0;
+		for (int i = 0; i < tup.arity(); i++) {
+			if ((i+1) != idx.value) { 
+				vals[target++] = tup.elm(i+1);
+			}
+		}
+		
+		return ETuple.make(vals);
+	}
+	
 }
