@@ -3489,6 +3489,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 		}
 
 		make_constructor(cw, module, function, full_inner_name,
+				outer_name,
 				super_class_name, lambda, exported);
 
 		make_go_method(cw, outer_name, fname, full_inner_name, arity, proc,
@@ -3502,7 +3503,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 	}
 
 	private static void make_constructor(ClassWriter cw, String module_name,
-			String function_name, String full_inner_name,
+			String function_name, String full_inner_name, String outer_name,
 			String super_class_name, Lambda lambda, boolean exported) {
 		StringBuilder sb = new StringBuilder("(");
 		int freevars = lambda == null ? 0 : lambda.freevars;
@@ -3582,7 +3583,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					"()" + Type.getDescriptor(FunID.class), null, null);
 			mv.visitCode();
 			mv.visitFieldInsn(GETSTATIC,
-					full_inner_name.substring(0, full_inner_name.indexOf('$')),
+					outer_name,
 					anon_fun_name(lambda), Type.getDescriptor(LocalFunID.class));
 			mv.visitInsn(ARETURN);
 			mv.visitMaxs(3, 3);
