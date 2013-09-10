@@ -143,7 +143,17 @@ public class IO {
 			}
 		}
 		
-		ERT.log.warning("unknown exception: "+e.getMessage());
+		if (e instanceof java.nio.file.FileSystemException) {
+			if (e.getMessage().indexOf("Not a directory") != -1) {
+				return Posix.ENOTDIR;
+			}
+		}
+		
+		if (e instanceof java.nio.file.NoSuchFileException) {
+			return Posix.ENOENT;
+		}
+		
+		ERT.log.warning("unknown exception: "+ e.getClass().getName() + " " + e.getMessage());
 		ERT.log.log(Level.FINE, "details: ", e);
 		
 		// TODO: implement some more error codes here
