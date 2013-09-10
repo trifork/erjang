@@ -91,4 +91,26 @@ public class ErlList {
 		return ETuple.make(vals);
 	}
 	
+	@BIF
+	public static EObject
+	insert_element(EObject idx0, EObject tup0, EObject term)
+	{
+		ESmall idx = idx0.testSmall();
+		ETuple tup = tup0.testTuple();
+		if (idx == null || tup == null || idx.value < 1 || idx.value > tup.arity()+1)
+			throw ERT.badarg(idx0, tup0);
+		
+		EObject[] vals = new EObject[tup.arity()+1];
+		int target = 0;
+		for (int i = 0; i < tup.arity(); i++) {
+			if ((i+1) == idx.value) { 
+				vals[target++] = term;
+			}
+			
+			vals[target++] = tup.elm(i+1);
+		}
+		
+		return ETuple.make(vals);
+	}
+	
 }
