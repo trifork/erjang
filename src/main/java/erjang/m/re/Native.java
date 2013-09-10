@@ -106,7 +106,7 @@ public class Native extends ENative {
 			return res;
 		} catch (RuntimeException e) {
 			//System.out.println("re:run("+subj+", "+re+", "+opts+") => "+e);
-			e.printStackTrace();
+			// e.printStackTrace();
 			throw e;
 		}
 	}
@@ -151,6 +151,7 @@ public class Native extends ENative {
 			while (matcher.find()) {
 				MatchResult mr = matcher.toMatchResult();
 			
+				ESeq list;
 				if (o2.capture_spec == am_all) {
 					ESeq l = ERT.NIL;
 					for (int i = mr.groupCount(); i >= 0; i--) {
@@ -158,6 +159,23 @@ public class Native extends ENative {
 					}
 					
 					result = result.cons(l);
+				} else if ((list = o2.capture_spec.testSeq()) != null) {
+					ESeq l = ERT.NIL;
+					while (!list.isNil()) {
+						EObject group = list.head();
+						ESmall num;
+						if ((num=group.testSmall()) != null)
+						{
+							if (mr.start(num.value) != -1) {
+								l = l.cons( capture (subject, mr, num.value, o2 ));
+							}
+						} else {
+							throw new NotImplemented("named capture groups");
+						}
+						list = list.tail();
+					}
+					result = result.cons(l);
+
 				} else {
 					throw new NotImplemented("global and not all");
 				}
