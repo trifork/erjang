@@ -30,7 +30,7 @@ public final class EBig extends EInteger {
 	private static final BigInteger BIG_MAX_INT = BigInteger.valueOf(Integer.MAX_VALUE);
 	private static final BigInteger BIG_MIN_INT = BigInteger.valueOf(Integer.MIN_VALUE);
 
-	final BigInteger value;
+	final public BigInteger value;
 
 	public EBig(BigInteger value) {
 		this.value = value;
