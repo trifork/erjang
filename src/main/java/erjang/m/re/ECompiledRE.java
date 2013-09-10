@@ -24,8 +24,10 @@ import java.util.regex.Pattern;
 import erjang.EAtom;
 import erjang.EBinary;
 import erjang.EBitString;
+import erjang.ECons;
 import erjang.EPseudoTerm;
 import erjang.ERT;
+import erjang.ESeq;
 import erjang.ETuple;
 import erjang.ETuple2;
 import erjang.ETuple4;
@@ -50,10 +52,41 @@ public class ECompiledRE extends ETuple4 {
 		this.elem1 = am_re_pattern;
 		this.elem2 = ERT.box(countGroups(patt.pattern()));
 		this.elem3 = options.isUnicode() ? ERT.box(1) : ERT.box(0);
-		String p = "/" + patt.pattern();
+		String p = "/" + patt.pattern() + "/" + encode_options();
 		this.elem4 = EBinary.make(p.getBytes(IO.UTF8));
 	}
 
+	String encode_options() {
+		StringBuilder sb = new StringBuilder();
+		if (options.global) 
+			sb.append('g');
+		if (options.unicode) 
+			sb.append('u');
+		if ((options.flags & Pattern.CASE_INSENSITIVE) == Pattern.CASE_INSENSITIVE)
+			sb.append('i');
+		if ((options.flags & Pattern.MULTILINE) == Pattern.MULTILINE)
+			sb.append('m');
+		if ((options.flags & Pattern.DOTALL) == Pattern.DOTALL)
+			sb.append('s');
+		return sb.toString();
+	}
+	
+	public static ESeq decode_options(byte[] ops) {
+		ESeq l = ERT.NIL;
+		for (int i = 0; i < ops.length; i++) {
+			switch(ops[i]) {
+			case 'g': l = l.cons(EAtom.intern("global")); break;
+			case 'u': l = l.cons(EAtom.intern("unicode")); break;
+			case 'i': l = l.cons(EAtom.intern("caseless")); break;
+			case 'f': l = l.cons(EAtom.intern("firstline")); break;
+			case 'm': l = l.cons(EAtom.intern("multiline")); break;
+			case 's': l = l.cons(EAtom.intern("dotall")); break;
+			default: throw new RuntimeException("unsupported regex option '"+((char)ops[i])+"'");
+			}
+		}
+		return l;
+	}
+	
 	private int countGroups(String pattern) {
 		int idx = 0;
 		int res = 0;

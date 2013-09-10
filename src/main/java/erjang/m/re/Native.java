@@ -530,8 +530,17 @@ public class Native extends ENative {
 		if (tup != null && tup.elem1 == ECompiledRE.am_re_pattern) {
 			EBinary b = tup.elem4.testBinary();
 			if (b != null && b.byteAt(0) == '/') {
+				
 				byte[] raw = b.getByteArray();
-				pattern = new String(raw, 1, raw.length-1, IO.UTF8);
+				int end = raw.length - 1;
+				for (int i = b.byteSize()-1; i > 0; i--) {
+					if (b.byteAt(i*8) == '/') {
+						end = i;
+						break;
+					}
+				}
+				
+				pattern = new String(raw, 1, end, IO.UTF8);
 			} else {
 				throw ERT.badarg(obj1, obj2);
 			}

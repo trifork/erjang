@@ -41,6 +41,7 @@ import erjang.driver.EDriver;
 import erjang.driver.EDriverTask;
 import erjang.driver.efile.Posix;
 import erjang.m.java.JavaObject;
+import erjang.m.re.ECompiledRE;
 
 @Module(value = "erlang")
 public class ERT {
@@ -334,6 +335,7 @@ public class ERT {
 	public static String describe_exception(Throwable e) {
 		StringWriter sw = new StringWriter();
 		PrintWriter pw = new PrintWriter(sw);
+		pw.print("java trace: ");
 		e.printStackTrace(pw);
 		pw.close();
 		return sw.toString();
@@ -1160,18 +1162,7 @@ public class ERT {
 	
 	public static EObject compile_elixir_regex(EObject patt, EObject opts) {
 		byte[] ops = opts.testBinary().getByteArray();
-		ECons l = ERT.NIL;
-		for (int i = 0; i < ops.length; i++) {
-			switch(ops[i]) {
-			case 'g': l = l.cons(EAtom.intern("global")); break;
-			case 'u': l = l.cons(EAtom.intern("unicode")); break;
-			case 'i': l = l.cons(EAtom.intern("caseless")); break;
-			case 'f': l = l.cons(EAtom.intern("firstline")); break;
-			case 'm': l = l.cons(EAtom.intern("multiline")); break;
-			case 's': l = l.cons(EAtom.intern("dotall")); break;
-			default: throw new RuntimeException("unsupported regex option "+((char)ops[i])+" in "+patt);
-			}
-		}
+		ECons l = ECompiledRE.decode_options(ops);
 		EObject tup = erjang.m.re.Native.compile(patt, l);
 		return tup.testTuple().elm(2);
 	}

@@ -33,6 +33,7 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.util.CheckClassAdapter;
 
+import erjang.driver.IO;
 import erjang.m.ets.EMatchContext;
 import erjang.m.ets.EPattern;
 import erjang.m.ets.ETermPattern;
@@ -519,6 +520,12 @@ public abstract class ETuple extends EObject implements Cloneable /* , Indexed *
 	}
 
 	public static final EAtom am_Elixir_Regex = EAtom.intern("Elixir.Regex");
+	public static final EAtom am_re_pattern = EAtom.intern("re_pattern");
+	
+	static String tos(EObject o) {
+		EBinary bin = o.testBinary();
+		return new String(bin.getByteArray(), IO.UTF8);
+	}
 	
 	@Override
 	public Type emit_const(MethodVisitor fa) {
@@ -534,6 +541,9 @@ public abstract class ETuple extends EObject implements Cloneable /* , Indexed *
 			fa.visitInsn(Opcodes.DUP);
 
 			if (i == 1 && arity() == 5 && elm(1) == am_Elixir_Regex) {
+				
+			//	System.err.println("emitting pattern /"+tos(elm(3))+"/"+tos(elm(4)));
+
 				elm(3).emit_const(fa);
 				elm(4).emit_const(fa);
 				fa.visitMethodInsn(Opcodes.INVOKESTATIC, "erjang/ERT", "compile_elixir_regex", 
@@ -570,6 +580,25 @@ public abstract class ETuple extends EObject implements Cloneable /* , Indexed *
 	@Override
 	public void encode(EOutputStream eos) {
         int arity = arity();
+        
+        EBinary bin;
+		ETuple e2;
+		if (arity == 5 && elm(1) == am_Elixir_Regex && (e2=elm(2).testTuple()) != null) 
+        {
+			// in short: it's a compiled regex
+			
+		//	System.err.println("serializing pattern /"+tos(elm(3))+"/"+tos(elm(4)));
+        	EObject elm2 = ERT.compile_elixir_regex(elm(3), elm(4));
+        	
+    		eos.write_tuple_head(arity);
+    		eos.write_any(elm(1));
+    		eos.write_any(elm2);
+    		eos.write_any(elm(3));
+    		eos.write_any(elm(4));
+    		eos.write_any(elm(5));
+    		return;
+        }
+        
 		eos.write_tuple_head(arity);
 
         for (int i = 1; i <= arity; i++) {
@@ -577,4 +606,6 @@ public abstract class ETuple extends EObject implements Cloneable /* , Indexed *
         }
 	}
 
+	
+	
 }
