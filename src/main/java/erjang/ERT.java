@@ -852,6 +852,7 @@ public class ERT {
 	public static void remove_message(EProc proc) {
 		proc.mbox.remove(proc.midx);
 		proc.midx = 0;
+		proc.timeout_start = 0L;
 		proc.in_receive = false;
 	}
 
@@ -874,7 +875,7 @@ public class ERT {
 				return true;
 			} else {
 				long now = System.currentTimeMillis();
-				if (proc.midx == 0) {
+				if (proc.midx == 0 || proc.timeout_start == 0L) {
 					proc.timeout_start = now;
 				}
 				
