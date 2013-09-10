@@ -191,6 +191,28 @@ public class ErlConvert {
 	}
 
 	@BIF
+	public static EBinary integer_to_binary(EObject arg, EObject radix) {
+		EInteger i = arg.testInteger();
+		ESmall r = radix.testSmall();
+		if (i == null || r == null || r.value < 2 || r.value > 36) 
+			throw ERT.badarg(arg, radix);
+
+		String out;
+		EBig big;
+		ESmall small;
+		if ((small=i.testSmall()) != null) {
+			out = Integer.toString(small.value, r.value);
+		} else if ((big=i.testBig()) != null) {
+			out = big.value.toString(r.value);
+		} else {
+			throw ERT.badarg(arg, radix);
+		}
+		
+		byte[] bin = out.getBytes(IO.ISO_LATIN_1);
+		return EBinary.make(bin);
+	}
+
+	@BIF
 	public static EInteger list_to_integer(EObject obj, EObject radix) {
 		EString seq;
 		ESmall rdx;
