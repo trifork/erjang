@@ -10,9 +10,23 @@ import erjang.EObject;
 import erjang.ERT;
 import erjang.ESeq;
 import erjang.EString;
+import erjang.driver.IO;
 
 public class Native extends ENative
 {
+	@BIF
+	public static EObject is_translatable(EObject arg) {
+		EBinary bin = arg.testBinary();
+		if (bin == null) throw ERT.badarg(arg);
+		
+		try {
+			new String(bin.getByteArray(), IO.UTF8);
+			return ERT.TRUE;
+		} catch (RuntimeException e) {
+			return ERT.FALSE;
+		}
+	}
+	
 	@BIF
 	public static EObject internal_name2native(EObject arg) {
 		if (arg.testAtom() != null) {
