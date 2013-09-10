@@ -412,21 +412,39 @@ public class ErlBif {
 	}
 
 	@BIF	
-	static public EString float_to_list(EObject obj) {
+	static public EBinary float_to_binary(EObject obj) {
 		EDouble value;
 		if ((value = obj.testFloat()) != null) {
-			return value.to_list();
+			return new EBinary(value.format(ERT.NIL).getBytes(IO.ISO_LATIN_1));
 		}
 		throw ERT.badarg(obj);
 	}
 
 	@BIF	
-	static public EBinary float_to_binary(EObject obj) {
+	static public EBinary float_to_binary(EObject obj, EObject options) {
 		EDouble value;
 		if ((value = obj.testFloat()) != null) {
-			return value.to_binary();
+			return new EBinary(value.format(options).getBytes(IO.ISO_LATIN_1));
+		}
+		throw ERT.badarg(obj, options);
+	}
+
+	@BIF	
+	static public EString float_to_list(EObject obj) {
+		EDouble value;
+		if ((value = obj.testFloat()) != null) {
+			return new EString(value.format(ERT.NIL));
 		}
 		throw ERT.badarg(obj);
+	}
+
+	@BIF
+	static public EString float_to_list(EObject obj, EObject options) {
+		EDouble value;
+		if ((value = obj.testFloat()) != null) {
+			return new EString(value.format(options));
+		}
+		throw ERT.badarg(obj, options);
 	}
 
 	@BIF 
@@ -2240,7 +2258,7 @@ public class ErlBif {
     @BIF
     public static EObject nif_error(EObject err) {
 
-        ErlangExit exit = new ErlangExit(err);
+        ErlangError exit = new ErlangError(err);
 
         log.log(Level.INFO, "missing nif "+err, exit);
 

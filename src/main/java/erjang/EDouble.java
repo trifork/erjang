@@ -31,6 +31,9 @@ import erjang.driver.IO;
 public class EDouble extends ENumber {
 
 	private static final Type EDOUBLE_TYPE = Type.getType(EDouble.class);
+	private static final EObject am_decimals = EAtom.intern("decimals");
+	private static final EObject am_scientific = EAtom.intern("scientific");
+	private static final EObject am_compact = EAtom.intern("compact");
 	public final double value;
 
 	public EDouble(double value) {
@@ -139,14 +142,61 @@ public class EDouble extends ENumber {
 		return new EString(value);
 	}
 
-	/**
-	 * @return
-	 */
-	public EBinary to_binary() {
-		Formatter form = new Formatter();
-		form = form.format("%.20e", value);
-		String value = form.toString();
-		return new EBinary(value.getBytes(IO.ISO_LATIN_1));
+	public String format(EObject options) {
+		
+		if (options.isNil()) {
+			return String.format("%.20e", value);
+		}
+		
+		boolean sci = true;
+		boolean dec = false;
+		int precision = 20;
+		boolean compact = false;
+		
+		ESeq opt = options.testSeq();
+		if (opt == null) {
+			throw ERT.badarg(this, options);
+		}
+		
+		while (!opt.isNil()) {
+			EObject o = opt.head();
+			ETuple tup;
+			if ((tup=o.testTuple()) != null && tup.arity() == 2) {
+				ESmall prec = tup.elm(2).testSmall();
+				if (prec == null) {
+					throw ERT.badarg(this, options);
+				}
+				if (tup.elm(1) == am_decimals) {
+					dec = true;
+					sci = false;
+					precision = prec.value;
+				} else if (tup.elm(1) == am_scientific) {
+					sci = true;
+					dec = false;
+					precision = prec.value;
+					compact = false;
+				} else {
+					throw ERT.badarg(this, options);
+				}
+			} else if (o == am_compact) {
+				compact = true;
+			}
+			opt = opt.tail();
+		}
+		
+		String format;
+		if (sci) {
+			format = "%." + precision + "e";
+		} else {
+			format = "%." + precision + "f";
+		}
+
+		String out = String.format(format, value);
+		
+		if (compact)
+			out = out.replaceFirst("0+$", "");
+		
+		return out;
 	}
 
 	public ENumber add(EObject other, boolean guard) {
