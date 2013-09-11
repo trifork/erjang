@@ -188,6 +188,9 @@ public class EFile extends EDriverInstance {
 							
 							free_size += written_bytes;
 							result_ok = true;
+						} catch (java.nio.channels.NonWritableChannelException e) {
+							posix_errno = Posix.EBADF;
+							super.result_ok = false;
 						} catch (IOException e) {
 							posix_errno = IO.exception_to_posix_code(e);
 							super.result_ok = false;
@@ -1877,8 +1880,9 @@ public class EFile extends EDriverInstance {
 			log.warning("invalid file_output cmd:" + ((int) cmd) + " "
 			+ EBinary.make(buf));
 			
-			throw new NotImplemented("file_output cmd:" + ((int) cmd) + " "
-					+ EBinary.make(buf));
+			driver_output_binary(new byte[]{ FILE_RESP_ERROR }, 
+							     ByteBuffer.wrap( ( "unknown_cmd_"+((int)cmd)).getBytes() ));
+			return;
 			/** ignore everything else - let the caller hang */
 			// return;
 		}

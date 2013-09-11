@@ -45,6 +45,8 @@ public class Posix {
 	public static final int EAGAIN = 15;
 	public static final int EALREADY = 16;
 	public static final int ENOTDIR = 17;
+	public static final int EBADF = 18;
+	
 
 	private static final String[] err_id = { 
 			"einval",
@@ -65,8 +67,8 @@ public class Posix {
 			"eagain",
 			"ealready",
 			"enotdir",
+			"ebadf",
 	};
-
 
 	/**
 	 * @param posixErrno
