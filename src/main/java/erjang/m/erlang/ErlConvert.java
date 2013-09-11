@@ -266,6 +266,31 @@ public class ErlConvert {
 		
 	}
 
+	@BIF
+	public static EInteger binary_to_integer(EObject obj, EObject radix) {
+		EBinary bin;
+		ESmall rdx;
+		if ((bin = obj.testBinary()) == null || (rdx = radix.testSmall()) == null)
+			throw ERT.badarg(obj, radix);
+
+		// remove leading +
+		int off = 0;
+		if (bin.byteSize() > 0) {
+			if (bin.byteAt(0) == '+') {
+				off += 1;
+			}
+		}
+		
+		try {
+			byte[] bytes = bin.getByteArray();
+			String sval = new String(bytes, off, bytes.length-off, IO.ISO_LATIN_1);
+			return ERT.box(new BigInteger(sval, rdx.value));
+			
+		} catch (NumberFormatException e) {
+			throw ERT.badarg(obj);
+		}
+		
+	}
 	
 	
 	@BIF
