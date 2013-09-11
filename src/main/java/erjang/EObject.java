@@ -184,6 +184,8 @@ public abstract class EObject {
 	}
 
 	/**
+	 * @param rest TODO
+	 * @return TODO
 	 * @throws CharCollector.CollectingException when encountering
 	 * something that can't be decoded as characters using the given
 	 * CharCollector.  Exception contains the undecoded part of the input.
@@ -192,7 +194,7 @@ public abstract class EObject {
 	 * which is neither a list, an integer or a binary (without extra
 	 * bits), or the input contains an integer in non-head position.
 	 */
-	public void collectCharList(CharCollector out)
+	public ESeq collectCharList(CharCollector out, ESeq rest)
 		throws CharCollector.CollectingException,
 		CharCollector.InvalidElementException,
 		IOException

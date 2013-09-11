@@ -294,13 +294,13 @@ public class EStringList extends ESeq {
 	}
 
 	@Override
-	public void collectCharList(CharCollector out)
+	public ESeq collectCharList(CharCollector out, ESeq rest)
 		throws CharCollector.CollectingException,
 		CharCollector.InvalidElementException,
 		IOException
 	{
 		try {
-			out.addBinary(bytes.data, off, len);
+			rest = out.addBinary(bytes.data, off, len, rest);
 		} catch (CharCollector.PartialDecodingException e) {
 			throw new CharCollector.CollectingException(drop(e.inputPos - off));
 		}
@@ -309,7 +309,9 @@ public class EStringList extends ESeq {
 			// Only nil and binaries are allowed as tail
 			// TODO: Fail sooner?
 			throw new CharCollector.InvalidElementException();
-		} else tail.collectCharList(out);
+		} else {
+			return tail.collectCharList(out, rest);
+		}
 	}
 
 	@Override

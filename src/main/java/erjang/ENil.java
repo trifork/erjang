@@ -62,7 +62,8 @@ public class ENil extends ESeq {
 	}
 
 	@Override
-	public void collectCharList(CharCollector out) {
+	public ESeq collectCharList(CharCollector out, ESeq rest) {
+		return rest;
 	}
 
 	@Override

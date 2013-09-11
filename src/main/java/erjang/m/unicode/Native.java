@@ -72,8 +72,9 @@ public class Native extends ENative {
 		CharArrayWriter out = new CharArrayWriter();
 		CharCollector collector = new CharCollector(encoding, out);
 
+		ESeq rest = ERT.NIL;
 		try {
-			charlist.collectCharList(collector);
+			rest = charlist.collectCharList(collector, rest);
 		} catch (CharCollector.InvalidElementException e) {
 			throw ERT.badarg(charlist, encodingSpec);
 		} catch (CharCollector.CollectingException e) {
@@ -85,6 +86,13 @@ public class Native extends ENative {
 
 		try {
 			collector.end();
+
+			if (rest != ERT.NIL) {
+				return ETuple.make(INCOMPLETE_ATOM,	
+								   output_converter.convert(out),
+								   rest.reverse());
+			}
+			
 		} catch (CharCollector.PartialDecodingException e) {
 			EObject data = output_converter.convert(out);
 			return ETuple.make(INCOMPLETE_ATOM, data);

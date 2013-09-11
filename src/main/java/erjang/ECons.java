@@ -209,6 +209,10 @@ public abstract class ECons extends EObject implements Iterable<EObject> {
 			}
 		}
 
+		if (tail == this || tail.testNonEmptyList() != null) {
+			throw new RuntimeException("loop logic?");
+		}
+		
 		if (!tail.collectIOList(out)) {
 			return false;
 		}
@@ -217,7 +221,7 @@ public abstract class ECons extends EObject implements Iterable<EObject> {
 	}
 
 
-	public void collectCharList(CharCollector out)
+	public ESeq collectCharList(CharCollector out, ESeq rest)
 		throws CharCollector.CollectingException,
 		CharCollector.InvalidElementException,
 		IOException
@@ -230,23 +234,24 @@ public abstract class ECons extends EObject implements Iterable<EObject> {
 			ESmall intval;
 			if ((intval = head.testSmall()) != null) {
 				try {
-					out.addInteger(intval.value);
+					rest = out.addInteger(intval.value, rest);
 				} catch (CharCollector.DecodingException e) {
 					throw new CharCollector.CollectingException(list);
 				}
 			} else {
 				try {
-					head.collectCharList(out);
+					rest = head.collectCharList(out, rest);
 				} catch (CharCollector.CollectingException e) {
 					throw new CharCollector.CollectingException(list.tail().cons(e.restOfInput));
 				}
 			}
 		}
+		
+		if (tail == this) {
+			throw new ErlangExit(EBigString.fromString("internal error"));
+		}
 
-		if (tail.testNumber() != null) {
-			// Only nil and binaries are allowed as tail
-			throw new CharCollector.InvalidElementException();
-		} else tail.collectCharList(out);
+		return tail.collectCharList(out, rest);
 	}
 
 	@Override

@@ -302,13 +302,17 @@ public class EBinList extends ECons {
 	}
 
 	@Override
-	public void collectCharList(CharCollector out)
+	public ESeq collectCharList(CharCollector out, ESeq rest)
 		throws CharCollector.CollectingException,
 		CharCollector.InvalidElementException,
 		IOException
 	{
+		if (rest != ERT.NIL) {
+			return rest.cons(this);
+		}
+		
 		try {
-			out.addBinary(data, off, len);
+			rest = out.addBinary(data, off, len, rest);
 		} catch (CharCollector.PartialDecodingException e) {
 			throw new CharCollector.CollectingException(drop(e.inputPos - off));
 		}
@@ -317,7 +321,9 @@ public class EBinList extends ECons {
 			// Only nil and binaries are allowed as tail
 			// TODO: Fail sooner?
 			throw new CharCollector.InvalidElementException();
-		} else tail.collectCharList(out);
+		} else {
+			return tail.collectCharList(out, rest);
+		}
 	}
 
 	@Override

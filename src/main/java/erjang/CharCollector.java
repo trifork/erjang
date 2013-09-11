@@ -43,7 +43,12 @@ public class CharCollector {
 		this.decoder.reset();
 	}
 
-	public void addInteger(int value) throws IOException, DecodingException {
+	public ESeq addInteger(int value, ESeq rest) throws IOException, DecodingException {
+		
+		if (rest != ERT.NIL) {
+			return rest.cons(ERT.box(value));
+		}
+
 		if (dirtyDecoder)
 			try { flushDecoder(); }
 			catch (PartialDecodingException e) {
@@ -52,22 +57,30 @@ public class CharCollector {
 				throw new DecodingException();
 			}
 		char c = (char)value;
-		if (c != value) fail(new DecodingException());
+		if (c != value || !Character.isDefined(value)) fail(new DecodingException());
 
 		if (! buffer.hasRemaining())
 			flushBuffer(); /* Or write to output directly?   Provided that we
 							* flush the buffer when we do the decoder. */
 		buffer.put(c);
+		
+		return rest;
 	}
 
 	/** Add a byte array, interpreted as a list of integers.
 	 *  Equivalent to (but faster than) calling add(int) for each of
 	 *  the elements.
+	 * @return 
 	 *  @throws PartialDecodingException if these integers follow an
 	 *  incomplete binary.
 	 */
-	public void addIntegers(byte[] data, int offset, int length) throws IOException, PartialDecodingException {
-		if (length==0) return;
+	public ESeq addIntegers(byte[] data, int offset, int length, ESeq rest) throws IOException, PartialDecodingException {
+		
+		if (rest != ERT.NIL) {
+			return rest.cons(EBinary.make(data, offset, length, 0));
+		}
+		
+		if (length==0) return rest;
 		if (dirtyDecoder) flushDecoder();
 		while (length > 0) {
 			int free = buffer.remaining();
@@ -78,26 +91,44 @@ public class CharCollector {
 			}
 			if (free==0) flushBuffer();
 		}
+		return rest;
 	}
 
-	/** Add a byte array, interpreted as a binary to be decoded. */
-	public void addBinary(byte[] data, int offset, int length) throws IOException, PartialDecodingException {
-		addBinary(ByteBuffer.wrap(data, offset, length), false);
+	/** Add a byte array, interpreted as a binary to be decoded. 
+	 * @param rest TODO
+	 * @return TODO*/
+	public ESeq addBinary(byte[] data, int offset, int length, ESeq rest) throws IOException, PartialDecodingException {
+		if (rest != ERT.NIL) {
+			return rest.cons(EBinary.make(data, offset, length, 0));
+		}
+		return addBinary(ByteBuffer.wrap(data, offset, length), false, rest);
 	}
 
-	public void addBinary(ByteBuffer data, boolean endOfInput)
+	public ESeq addBinary(ByteBuffer data, boolean endOfInput, ESeq rest)
 		throws IOException, PartialDecodingException
 	{
+		if (rest != ERT.NIL) {
+			return rest.cons(EBinary.make(data));
+		}
+		
 		CoderResult res;
 		do {
 			res = decoder.decode(data, buffer, endOfInput);
 			if (!handle(res))
 				fail(new PartialDecodingException(data.position()));
 		} while (res == CoderResult.OVERFLOW);
-		if (data.hasRemaining())
-			throw new NotImplemented("Character possibly spanning binary boundary");
+		
+		if (data.hasRemaining()) {
+			if (!endOfInput) {
+				decoder.decode(ByteBuffer.wrap(new byte[0]), buffer, true);
+				// flush the decoder ...
+				// decoder.flush(buffer);
+			}
+			return rest.cons(EBinary.make(data));
+		}
 		// The decoder may have left some data. Save that in some fashion...
 		dirtyDecoder = true;
+		return rest;
 	}
 
 	protected boolean handle(CoderResult res) throws IOException {
@@ -124,7 +155,7 @@ public class CharCollector {
 	}
 
 	protected void flushDecoder() throws IOException,PartialDecodingException {
-		addBinary(EMPTY, true);
+		addBinary(EMPTY, true, ERT.NIL);
 		decoder.flush(buffer);
 		decoder.reset();
 		dirtyDecoder = false;
@@ -135,8 +166,10 @@ public class CharCollector {
 		output.append(buffer);
 	}
 
+	@SuppressWarnings("serial")
 	public static class DecodingException extends Exception { }
 
+	@SuppressWarnings("serial")
 	public static class PartialDecodingException extends Exception {
 		public final int inputPos;
 		public PartialDecodingException(int inputPos) {
@@ -144,8 +177,10 @@ public class CharCollector {
 		}
 	}
 
- 	public static class InvalidElementException extends Exception { }
+ 	@SuppressWarnings("serial")
+	public static class InvalidElementException extends Exception { }
 
+	@SuppressWarnings("serial")
 	public static class CollectingException extends Exception {
 		public final EObject restOfInput;
 		public CollectingException(EObject restOfInput) {
@@ -160,8 +195,8 @@ public class CharCollector {
 	 * @throws PartialDecodingException 
 	 * @throws IOException 
 	 */
-	public void addIntegers(char[] data, int offset, int length) throws IOException, PartialDecodingException {
-		if (length==0) return;
+	public ESeq addIntegers(char[] data, int offset, int length, ESeq rest) throws IOException, PartialDecodingException {
+		if (length==0) return rest;
 		if (dirtyDecoder) flushDecoder();
 		while (length > 0) {
 			int free = buffer.remaining();
@@ -172,6 +207,7 @@ public class CharCollector {
 			}
 			if (free==0) flushBuffer();
 		}
+		return rest;
 	}
 
 }

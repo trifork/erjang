@@ -476,7 +476,7 @@ public class Native extends ENative {
 				Charset spec = Charset.forName("UTF-16BE");
 				CharCollector cc = new CharCollector(spec, out);
 				try {
-					io_or_char_list.collectCharList(cc);
+					ESeq rest = io_or_char_list.collectCharList(cc, ERT.NIL);
 					cc.end();
 				} catch (CollectingException e) {
 					return null;

@@ -481,11 +481,11 @@ public class EString extends ESeq implements CharSequence {
 		out.visit(data, off, data.length - off);
 	}
 
-	public void collectCharList(CharCollector out)
+	public ESeq collectCharList(CharCollector out, ESeq rest)
 		throws CharCollector.CollectingException, IOException
 	{
 		try {
-			out.addIntegers(data, off, data.length - off);
+			return out.addIntegers(data, off, data.length - off, rest);
 		} catch (CharCollector.PartialDecodingException e) {
 			int n = e.inputPos;
 			throw new CharCollector.CollectingException(new EString(data, off+n));

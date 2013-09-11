@@ -37,7 +37,7 @@ public class EBigString extends ESeq implements CharSequence {
 
 	final char[] data;
 	final int off;
-	private int hash = -1;
+	private int hash;
 
 	public EBigString(String value) {
 		this.hash = value.hashCode();
@@ -119,7 +119,7 @@ public class EBigString extends ESeq implements CharSequence {
 
 	@Override
 	public int hashCode() {
-		if (hash == -1) {
+		if (hash == 0) {
 			hash = stringValue().hashCode();
 		}
 		return hash;
@@ -290,7 +290,7 @@ public class EBigString extends ESeq implements CharSequence {
 	 */
 	@Override
 	public ESmall head() {
-		return new ESmall(data[off] & 0xff);
+		return ERT.box(data[off] & 0xffff);
 	}
 
 	@Override
@@ -418,15 +418,32 @@ public class EBigString extends ESeq implements CharSequence {
 		throw ERT.badarg();
 	}
 
-	public void collectCharList(CharCollector out)
+	public ESeq collectCharList(CharCollector out, ESeq rest)
 		throws CharCollector.CollectingException, IOException
 	{
 		try {
-			out.addIntegers(data, off, data.length - off);
+			return out.addIntegers(data, off, data.length - off, rest);
 		} catch (CharCollector.PartialDecodingException e) {
 			int n = e.inputPos;
 			throw new CharCollector.CollectingException(new EBigString(data, off+n));
 		}
+	}
+	
+	@Override
+	public boolean collectIOList(List<ByteBuffer> out) {
+		byte[] arr = new byte[data.length-off];
+		for (int i = 0; i < arr.length; i++) {
+			char ch = data[off+i];
+			int by = ch & 0xff;
+			if (ch != by) {
+				return false;
+			}
+			arr[i] = (byte) by;
+		}
+		
+		out.add(ByteBuffer.wrap(arr));
+		
+		return tail().collectIOList(out);
 	}
 
 	/**

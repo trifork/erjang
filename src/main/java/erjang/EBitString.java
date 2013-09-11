@@ -749,7 +749,7 @@ public class EBitString extends EObject {
 	}
 
 	@Override
-	public void collectCharList(CharCollector out)
+	public ESeq collectCharList(CharCollector out, ESeq rest)
 		throws CharCollector.CollectingException,
 		CharCollector.InvalidElementException,
 		IOException
@@ -758,7 +758,7 @@ public class EBitString extends EObject {
 			throw new CharCollector.InvalidElementException();
 
 		try {
-			out.addBinary(data, data_offset, byte_size);
+			return out.addBinary(data, data_offset, byte_size, rest);
 		} catch (CharCollector.PartialDecodingException e) {
 			int n = e.inputPos;
 			throw new CharCollector.CollectingException(EBitString.make(data, data_offset+n, byte_size-n, extra_bits));
