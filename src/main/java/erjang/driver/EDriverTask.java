@@ -528,7 +528,7 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 		} else {
 
 			bb.flip();
-			return EString.make(bb.array(), bb.arrayOffset(), bb.remaining());
+			return EString.make(bb.array(), bb.arrayOffset() + bb.position(), bb.remaining());
 		}
 	}
 

@@ -173,7 +173,7 @@ public class FDDriverInstance extends EDriverInstance {
 	protected void output(EHandle caller, ByteBuffer data) throws IOException, Pausable {
 		if (outs != null) {
 			if (data.hasArray()) {
-				outs.write(data.array(), data.arrayOffset(), data.remaining());
+				outs.write(data.array(), data.arrayOffset() + data.position(), data.remaining());
 			} else {
 				throw new NotImplemented();
 			}

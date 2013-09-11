@@ -25,8 +25,13 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectableChannel;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
+import com.jcraft.jzlib.CRC32;
+import com.jcraft.jzlib.Deflater;
+import com.jcraft.jzlib.Inflater;
+import com.jcraft.jzlib.JZlib;
 import com.jcraft.jzlib.ZStream;
 import com.jcraft.jzlib.ZStreamException;
 
@@ -128,7 +133,8 @@ public class ZLibDriver extends EDriverInstance {
 	public static final int CRC32_COMBINE = 23;
 	public static final int ADLER32_COMBINE = 24;
 
-	private ZStream inf;
+	private Inflater inflater;
+	private Deflater deflater;
 
 	public ZLibDriver(EDriver driver, EString command) {
 		super(driver);
@@ -150,37 +156,32 @@ public class ZLibDriver extends EDriverInstance {
 		}
 	}
 	
-	void do_inflate(int flush_mode) throws Pausable {
-		int err = ZStream.Z_OK;
+	int do_inflate(int flush_mode) throws Pausable {
+		int err = JZlib.Z_OK;
 		
 		read_loop:
-		for (int i = 0; err==ZStream.Z_OK && i < inbuf.size(); i++) {
+		for (int i = 0; err==JZlib.Z_OK && i < inbuf.size(); i++) {
 			
 			ByteBuffer bb = inbuf.get(i);
 			
-			inf.next_in = bb.array();
-			inf.next_in_index = bb.arrayOffset() + bb.position();
-			inf.avail_in = bb.limit();
+			inflater.setInput(bb.array(), bb.arrayOffset() + bb.position(), bb.remaining(), true);
 
-	//		inf.setInput(bb.array(), bb.arrayOffset()+bb.position(), bb.limit());
-			
 			int in_size = bb.remaining();
+			ByteBuffer out = ByteBuffer.allocate(1024);				
 			do {
-				ByteBuffer out = ByteBuffer.allocate(1024);				
+				long read_before = inflater.total_in;
+				long wrote_before = inflater.total_out;
 
-				long read_before = inf.total_in;
-				long wrote_before = inf.total_out;
-
-				inf.next_out = out.array();
-				inf.next_out_index = out.arrayOffset() + out.position();
-				inf.avail_out = out.capacity();
+				inflater.next_out = out.array();
+				inflater.next_out_index = out.arrayOffset() + out.position();
+				inflater.avail_out = out.remaining();
 					
-				err = inf.inflate(flush_mode);
+				err = inflater.inflate(flush_mode);
 
-				if (err == ZStream.Z_OK || err == ZStream.Z_STREAM_END) {
+				if (err == JZlib.Z_OK || err == JZlib.Z_STREAM_END) {
 				
-					long read_after = inf.total_in;
-					long wrote_after = inf.total_out;
+					long read_after = inflater.total_in;
+					long wrote_after = inflater.total_out;
 					
 					in_size -= (read_after-read_before);
 					
@@ -188,67 +189,69 @@ public class ZLibDriver extends EDriverInstance {
 					out.position(written);
 					
 					driver_output(out);
-				
+					out = ByteBuffer.allocate(1024);				
 				}
 
-			} while(err==ZStream.Z_OK && in_size > 0);
+			} while(err==JZlib.Z_OK && in_size > 0);
 		}
 		
 		inbuf.clear();
 		
 		if (flush_mode == Z_FINISH) {
-			inf.free();
+			inflater.free();
 		}
+		
+		return err;
 	}
 	
 	void do_deflate(int flush_mode) throws Pausable {
-		int err = ZStream.Z_OK;
-		
+		int err = JZlib.Z_OK;
+
 		read_loop:
-		for (int i = 0; err==ZStream.Z_OK && i < inbuf.size(); i++) {
-			
+		for (int i = 0; err==JZlib.Z_OK && i < inbuf.size(); i++) {
+
 			ByteBuffer bb = inbuf.get(i);
-			
-			inf.next_in = bb.array();
-			inf.next_in_index = bb.arrayOffset() + bb.position();
-			inf.avail_in = bb.limit();
+
+			deflater.next_in = bb.array();
+			deflater.next_in_index = bb.arrayOffset() + bb.position();
+			deflater.avail_in = bb.remaining();
 
 	//		inf.setInput(bb.array(), bb.arrayOffset()+bb.position(), bb.limit());
-			
+
 			int in_size = bb.remaining();
 			do {
 				ByteBuffer out = ByteBuffer.allocate(1024);				
 
-				long read_before = inf.total_in;
-				long wrote_before = inf.total_out;
+				long read_before = deflater.total_in;
+				long wrote_before = deflater.total_out;
 
-				inf.next_out = out.array();
-				inf.next_out_index = out.arrayOffset() + out.position();
-				inf.avail_out = out.capacity();
-					
-				err = inf.deflate(flush_mode);
+				deflater.next_out = out.array();
+				deflater.next_out_index = out.arrayOffset() + out.position();
+				deflater.avail_out = out.remaining();
 
-				if (err == ZStream.Z_OK || err == ZStream.Z_STREAM_END) {
-				
-					long read_after = inf.total_in;
-					long wrote_after = inf.total_out;
-					
+				err = deflater.deflate(flush_mode);
+
+				if (err == JZlib.Z_OK || err == JZlib.Z_STREAM_END) {
+
+					long read_after = deflater.total_in;
+					long wrote_after = deflater.total_out;
+
 					in_size -= (read_after-read_before);
-					
+
 					int written = (int) (wrote_after - wrote_before);
 					out.position(written);
-					
+
 					driver_output(out);
-				
+
 				}
 
-			} while(err==ZStream.Z_OK && in_size > 0);
+			} while(err==JZlib.Z_OK && in_size > 0);
 		}
-		
+
 		inbuf.clear();
-		
+
 		if (flush_mode == Z_FINISH) {
-			inf.free();
+			deflater.free();
 		}
 	}
 	
@@ -259,15 +262,15 @@ public class ZLibDriver extends EDriverInstance {
 		switch (command) {
 		case INFLATE_INIT:
 		{
-			this.inf = new ZStream();
-			this.inf.inflateInit(true);
+			this.inflater = new Inflater();
+			this.inflater.inflateInit(true);
 			return reply_ok();
 		}
 		case INFLATE_INIT2:
 		{
 			int ws = cmd.getInt();
-			this.inf = new ZStream();
-			this.inf.inflateInit(ws);
+			this.inflater = new Inflater();
+			this.inflater.inflateInit(ws);
 			return reply_ok();
 		}
 		case DEFLATE_INIT2:
@@ -275,15 +278,19 @@ public class ZLibDriver extends EDriverInstance {
 			int level = cmd.getInt();
 			int method = cmd.getInt();
 			int bits = cmd.getInt();
-			int memLevel = cmd.getInt();
+			int memlevel = cmd.getInt();
 			int strategy = cmd.getInt();
-			this.inf = new ZStream();
-			this.inf.deflateInit(level,method,bits,memLevel,strategy);
+			this.deflater = new Deflater();
+			this.deflater.deflateInit(level, bits, memlevel);
+			this.deflater.deflateParams(level, strategy);
 			return reply_ok();
 		}
 		case INFLATE: {
 			int flush_mode = cmd.getInt();
-			do_inflate(flush_mode);
+			int err = do_inflate(flush_mode);
+			if (err == JZlib.Z_NEED_DICT) {
+				return reply_need_dict(inflater.getAdler());
+			}
 			return reply_ok();
 		}
 		case INFLATE_END: {
@@ -299,6 +306,27 @@ public class ZLibDriver extends EDriverInstance {
 			do_deflate(Z_FINISH);
 			return reply_ok();
 		}
+		case CRC32_0: {
+			if (deflater != null) {
+				return reply_int( deflater.getAdler() );
+			}
+			if (inflater != null) {
+				return reply_int( inflater.getAdler() );
+			}
+			return reply_int(0);
+		}
+		case CRC32_1: {
+			CRC32 crc = new CRC32();
+			crc.update(cmd.array(), cmd.arrayOffset()+cmd.position(), cmd.remaining());
+			return reply_int((int) crc.getValue());
+		}
+		case CRC32_2: {
+			CRC32 crc = new CRC32();
+			long init = cmd.getInt() & 0xffffffffL;
+			crc.reset(init);
+			crc.update(cmd.array(), cmd.arrayOffset()+cmd.position(), cmd.remaining());
+			return reply_int((int) crc.getValue());
+		}
 		}
 
 		throw new erjang.NotImplemented("command="+command+"; data="+EBinary.make(cmd));
@@ -309,6 +337,27 @@ public class ZLibDriver extends EDriverInstance {
 		ok.put((byte) 0);
 		ok.put((byte) 'o');
 		ok.put((byte) 'k');
+		return ok;
+	}
+
+	private ByteBuffer reply_error(String atom) {
+		ByteBuffer err = ByteBuffer.allocate(1 + atom.length());
+		err.put((byte) 1);
+		err.put( atom.getBytes(StandardCharsets.UTF_8) );
+		return err;
+	}
+
+	private ByteBuffer reply_int(long l) {
+		ByteBuffer ok = ByteBuffer.allocate(5);
+		ok.put((byte) 2);
+		ok.putInt((int)l);
+		return ok;
+	}
+
+	private ByteBuffer reply_need_dict(long l) {
+		ByteBuffer ok = ByteBuffer.allocate(5);
+		ok.put((byte) 3);
+		ok.putInt((int) l);
 		return ok;
 	}
 

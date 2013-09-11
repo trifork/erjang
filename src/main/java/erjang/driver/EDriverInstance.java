@@ -340,7 +340,7 @@ public abstract class EDriverInstance extends EDriverControl {
 	}
 	
 	protected void driver_enqv(ByteBuffer[] q) {
-		if (queue == null || queue[0] == null) 
+		if (queue == null || (queue.length>0 && queue[0] == null))
 			queue = q;
 		else {
 			
