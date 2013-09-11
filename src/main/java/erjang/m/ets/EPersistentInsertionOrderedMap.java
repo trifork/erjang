@@ -220,7 +220,9 @@ public class EPersistentInsertionOrderedMap<K,V> extends APersistentMap<K,V> {
 
 	@Override
 	public ISeq<IMapEntry<K, V>> seq() {
-		return new ESeq<K,V>(iorder.seq());
+		ISeq<IMapEntry<Long, Rec<K, V>>> seq = iorder.seq();
+		if (seq == null) return null;
+		return new ESeq<K,V>(seq);
 	}
 	
 	static class ESeq<K,V> implements ISeq<IMapEntry<K, V>> {
@@ -246,7 +248,7 @@ public class EPersistentInsertionOrderedMap<K,V> extends APersistentMap<K,V> {
 
 		@Override
 		public ISeq<IMapEntry<K, V>> seq() {
-			return new ESeq<K,V>(iseq.seq());
+			return this;
 		}
 
 		@Override
@@ -265,6 +267,7 @@ public class EPersistentInsertionOrderedMap<K,V> extends APersistentMap<K,V> {
 		@Override
 		public ISeq<IMapEntry<K, V>> more() {
 			ISeq<IMapEntry<Long, Rec<K, V>>> more = iseq.more();
+			if (more == null) return null;
 			return new ESeq<K,V>(more);
 		}
 
