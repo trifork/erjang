@@ -46,6 +46,8 @@ public class EInputStream extends ByteArrayInputStream {
 
 	private EAtom[] atom_cache_refs;
 
+	private boolean safeMode;
+
 	/**
 	 * @param buf
 	 */
@@ -400,7 +402,11 @@ public class EInputStream extends ByteArrayInputStream {
 			atom = atom.substring(0, EExternal.maxAtomLength);
 		}
 
-		return EAtom.intern(atom);
+		if (safeMode) {
+			return EAtom.existing_atom(atom);
+		} else {
+			return EAtom.intern(atom);
+		}
 	}
 
 	/**
@@ -1250,5 +1256,9 @@ public class EInputStream extends ByteArrayInputStream {
 
 	public void setAtomCacheRefs(EAtom[] atomCacheRefs) {
 		this.atom_cache_refs = atomCacheRefs;		
+	}
+
+	public void setSafe(boolean safeMode) {
+		this.safeMode = safeMode;
 	}
 }

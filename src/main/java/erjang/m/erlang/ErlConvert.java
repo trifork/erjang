@@ -61,6 +61,7 @@ public class ErlConvert {
 	private static final ESmall PLUS_SIGN = ERT.box((int)'+');
 	public static final EAtom am_compressed = EAtom.intern("compressed");
 	private static final EAtom am_minor_version = EAtom.intern("minor_version");
+	private static final EAtom am_safe = EAtom.intern("safe");
 
 	@BIF
 	public static EObject binary_to_term(EObject arg) {
@@ -71,6 +72,26 @@ public class ErlConvert {
 			EObject val = in.read_any();
 			//System.out.println("DECODED:"+val);
 			return val;
+		} catch (IOException e) {
+			throw new ErlangError(ERT.am_badarg, e, arg);
+		}
+	}
+
+	@BIF
+	public static EObject binary_to_term(EObject arg, EObject opts) {
+		EBinary bin; ESeq options;
+		if ((bin=arg.testBinary()) == null || (options = opts.testSeq()) == null) throw ERT.badarg(arg);
+		EInputStream in = bin.getInputStream();
+		if (!options.isNil()) {
+			if (options.head() == am_safe) {
+				in.setSafe(true);
+			}
+		}
+		try {
+			EObject val = in.read_any();
+			return val;
+		} catch (ErlangError e) {
+			throw new ErlangError(ERT.am_badarg, e, arg);
 		} catch (IOException e) {
 			throw new ErlangError(ERT.am_badarg, e, arg);
 		}
