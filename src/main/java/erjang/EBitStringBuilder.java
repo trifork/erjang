@@ -68,6 +68,8 @@ public class EBitStringBuilder {
 
 	/** return bitstring under construction */
 	public EBitString bitstring() {
+		if ((flags & PB_IS_WRITABLE) == PB_IS_WRITABLE)
+			bs.byte_size = this.byte_pos;
 		return bs;
 	}
 

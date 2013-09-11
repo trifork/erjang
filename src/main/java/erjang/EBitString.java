@@ -42,7 +42,7 @@ public class EBitString extends EObject {
 
 	protected final byte[] data;
 	private final int data_offset;
-	private final int byte_size;
+	int byte_size;
 	protected final int extra_bits;
 	//private final long bits;
 	//protected final long bitOff = 0;
@@ -221,6 +221,9 @@ public class EBitString extends EObject {
 		this.byte_size = byte_len;
 		this.extra_bits = extra_bits;
 
+		if (byte_size < 0){
+			throw new IllegalArgumentException();
+		}		
 		if (data.length < byte_off + byte_len + (extra_bits>0?1:0)) {
 			throw new IllegalArgumentException();
 		}
