@@ -2296,8 +2296,8 @@ public class ErlBif {
     	}
     	
     	if (start1.value < 0
-    			&& (start1.value + length1.value) > bin1.byteSize()
-				&& length1.value < 0) {
+    			|| (start1.value + length1.value) > bin1.byteSize()
+				|| length1.value < 0) {
     		return null;
     	}
 	
