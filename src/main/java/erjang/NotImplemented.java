@@ -21,8 +21,6 @@ package erjang;
 public class NotImplemented extends ErlangError {
 
 	static EAtom am_not_implemented = EAtom.intern("not_implemented");
-	EObject reason;
-	private String message;
 	
 	/**
 	 * 
@@ -31,28 +29,19 @@ public class NotImplemented extends ErlangError {
 	 super(ETuple.make(am_not_implemented, ERT.NIL,
 			 not_implemented_trace(new Throwable().getStackTrace()) ));
 	
-	 printStackTrace(System.err);
-	 
-	 this.message = reason.toString();
+	 printStackTrace(System.err);	 
 	}
 	
 	public NotImplemented(String message) {
 		super(ETuple.make(am_not_implemented, EString.fromString(message),
 				not_implemented_trace(new Throwable().getStackTrace()) ));
 		 
-		this.message = message;
 		printStackTrace(System.err);
 	}
 	
 	static ESeq not_implemented_trace (StackTraceElement[] elm) {
 		if (elm.length <= 1) return ERT.NIL;
 		return EString.fromString(elm[1].toString());
-	}
-	
-	
-	public EObject reason() {
-		return reason;
-	}
-	
+	}	
 	
 }

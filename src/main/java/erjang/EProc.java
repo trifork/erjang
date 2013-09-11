@@ -492,7 +492,8 @@ public final class EProc extends ETask<EInternalPID> {
 			throw e;
 			
 		} catch (Throwable e) {
-			e.printStackTrace();
+			System.err.println("uncaught top-level exception");
+			e.printStackTrace(System.err);
 		}
 	}
 
@@ -502,32 +503,26 @@ public final class EProc extends ETask<EInternalPID> {
 			result = execute1();
 
 		} catch (NotImplemented e) {
-			e.printStackTrace();
 			log.log(Level.SEVERE, "[fail] exiting "+self_handle(), e);
 			result = e.reason();
 			death[0] = e;
 			
 		} catch (ErlangException e) {
-			// e.printStackTrace();
 			log.log(Level.FINE, "[erl] exiting "+self_handle(), e);
 			last_exception = e;
 			result = e.reason();
 			death[0] = e;
 
 		} catch (ErlangExitSignal e) {
-			//e.printStackTrace();
 			log.log(Level.FINE, "[signal] exiting "+self_handle(), e);
 			result = e.reason();
 			death[0] = e;
 			
 		} catch (ErlangHalt e) {
-			//e.printStackTrace();
 			throw e;
 
 		} catch (Throwable e) {
 
-			e.printStackTrace();
-			
 			log.log(Level.SEVERE, "[java] exiting "+self_handle()+" with: ", e);
 
 			ESeq erl_trace = ErlangError.decodeTrace(e.getStackTrace());
@@ -557,6 +552,7 @@ public final class EProc extends ETask<EInternalPID> {
 				} catch (ThreadDeath e) {
 					throw e;
 				} catch (Throwable e) {
+					System.err.println(msg);
 					e.printStackTrace();
 					// ignore //
 				}

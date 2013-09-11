@@ -48,7 +48,7 @@ public class ErlangUndefined extends ErlangError {
 		this.function = function;
 		this.arity = arity;
 		
-		this.printStackTrace();
+		// this.printStackTrace();
 	}
 
 	/**
