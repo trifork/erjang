@@ -30,13 +30,18 @@ public class NotImplemented extends ErlangError {
 	public NotImplemented() {
 	 super(ETuple.make(am_not_implemented, ERT.NIL,
 			 not_implemented_trace(new Throwable().getStackTrace()) ));
-	 this.message = "";
+	
+	 printStackTrace(System.err);
+	 
+	 this.message = reason.toString();
 	}
 	
 	public NotImplemented(String message) {
 		super(ETuple.make(am_not_implemented, EString.fromString(message),
 				not_implemented_trace(new Throwable().getStackTrace()) ));
+		 
 		this.message = message;
+		printStackTrace(System.err);
 	}
 	
 	static ESeq not_implemented_trace (StackTraceElement[] elm) {
@@ -49,9 +54,5 @@ public class NotImplemented extends ErlangError {
 		return reason;
 	}
 	
-	@Override
-	public String getMessage() {
-		return message;
-	}
 	
 }
