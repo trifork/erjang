@@ -303,7 +303,12 @@ public class EModuleManager {
 			return resident != null;
 		}
 		
-		public void unload() throws Exception {
+		public EAtom unload() throws Exception {
+			
+			if (resident == null) {
+				return ERT.am_undefined;
+			}
+			
 			resident = null;
 			for (FunctionInfo fi : this.binding_points.values()) {
 				fi.unbind();
@@ -311,6 +316,8 @@ public class EModuleManager {
 			binding_points.clear(); // ?
 			this.resident = null;
 			this.module_md5 = empty_md5;
+			
+			return ERT.TRUE;
 		}
 
 		/**
@@ -574,13 +581,12 @@ public class EModuleManager {
 	public static EAtom delete_module(EAtom module) {
 		ModuleInfo mi = get_module_info(module);
 		try {
-			mi.unload();
+			return mi.unload();
 		} catch (ErlangException e) {
 			throw e;
 		} catch (Exception e) {
 			throw new ErlangError(e);
 		}
-		return ERT.am_ok;
 	}
 
 	public static EModule get_loaded_module(EAtom module) {
