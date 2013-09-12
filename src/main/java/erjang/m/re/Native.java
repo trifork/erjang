@@ -21,11 +21,14 @@ import java.io.CharArrayWriter;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -164,10 +167,18 @@ public class Native extends ENative {
 					while (!list.isNil()) {
 						EObject group = list.head();
 						ESmall num;
+						EAtom nam;
 						if ((num=group.testSmall()) != null)
 						{
 							if (mr.start(num.value) != -1) {
 								l = l.cons( capture (subject, mr, num.value, o2 ));
+							}
+						} else if ((nam=group.testAtom()) != null)
+						{
+							Integer groupNo = o2.named_groups.get(nam.getName());
+							System.err.println("named group <"+nam.getName()+"> => "+groupNo);
+							if (groupNo != null && mr.start(groupNo.intValue()) != -1) {
+								l = l.cons( capture (subject, mr, groupNo.intValue(), o2 ));
 							}
 						} else {
 							throw new NotImplemented("named capture groups");
@@ -224,7 +235,7 @@ public class Native extends ENative {
 					
 					 for (; !il.isNil(); il = il.tail()) {
 						 ESmall idx = il.head().testSmall();
-						 if (mr.start(idx.value) != -1) {
+						 if (idx != null && mr.start(idx.value) != -1) {
 							 EObject val = capture (subject, mr, idx.value, o2);
 							 out = out.cons(val);
 						 }
@@ -306,6 +317,10 @@ public class Native extends ENative {
 
 		boolean anchored = true;
 
+		Map<String,Integer> named_groups = new HashMap<>(3);
+
+		public int group_count;
+		
 		Options re_init(ESeq opts) {
 			Options out;
 			try {
@@ -422,7 +437,7 @@ public class Native extends ENative {
 				// if it is a sequence, make sure elements are integers
 				while (!spec.isNil()) {
 					EObject val = spec.head();
-					if (val.testSmall() == null)
+					if (val.testSmall() == null && val.testAtom() == null)
 						return false;
 					spec = spec.tail();
 				}
@@ -525,6 +540,51 @@ public class Native extends ENative {
 		public boolean isUnicode() {
 			return unicode;
 		}
+		
+
+		Pattern NAMED_GROUP = Pattern.compile("\\(\\?<([a-zA-Z0-9_]+)>.*");
+		
+		private String countGroups(String pattern) {
+
+			int start = 0;
+			StringBuilder sb = new StringBuilder();
+			
+			group_count = 0;
+			Matcher m = NAMED_GROUP.matcher( pattern );
+
+			int i;
+			for (i = 0; i < pattern.length(); i++) {
+				char ch = pattern.charAt(i);
+				if (ch == '\\') {
+					i += 1;
+				} else if (ch == '(') {
+					group_count += 1;
+					
+					if (m.find(i)) {
+						if (m.start() == i) {
+							String name = m.group(1);
+							named_groups.put(name, group_count);
+							
+							sb.append( pattern.substring(start, i+1) );
+							start = i+4+name.length();
+							i = start-1;
+						}
+					}
+					
+				}
+			}
+			
+			if (start == 0)
+				return pattern;
+
+			sb.append( pattern.substring(start) );
+			return sb.toString();
+		}
+
+		public String findGroups(String pattern) {
+			return countGroups(pattern);
+		}
+		
 	}
 
 	@BIF
@@ -569,6 +629,8 @@ public class Native extends ENative {
 		if (pattern == null) {
 			throw ERT.badarg(obj1, obj2);
 		}
+		
+		pattern = o.findGroups(pattern);
 
 		try {
 			Pattern c = Pattern.compile(pattern, o.flags);

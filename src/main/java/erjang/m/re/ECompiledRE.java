@@ -19,6 +19,9 @@
 package erjang.m.re;
 
 import java.math.BigInteger;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import erjang.EAtom;
@@ -50,7 +53,7 @@ public class ECompiledRE extends ETuple4 {
 		this.patt = patt;
 		
 		this.elem1 = am_re_pattern;
-		this.elem2 = ERT.box(countGroups(patt.pattern()));
+		this.elem2 = ERT.box(options.group_count);
 		this.elem3 = options.isUnicode() ? ERT.box(1) : ERT.box(0);
 		String p = "/" + patt.pattern() + "/" + encode_options();
 		this.elem4 = EBinary.make(p.getBytes(IO.UTF8));
@@ -85,18 +88,6 @@ public class ECompiledRE extends ETuple4 {
 			}
 		}
 		return l;
-	}
-	
-	private int countGroups(String pattern) {
-		int idx = 0;
-		int res = 0;
-		while ((idx = pattern.indexOf('(', idx)) != -1) {
-			if (idx > 0 && pattern.charAt(idx-1) != '\\') {
-				res += 1;
-			}
-			idx += 1;
-		}
-		return res;
 	}
 	
 }
