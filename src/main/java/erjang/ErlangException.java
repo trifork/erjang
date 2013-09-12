@@ -371,6 +371,12 @@ public abstract class ErlangException extends RuntimeException {
 
 	/** Exception wrapper to be used in 'try_case' and 'raise' instructions. */
 	public class ExceptionAsObject extends EPseudoTerm {
+		
+		@Override
+		public ECons testNonEmptyList() {
+			return ERT.NIL.cons ( ErlangException.this.getTrace() );
+		}
+		
 		public ErlangException getException() {
 			return ErlangException.this;
 		}
@@ -382,7 +388,7 @@ public abstract class ErlangException extends RuntimeException {
 		
 		@Override
 		public String toString() {
-			return ErlangException.this.toString();
+			return "wrapped:" + ErlangException.this.toString();
 		}
 	}
 }

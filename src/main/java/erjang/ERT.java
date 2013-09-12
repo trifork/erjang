@@ -61,9 +61,14 @@ public class ERT {
 			log.warning("Pre-R10-1 exception style is not supported.");
 		}
 
-		Throwable error = new Throwable("bad argument to raise2: ("+value+", "+trace+")");
+		ESeq trz;
+		if ((trz = trace.testSeq()) != null) {
+			throw new ErlangRaise(am_error, value, trz);
+		}
+
+		Throwable error = new Throwable("bad argument to raise2 :: "+ trace.getClass().getName());
 		log.log(Level.WARNING, "bad argument to raise2: ("+value+", "+trace+")", error);
-		return am_badarg;
+		throw ERT.badarg(trace, value);
 	}
 
 	public static final EAtom am_badarg = EAtom.intern("badarg");
