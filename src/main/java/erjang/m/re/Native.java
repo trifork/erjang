@@ -131,9 +131,16 @@ public class Native extends ENative {
 		}
 
 		ESeq o = opts.testSeq();
-		Options o2 = new Options();
-		if (!o2.init(o)) {
-			throw ERT.badarg(subj, re, opts);
+		Options o2;
+		
+		if (o.isNil()) {
+			o2 = regex.options;
+		} else {
+			o2 = regex.options.re_init(o);
+			
+			if (o2 == null) {
+				throw ERT.badarg(subj, re, opts);
+			}
 		}
 		
 		String subject = regex.options.decode(subj);
@@ -170,14 +177,12 @@ public class Native extends ENative {
 						EAtom nam;
 						if ((num=group.testSmall()) != null)
 						{
-							if (mr.start(num.value) != -1) {
-								l = l.cons( capture (subject, mr, num.value, o2 ));
-							}
+							l = l.cons( capture (subject, mr, num.value, o2 ));
 						} else if ((nam=group.testAtom()) != null)
 						{
 							Integer groupNo = o2.named_groups.get(nam.getName());
 							System.err.println("named group <"+nam.getName()+"> => "+groupNo);
-							if (groupNo != null && mr.start(groupNo.intValue()) != -1) {
+							if (groupNo != null) {
 								l = l.cons( capture (subject, mr, groupNo.intValue(), o2 ));
 							}
 						} else {
@@ -212,16 +217,14 @@ public class Native extends ENative {
 				if (o2.capture_spec == am_all) {
 					ESeq l = ERT.NIL;
 					for (int i = mr.groupCount(); i >= 0; i--) {
-						if (mr.start(i) != -1)
-							l = l.cons( capture (subject, mr, i, o2) );
+						l = l.cons( capture (subject, mr, i, o2) );
 					}
 					return new ETuple2(am_match, l);
 					
 				} else if (o2.capture_spec == am_all_but_first) {
 					ESeq l = ERT.NIL;
 					for (int i = mr.groupCount(); i > 0; i--) {
-						if (mr.start(i) != -1)
-							l = l.cons( capture (subject, mr, i, o2) );
+						l = l.cons( capture (subject, mr, i, o2) );
 					}
 					return new ETuple2(am_match, l);
 					
@@ -234,10 +237,22 @@ public class Native extends ENative {
 					ESeq out = ERT.NIL;
 					
 					 for (; !il.isNil(); il = il.tail()) {
-						 ESmall idx = il.head().testSmall();
-						 if (idx != null && mr.start(idx.value) != -1) {
+						 EObject what = il.head();
+						ESmall idx = what.testSmall();
+						 EAtom nam;
+						if (idx != null && mr.start(idx.value) != -1) {
 							 EObject val = capture (subject, mr, idx.value, o2);
 							 out = out.cons(val);
+						 } else if ((nam=what.testAtom())!=null) {
+							 Integer idx2 = o2.named_groups.get(nam.getName());
+							 if (idx2 != null) {
+									 EObject val = capture (subject, mr, idx2, o2);
+									 out = out.cons(val);
+							 } else {
+								 // badarg?
+							 }
+						 } else {
+							 out = out.cons(nocapture(o2));
 						 }
 					 }
 					 
@@ -253,10 +268,27 @@ public class Native extends ENative {
 		}
 	}
 
+	private static EObject nocapture(Options opts) {
+		if (opts.capture_type == am_binary) {
+			return EBinary.EMPTY;
+		} else if (opts.capture_type == am_list) {
+			return ERT.NIL;
+		} else if (opts.capture_spec == am_index) {
+			return am_nomatch;
+		} else {
+			throw new InternalError("bad capture_type "+opts.capture_type);
+		}
+	}
+	
 	private static EObject capture(String subject, MatchResult mr, int group_index,
 			Options opts) {
 
 		int start = mr.start(group_index);
+		
+		if (start == -1) {
+			return nocapture(opts);
+		}
+		
 		int end = mr.end(group_index);
 
 		if (opts.capture_type  == am_index) {
@@ -328,7 +360,9 @@ public class Native extends ENative {
 			} catch (CloneNotSupportedException e) {
 				throw new InternalError();
 			}
-			out.init(opts);
+			if (!out.init(opts))
+				return null;
+			
 			return out;
 		}
 		
@@ -549,6 +583,7 @@ public class Native extends ENative {
 			int start = 0;
 			StringBuilder sb = new StringBuilder();
 			
+			boolean in_ch_class = false;
 			group_count = 0;
 			Matcher m = NAMED_GROUP.matcher( pattern );
 
@@ -571,6 +606,15 @@ public class Native extends ENative {
 						}
 					}
 					
+				} else if (ch == '[') {
+					if (!in_ch_class) {
+						in_ch_class = true;
+					} else {
+						sb.append( pattern.substring( start, i )).append('\\');
+						start = i;
+					}
+				} else if (ch == ']') {
+					in_ch_class = false;
 				}
 			}
 			
@@ -581,7 +625,7 @@ public class Native extends ENative {
 			return sb.toString();
 		}
 
-		public String findGroups(String pattern) {
+		public String process_erl2java(String pattern) {
 			return countGroups(pattern);
 		}
 		
@@ -599,9 +643,6 @@ public class Native extends ENative {
 		ESeq opts = obj2.testSeq();
 
 		Options o = new Options();
-		if (!o.init(opts)) {
-			throw ERT.badarg(obj1, obj2);
-		}
 
 		String pattern;
 		ETuple4 tup = ETuple4.cast(obj1);
@@ -618,11 +659,21 @@ public class Native extends ENative {
 					}
 				}
 				
-				pattern = new String(raw, 1, end, IO.UTF8);
+				pattern = new String(raw, 1, end-1, IO.UTF8);
+
+				o.init( ECompiledRE.decode_options(raw, end+1) );
+				
+				if (!o.init(opts)) {
+					throw ERT.badarg(obj1, obj2);
+				}
+
 			} else {
 				throw ERT.badarg(obj1, obj2);
 			}
 		} else {
+			if (!o.init(opts)) {
+				throw ERT.badarg(obj1, obj2);
+			}
 			pattern = o.decode(obj1);
 		}
 		
@@ -630,12 +681,12 @@ public class Native extends ENative {
 			throw ERT.badarg(obj1, obj2);
 		}
 		
-		pattern = o.findGroups(pattern);
+		String stripped_pattern = o.process_erl2java(pattern);
 
 		try {
-			Pattern c = Pattern.compile(pattern, o.flags);
+			Pattern c = Pattern.compile(stripped_pattern, o.flags);
 			return new ETuple2(ERT.am_ok,
-					new ECompiledRE(o, c)
+					new ECompiledRE(o, c, pattern)
 			);
 
 		} catch (PatternSyntaxException e) {

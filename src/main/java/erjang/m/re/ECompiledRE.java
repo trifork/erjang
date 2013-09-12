@@ -45,17 +45,19 @@ import erjang.m.re.Native.Options;
 public class ECompiledRE extends ETuple4 {
 	final Pattern patt;
 	final Options options;
+	private String source;
 	
 	static final EAtom am_re_pattern = EAtom.intern("re_pattern");
 
-	ECompiledRE(Options options, Pattern patt) {
+	ECompiledRE(Options options, Pattern patt, String src) {
 		this.options = options;
 		this.patt = patt;
+		this.source = src;
 		
 		this.elem1 = am_re_pattern;
 		this.elem2 = ERT.box(options.group_count);
 		this.elem3 = options.isUnicode() ? ERT.box(1) : ERT.box(0);
-		String p = "/" + patt.pattern() + "/" + encode_options();
+		String p = "/" + src + "/" + encode_options();
 		this.elem4 = EBinary.make(p.getBytes(IO.UTF8));
 	}
 
@@ -75,8 +77,12 @@ public class ECompiledRE extends ETuple4 {
 	}
 	
 	public static ESeq decode_options(byte[] ops) {
+		return decode_options(ops, 0);
+	}
+
+	public static ESeq decode_options(byte[] ops, int i) {
 		ESeq l = ERT.NIL;
-		for (int i = 0; i < ops.length; i++) {
+		for (; i < ops.length; i++) {
 			switch(ops[i]) {
 			case 'g': l = l.cons(EAtom.intern("global")); break;
 			case 'u': l = l.cons(EAtom.intern("unicode")); break;
