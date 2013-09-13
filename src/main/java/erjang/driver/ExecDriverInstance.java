@@ -33,7 +33,6 @@ import java.util.Map;
 
 import kilim.Pausable;
 import kilim.Task;
-
 import erjang.EAtom;
 import erjang.EBinary;
 import erjang.ECons;
@@ -169,6 +168,18 @@ public class ExecDriverInstance extends EDriverInstance {
 					} finally {
 						stdin_thread = null;
 						
+						while(stderr_thread != null) {
+							Thread t = stderr_thread;
+							if (t != null && !t.isAlive())
+								break;
+							
+							try {
+								Thread.sleep(1);
+							} catch (InterruptedException e) {
+								e.printStackTrace();
+							}
+						}
+						
 						if (task.send_eof) {
 							task.eof_from_driver_b();
 						}
@@ -206,7 +217,6 @@ public class ExecDriverInstance extends EDriverInstance {
 					} finally {
 						stderr_thread = null;
 					}
-
 				}
 			}
 

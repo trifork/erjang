@@ -766,11 +766,11 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 	}
 
 	public void exit_status_from_driver(int code) throws Pausable {
-		output_term_from_driver(new ETuple2(port, ERT.box(code)));
+		output_term_from_driver(new ETuple2(port, new ETuple2(am_exit_status, ERT.box(code))));
 	}
 
 	public void exit_status_from_driver_b(int code) {
-		output_term_from_driver_b(new ETuple2(port, ERT.box(code)));
+		output_term_from_driver_b(new ETuple2(port, new ETuple2(am_exit_status, ERT.box(code))));
 	}
 
 	public static ESeq all_ports() {
