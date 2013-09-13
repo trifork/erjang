@@ -99,6 +99,9 @@ void initialize_jnif_list(JavaVM* vm, JNIEnv *je)
   m_eobject__testSeq     = je->GetMethodID(eobject_class,
                                               "testSeq",
                                               "()Lerjang/ESeq;");
+  m_eobject__testCons    = je->GetMethodID(eobject_class,
+                                              "testCons",
+                                              "()Lerjang/ECons;");
 
   elist_class      = je->FindClass("erjang/EList");
   elist_class      = (jclass) je->NewGlobalRef(elist_class);
