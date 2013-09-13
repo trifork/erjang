@@ -523,7 +523,7 @@ public class ErlProc {
 		} else if (type == am_schedulers) {
 			return ERT.box(ERT.threadPoolSize());
 		} else if (type == am_schedulers_online) {
-			return ERT.box(Math.min(1, ERT.threadPoolSize()/2));
+			return ERT.box(Math.max(1, ERT.threadPoolSize()));
 		} else if (type == am_threads) {
 			return ERT.box(true);
 		} else if (type == am_thread_pool_size) {

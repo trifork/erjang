@@ -1027,7 +1027,7 @@ public class ERT {
 		if (threads != null)
 			return Integer.parseInt(threads);
 		else
-			return Runtime.getRuntime().availableProcessors();
+			return Math.max(1, Runtime.getRuntime().availableProcessors()/2);
 	}
 
 	public static int asyncThreadPoolSize() {
@@ -1035,7 +1035,7 @@ public class ERT {
 		if (threads != null)
 			return Integer.parseInt(threads);
 		else
-			return 20;
+			return 10;
 	}
 
 	public static ESeq registered() {

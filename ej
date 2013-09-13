@@ -18,6 +18,4 @@ exec java \
     -jar $ERJANG_DIR/erjang-0.2.jar \
 \
     -progname ej \
-    +A 10 \
-    +S 1 \
     "$@"
