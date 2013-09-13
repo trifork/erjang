@@ -30,7 +30,7 @@ import kilim.Task;
 public abstract class EHandle extends EObject {
 
 	protected final EAbstractNode node;
-	protected EAtom name = null;
+	protected EAtom name = ERT.am_undefined;
 	
 	protected EHandle(EAbstractNode node) {
 		if (node == null) throw new IllegalArgumentException("node cannot be null");

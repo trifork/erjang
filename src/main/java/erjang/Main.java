@@ -22,6 +22,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import sun.misc.Signal;
+import sun.misc.SignalHandler;
 import erjang.driver.efile.EFile;
 
 public class Main {
@@ -137,6 +139,17 @@ public class Main {
 			ERT.log.severe("No bootstrap classes at: "+runtimeInfo.erl_bootstrap_ebindir);
 			throw new IllegalArgumentException("No bootstrap classes at: "+runtimeInfo.erl_bootstrap_ebindir);
 		}
+		
+		@SuppressWarnings({})
+		SignalHandler handler = new SignalHandler() {
+			
+			@Override
+			public void handle(Signal arg0) {				
+				ERT.print_all_stack_traces();
+			}
+		};
+		
+		sun.misc.Signal.handle(new Signal("HUP"), handler);
 		
 		OTPMain.main(ra.toArray(new String[ra.size()]));
 	}

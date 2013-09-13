@@ -262,6 +262,8 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 
 	protected Throwable killer;
 
+	private Mailbox<EObject> print_trace;
+
 	/**
 	 * @throws Pausable
 	 * 
@@ -359,8 +361,28 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 		if (this.pstate == STATE.EXIT_SIG) {
 			do_check_exit();
 		}
+
+		if (print_trace != null) {
+			Mailbox<EObject> mb = print_trace;
+			if (mb != null) {
+								
+				H handle = self_handle();
+				ESeq trace = new ErlangError(ERT.am_ok).getTrace(); 
+				mb.putb(new ETuple2(handle, trace));
+								
+			}
+			print_trace = null;
+		}
 	}
 
+
+	public void printStackTrace(Mailbox<EObject> info) {
+		this.print_trace = info;
+		this.resume();
+	}
+
+
+	
 	/** because the above is called a bazillion times, we split this out to make it easier to inline */
 	private void do_check_exit() throws ErlangExitSignal {
 		if (exit_reason != null) {
@@ -372,6 +394,7 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 			//System.err.println("---- [ ... ]");
 			throw e;
 		}
+		
 	}
 	
 

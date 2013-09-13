@@ -29,10 +29,12 @@ import java.lang.reflect.Method;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import kilim.Mailbox;
 import kilim.Pausable;
 import kilim.Task;
 import erjang.driver.Drivers;
@@ -49,6 +51,8 @@ public class ERT {
 	public static Logger log = Logger.getLogger("erjang");
 	static Logger ipclog = Logger.getLogger("erjang.ipc");
 	public static EAtom am_badsig = EAtom.intern("badsig");
+	public static EAtom am_file = EAtom.intern("file");
+	public static EAtom am_line = EAtom.intern("line");
 
 	public static EObject raise(EObject trace, EObject value) throws ErlangException {
 		// log.warning("raise "+trace);
@@ -1171,4 +1175,121 @@ public class ERT {
 		EObject tup = erjang.m.re.Native.compile(patt, l);
 		return tup.testTuple().elm(2);
 	}
+
+	public static void print_all_stack_traces() {
+		System.err.println("== Trace ==");
+
+		Mailbox<EObject> mbox = new Mailbox<>( EProc.process_count() );
+
+		ESeq all = EProc.processes();
+		for(EObject o : all) {
+			EInternalPID pid = (EInternalPID) o;
+			pid.task().printStackTrace( mbox );
+		}
+
+		while (true) {
+			EObject o = mbox.getb(1000);
+			if (o == null)
+				break;
+
+			ETuple2 tup = ETuple2.cast(o);
+			EHandle handle = tup.elm(1).testHandle();
+			ESeq stack = tup.elm(2).testSeq();
+
+			System.err.println("\n == "+handle+" : "+handle.name);
+			for (EObject elm : stack) {
+
+				ETuple4 tup4 = ETuple4.cast(elm);
+
+				if (tup4 != null) {
+					ESeq args = tup4.elem3.testSeq();
+					ESmall arity = tup4.elem3.testSmall();
+					if (arity == null && args != null) {
+						arity = ERT.box(args.length());
+					}
+
+					StringBuffer file_line = new StringBuffer();
+
+					ESeq info = tup4.elem4.testSeq();
+					if (info != null) {
+						String file = "?";
+						int line = -1;
+						for (EObject inf : info) {
+							ETuple2 t;
+							if ((t=ETuple2.cast(inf)) != null) {
+								ESmall n;
+								EString f;
+								if (t.elem1 == ErlangException.am_line && ((n = t.elem2.testSmall()) != null)) {
+									line = n.value;
+								} else
+								if (t.elem1 == ErlangException.am_file && ((f = t.elem2.testString()) != null)) {
+									file = f.stringValue();
+								}
+							}
+						}
+						if ( line != -1) {
+							file_line.append('(').append(file).append(':').append(line).append(')');
+						}
+					}
+
+					String module = tup4.elem1.toString();
+					String mfa;
+					System.err.print( mfa = make_width(20, module) + ":" + tup4.elem2 + "/" + arity );
+					System.err.println( " " + make_width(65-mfa.length(), file_line.toString()));
+				} else {
+					System.err.println(elm);
+				}
+			}
+		}
+	}
+	
+	private static String make_width(int n, String s) {
+		if (s.length() > n) return s;
+		StringBuilder sb = new StringBuilder();
+		while ((sb.length()+s.length()) < n) {
+			sb.append(' ');
+		}
+		sb.append(s);
+		return sb.toString();
+	}
+	
+	/*
+	 * 
+		async_scheduler.schedule(new Task() {
+			@Override
+			public void execute() throws Pausable, Exception {
+				try {
+				execute0();
+				} catch (Throwable e) {
+					e.printStackTrace();
+				}
+			}
+				
+			public void execute0() throws Pausable, Exception {
+				
+				System.err.println("== Trace ==");
+				
+				Mailbox<EObject> mbox = new Mailbox<>( EProc.process_count() );
+				
+				ESeq all = EProc.processes();
+				for(EObject o : all) {
+					EInternalPID pid = (EInternalPID) o;
+					
+					pid.task().printStackTrace( mbox );
+					
+				}
+
+				while (mbox.untilHasMessages(1, 1000L)) {
+					ETuple2 tup = (ETuple2) mbox.get();
+					EHandle handle = tup.elm(1).testHandle();
+					ESeq stack = tup.elm(2).testSeq();
+					
+					System.err.println(" == "+handle+" : "+handle.name);
+					for (EObject o : stack) {
+						System.err.println(o);
+					}
+				}
+				
+			}
+		}); */
 }
