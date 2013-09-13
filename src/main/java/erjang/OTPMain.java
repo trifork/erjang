@@ -122,6 +122,8 @@ public class OTPMain {
             System.out.println("** Erjang " + info.otp_version + " ** "
                                + " [root:" + info.erl_rootdir + "]"
                                + " [erts:" + info.erts_version + "]"
+                               + " [smp S:" + ERT.threadPoolSize() + " A:"+ ERT.asyncThreadPoolSize()+"]"
+                               + " [java:" + System.getProperty("java.version") + "]"
                                + (info.unicodeDriverInterface ? " [unicode]" : "")
                                );
         }
