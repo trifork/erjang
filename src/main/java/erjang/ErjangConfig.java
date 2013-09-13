@@ -92,4 +92,13 @@ public class ErjangConfig {
 	public static String getenv(String env) {
 		return extra_env.get(env);
 	}
+
+	public static Map<? extends String, ? extends String> getenv() {
+		if (extra_env.size() == 0)
+			return System.getenv();
+		
+		Map<String, String> env = new HashMap<>(System.getenv());
+		env.putAll(extra_env);
+		return env;
+	}
 }

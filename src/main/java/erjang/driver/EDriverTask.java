@@ -68,6 +68,7 @@ import erjang.ETuple;
 import erjang.ETuple2;
 import erjang.ETuple3;
 import erjang.ETuple4;
+import erjang.ErjangConfig;
 import erjang.ErlangError;
 import erjang.ErlangException;
 import erjang.ErlangExit;
@@ -190,7 +191,7 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 		// set by options
 		this.cmd = cmd;
 		this.cwd = System.getProperty("user.dir");
-		this.env = new HashMap<String, String>(System.getenv());
+		this.env = new HashMap<String, String>(ErjangConfig.getenv());
 
 		this.packet = -1; // not set
 		this.line_length = -1;
