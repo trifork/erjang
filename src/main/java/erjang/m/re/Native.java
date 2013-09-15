@@ -24,6 +24,7 @@ import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -175,13 +176,17 @@ public class Native extends ENative {
 						EObject group = list.head();
 						ESmall num;
 						EAtom nam;
+						EString nam2;
 						if ((num=group.testSmall()) != null)
 						{
 							l = l.cons( capture (subject, mr, num.value, o2 ));
-						} else if ((nam=group.testAtom()) != null)
-						{
+						} else if ((nam=group.testAtom()) != null) {
 							Integer groupNo = o2.named_groups.get(nam.getName());
-							System.err.println("named group <"+nam.getName()+"> => "+groupNo);
+							if (groupNo != null) {
+								l = l.cons( capture (subject, mr, groupNo.intValue(), o2 ));
+							}
+						} else if ((nam2=group.testString()) != null) {
+							Integer groupNo = o2.named_groups.get(nam2.stringValue());
 							if (groupNo != null) {
 								l = l.cons( capture (subject, mr, groupNo.intValue(), o2 ));
 							}
@@ -471,7 +476,7 @@ public class Native extends ENative {
 				// if it is a sequence, make sure elements are integers
 				while (!spec.isNil()) {
 					EObject val = spec.head();
-					if (val.testSmall() == null && val.testAtom() == null)
+					if (val.testSmall() == null && val.testString() == null && val.testAtom() == null)
 						return false;
 					spec = spec.tail();
 				}
@@ -522,8 +527,7 @@ public class Native extends ENative {
 			String pattern;
 			if (unicode) {
 				CharArrayWriter out = new CharArrayWriter();
-				Charset spec = Charset.forName("UTF-16BE");
-				CharCollector cc = new CharCollector(spec, out);
+				CharCollector cc = new CharCollector(StandardCharsets.UTF_8, out);
 				try {
 					ESeq rest = io_or_char_list.collectCharList(cc, ERT.NIL);
 					cc.end();
@@ -588,11 +592,25 @@ public class Native extends ENative {
 			Matcher m = NAMED_GROUP.matcher( pattern );
 
 			int i;
+			
+
 			for (i = 0; i < pattern.length(); i++) {
 				char ch = pattern.charAt(i);
+				char ch2;
 				if (ch == '\\') {
+					
+					if (pattern.indexOf("\\p{Latin}", i) == i) {
+						sb.append( pattern.substring( start, i )).append("\\p{IsLatin}");
+						i += 8;
+						start = i+1; 
+						continue;
+					}
+					
 					i += 1;
-				} else if (ch == '(') {
+					continue;
+				} 
+
+				if (ch == '(') {
 					group_count += 1;
 					
 					if (m.find(i)) {
@@ -615,6 +633,14 @@ public class Native extends ENative {
 					}
 				} else if (ch == ']') {
 					in_ch_class = false;
+					
+				// if seeing "{[^0-9]" then insert escape, as java complains about non-numeric
+				} else if (ch == '{' 
+						&& i+1 < pattern.length() 
+						&& (ch2 = pattern.charAt(i+1)) != '0'
+						&& !(ch2 >= '1' && ch2 <= '9')) {
+					sb.append( pattern.substring( start, i )).append('\\');
+					start = i;					
 				}
 			}
 			
@@ -630,7 +656,25 @@ public class Native extends ENative {
 		}
 		
 	}
+	
+	// output of BEAM's re:compile(<<"\\(\\?<(?<G>[^>]*)>">>)
+	static String ELIXIR_GROUPS_PATTERN = "\\(\\?<(?<G>[^>]*)>";
+	static byte[] ELIXIR_GROUPS_PATTERN_BEAM = new byte[] {
+		69,82,67,80,80,0,0,0,0,0,0,0,7,0,0,0,1,0,0,0,40,0,62,
+        2,48,0,4,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        1,71,0,93,0,21,27,40,27,63,27,60,94,0,7,0,1,43,62,84,
+        0,7,27,62,84,0,21,0,0,0,0
+	};
 
+	// output of BEAM's re:compile(<<"[.^$*+?()[{\\\|\s#]">>, [unicode]).
+	static String ELIXIR_ESCAPE_PATTERN = "[\\.\\^\\$\\*\\+\\?\\(\\)\\[\\{\\\\\\|\\s\\#]";
+	static byte[] ELIXIR_ESCAPE_PATTERN_BEAM = new byte[] {
+        69, 82, 67, 80, 88, 0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+        48, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 93, 0, 
+        36, 77, 0, 54, 0, 0, 25, 79, 0, -128, 0, 0, 0, 88, 0, 0, 0, 24, 0, 0, 0, 0, 0, 
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 84, 0, 36, 0
+	};
+	
 	@BIF
 	static public ETuple2 compile(EObject obj1, EObject obj2) {
 
@@ -648,25 +692,33 @@ public class Native extends ENative {
 		ETuple4 tup = ETuple4.cast(obj1);
 		if (tup != null && tup.elem1 == ECompiledRE.am_re_pattern) {
 			EBinary b = tup.elem4.testBinary();
+			byte[] byteArray = b.getByteArray();
 			if (b != null && b.byteAt(0) == '/') {
 				
-				byte[] raw = b.getByteArray();
+				byte[] raw = byteArray;
 				int end = raw.length - 1;
 				for (int i = b.byteSize()-1; i > 0; i--) {
 					if (b.byteAt(i*8) == '/') {
 						end = i;
 						break;
 					}
-				}
-				
+				}	
+					
 				pattern = new String(raw, 1, end-1, IO.UTF8);
-
+	
 				o.init( ECompiledRE.decode_options(raw, end+1) );
 				
 				if (!o.init(opts)) {
 					throw ERT.badarg(obj1, obj2);
 				}
 
+			} else if (Arrays.equals(byteArray, ELIXIR_GROUPS_PATTERN_BEAM)) {
+				pattern = ELIXIR_GROUPS_PATTERN;
+				
+			} else if (Arrays.equals(byteArray, ELIXIR_ESCAPE_PATTERN_BEAM)) {
+				pattern = ELIXIR_ESCAPE_PATTERN;
+				o.unicode = true;
+				
 			} else {
 				throw ERT.badarg(obj1, obj2);
 			}
@@ -691,7 +743,7 @@ public class Native extends ENative {
 
 		} catch (PatternSyntaxException e) {
 			return new ETuple2(ERT.am_error, new ETuple2(EString.fromString(e
-					.getDescription()), ERT.box(e.getIndex())));
+					.getDescription()+" in /"+stripped_pattern+"/"), ERT.box(e.getIndex())));
 		}
 	}
 	
