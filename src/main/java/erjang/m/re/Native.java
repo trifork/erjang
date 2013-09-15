@@ -21,6 +21,8 @@ import java.io.CharArrayWriter;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
+import java.lang.Character.UnicodeBlock;
+import java.lang.Character.UnicodeScript;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -218,17 +220,21 @@ public class Native extends ENative {
 				
 				MatchResult mr = matcher.toMatchResult();
 			
+				int max = mr.groupCount();
+				while( mr.start(max) == -1)
+					max -= 1;
+				
 				ESeq il;
 				if (o2.capture_spec == am_all) {
 					ESeq l = ERT.NIL;
-					for (int i = mr.groupCount(); i >= 0; i--) {
+					for (int i = max; i >= 0; i--) {
 						l = l.cons( capture (subject, mr, i, o2) );
 					}
 					return new ETuple2(am_match, l);
 					
 				} else if (o2.capture_spec == am_all_but_first) {
 					ESeq l = ERT.NIL;
-					for (int i = mr.groupCount(); i > 0; i--) {
+					for (int i = max; i > 0; i--) {
 						l = l.cons( capture (subject, mr, i, o2) );
 					}
 					return new ETuple2(am_match, l);
@@ -580,7 +586,8 @@ public class Native extends ENative {
 		}
 		
 
-		Pattern NAMED_GROUP = Pattern.compile("\\(\\?<([a-zA-Z0-9_]+)>.*");
+		static Pattern NAMED_GROUP = Pattern.compile("\\(\\?<([a-zA-Z0-9_]+)>.*");
+		static Pattern PREDEFINED = Pattern.compile(".*(\\\\p\\{(?<name>[a-zA-Z][a-zA-Z0-9]*)\\}).*");
 		
 		private String countGroups(String pattern) {
 
@@ -589,19 +596,42 @@ public class Native extends ENative {
 			
 			boolean in_ch_class = false;
 			group_count = 0;
-			Matcher m = NAMED_GROUP.matcher( pattern );
+			Matcher namedGroupMatcher = NAMED_GROUP.matcher( pattern );
 
 			int i;
-			
+
+			Matcher prefinedMatcher = PREDEFINED.matcher(pattern);
 
 			for (i = 0; i < pattern.length(); i++) {
 				char ch = pattern.charAt(i);
 				char ch2;
 				if (ch == '\\') {
 					
-					if (pattern.indexOf("\\p{Latin}", i) == i) {
-						sb.append( pattern.substring( start, i )).append("\\p{IsLatin}");
-						i += 8;
+					if (prefinedMatcher.find(i) && prefinedMatcher.start(1) == i) {
+						String predefined = prefinedMatcher.group(2);
+						String javaPredefName = predefined;
+					
+						do {
+							try {
+								UnicodeScript found = UnicodeScript.forName(predefined);
+								javaPredefName = "Is" + predefined;
+								break;
+							} catch (IllegalArgumentException e) {
+								// ok
+							}
+						
+							try {
+								UnicodeBlock found = UnicodeBlock.forName(predefined);
+								javaPredefName = "In" + predefined;
+							} catch (IllegalArgumentException e) {
+								// ok
+							}
+							
+							
+						} while(false);
+						
+						sb.append( pattern.substring( start, i+3 )).append(javaPredefName).append('}');
+						i += predefined.length()+3;
 						start = i+1; 
 						continue;
 					}
@@ -610,12 +640,12 @@ public class Native extends ENative {
 					continue;
 				} 
 
-				if (ch == '(') {
+				if (ch == '(' && !lookingAt(pattern, i+1, "?:")) {					
 					group_count += 1;
 					
-					if (m.find(i)) {
-						if (m.start() == i) {
-							String name = m.group(1);
+					if (namedGroupMatcher.find(i)) {
+						if (namedGroupMatcher.start() == i) {
+							String name = namedGroupMatcher.group(1);
 							named_groups.put(name, group_count);
 							
 							sb.append( pattern.substring(start, i+1) );
@@ -651,20 +681,39 @@ public class Native extends ENative {
 			return sb.toString();
 		}
 
+		private static boolean lookingAt(String base, int i, CharSequence find) {
+			if (base.length()-i < find.length())
+				return false;
+			
+			for (int off = 0; off < find.length(); off += 1) {
+				if (find.charAt(off) != base.charAt(i+off))
+					return false;
+			}
+			
+			return true;
+		}
+
 		public String process_erl2java(String pattern) {
 			return countGroups(pattern);
 		}
 		
 	}
 	
+	//
+	// This is an enormous ugly hack, but since Elixir jut has two special-case
+	// regular expressions, we'll encode them specifically into erjang.
+	//
+	
 	// output of BEAM's re:compile(<<"\\(\\?<(?<G>[^>]*)>">>)
 	static String ELIXIR_GROUPS_PATTERN = "\\(\\?<(?<G>[^>]*)>";
 	static byte[] ELIXIR_GROUPS_PATTERN_BEAM = new byte[] {
-		69,82,67,80,80,0,0,0,0,0,0,0,7,0,0,0,1,0,0,0,40,0,62,
-        2,48,0,4,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        1,71,0,93,0,21,27,40,27,63,27,60,94,0,7,0,1,43,62,84,
-        0,7,27,62,84,0,21,0,0,0,0
+		69, 82, 67, 80, 80, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 1, 0, 0, 0, 40, 0, 62, 
+		2, 48, 0, 4, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+		1, 71, 0, 93, 0, 21, 27, 40, 27, 63, 27, 60, 94, 0, 7, 0, 1, 43, 62, 84, 
+		0, 7, 27, 62, 84, 0, 21, 0, -1, -1, -1
 	};
+	
+
 
 	// output of BEAM's re:compile(<<"[.^$*+?()[{\\\|\s#]">>, [unicode]).
 	static String ELIXIR_ESCAPE_PATTERN = "[\\.\\^\\$\\*\\+\\?\\(\\)\\[\\{\\\\\\|\\s\\#]";
@@ -674,6 +723,24 @@ public class Native extends ENative {
         36, 77, 0, 54, 0, 0, 25, 79, 0, -128, 0, 0, 0, 88, 0, 0, 0, 24, 0, 0, 0, 0, 0, 
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 84, 0, 36, 0
 	};
+	
+	static String is_special_pattern(byte[] raw, Options o) {
+		if (Arrays.equals(raw, ELIXIR_ESCAPE_PATTERN_BEAM)) {
+			o.unicode = true;
+			return ELIXIR_ESCAPE_PATTERN;
+		}
+		
+		if (raw.length == ELIXIR_GROUPS_PATTERN_BEAM.length) {
+			for (int i = 0; i < raw.length-4; i++) {
+				if (raw[i] != ELIXIR_GROUPS_PATTERN_BEAM[i])
+					return null;
+			}
+		} else {
+			return null;
+		}
+	
+		return ELIXIR_GROUPS_PATTERN;
+	}
 	
 	@BIF
 	static public ETuple2 compile(EObject obj1, EObject obj2) {
@@ -712,14 +779,15 @@ public class Native extends ENative {
 					throw ERT.badarg(obj1, obj2);
 				}
 
-			} else if (Arrays.equals(byteArray, ELIXIR_GROUPS_PATTERN_BEAM)) {
-				pattern = ELIXIR_GROUPS_PATTERN;
-				
-			} else if (Arrays.equals(byteArray, ELIXIR_ESCAPE_PATTERN_BEAM)) {
-				pattern = ELIXIR_ESCAPE_PATTERN;
-				o.unicode = true;
+			} else if ((pattern = is_special_pattern(byteArray, o)) != null) {
+				// ok //
 				
 			} else {
+				System.out.println("byte data[] = { ");
+				for (int i = 0; i < byteArray.length; i++) {
+					System.out.print(", "+byteArray[i]);
+				}
+				System.out.println(" } ");
 				throw ERT.badarg(obj1, obj2);
 			}
 		} else {
