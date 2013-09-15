@@ -147,6 +147,17 @@ public class ExecDriverInstance extends EDriverInstance {
 			{ setDaemon(true); start(); }
 			
 			public void run() {
+				try {
+					run0();
+				} catch (ThreadDeath e) {
+					throw e;
+				} catch (Throwable e) {
+					// this should not happen //
+					e.printStackTrace();
+				}
+			}
+				
+			public void run0() {
 
 				
 				if (is_stdin) {
