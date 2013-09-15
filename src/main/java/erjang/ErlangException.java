@@ -291,8 +291,14 @@ public abstract class ErlangException extends RuntimeException {
 			if (parameterTypes[0].equals(EProc.class))
 				arity -= 1;
 		}
-
+		
 		if (module != null && fun != null) {
+			
+			// erlang:apply/N doesn't show up in stack traces
+			if ("erlang".equals(module) && "apply".equals(fun)) {
+				return null;
+			}
+
 			ETuple4 res = new ETuple4();
 			res.elem1 = EAtom.intern(module);
 			res.elem2 = EAtom.intern(fun);
