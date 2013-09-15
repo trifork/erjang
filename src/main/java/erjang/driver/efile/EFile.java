@@ -1312,12 +1312,15 @@ public class EFile extends EDriverInstance {
 		case FILE_MKDIR: {
 			d = new SimpleFileAsync(cmd, IO.strcpy(buf)) {
 				public void run() {
+					
 					result_ok = file.mkdir();
 					if (!result_ok) {
 						if (name.length() == 0) {
 							posix_errno = Posix.ENOENT;
 						} else if (file.exists()) {
 							posix_errno = Posix.EEXIST;
+						} else if (file.getParentFile() != null && !file.getParentFile().isDirectory()) {
+							posix_errno = Posix.ENOTDIR;
 						} else {
 							posix_errno = Posix.EUNKNOWN;
 						}
@@ -1357,7 +1360,7 @@ public class EFile extends EDriverInstance {
 						if (!file.exists()) {
 							posix_errno = Posix.ENOENT;
 						} else if (!file.isDirectory()) {
-							posix_errno = Posix.EEXIST;
+							posix_errno = Posix.ENOTDIR;
 						} else {
 							posix_errno = Posix.EUNKNOWN;
 						}
@@ -1557,6 +1560,13 @@ public class EFile extends EDriverInstance {
 				
 				@Override
 				protected void run() throws IOException {
+					
+					if (!file.exists()) {
+						this.posix_errno = Posix.ENOENT;
+						this.result_ok = false;
+						return;
+					}
+					
 					Path path = file.toPath();
 					
 					Files.setLastModifiedTime(path, file_mtime);
@@ -1809,7 +1819,7 @@ public class EFile extends EDriverInstance {
 						return;
 					}
 					if (!dir.isDirectory()) {
-						this.posix_errno = Posix.EINVAL;
+						this.posix_errno = Posix.ENOTDIR;
 						this.result_ok = false;
 						return;
 					}
