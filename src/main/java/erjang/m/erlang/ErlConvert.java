@@ -118,7 +118,7 @@ public class ErlConvert {
 			|| ((i=idx.testSmall()) == null)
 			|| i.value < 0
 			|| i.value > b.byteSize()) {
-			throw ERT.badarg(bin);
+			throw ERT.badarg(bin, idx);
 		}
 
 		long split = i.value*8;
@@ -229,7 +229,7 @@ public class ErlConvert {
 			throw ERT.badarg(arg, radix);
 		}
 		
-		byte[] bin = out.getBytes(IO.ISO_LATIN_1);
+		byte[] bin = out.toUpperCase().getBytes(IO.ISO_LATIN_1);
 		return EBinary.make(bin);
 	}
 

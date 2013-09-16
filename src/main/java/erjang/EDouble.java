@@ -193,8 +193,8 @@ public class EDouble extends ENumber {
 
 		String out = String.format(format, value);
 		
-		if (compact)
-			out = out.replaceFirst("0+$", "");
+		if (compact & dec)
+			out = out.replaceFirst("([0-9])0+$", "$1");
 		
 		return out;
 	}

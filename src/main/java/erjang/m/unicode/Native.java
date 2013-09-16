@@ -28,6 +28,7 @@ import erjang.EBinary;
 import erjang.ERT;
 import erjang.NotImplemented;
 import erjang.CharCollector;
+import erjang.m.erlang.ErlConvert;
 
 import java.io.CharArrayWriter;
 import java.io.IOException;
@@ -90,7 +91,7 @@ public class Native extends ENative {
 			if (rest != ERT.NIL) {
 				return ETuple.make(INCOMPLETE_ATOM,	
 								   output_converter.convert(out),
-								   rest.reverse());
+								   ErlConvert.iolist_to_binary(rest.reverse()));
 			}
 			
 		} catch (CharCollector.PartialDecodingException e) {
