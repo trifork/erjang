@@ -231,6 +231,7 @@ extern "C" jint JNI_OnLoad(JavaVM *vm, void *reserved)
     initialize_jnif_atom(vm,je);
     initialize_jnif_tuple(vm,je);
     initialize_jnif_list(vm, je);
+    initialize_jnif_sys(vm, je);
   }
   return JNI_VERSION_1_4;
 }

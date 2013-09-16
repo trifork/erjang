@@ -82,4 +82,31 @@ public class NIF {
     {
         return load(path, ERT.am_undefined);
     }
+
+    //
+    // Static methods used by the NIF infrastructure
+    //
+
+    public static String get_erts_version() {
+        String erts_version = ERT.runtime_info.erts_version;
+        // remove prefix
+        String prefix = "erts-";
+        if (erts_version.startsWith(prefix)) {
+            erts_version = erts_version.substring(prefix.length());
+        }
+        return erts_version;
+    }
+
+    public static String get_otp_release() {
+        return ERT.runtime_info.otp_version;
+    }
+
+    public static int get_num_async_threads() {
+        return ERT.asyncThreadPoolSize();
+    }
+
+    public static int get_num_scheduler_threads() {
+        return ERT.threadPoolSize();
+    }
+
 }
