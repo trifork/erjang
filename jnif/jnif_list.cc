@@ -88,7 +88,7 @@ extern ERL_NIF_TERM enif_make_list (ErlNifEnv* ee, unsigned cnt, ...)
     }
   va_end(vl);
 
-  jobject list = ee->je->CallStaticObjectMethod(elist_class, m_elist__make, cnt);
+  jobject list = ee->je->CallStaticObjectMethod(elist_class, m_elist__make, arr);
   return jnif_retain(ee, list);
 }
 
