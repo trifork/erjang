@@ -180,6 +180,11 @@ public final class EProc extends ETask<EInternalPID> {
 		}
 	}
 
+	// called from JNIF
+	static EProc find(int key) {
+		return all_tasks.get(key);
+	}
+	
 	private int key() {
 		int key = (self.serial() << 15) | (self.id() & 0x7fff);
 		return key;

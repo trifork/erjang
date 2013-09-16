@@ -23,7 +23,9 @@ OFILES= jnif.o \
 	jnif_list.o \
 	jnif_errno.o \
 	jnif_dlopen.o \
-	jnif_sys.o
+	jnif_sys.o \
+	jnif_process.o
+
 
 
 all: $(OFILES)

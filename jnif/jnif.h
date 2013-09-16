@@ -41,7 +41,9 @@ struct enif_environment_t {
   std::list< jnif_dtor* > commits;
 
   struct jnif_module *module;
+
   jobject self;
+  ErlNifPid self_pid; // memory location to return
 
   enif_environment_t() { type = ALLOC; self = NULL; module = NULL; }
 
@@ -93,5 +95,8 @@ void initialize_jnif_list(JavaVM* vm, JNIEnv *je);
 
 // jnif_sys.cc
 void initialize_jnif_sys(JavaVM* vm, JNIEnv *je);
+
+// jnif_process.cc
+void initialize_jnif_process(JavaVM* vm, JNIEnv *je);
 
 #endif

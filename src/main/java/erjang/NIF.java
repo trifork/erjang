@@ -108,5 +108,9 @@ public class NIF {
     public static int get_num_scheduler_threads() {
         return ERT.threadPoolSize();
     }
+    
+    public static void send(EPID target, EObject msg) {
+    	target.sendb(msg);
+    }
 
 }
