@@ -76,6 +76,15 @@ JNIEXPORT jlong JNICALL Java_erjang_NIF_jni_1load
   nif_init_t nif_init_fp = reinterpret_cast<nif_init_t>(address);
   ErlNifEntry *entry = (*nif_init_fp)();
 
+  if (entry->major != ERL_NIF_MAJOR_VERSION) {
+    // fail
+    fprintf(stderr, "bad erl_nif_major_version %i (vs. expected %i)\n",
+            entry->major,
+            ERL_NIF_MAJOR_VERSION);
+    dlclose(so_handle);
+    return 0L;
+  }
+
   struct jnif_module *mod = new jnif_module();
   mod->so_handle = so_handle;
   mod->entry = entry;
