@@ -3,7 +3,6 @@
 #include "jnif.h"
 
 
-
 static jmethodID m_eobject__testPID;
 static jmethodID m_eobject__testInternalPID;
 static jclass NIF_class;
@@ -19,12 +18,12 @@ static jmethodID m_eproc__key;
 // valid for the life time of the given environment; otherwise it
 // will have to be copied.
 //
-ErlNifPid* enif_self(ErlNifEnv* ee)
+ErlNifPid* enif_self(ErlNifEnv* ee, ErlNifPid* pid)
 {
   if (ee->self == NULL) return NULL;
   jlong key = ee->je->CallIntMethod( ee->self, m_eproc__key );
-  ee->self_pid.pid = key;
-  return &ee->self_pid;
+  pid->pid = key;
+  return pid;
 }
 
 int enif_get_local_pid(ErlNifEnv* ee, ERL_NIF_TERM term, ErlNifPid* pid)
@@ -48,7 +47,7 @@ int enif_is_pid(ErlNifEnv* ee, ERL_NIF_TERM term)
   }
 }
 
-int enif_send(ErlNifEnv* ee, ErlNifPid* to_pid,
+extern "C" int enif_send(ErlNifEnv* ee, const ErlNifPid* to_pid,
               ErlNifEnv* msg_env, ERL_NIF_TERM msg)
 {
   JNIEnv* je = ee->je;

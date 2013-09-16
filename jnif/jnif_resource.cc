@@ -88,7 +88,7 @@ void* enif_alloc_resource(ErlNifResourceType* type, size_t size)
 }
 
 
-static int enif_release_resource2(JNIEnv *je, void* obj)
+static int jnif_release_resource(JNIEnv *je, void* obj)
 {
   struct jnif_resource_hdr *hdr = get(obj);
 
@@ -118,7 +118,7 @@ void enif_release_resource(void* obj)
 {
     JNIEnv *je;
     jvm->AttachCurrentThreadAsDaemon((void**)&je, NULL);
-    enif_release_resource2(je, obj);
+    jnif_release_resource(je, obj);
 }
 
 
@@ -184,7 +184,7 @@ JNIEXPORT void JNICALL Java_erjang_EResource_jni_1finalize
   const char *rnam = hdr->type->name_str;
   fprintf(stderr, "finalize(%p) %s:%s\n", (void*)handle, mod, rnam);
 #endif
-  int did_free = enif_release_resource2(je, (void*)handle);
+  int did_free = jnif_release_resource(je, (void*)handle);
 #ifdef DEBUG
   fprintf(stderr, " -> done (%s)\n", did_free ? "feed" : "retained");
 #endif
