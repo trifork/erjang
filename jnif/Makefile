@@ -21,7 +21,8 @@ OFILES= jnif.o \
 	jnif_atom.o \
 	jnif_tuple.o \
 	jnif_list.o \
-	jnif_errno.o
+	jnif_errno.o \
+	jnif_dlopen.o
 
 
 all: $(OFILES)
