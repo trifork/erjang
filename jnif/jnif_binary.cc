@@ -37,6 +37,20 @@ void initialize_jnif_binary(JavaVM* vm, JNIEnv *je)
                           "(Lerjang/EObject;)Lerjang/EBitString;");
 }
 
+static void jnif_release_binary(struct jnif_bin_data *bd);
+
+struct jnif_bin_data : jnif_dtor {
+  enum { SHOULD_RELEASE, SHOULD_FREE, IS_FREE } type;
+  JNIEnv     *je;
+  jbyteArray  array;
+  jbyte      *elements;
+
+  void release(ErlNifEnv *env) {
+    jnif_release_binary(this);
+  }
+};
+
+
 void uninitialize_jnif_binary(JavaVM* vm, JNIEnv* je)
 {
   je->DeleteGlobalRef(ebinary_class);
@@ -91,7 +105,7 @@ int enif_inspect_binary(ErlNifEnv* ee, ERL_NIF_TERM bin_term, ErlNifBinary* bin)
   bd->elements = elements;
 
   // add to "autorelease pool" for this env
-  ee->binaries.push_back( bd );
+  ee->dtors.push_back( bd );
 
   bin->ref_bin = bd;
 
@@ -142,7 +156,6 @@ void jnif_release_binary(struct jnif_bin_data *bd)
   } else if (bd->type == jnif_bin_data::SHOULD_FREE) {
     free( bd->elements );
     bd->type = jnif_bin_data::IS_FREE;
-    delete bd;
   }
 }
 
@@ -150,7 +163,8 @@ void enif_release_binary(ErlNifBinary* bin)
 {
   if (bin->ref_bin != NULL) {
     jnif_bin_data *bd = (jnif_bin_data*)bin->ref_bin;
-    jnif_release_binary(bd);
+    delete bd;
+    bin->ref_bin = 0;
     bin->data = NULL;
     bin->ref_bin = NULL;
   }

@@ -23,11 +23,9 @@ struct jnif_module {
   ErlNifEnv *global;
 };
 
-struct jnif_bin_data {
-  enum { SHOULD_RELEASE, SHOULD_FREE, IS_FREE } type;
-  JNIEnv     *je;
-  jbyteArray  array;
-  jbyte      *elements;
+struct jnif_dtor {
+  virtual void release(ErlNifEnv* ee) {};
+  virtual ~jnif_dtor() {};
 };
 
 struct enif_environment_t {
@@ -35,11 +33,7 @@ struct enif_environment_t {
   typedef enum { ALLOC, STACK } TYPE;
   TYPE type;
 
-  // globals to DeleteGlobalRef
-  std::list< jobject > globals;
-
-  // binaries to ReleaseByteArrayElements
-  std::list< jnif_bin_data * > binaries;
+  std::list< jnif_dtor* > dtors;
 
   struct jnif_module *module;
   jobject self;
@@ -72,7 +66,6 @@ void jnif_release_env( ErlNifEnv * ee);
 // jnif_binary.cc
 void initialize_jnif_binary(JavaVM* vm, JNIEnv *e);
 void uninitialize_jnif_binary(JavaVM* vm, JNIEnv* je);
-void jnif_release_binary(struct jnif_bin_data *bd);
 
 // jnif_resource.cc
 void initialize_jnif_resource(JavaVM* vm, JNIEnv *je);

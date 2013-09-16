@@ -9,13 +9,22 @@ void initialize_jnif_env(JavaVM* vm, JNIEnv *e)
   jvm = vm;
 }
 
+struct global_dtor : jnif_dtor {
+  jobject global;
+  global_dtor(jobject g) : global(g) {}
+  void release(ErlNifEnv* ee) {
+    ee->je->DeleteGlobalRef( global );
+  }
+};
+
 
 ERL_NIF_TERM
 jnif_retain(ErlNifEnv* ee, jobject obj)
 {
   if (ee->type == enif_environment_t::ALLOC) {
     jobject global = ee->je->NewGlobalRef(obj);
-    ee->globals.push_back(global);
+    ee->dtors.push_back (new global_dtor(global));
+    //    ee->globals.push_back(global);
     return J2E(global);
   } else if (ee->type == enif_environment_t::STACK) {
     return J2E(obj);
@@ -53,24 +62,16 @@ void *enif_priv_data(ErlNifEnv *ee)
 void
 jnif_release_env( ErlNifEnv * ee)
 {
-  // release any jnif_retained byte array elements
-  for (std::list<jnif_bin_data*>::iterator it = ee->binaries.begin();
-       it != ee->binaries.end();
+  for (std::list<jnif_dtor*>::iterator it = ee->dtors.begin();
+       it != ee->dtors.end();
        it++ )
     {
-      jnif_release_binary(*it);
+      jnif_dtor *dtor = *it;
+      dtor->release( ee );
+      delete dtor;
     }
 
-  ee->binaries.clear();
-
-  for (std::list<jobject>::iterator it = ee->globals.begin();
-       it != ee->globals.end();
-       it++ )
-    {
-      ee->je->DeleteGlobalRef( *it );
-    }
-
-  ee->globals.clear();
+  ee->dtors.clear();
 
 }
 
