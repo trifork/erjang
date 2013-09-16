@@ -33,7 +33,12 @@ struct enif_environment_t {
   typedef enum { ALLOC, STACK } TYPE;
   TYPE type;
 
+  // run when the environment is cleared (or freed)
   std::list< jnif_dtor* > dtors;
+
+  // run every time a call executes, is used to "fake"
+  // the behavior of enif_make_new_binary
+  std::list< jnif_dtor* > commits;
 
   struct jnif_module *module;
   jobject self;
@@ -62,6 +67,7 @@ ERL_NIF_TERM jnif_retain(ErlNifEnv* ee, jobject obj);
 ERL_NIF_TERM jnif_retain(ErlNifEnv* ee, ERL_NIF_TERM term);
 void jnif_init_env( ErlNifEnv * ee, JNIEnv *je, struct jnif_module *mod, enif_environment_t::TYPE type );
 void jnif_release_env( ErlNifEnv * ee);
+void jnif_commit_env( ErlNifEnv *ee);
 
 // jnif_binary.cc
 void initialize_jnif_binary(JavaVM* vm, JNIEnv *e);

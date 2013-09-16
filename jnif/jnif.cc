@@ -102,6 +102,10 @@ JNIEXPORT jlong JNICALL Java_erjang_NIF_jni_1load
     }
   }
 
+  // when nif_init is done, we may need to "commit" data that
+  // was made available to the NIF as char* data.
+  jnif_commit_env(mod->global);
+
   // mod->global should be released when unloading
   return reinterpret_cast<jlong>(mod);
 }

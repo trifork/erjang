@@ -189,3 +189,40 @@ ERL_NIF_TERM enif_make_binary(ErlNifEnv *ee, ErlNifBinary* bin)
   return result;
 }
 
+struct array_commit : jnif_dtor {
+  jbyteArray o;
+  jbyte* d;
+  array_commit( jbyteArray barr, jbyte* arr ) : o(barr), d(arr) {}
+  void release(ErlNifEnv *ee) {
+    ee->je->ReleaseByteArrayElements(o,d, JNI_COMMIT);
+  }
+};
+
+//
+// enif_make_new_binary: a little special, since we (probably) don't have
+// direct access to memory.  Because of this, we make a "dtor" that
+// is executed at call boundary to commit changes to the underlying array.
+//
+
+unsigned char *enif_make_new_binary(ErlNifEnv* ee,
+                                    size_t size,
+                                    ERL_NIF_TERM* termp)
+{
+  JNIEnv* je = ee->je;
+
+  jboolean isCopy;
+  jbyteArray barr = je->NewByteArray(size);
+  jbyte* arr = je->GetByteArrayElements(barr, &isCopy);
+
+  jobject lazyBin = je->CallStaticObjectMethod(ebinary_class,
+                                               m_ebinary__make,
+                                               barr);
+
+  ee->commits.push_back( new array_commit( barr, arr) );
+
+  if (termp != NULL) {
+    *termp = jnif_retain(ee, lazyBin);
+  }
+
+  return (unsigned char*) arr;
+}

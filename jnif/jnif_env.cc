@@ -59,9 +59,26 @@ void *enif_priv_data(ErlNifEnv *ee)
 }
 
 
+void jnif_commit_env( ErlNifEnv *ee)
+{
+  for (std::list<jnif_dtor*>::iterator it = ee->commits.begin();
+       it != ee->commits.end();
+       it++ )
+    {
+      jnif_dtor *dtor = *it;
+      dtor->release( ee );
+      delete dtor;
+    }
+
+  ee->commits.clear();
+
+}
+
 void
 jnif_release_env( ErlNifEnv * ee)
 {
+  jnif_commit_env( ee );
+
   for (std::list<jnif_dtor*>::iterator it = ee->dtors.begin();
        it != ee->dtors.end();
        it++ )
