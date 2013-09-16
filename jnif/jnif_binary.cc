@@ -8,8 +8,10 @@ static jfieldID  f_ebitstring__data;
 static jfieldID  f_ebitstring__byte_size;
 static jfieldID  f_ebitstring__data_offset;
 
+static jclass    ErlConvert_class;
 static jclass    ebinary_class;
 static jmethodID m_ebinary__make;
+static jmethodID m_ErlConvert__iolist_to_binary;
 
 
 void initialize_jnif_binary(JavaVM* vm, JNIEnv *je)
@@ -26,6 +28,13 @@ void initialize_jnif_binary(JavaVM* vm, JNIEnv *je)
   ebinary_class = (jclass)je->NewGlobalRef(ebinary_class);
 
   m_ebinary__make  = je->GetStaticMethodID(ebinary_class, "make", "([B)Lerjang/EBinary;");
+
+  ErlConvert_class = je->FindClass("erjang/m/erlang/ErlConvert");
+  ErlConvert_class = (jclass) je->NewGlobalRef(ErlConvert_class);
+  m_ErlConvert__iolist_to_binary =
+    je->GetStaticMethodID(ErlConvert_class,
+                          "iolist_to_binary",
+                          "(Lerjang/EObject;)Lerjang/EBitString;");
 }
 
 void uninitialize_jnif_binary(JavaVM* vm, JNIEnv* je)
@@ -38,6 +47,18 @@ int enif_is_binary(ErlNifEnv* ee, ERL_NIF_TERM term)
   JNIEnv *je = ee->je;
   jobject ok = je->CallObjectMethod(E2J(term), m_eobject__testBinary);
   return ok != JVM_NULL;
+}
+
+int enif_inspect_iolist_as_binary(ErlNifEnv* ee, ERL_NIF_TERM bin_term, ErlNifBinary* bin)
+{
+  JNIEnv *je = ee->je;
+  jobject binary = je->CallStaticObjectMethod(ErlConvert_class,
+                                              m_ErlConvert__iolist_to_binary,
+                                              E2J(bin_term));
+  if (je->ExceptionOccurred())
+    return 0;
+
+  return enif_inspect_binary(ee, J2E(binary), bin);
 }
 
 int enif_inspect_binary(ErlNifEnv* ee, ERL_NIF_TERM bin_term, ErlNifBinary* bin)
