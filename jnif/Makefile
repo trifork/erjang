@@ -24,7 +24,8 @@ OFILES= jnif.o \
 	jnif_errno.o \
 	jnif_dlopen.o \
 	jnif_sys.o \
-	jnif_process.o
+	jnif_process.o \
+	jnif_thread.o
 
 
 
