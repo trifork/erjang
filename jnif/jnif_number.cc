@@ -57,6 +57,16 @@ void initialize_jnif_number(JavaVM* vm, JNIEnv *je)
 }
 
 
+int enif_is_number(ErlNifEnv* ee, ERL_NIF_TERM term)
+{
+  if (ee->je->CallObjectMethod( E2J(term), m_eobject__testNumber ) != NULL) {
+    return NIF_TRUE;
+  } else {
+    return NIF_FALSE;
+  }
+}
+
+
 int enif_get_double(ErlNifEnv* ee, ERL_NIF_TERM term, double* dp)
 {
   jobject o = ee->je->CallObjectMethod(E2J(term), m_eobject__testNumber);
