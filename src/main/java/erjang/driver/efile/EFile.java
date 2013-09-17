@@ -33,6 +33,7 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.SelectableChannel;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
+import java.nio.file.NotLinkException;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
@@ -1306,6 +1307,58 @@ public class EFile extends EDriverInstance {
 					reply(EFile.this);
 				}
 				
+			};
+		} break;
+		
+		
+		case FILE_READLINK: {
+			d = new SimpleFileAsync(cmd, IO.strcpy(buf)) {
+				
+				String outfile = null;
+				
+				public void run() {
+					Path p = this.file.toPath();
+					
+					if (!Files.exists(p, LinkOption.NOFOLLOW_LINKS)) {
+						result_ok = false;
+						posix_errno = Posix.ENOENT;
+						return;
+					}
+					
+					if (!Files.isSymbolicLink(p)) {
+						result_ok = false;
+						posix_errno = Posix.EINVAL;
+						return;
+					}
+					
+					try {
+						p = Files.readSymbolicLink(p);
+						outfile = p.toString();
+						result_ok = true;
+						
+					} catch (IOException e) {
+						result_ok = false;
+						posix_errno = IO.exception_to_posix_code(e);
+					}
+				}
+				
+				@Override
+				public void ready() throws Pausable {
+					if (!result_ok) {
+						super.ready();
+					} else {
+						ByteBuffer reply = null;
+						ByteBuffer data = null;
+
+						// prim_file interface from R14 on
+						reply = ByteBuffer.allocate(1);
+						data = ByteBuffer.allocate(outfile.length());
+						reply.put(FILE_RESP_FNAME);
+						IO.putstr(data, outfile, false);
+
+						driver_output2(reply, data);						
+					}
+				}
 			};
 		} break;
 		
