@@ -1311,6 +1311,44 @@ public class EFile extends EDriverInstance {
 		} break;
 		
 		
+		case FILE_LINK:
+		case FILE_SYMLINK: {
+			final String old_file = IO.strcpy(buf);
+			final String new_file = IO.strcpy(buf);
+			
+			
+			d = new FileAsync() {
+				
+				@Override
+				public void async() {
+					Path existing = ERT.newFile(old_file).toPath();
+					Path link = new File(new_file).toPath();
+					try {
+						if (cmd == FILE_LINK) {
+							Files.createLink(link, existing);
+						} else if (cmd == FILE_SYMLINK) {
+							Files.createSymbolicLink(link, existing);
+						} else {
+							posix_errno = Posix.EUNKNOWN;
+							result_ok = false;
+							return;
+						}
+						
+						result_ok = true;
+					} catch (IOException e) {
+						posix_errno = IO.exception_to_posix_code(e);
+						result_ok = false;
+					}
+				}
+
+				@Override
+				public void ready() throws Pausable {
+					reply(EFile.this);
+				}
+			};
+			
+		} break;
+		
 		case FILE_READLINK: {
 			d = new SimpleFileAsync(cmd, IO.strcpy(buf)) {
 				
