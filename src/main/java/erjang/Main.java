@@ -18,9 +18,12 @@
 
 package erjang;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 import sun.misc.Signal;
 import sun.misc.SignalHandler;
@@ -96,6 +99,33 @@ public class Main {
 			
 			if ("-root".equals(args[i]) && i < args.length) {
 				// skip "-root <dir>" arg, was set above
+				i++;
+				continue;
+			}
+			
+			if ("-args_file".equals(args[i]) && i < args.length) {
+				
+				BufferedReader br = new BufferedReader(new FileReader(args[i+1]));
+				String line;
+				while ((line = br.readLine()) != null) {
+					line = line.replaceFirst("^ *(#.*)?", "");
+					if (line.isEmpty()) {
+						continue;
+					}
+
+					Pattern p = Pattern.compile("((?<plain>[^ ]+)|\"(?<quoted>([^\"]|\\\\\")*)\") *");
+					java.util.regex.Matcher m = p.matcher(line);
+					while (m.find()) {
+						String a;
+						if ((a=m.group("plain")) != null) {
+							ra.add(a);
+						} else if ((a=m.group("quoted")) != null) {
+							ra.add(a.replace("\\\"", "\""));
+						}
+					}
+				}
+				br.close();
+				
 				i++;
 				continue;
 			}
