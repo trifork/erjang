@@ -453,6 +453,21 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						break;
 					}
 
+					case fnegate: {	
+						Insn.LSD insn = (Insn.LSD)insn_;
+						EAtom name = opcode.symbol;
+						int failLabel = decode_labelref(insn.label, type_map.exh);
+						Arg[] in = new Arg[] {src_arg(insn_idx, insn.src)};
+						Type[] inTypes = new Type[] {in[0].type};
+						Arg out = dest_arg(insn_idx, insn.dest);
+
+						BuiltInFunction bif = BIFUtil.getMethod("erlang", name.getName(), inTypes,
+								failLabel != 0, true);
+
+						vis.visitInsn(opcode, failLabel, in, out, bif);
+						break;
+					}
+					
 					case fconv:
 					case fmove:
 					case move: {
@@ -1069,8 +1084,8 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						vis.visitBitStringAppend(opcode, decode_labelref(insn.label, type_map.exh), extra_size, src, unit, flags, dst);
 						break;
 					}
-					default:
-						throw new Error("unhandled insn: " + insn_.toSymbolicTuple());
+					//default:
+					//	throw new Error("unhandled insn: " + insn_.toSymbolicTuple());
 					}
 
 				}
