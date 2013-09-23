@@ -576,7 +576,7 @@ public class ERT {
 			if (node == null) {
 				EObject[] args = (options!=null
 								  ? new EObject[] { dest, msg, options }
-								  : new EObject[] { dest, msg });
+								  : new EObject[] { dest, msg, ERT.NIL });
 				return erlang__dsend__3.invoke(proc, args);
 			} else {
 				node.dsig_reg_send(proc.self_handle(), reg_name, msg);
