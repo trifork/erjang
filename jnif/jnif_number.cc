@@ -115,10 +115,12 @@ extern ERL_NIF_TERM enif_make_uint (ErlNifEnv* ee, unsigned i)
 {
   jobject boxed;
 
-  if (i > INT_MAX_VALUE) {
-    boxed = ee->je->CallStaticObjectMethod(ERT_class, m_ERT__box_long, (jlong) i);
+  if (i > 0x7fffffffU) {
+    boxed = ee->je->CallStaticObjectMethod(ERT_class, m_ERT__box_long,
+                                           (jlong) (uint64_t) i);
   } else {
-    boxed = ee->je->CallStaticObjectMethod(ERT_class, m_ERT__box_int, (jint) i);
+    boxed = ee->je->CallStaticObjectMethod(ERT_class, m_ERT__box_int,
+                                           (jint) i);
   }
 
   return jnif_retain(ee, boxed);
@@ -127,7 +129,11 @@ extern ERL_NIF_TERM enif_make_uint (ErlNifEnv* ee, unsigned i)
 extern ERL_NIF_TERM enif_make_int (ErlNifEnv* ee, int i)
 {
   jobject boxed;
-  boxed = ee->je->CallStaticObjectMethod(ERT_class, m_ERT__box_int, (jint) i);
+  if (sizeof(jint) >= sizeof(int)) {
+    boxed = ee->je->CallStaticObjectMethod(ERT_class, m_ERT__box_int, (jint) i);
+  } else {
+    boxed = ee->je->CallStaticObjectMethod(ERT_class, m_ERT__box_long, (jlong) i);
+  }
   return jnif_retain(ee, boxed);
 }
 
@@ -135,7 +141,7 @@ extern ERL_NIF_TERM enif_make_ulong (ErlNifEnv* ee, unsigned long i)
 {
   jobject boxed;
 
-  if (i > LONG_MAX_VALUE) {
+  if (i > 0x7fffffffffffffffULL) {
     const int n = snprintf(NULL, 0, "%lu", i);
     assert(n > 0);
     char buf[n+1];
@@ -145,8 +151,33 @@ extern ERL_NIF_TERM enif_make_ulong (ErlNifEnv* ee, unsigned long i)
     jobject str = ee->je->NewStringUTF(buf);
 
     boxed = ee->je->CallStaticObjectMethod(ERT_class, m_ERT__box_parse, buf);
-  } else {
+  } else if (i > 0x7fffffffUL) {
     boxed = ee->je->CallStaticObjectMethod(ERT_class, m_ERT__box_long, (jlong) i);
+  } else {
+    boxed = ee->je->CallStaticObjectMethod(ERT_class, m_ERT__box_int, (jint) i);
+  }
+
+  return jnif_retain(ee, boxed);
+}
+
+extern ERL_NIF_TERM enif_make_uint64 (ErlNifEnv* ee, ErlNifUInt64 i)
+{
+  jobject boxed;
+
+  if (i > 0x7fffffffffffffffULL) {
+    const int n = snprintf(NULL, 0, "%llu", i);
+    assert(n > 0);
+    char buf[n+1];
+    int c = snprintf(buf, n+1, "%llu", i);
+    assert(buf[n] == '\0');
+
+    jobject str = ee->je->NewStringUTF(buf);
+
+    boxed = ee->je->CallStaticObjectMethod(ERT_class, m_ERT__box_parse, buf);
+  } else if (i > 0x7fffffffUL) {
+    boxed = ee->je->CallStaticObjectMethod(ERT_class, m_ERT__box_long, (jlong) i);
+  } else {
+    boxed = ee->je->CallStaticObjectMethod(ERT_class, m_ERT__box_int, (jint) i);
   }
 
   return jnif_retain(ee, boxed);
