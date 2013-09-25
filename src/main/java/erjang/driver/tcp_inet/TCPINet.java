@@ -3273,14 +3273,14 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 	}
 
 	void state(StringBuffer sb) {
-		if ((state & TCP_STATE_ACCEPTING) != 0) sb.append("Ac");
-		if ((state & TCP_STATE_BOUND) != 0) sb.append("Bo");
-		if ((state & TCP_STATE_CLOSED) != 0) sb.append("Clo");
-		if ((state & TCP_STATE_CONNECTED) != 0) sb.append("Con");
-		if ((state & TCP_STATE_CONNECTING) != 0) sb.append("Cog");
-		if ((state & TCP_STATE_LISTEN) != 0) sb.append("Li");
-		if ((state & TCP_STATE_MULTI_ACCEPTING) != 0) sb.append("Mu");
-		if ((state & TCP_STATE_OPEN) != 0) sb.append("Op");
+		if ((state) == TCP_STATE_ACCEPTING) sb.append("Ac");
+		if ((state) == TCP_STATE_BOUND) sb.append("Bo");
+		if ((state) == TCP_STATE_CLOSED) sb.append("Clo");
+		if ((state) == TCP_STATE_CONNECTED) sb.append("Con");
+		if ((state) == TCP_STATE_CONNECTING) sb.append("Cog");
+		if ((state) == TCP_STATE_LISTEN) sb.append("Li");
+		if ((state) == TCP_STATE_MULTI_ACCEPTING) sb.append("Mu");
+		if ((state) == TCP_STATE_OPEN) sb.append("Op");
 	}
 	
 	@Override
