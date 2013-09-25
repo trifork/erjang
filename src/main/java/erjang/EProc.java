@@ -572,29 +572,25 @@ public final class EProc extends ETask<EInternalPID> {
 	private EObject execute1() throws Pausable {
 		EObject result;
 		this.check_exit();
-		
-//					synchronized(this) {
-				this.pstate = STATE.RUNNING;
-//					}
-		
-			boolean live = true;
-			while (live) {
-				try {
-					while(this.tail.go(this) == TAIL_MARKER) {
-						/* skip */
-					}
-				live = false;
+
+		// synchronized(this) {
+		this.pstate = STATE.RUNNING;
+		// }
+
+	hibernate_loop:
+		while (true) {
+			try {
+				while (this.tail.go(this) == TAIL_MARKER) {
+					/* skip */
+				}
+				break hibernate_loop;
 			} catch (ErjangHibernateException e) {
 				// noop, live = true //
 			}
-			
-			if (live == true) {
 
-				mbox_wait();
-
-			}
+			mbox_wait();
 		}
-		 
+
 		result = am_normal;
 		return result;
 	}
