@@ -442,8 +442,12 @@ public class Native extends ENative {
 		return res;
 	}
 
-	@BIF static public EObject last(EObject obj) {
-		throw new NotImplemented(); 
+	@BIF static public EObject last(EProc caller, EObject nameOrTid) {
+		ETable table = resolve(caller, nameOrTid, false);
+		if (table == null) 
+			throw ERT.badarg(nameOrTid);
+		
+		return table.last();
 	}
 
 	@BIF static public EObject match_object(EProc caller, EObject nameOrTid, EObject spec) {

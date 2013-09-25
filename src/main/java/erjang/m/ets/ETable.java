@@ -437,5 +437,7 @@ abstract class ETable implements ExitHook {
 	}
 
 	protected abstract EAtom member(EObject key);
+
+	protected abstract EObject last();
 	
 }

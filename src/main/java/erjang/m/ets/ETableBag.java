@@ -181,6 +181,11 @@ public class ETableBag extends ETable {
 		}
 	}
 	
+	
+	@Override
+	protected EObject last() {
+		return first();
+	}
 
 	
 	@Override

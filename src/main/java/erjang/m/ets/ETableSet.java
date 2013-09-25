@@ -27,6 +27,7 @@ import com.trifork.clj_ds.IPersistentMap;
 import com.trifork.clj_ds.ISeq;
 import com.trifork.clj_ds.PersistentHashMap;
 import com.trifork.clj_ds.PersistentTreeMap;
+import com.trifork.clj_ds.Reversible;
 
 import erjang.EAtom;
 import erjang.ECons;
@@ -165,6 +166,31 @@ public class ETableSet extends ETable {
 		
 	}
 	
+	
+	@Override
+	protected EObject last() {
+		if (!ordered) { return first(); }
+		
+		// no need to run in_tx if we're only reading
+		IPersistentMap map = deref();
+		
+		if (map.count() == 0) {
+			return Native.am_$end_of_table;
+		} else {
+			ISeq entseq;
+			try {
+				entseq = ((Reversible)map).rseq();
+			} catch (Exception e) {
+				throw new InternalError("cannot reverse");
+			}
+			if (entseq == null) return Native.am_$end_of_table;
+			IMapEntry ent = (IMapEntry) entseq.first();
+			if (ent == null) return Native.am_$end_of_table;
+			return (EObject) ent.getKey();
+		}
+	}
+
+
 	@Override
 	protected EObject first() {
 		// no need to run in_tx if we're only reading
