@@ -161,7 +161,7 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 
 			pid.send_monitor_exit((EHandle)me, ref, exit_reason);
 		}
-		if (name != null) {
+		if (name != ERT.am_undefined) {
 			ERT.unregister(name);
 		}
 	}

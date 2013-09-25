@@ -613,7 +613,7 @@ public final class EProc extends ETask<EInternalPID> {
 		res = res.cons(process_info(am_reductions));
 
 		EObject reg_name = self_handle().name;
-		if (reg_name != null)
+		if (reg_name != ERT.am_undefined)
 			res = res.cons(new ETuple2(am_registered_name, reg_name));
 		
 		if (res == ERT.NIL) return ERT.am_undefined;
@@ -626,7 +626,7 @@ public final class EProc extends ETask<EInternalPID> {
 	 */
 	public EObject process_info(EObject spec) {
 		if (spec == am_registered_name) {
-			return self_handle().name == null 
+			return self_handle().name == ERT.am_undefined 
 				? ERT.NIL 
 				: new ETuple2(am_registered_name, self_handle().name);
 		} else if (spec == am_trap_exit) {
