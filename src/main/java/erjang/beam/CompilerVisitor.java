@@ -2124,12 +2124,11 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			public void visitInsn(BeamOpcode opcode, int val, Arg out) {
 				switch (opcode) {
 				case put_tuple:
-					mv.visitTypeInsn(NEW, out.type.getInternalName());
-					mv.visitInsn(DUP);
-					mv.visitMethodInsn(INVOKESPECIAL,
-							out.type.getInternalName(), "<init>", "()V");
+				{
+					String name = out.type.getInternalName();
+					mv.visitMethodInsn(INVOKESTATIC, name, "create", "()L" + name + ";");
 					pop(out, out.type);
-
+				}
 					return;
 
 				case wait_timeout: {
@@ -2670,7 +2669,6 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					for (int i = 0; i < ys.length; i++) {
 						if (i != (ys.length - 1))
 							mv.visitInsn(DUP);
-						mv.visitInsn(NOP);
 						pop(ys[i], ENIL_TYPE);
 					}
 

@@ -35,6 +35,10 @@ public class ETuple0 extends ETuple {
 		return new ETuple0();
 	}
 	
+	public static ETuple0 create() {
+		return new ETuple0();
+	}
+	
 	@Override
 	public int arity() {
 		return 0;

@@ -54,6 +54,10 @@ public class ETuple2 extends ETuple {
 		return res;
 	}
 
+	public static ETuple2 create() {
+		return new ETuple2();
+	}
+	
 	@Override
 	public int arity() {
 		return 2;

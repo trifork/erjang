@@ -234,6 +234,8 @@ public abstract class ETuple extends EObject implements Cloneable /* , Indexed *
 		// create copy
 		create_tuple_copy(num_cells, cw, this_class_name, super_class_name);
 
+		create_tuple_make(num_cells, cw, this_class_name, super_class_name);
+
 		// create nth
 		create_tuple_nth(num_cells, cw, this_class_name);
 
@@ -254,6 +256,24 @@ public abstract class ETuple extends EObject implements Cloneable /* , Indexed *
 		make_blank_bridge(cw, this_class_name, super_class_name);
 
 		mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "blank", "()L"
+				+ this_class_name + ";", null, null);
+		mv.visitCode();
+		mv.visitTypeInsn(Opcodes.NEW, this_class_name);
+		mv.visitInsn(Opcodes.DUP);
+		mv.visitMethodInsn(Opcodes.INVOKESPECIAL, this_class_name, "<init>",
+				"()V");
+
+		mv.visitInsn(Opcodes.ARETURN);
+
+		mv.visitMaxs(3, 3);
+		mv.visitEnd();
+	}
+
+	private static void create_tuple_make(int i, ClassVisitor cw,
+			String this_class_name, String super_class_name) {
+		MethodVisitor mv;
+
+		mv = cw.visitMethod(Opcodes.ACC_PUBLIC|Opcodes.ACC_STATIC, "create", "()L"
 				+ this_class_name + ";", null, null);
 		mv.visitCode();
 		mv.visitTypeInsn(Opcodes.NEW, this_class_name);
