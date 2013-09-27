@@ -18,6 +18,7 @@
 
 package erjang.beam.analysis;
 
+import java.util.BitSet;
 import java.util.Comparator;
 import java.util.Set;
 import java.util.TreeSet;
@@ -27,12 +28,11 @@ class BasicBlock {
 	final int label;
 	final int index;
 
-	TreeSet<Integer> use = new TreeSet<Integer>();
-	TreeSet<Integer> kill = new TreeSet<Integer>();
-
-	TreeSet<Integer> in = new TreeSet<Integer>();
-	TreeSet<Integer> out = new TreeSet<Integer>();
-
+	BitSet use = new BitSet();
+	BitSet def = new BitSet();
+	BitSet in = new BitSet();
+	BitSet out = new BitSet();
+	
 	Set<BasicBlock> succ = new TreeSet<BasicBlock>(
 			new Comparator<BasicBlock>() {
 				@Override
@@ -59,27 +59,27 @@ class BasicBlock {
 	}
 
 	public void use_x(int reg) {
-		use.add(KEY_X | reg);
+		use.set(KEY_X | reg);
 	}
 
 	public void use_y(TypeMap map, int reg) {
-		use.add(KEY_X | map.get_ypos(reg));
+		use.set(KEY_X | map.get_ypos(reg));
 	}
 
 	public void use_fr(int reg) {
-		use.add(KEY_X | reg);
+		use.set(KEY_X | reg);
 	}
 
 	public void kill_x(int reg) {
-		kill.add(KEY_X | reg);
+		def.set(KEY_X | reg);
 	}
 
 	public void kill_y(TypeMap map, int reg) {
-		kill.add(KEY_X | map.get_ypos(reg));
+		def.set(KEY_X | map.get_ypos(reg));
 	}
 
 	public void kill_fr(int reg) {
-		kill.add(KEY_X | reg);
+		def.set(KEY_X | reg);
 	}
 
 	static final int KEY_X = 0 << 16;

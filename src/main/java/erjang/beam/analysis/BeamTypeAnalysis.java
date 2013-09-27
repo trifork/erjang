@@ -20,6 +20,7 @@ package erjang.beam.analysis;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -158,34 +159,35 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 			Integer[] all = bbs.keySet().toArray(new Integer[bbs.size()]);
 			Arrays.sort(all);
 
-			boolean change = false;
+			boolean change;
 
 			int iter = 0;
 			do {
+				change = false;
 				iter += 1;
 				for (int n = all.length - 1; n >= 0; n--) {
 
 					BasicBlock bb = bbs.get(all[n]);
 
-					TreeSet<Integer> inq = bb.in;
-					TreeSet<Integer> outq = bb.out;
+					BitSet inq = bb.in;
+					BitSet outq = bb.out;
 
-					TreeSet<Integer> in_n = new TreeSet<Integer>();
-					in_n.addAll(outq);
-					in_n.removeAll(bb.kill);
-					in_n.addAll(bb.use);
-					bb.in = in_n;
-
-					TreeSet<Integer> out_n = new TreeSet<Integer>();
+					BitSet out_n = new BitSet();
 					for (BasicBlock s : bb.succ) {
-						TreeSet<Integer> in_s = s.in;
+						BitSet in_s = s.in;
 						if (in_s != null) {
-							out_n.addAll(in_s);
+							out_n.or(in_s);
 						}
 					}
 					bb.out = out_n;
 
-					change = (!inq.equals(in_n)) || (!outq.equals(out_n));
+
+					BitSet in_n = (BitSet) out_n.clone();
+					in_n.andNot(bb.def);
+					in_n.or(bb.use);
+					bb.in = in_n;
+
+					change |= (!inq.equals(in_n)) || (!outq.equals(out_n));
 
 				}
 			} while (change);
