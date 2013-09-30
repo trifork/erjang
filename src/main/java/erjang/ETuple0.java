@@ -25,6 +25,10 @@ public class ETuple0 extends ETuple {
 		return null;
 	}
 	
+	static public ETuple0 make_tuple() {
+		return new ETuple0();
+	}
+	
 	static public ETuple0 cast(EObject value) {
 		if (value instanceof ETuple0) return (ETuple0)value; 
 		return null;

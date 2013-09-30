@@ -2120,6 +2120,24 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			 * @see erjang.beam.BlockVisitor2#visitInsn(erjang.beam.BeamOpcode,
 			 * int, erjang.beam.Arg)
 			 */
+			
+			@Override
+			public void visitMakeTuple(int arity, Arg out, Arg[] elems) {
+				String name = out.type.getInternalName();
+				
+				StringBuffer sb = new StringBuffer("(");
+				for (int i = 0; i<arity; i++) sb.append(EOBJECT_DESC);
+				sb.append(")");
+				sb.append(out.type.getDescriptor());
+				
+				for (int i = 0; i < arity; i++) {
+					push(elems[i], EOBJECT_TYPE);
+				}
+				
+				mv.visitMethodInsn(INVOKESTATIC, name, "make_tuple", sb.toString());
+				pop(out, out.type);
+			}
+			
 			@Override
 			public void visitInsn(BeamOpcode opcode, int val, Arg out) {
 				switch (opcode) {

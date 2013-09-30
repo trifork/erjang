@@ -153,6 +153,8 @@ public abstract class ETuple extends EObject implements Cloneable /* , Indexed *
 
 	public abstract ETuple blank();
 
+	private static final Type EOBJECT_TYPE = Type.getType(EObject.class);
+	private static final String EOBJECT_DESC = EOBJECT_TYPE.getDescriptor();
 	private static final Type ETUPLE_TYPE = Type.getType(ETuple.class);
 	private static final String ETUPLE_NAME = ETUPLE_TYPE.getInternalName();
 	private static final Type ETERM_TYPE = Type.getType(EObject.class);
@@ -235,7 +237,7 @@ public abstract class ETuple extends EObject implements Cloneable /* , Indexed *
 		create_tuple_copy(num_cells, cw, this_class_name, super_class_name);
 
 		create_tuple_make(num_cells, cw, this_class_name, super_class_name);
-
+		create_tuple_make2(num_cells, cw, this_class_name, super_class_name);
 		// create nth
 		create_tuple_nth(num_cells, cw, this_class_name);
 
@@ -284,6 +286,36 @@ public abstract class ETuple extends EObject implements Cloneable /* , Indexed *
 		mv.visitInsn(Opcodes.ARETURN);
 
 		mv.visitMaxs(3, 3);
+		mv.visitEnd();
+	}
+
+	private static void create_tuple_make2(int arity, ClassVisitor cw,
+			String this_class_name, String super_class_name) {
+		MethodVisitor mv;
+
+		StringBuffer sb = new StringBuffer("(");
+		for (int i = 0; i<arity; i++) sb.append(EOBJECT_DESC);
+		sb.append(")L");
+		sb.append(this_class_name);
+		sb.append(";");
+		
+		mv = cw.visitMethod(Opcodes.ACC_PUBLIC|Opcodes.ACC_STATIC, "make_tuple", sb.toString(), null, null);
+
+		mv.visitCode();
+		mv.visitTypeInsn(Opcodes.NEW, this_class_name);
+		mv.visitInsn(Opcodes.DUP);
+		mv.visitMethodInsn(Opcodes.INVOKESPECIAL, this_class_name, "<init>",
+				"()V");
+
+		for (int i = 0; i < arity; i++) {
+			mv.visitInsn(Opcodes.DUP);
+			mv.visitVarInsn(Opcodes.ALOAD, i);
+			mv.visitFieldInsn(Opcodes.PUTFIELD, this_class_name, "elem"+(i+1), EOBJECT_DESC);
+		}
+		
+		mv.visitInsn(Opcodes.ARETURN);
+
+		mv.visitMaxs(3, arity);
 		mv.visitEnd();
 	}
 

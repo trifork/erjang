@@ -48,6 +48,13 @@ public class ETuple1 extends ETuple {
 		return new ETuple1();
 	}
 	
+	static public ETuple1 make_tuple(EObject e1) {
+		ETuple1 t = create();
+		t.elem1 = e1;
+		return t;
+	}
+	
+
 	@Override
 	public int arity() {
 		return 1;

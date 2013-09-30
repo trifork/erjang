@@ -45,6 +45,18 @@ public class ETuple4 extends ETuple {
 		return new ETuple4();
 	}
 	
+	static public ETuple4 make_tuple(EObject e1, EObject e2, EObject e3, EObject e4) {
+		ETuple4 t = create();
+		t.elem1 = e1;
+		t.elem2 = e2;
+		t.elem3 = e3;
+		t.elem4 = e4;
+		return t;
+	}
+	
+
+
+	
 	@Override
 	public int arity() {
 		return 4;

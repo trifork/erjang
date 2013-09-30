@@ -751,10 +751,30 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					case put_tuple: {
 						Insn.ID insn = (Insn.ID) insn_;
 						int arity = insn.i1;
-						tuple_reg = new Arg(dest_arg(insn_idx, insn.dest),
-											getTupleType(arity));
-						vis.visitInsn(opcode, arity, tuple_reg);
-						tuple_pos = 1;
+						
+						Arg[] puts = new Arg[arity];
+						boolean simple_tuple_create = true;
+						for (int i = 1; i <= arity; i++) {
+							if (insns.get(insn_idx+i).opcode() == BeamOpcode.put) { 
+								Insn.S put_insn = (Insn.S) insns.get(insn_idx+i);
+								puts[i-1] = src_arg(insn_idx+i, put_insn.src);
+								continue; 
+							}
+							simple_tuple_create = false;
+							break;
+						}
+						
+						if (simple_tuple_create) {
+							tuple_reg = new Arg(dest_arg(insn_idx, insn.dest),
+									getTupleType(arity));
+							insn_idx += arity;
+							vis.visitMakeTuple(arity, tuple_reg, puts);
+						} else {						
+							tuple_reg = new Arg(dest_arg(insn_idx, insn.dest),
+									getTupleType(arity));
+							vis.visitInsn(opcode, arity, tuple_reg);
+							tuple_pos = 1;
+						}
 						break;
 					}
 
