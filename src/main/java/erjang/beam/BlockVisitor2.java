@@ -214,4 +214,6 @@ public interface BlockVisitor2 extends BlockVisitor {
 	void visitInitWritable(Arg size, Arg dest);
 
 	void visitLine(int line);
+
+	void visitMakeTuple(int arity, Arg tuple_reg, Arg[] puts);
 }
