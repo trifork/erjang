@@ -751,8 +751,9 @@ public abstract class EFun extends EObject implements Opcodes {
 		if (cname.startsWith(ERJANG_MODULES_DOT)) {
 
 			int last = cname.lastIndexOf('.');
-			module = EAtom.intern(cname.substring(ERJANG_MODULES_DOT.length(),
-					last));
+			String name = cname.substring(ERJANG_MODULES_DOT.length(),
+					last);
+			module = EAtom.intern(EUtil.decodeJavaName(name));
 		}
 		
 		EAtom fun = null;
