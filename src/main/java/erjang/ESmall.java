@@ -211,13 +211,23 @@ public final class ESmall extends EInteger {
 		return rhs.add(value, false);
 	}
 
-	public EInteger add(int rhs, boolean guard) {
-		return ERT.box((long) value + (long) rhs);
+	public EInteger add(int b, boolean guard) {
+		int a = value;
+		int r=a+b;
+		if (( (a^r) & (b^r) ) < 0)
+			return ERT.box((long)a + (long)b); 
+		return ERT.box(r);
 	}
 
+	/** overflow check due to http://www.drdobbs.com/jvm/signalling-integer-overflows-in-java/210500001 */
 	@BIF(name="+")
 	public EInteger add(ESmall rhs) { 
-		return ERT.box((long)value + (long)rhs.value); 
+		int a = value;
+		int b = rhs.value;
+		int r=a+b;
+		if (( (a^r) & (b^r) ) < 0)
+			return ERT.box((long)a + (long)b); 
+		return ERT.box(r);
 	}
 
 	public ENumber add(double lhs, boolean guard) {
