@@ -746,7 +746,7 @@ public class ERT {
 	public static boolean unregister(EAtom aname) {
 		EHandle val = register.remove(aname);
 		if (val != null) {
-			val.setName(null);
+			val.setName(ERT.am_undefined);
 			return true;
 		} else {
 			return false;
