@@ -34,7 +34,7 @@ public class EInternalPort extends EPort implements ELocalHandle {
 	 */
 	@Override
 	public String toString() {
-		return "<port:" + task.id + ">";
+		return "#Port<" + task.id + ">";
 	}
 	
 	// TODO: private final WeakReference<EDriverTask> task;
