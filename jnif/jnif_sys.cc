@@ -11,6 +11,13 @@ static JavaVM *jvm;
 
 void enif_system_info(ErlNifSysInfo* info, size_t si_size)
 {
+  if (sizeof(*info) >= si_size) {
+    memset(info, 0, si_size);
+    info->driver_major_version = ERL_DRV_EXTENDED_MAJOR_VERSION;
+    info->driver_minor_version = ERL_DRV_EXTENDED_MINOR_VERSION;
+    return;
+  }
+
   JNIEnv *je;
   if (jvm->AttachCurrentThreadAsDaemon((void**)&je, NULL) == JNI_OK) {
 
