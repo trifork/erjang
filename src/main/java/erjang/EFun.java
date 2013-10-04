@@ -220,7 +220,7 @@ public abstract class EFun extends EObject implements Opcodes {
 		String self_type = EFUN_TYPE.getInternalName() + arity;
 
 		ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES|ClassWriter.COMPUTE_MAXS);
-		cw.visit(Opcodes.V1_5, Opcodes.ACC_PUBLIC | Opcodes.ACC_ABSTRACT,
+		cw.visit(Opcodes.V1_6, Opcodes.ACC_PUBLIC | Opcodes.ACC_ABSTRACT,
 				self_type, null, EFUN_TYPE.getInternalName(), null);
 
 		make_invoke_method(cw, self_type, arity);
