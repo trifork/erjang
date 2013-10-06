@@ -107,8 +107,8 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 	EAtom am_source = EAtom.intern("source");
 
-	ECons atts = ERT.NIL;
-	ECons compile_info = ERT.NIL;
+	ESeq atts = ERT.NIL;
+	ESeq compile_info = ERT.NIL;
 	String source = null;
 	private Set<String> exported = new HashSet<String>();
 
@@ -416,11 +416,11 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 		cv.visitField(ACC_STATIC, "attributes", ESEQ_DESC, 
 				null, null).visitEnd();
-		constants.put(atts, "attributes");
+		constants.put(atts.reverse(), "attributes");
 
 		cv.visitField(ACC_STATIC, "compile", ESEQ_DESC, 
 				null, null).visitEnd();
-		constants.put(compile_info, "compile");
+		constants.put(compile_info.reverse(), "compile");
 		
 		if (this.module_md5 != null) {
 
