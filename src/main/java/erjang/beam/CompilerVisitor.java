@@ -2326,6 +2326,8 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					return;
 
 				case case_end:
+					ensure_exception_handler_in_place();
+
 					push(arg, EOBJECT_TYPE);
 					mv.visitMethodInsn(INVOKESTATIC, ERT_NAME, "case_end",
 							EUtil.getSignature(1, false));
@@ -2333,6 +2335,8 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					return;
 
 				case badmatch:
+					ensure_exception_handler_in_place();
+
 					push(arg, EOBJECT_TYPE);
 					mv.visitMethodInsn(INVOKESTATIC, ERT_NAME, "badmatch",
 							EUtil.getSignature(1, false));
