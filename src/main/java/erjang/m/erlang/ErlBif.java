@@ -113,7 +113,7 @@ public class ErlBif {
 
 			ETuple t = fun.testTuple();
 			if (t == null) {
-				throw ERT.badarg(fun,args);
+				throw ERT.badfun(fun);
 			}
 	
 			ETuple2 t2 = ETuple2.cast(t);

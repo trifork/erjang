@@ -130,6 +130,10 @@ public class ERT {
 		throw new ErlangError(AM_BADARITH, NIL.cons(o2).cons(o1));
 	}
 
+	public static ErlangError badfun(EObject o) {
+		throw new ErlangError(new ETuple2(am_badfun, o));
+	}
+
 
 	public static final EAtom TRUE = EAtom.intern("true");
 	public static final EAtom FALSE = EAtom.intern("false");
@@ -355,7 +359,7 @@ public class ERT {
 			if ((orig.testFunction()) != null) {
 				throw new ErlangError(new ETuple2(am_badarity, new ETuple2(orig, NIL)));
 			} else {
-				throw new ErlangError(am_badfun, orig);
+				throw badfun(orig);
 			}
 		}
 	}
