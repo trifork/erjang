@@ -1431,6 +1431,8 @@ public class EFile extends EDriverInstance {
 							posix_errno = Posix.ENOENT;
 						} else if (Posix.isCWD(name, file)) {
 							posix_errno = Posix.EINVAL;
+						} else if (!file.isDirectory()) {
+							posix_errno = Posix.ENOTDIR;
 						} else if (file.exists()) {
 							posix_errno = Posix.EEXIST;
 						} else {
@@ -1475,6 +1477,8 @@ public class EFile extends EDriverInstance {
 					if (!result_ok) {
 						if (!file.exists()) {
 							posix_errno = Posix.ENOENT;
+						} else if (!file.canWrite()) {
+							posix_errno = Posix.EPERM;
 						} else if (file.isDirectory()) {
 							posix_errno = Posix.EEXIST;
 						} else {
