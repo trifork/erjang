@@ -1095,7 +1095,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			 * erjang.beam.Arg)
 			 */
 			@Override
-			public void visitBS(BeamOpcode opcode, Arg arg, Arg imm) {
+			public void visitBS(BeamOpcode opcode, Arg arg, Arg imm, int failLabel) {
 				switch (opcode) {
 				case bs_save2:
 				case bs_restore2:
@@ -1130,7 +1130,9 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 							EBINSTRINGBUILDER_TYPE.getInternalName(),
 							"bs_utf8_size", "(" + EOBJECT_DESC + ")"
 									+ ESMALL_TYPE.getDescriptor());
+					if (failLabel != 0) mv.visitInsn(DUP);
 					pop(imm, ESMALL_TYPE);
+					if (failLabel != 0) mv.visitJumpInsn(IFNULL, getLabel(failLabel));
 					return;
 
 				case bs_utf16_size:
@@ -1139,7 +1141,9 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 							EBINSTRINGBUILDER_TYPE.getInternalName(),
 							"bs_utf16_size", "(" + EOBJECT_DESC + ")"
 									+ ESMALL_TYPE.getDescriptor());
+					if (failLabel != 0) mv.visitInsn(DUP);
 					pop(imm, ESMALL_TYPE);
+					if (failLabel != 0) mv.visitJumpInsn(IFNULL, getLabel(failLabel));
 					return;
 
 				}

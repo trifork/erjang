@@ -992,7 +992,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 					case bs_context_to_binary: {
 						Insn.D insn = (Insn.D) insn_;
-						vis.visitBS(opcode, dest_arg(insn_idx, insn.dest), null);
+						vis.visitBS(opcode, dest_arg(insn_idx, insn.dest), null, 0);
 						// do nothing for now
 						break;
 					}
@@ -1004,7 +1004,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 									//TODO: streamline - change API
 									insn.i2 == -1
 									? new Arg(EAtom.intern("start"))
-									: new Arg(new ESmall(insn.i2))
+									: new Arg(new ESmall(insn.i2)), 0
 							);
 						break;
 					}
@@ -1068,8 +1068,8 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						Insn.LSD insn = (Insn.LSD) insn_;
 						Arg value = src_arg(insn_idx, insn.src);
 						Arg out   = dest_arg(insn_idx, insn.dest);
-						//TODO: is the label always 0? (Op may fail)
-						vis.visitBS(opcode, value, out);
+						int label = decode_labelref(insn.label, type_map.exh);
+						vis.visitBS(opcode, value, out, label);
 						break;
 					}
 

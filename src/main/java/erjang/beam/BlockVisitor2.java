@@ -192,10 +192,11 @@ public interface BlockVisitor2 extends BlockVisitor {
 
 	/**
 	 * @param opcode
-	 * @param decodeArg
 	 * @param arg2 
+	 * @param failLabel TODO
+	 * @param decodeArg
 	 */
-	void visitBS(BeamOpcode opcode, Arg arg1, Arg arg2);
+	void visitBS(BeamOpcode opcode, Arg arg1, Arg arg2, int failLabel);
 
 	/**
 	 * @param in
