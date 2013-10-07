@@ -153,6 +153,10 @@ public class IO {
 			return Posix.ENOENT;
 		}
 		
+		if (e instanceof java.nio.file.FileAlreadyExistsException) {
+			return Posix.EEXIST;
+		}
+		
 		ERT.log.warning("unknown exception: "+ e.getClass().getName() + " " + e.getMessage());
 		ERT.log.log(Level.FINE, "details: ", e);
 		
