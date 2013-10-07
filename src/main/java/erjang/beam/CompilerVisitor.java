@@ -1124,26 +1124,27 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					pop(arg, EOBJECT_TYPE);
 					return;
 
+				case bs_utf16_size:
 				case bs_utf8_size:
 					push(arg, EOBJECT_TYPE);
 					mv.visitMethodInsn(INVOKESTATIC,
 							EBINSTRINGBUILDER_TYPE.getInternalName(),
-							"bs_utf8_size", "(" + EOBJECT_DESC + ")"
+							opcode.name(), "(" + EOBJECT_DESC + ")"
 									+ ESMALL_TYPE.getDescriptor());
-					if (failLabel != 0) mv.visitInsn(DUP);
-					pop(imm, ESMALL_TYPE);
-					if (failLabel != 0) mv.visitJumpInsn(IFNULL, getLabel(failLabel));
-					return;
-
-				case bs_utf16_size:
-					push(arg, EOBJECT_TYPE);
-					mv.visitMethodInsn(INVOKESTATIC,
-							EBINSTRINGBUILDER_TYPE.getInternalName(),
-							"bs_utf16_size", "(" + EOBJECT_DESC + ")"
-									+ ESMALL_TYPE.getDescriptor());
-					if (failLabel != 0) mv.visitInsn(DUP);
-					pop(imm, ESMALL_TYPE);
-					if (failLabel != 0) mv.visitJumpInsn(IFNULL, getLabel(failLabel));
+					if (failLabel == 0) {
+						mv.visitInsn(DUP);
+						Label okLabel = new Label();
+						mv.visitJumpInsn(IFNONNULL, okLabel);
+						push(arg, EOBJECT_TYPE);
+						mv.visitMethodInsn(INVOKESTATIC, ERT_NAME, "badarg", "(Lerjang/EObject;)Lerjang/ErlangError;");
+						mv.visitInsn(ATHROW);
+						mv.visitLabel(okLabel);
+						pop(imm, ESMALL_TYPE);
+					} else {
+						mv.visitInsn(DUP);
+						pop(imm, ESMALL_TYPE);
+						mv.visitJumpInsn(IFNULL, getLabel(failLabel));
+					}
 					return;
 
 				}

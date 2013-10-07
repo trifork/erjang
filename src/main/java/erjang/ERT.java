@@ -102,6 +102,10 @@ public class ERT {
 		throw new ErlangError(am_badarg, NIL.cons(o2).cons(o1));
 	}
 
+	public static ErlangError badarg(EObject o1) throws ErlangError {
+		throw new ErlangError(am_badarg, NIL.cons(o1));
+	}
+
 	public static ErlangError badarith(EObject... args) {
 		throw new ErlangError(AM_BADARITH, args);
 	}

@@ -269,6 +269,30 @@ public class EBitStringBuilder {
 		put_byte(b4);
 	}
 	
+	protected void put_int16(int val, int flags) {
+		if ((flags & EBinMatchState.BSF_LITTLE) > 0) {
+			put_int16_little(val);
+		} else {
+			put_int16_big(val);
+		}
+	}
+
+	protected void put_int16_little(int val) {
+		byte b1, b2;
+		b1 = (byte)val; val >>= 8;
+		b2 = (byte)val;
+		put_byte(b1);
+		put_byte(b2);
+	}
+
+	protected void put_int16_big(int val) {
+		byte b1, b2;
+		b2 = (byte)val; val >>= 8;
+		b1 = (byte)val;
+		put_byte(b1);
+		put_byte(b2);
+	}
+	
 	private void put_byte(byte val) {
 		
 		if (extra_bits == 0) {
@@ -363,17 +387,8 @@ public class EBitStringBuilder {
 	public void put_utf8(EObject value, int flags) {
 		
 		ESmall sm;
-		if ((sm=value.testSmall()) != null && sm.value >= 0 && sm.value <= 0x10FFFF) {
+		if ((sm=value.testSmall()) != null && sm.value >= 0 && sm.value < 0x110000) {
 
-			byte[] raw = new String(new char[]{ (char) sm.value }).getBytes(IO.UTF8);
-			
-			for (int i = 0; i < raw.length; i++) {
-				put_byte(raw[i]);
-			}
-			
-			return;
-			
-			/*
 			if (sm.value < 0x80) {
 				put_byte((byte) sm.value); 
 				return;
@@ -381,48 +396,47 @@ public class EBitStringBuilder {
 			
 			if (sm.value < 0x0800) {
 				put_byte((byte) (0xc0 | ((sm.value >> 6) & 0x1f)));
-				put_byte((byte) (0x80 | (sm.value & 0x3f)));
+				put_byte((byte) (0x80 | (sm.value        & 0x3f)));
 				return;
 			}
 	
 			if (sm.value < 0x10000) {
 				put_byte((byte) (0xe0 | ((sm.value >> 12) & 0x0f)));
-				put_byte((byte) (0x80 | ((sm.value >> 6) & 0x3f)));
-				put_byte((byte) (0x80 | (sm.value & 0x3f)));
+				put_byte((byte) (0x80 | ((sm.value >> 6)  & 0x3f)));
+				put_byte((byte) (0x80 | (sm.value         & 0x3f)));
 				return;
 			}
 
-			if (sm.value < 0x20000) {
+			if (sm.value < 0x110000) {
 				put_byte((byte) (0xf0 | ((sm.value >> 18) & 0x7)));
 				put_byte((byte) (0x80 | ((sm.value >> 12) & 0x3f)));
-				put_byte((byte) (0x80 | ((sm.value >> 6) & 0x3f)));
-				put_byte((byte) (0x80 | (sm.value & 0x3f)));
+				put_byte((byte) (0x80 | ((sm.value >> 6)  & 0x3f)));
+				put_byte((byte) (0x80 | (sm.value         & 0x3f)));
 				return;
 			}
-
-			if (sm.value < 0x4000000) {
-				put_byte((byte) (0xf8 | ((sm.value >> 24) & 0x3)));
-				put_byte((byte) (0x80 | ((sm.value >> 18) & 0x3f)));
-				put_byte((byte) (0x80 | ((sm.value >> 12) & 0x3f)));
-				put_byte((byte) (0x80 | ((sm.value >> 6) & 0x3f)));
-				put_byte((byte) (0x80 | (sm.value & 0x3f)));
-				return;
-			}
-			*/
 		}
 
 		
-		throw new NotImplemented("val="+value);
+		throw ERT.badarg(value);
 	}
 
 	public void put_utf16(EObject value, int flags) {
 		ESmall num = value.testSmall();
-		if (num == null || !Character.isDefined(num.value))
-			throw ERT.badarg(value); // TODO: throw what?
-		String val = new String(new char[] { (char) num.value });
-		byte[] bytes = val.getBytes(IO.UTF16);
-		for (int i = 0; i < bytes.length; i++) {
-			put_byte(bytes[i]);
+		if (num == null 
+				|| num.value < 0
+				|| num.value > 0x10FFFF 
+				|| (0xD800 <= num.value && num.value <= 0xDFFF)) {
+			throw ERT.badarg(value);
+		}
+		
+		if (num.value < 0x10000) {
+			put_int16(num.value, flags);
+		} else {
+			int low = num.value - 0x10000;
+			int num1 = 0xD800 | ((low >> 10) & 0x3ff);
+			int num2 = 0xDC00 | (low & 0x3ff);
+			put_int16(num1, flags);
+			put_int16(num2, flags);
 		}
 	}
 
@@ -442,29 +456,24 @@ public class EBitStringBuilder {
 		ESmall sm;
 		if ((sm=value.testSmall()) != null) {
 			
-			byte[] raw = new String(new char[]{ (char) sm.value }).getBytes(IO.UTF8);
-			return ERT.box(raw.length);
-
-			/*
+			if (sm.value < 0) return null;
 			if (sm.value < 0x80) return ERT.box(1);
-			if (sm.value < 0x0800) return ERT.box(2);
+			if (sm.value < 0x800) return ERT.box(2);
 			if (sm.value < 0x10000) return ERT.box(3);
 			if (sm.value < 0x200000) return ERT.box(4);
 			if (sm.value < 0x4000000) return ERT.box(5);
 			return ERT.box(6);
-			*/
 		}
 		
-		throw new NotImplemented("val="+value);
+		return null;
 	}
 	
 	// compute size of utf16 char
 	static public ESmall bs_utf16_size(EObject value) {
 		ESmall num = value.testSmall();
-		if (num == null || !Character.isDefined(num.value))
-			throw ERT.badarg(value); // TODO: throw what?
-		String val = new String(new char[] { (char) num.value });
-		byte[] bytes = val.getBytes(IO.UTF16);
-		return ERT.box(bytes.length);
+		if (num == null || num.value < 0)
+			return null;
+		if (num.value < 0x10000) return ERT.box(2);
+		return ERT.box(4);
 	}
 }
