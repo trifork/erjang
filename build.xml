@@ -7,7 +7,6 @@
     <pathelement location="target/classes/" />
     <pathelement location="lib/js.jar" />
     <pathelement location="lib/kilim.jar" />
-    <pathelement location="lib/asm-all-4.1.jar" />
     <pathelement location="lib/OtpErlang.jar" />
     <pathelement location="lib/junit.jar" />
     <pathelement location="lib/clj-ds.jar" />
@@ -86,7 +85,7 @@
 
   <target name="compile" depends="gen-interpreter,create-dirs">
     <echo message="Compiling src ===================" />
-    <javac includeantruntime="false" debug="true" srcdir="src/main/java" destdir="target/classes" classpathref="erjang.classpath" deprecation="off" debuglevel="lines,vars,source" target="1.7" fork="true"/>
+    <javac includeantruntime="false" debug="true" srcdir="src/main/java" destdir="target/classes" classpathref="erjang.classpath" deprecation="off" debuglevel="lines,vars,source" target="1.7" source="1.7" fork="true"/>
   </target>
 
   <target name="testcompile" depends="compile">
@@ -116,6 +115,7 @@
       <assertions>
 	<enable />
       </assertions>
+      <jvmarg value="-Dkilim.optimize_codesize=true" />
       <arg value="-q" />
       <arg value="-d" />
       <arg value="./target/classes" />
@@ -130,6 +130,7 @@
       <assertions>
 	<enable />
       </assertions>
+      <jvmarg value="-Dkilim.optimize_codesize=true" />
       <arg value="-q" />
       <arg value="-d" />
       <arg value="./target/test-classes" />
@@ -168,6 +169,7 @@
       <jvmarg value="-Xss50m"/>
       <jvmarg value="-XX:PermSize=128m"/>
       <jvmarg value="-XX:MaxPermSize=700m"/>
+      <jvmarg value="-Dkilim.optimize_codesize=true" />
       <jvmarg value="-Derjang.otp.root=${erjang.otp.root}"/>
       <jvmarg value="-Derjang.triq.root=${erjang.triq.root}"/>
       <batchtest todir="test-outputs">
@@ -283,7 +285,6 @@
     <jar jarfile="erjang-${erjang.version}.jar" basedir="target/classes">
       <zipgroupfileset dir="lib" includes="*.jar">
 	<exclude name="junit.jar" />
-	<exclude name="asm-all-2.2.3.jar" />
       </zipgroupfileset>
       <exclude name="erjang/test/**" />
       <exclude name="erjang/examples/**" />

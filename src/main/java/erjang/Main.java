@@ -42,6 +42,10 @@ public class Main {
 	 * @throws ClassNotFoundException 
 	 */
 	public static void main(String[] args) throws Exception {
+		
+		// enforce Kilim to optimize for code size before anything else
+		System.setProperty("kilim.optimize_codesize", "true");
+		
 		ErjangConfig.init();
 
 		ArrayList<String> ra = new ArrayList<String>();
