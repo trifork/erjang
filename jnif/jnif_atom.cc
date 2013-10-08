@@ -6,6 +6,8 @@ static jmethodID m_eobject__testAtom;
 static jclass    eatom_class;
 static jmethodID m_eatom__intern;
 static jmethodID m_eatom__existing_atom_or_null;
+static jmethodID m_eatom__latin1_bytes;
+static jmethodID m_eatom__latin1_length;
 
 void initialize_jnif_atom(JavaVM* vm, JNIEnv *je)
 {
@@ -22,8 +24,48 @@ void initialize_jnif_atom(JavaVM* vm, JNIEnv *je)
   m_eatom__existing_atom_or_null    = je->GetStaticMethodID(eatom_class,
                                            "existing_atom_or_null",
                                            "(Ljava/lang/String;)Lerjang/EAtom;");
+  m_eatom__latin1_bytes             = je->GetMethodID(eatom_class,
+                                                      "latin1_bytes",
+                                                      "()[B");
+  m_eatom__latin1_length            = je->GetMethodID(eatom_class,
+                                                      "latin1_length",
+                                                      "()I");
 
 }
+
+int enif_get_atom_length(ErlNifEnv* ee, ERL_NIF_TERM term, unsigned* len, ErlNifCharEncoding encoding)
+{
+  JNIEnv *je = ee->je;
+  jobject atom = je->CallObjectMethod(E2J(term), m_eobject__testAtom);
+  if (atom == JVM_NULL || encoding != ERL_NIF_LATIN1)
+    return NIF_FALSE;
+
+  *len = je->CallIntMethod(atom, m_eatom__latin1_length);
+
+  return NIF_TRUE;
+}
+
+int enif_get_atom(ErlNifEnv* ee, ERL_NIF_TERM term, char* buf, unsigned size, ErlNifCharEncoding encoding)
+{
+  JNIEnv *je = ee->je;
+  jobject atom = je->CallObjectMethod(E2J(term), m_eobject__testAtom);
+  if (atom == JVM_NULL || encoding != ERL_NIF_LATIN1)
+    return 0;
+
+  jbyteArray barr = (jbyteArray) je->CallObjectMethod(atom, m_eatom__latin1_bytes);
+  jint byte_size = je->GetArrayLength(barr);
+  if (byte_size+1 > size)
+    return 0;
+
+  jbyte* arr = (jbyte*)je->GetPrimitiveArrayCritical(barr, 0);
+  memcpy(buf, arr, byte_size);
+  je->ReleasePrimitiveArrayCritical(barr, arr, JNI_ABORT);
+  buf[byte_size] = 0;
+
+  return byte_size+1;
+}
+
+
 
 int enif_is_atom(ErlNifEnv* ee, ERL_NIF_TERM term)
 {

@@ -19,6 +19,7 @@
 package erjang;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
@@ -139,6 +140,16 @@ public final class EAtom extends EObject implements CharSequence {
 	@Override
 	public int hashCode() {
 		return hash;
+	}
+
+	// used by NIF API
+	public byte[] latin1_bytes() {
+		return value.getBytes(StandardCharsets.ISO_8859_1);
+	}
+
+	// used by NIF API
+	public int latin1_length() {
+		return value.length();
 	}
 
 	public static EAtom intern(String name) {
