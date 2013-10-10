@@ -19,6 +19,11 @@ static jclass    ERT_class;
 static jmethodID m_ERT__badarg;
 
 
+void* enif_realloc(void* ptr, size_t size)
+{
+  return realloc(ptr, size);
+}
+
 void *enif_alloc(size_t size)
 {
   return malloc(size);
