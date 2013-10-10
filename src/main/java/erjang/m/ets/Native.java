@@ -18,12 +18,14 @@
 
 package erjang.m.ets;
 
+import java.lang.ref.WeakReference;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import kilim.Pausable;
 import erjang.BIF;
 import erjang.EAtom;
 import erjang.EInteger;
@@ -650,6 +652,26 @@ public class Native extends ENative {
 			table.setopt(opts);
 		}
 	
+		return ERT.TRUE;
+	}
+	
+	@BIF static public EObject give_away(EProc proc, EObject tab, EObject pid, EObject giftData) throws Pausable
+	{
+		EInternalPID giveTo = pid.testInternalPID();
+		ETable table = resolve(proc, tab, true);		
+		if (table == null || giveTo==null || !giveTo.is_alive() || table.owner_pid() != proc.self_handle()) {
+			throw ERT.badarg(tab, pid, giftData);
+		}
+
+		table.owner = new WeakReference<EProc>(giveTo.task());
+		
+		ETuple msg = ETuple.make(EAtom.intern("ETS-TRANSFER"),
+				tab,
+				proc.self_handle(),
+				giftData);
+		
+		giveTo.send(proc.self_handle(), msg);
+		
 		return ERT.TRUE;
 	}
 
