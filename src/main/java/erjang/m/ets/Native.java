@@ -72,6 +72,8 @@ public class Native extends ENative {
 	public static final EAtom am_named_table = EAtom.intern("named_table");
 	public static final EAtom am_write_concurrency = EAtom
 			.intern("write_concurrency");
+	public static final EAtom am_read_concurrency = EAtom
+			.intern("read_concurrency");
 	public static final EAtom am_type = EAtom.intern("type");
 	public static final EAtom am_none = EAtom.intern("none");
 	public static final EAtom am_protection = EAtom.intern("protection");
@@ -124,6 +126,7 @@ public class Native extends ENative {
 		EAtom access = am_protected;
 		int keypos = 1;
 		boolean write_concurrency = false;
+		boolean read_concurrency = false;
 		EInternalPID heir_pid = null;
 		EObject heir_data = null;
 		boolean is_named = false;
@@ -160,6 +163,9 @@ public class Native extends ENative {
 					continue;
 				} else if (t2.elem1 == am_write_concurrency) {
 					write_concurrency = (t2.elem2 == ERT.TRUE);
+					continue;
+				} else if (t2.elem1 == am_read_concurrency) {
+					read_concurrency = (t2.elem2 == ERT.TRUE);
 					continue;
 				}
 			} else if ((t3 = ETuple3.cast(option)) != null) {
