@@ -19,6 +19,18 @@ extern int enif_is_tuple (ErlNifEnv* ee, ERL_NIF_TERM term)
   }
 }
 
+ERL_NIF_TERM enif_make_tuple_from_array(ErlNifEnv* ee, const ERL_NIF_TERM arr[], unsigned cnt)
+{
+  jobject tup;
+  tup = ee->je->CallStaticObjectMethod(etuple_class, m_etuple__make, cnt);
+
+  for (int i = 0; i < cnt; i++) {
+    ee->je->CallVoidMethod(tup, m_etuple__set, (jint)(i+1), E2J(arr[i]));
+  }
+
+  return jnif_retain(ee, tup);
+
+}
 
 int enif_get_tuple(ErlNifEnv* ee, ERL_NIF_TERM tpl, int* arity, const ERL_NIF_TERM** a0)
 {
