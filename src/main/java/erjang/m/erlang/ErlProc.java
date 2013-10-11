@@ -524,6 +524,10 @@ public class ErlProc {
 			return ERT.TRUE;
 		} else if (type == am_schedulers) {
 			return ERT.box(ERT.threadPoolSize());
+		} else if (type == am_process_limit) {
+			return ERT.box(ERT.processLimit());
+		} else if (type == am_fullsweep_after) {
+			return ERT.box(65535);
 		} else if (type == am_schedulers_online) {
 			return ERT.box(Math.max(1, ERT.threadPoolSize()));
 		} else if (type == am_threads) {
