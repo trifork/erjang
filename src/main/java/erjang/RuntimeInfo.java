@@ -52,20 +52,13 @@ public class RuntimeInfo {
 	 * 
 	 * @see http://www.erlang.org/doc/apps/stdlib/unicode_usage.html#id60205
 	 */
-	public final boolean unicodeDriverInterface;
+	public final boolean unicodeDriverInterface = true;
 
 	public RuntimeInfo(String erts_version, String otp_version, String erl_rootdir, String erl_bootstrap_ebindir) {
 		this.erts_version = erts_version;
 		this.otp_version = otp_version;
 		this.erl_rootdir = erl_rootdir;
 		this.erl_bootstrap_ebindir = erl_bootstrap_ebindir;
-		
-		if (otp_version != null) {
-			unicodeDriverInterface = ("R14B".compareTo(otp_version) < 0);
-		}
-		else {
-			unicodeDriverInterface = false;
-		}
 	}
 	
 	public void verify() throws RuntimeException {
