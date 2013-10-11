@@ -1162,7 +1162,15 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 			async_error(am_closed);
 
 		} else if ((state&TCP_STATE_MULTI_ACCEPTING) == TCP_STATE_MULTI_ACCEPTING) {
-			throw new NotImplemented();
+			sock_select(ERL_DRV_ACCEPT, SelectMode.CLEAR);
+			state = TCP_STATE_LISTEN;
+
+			for (AsyncMultiOp op = deq_multi_op(); op != null; op = deq_multi_op()) {
+				driver_demonitor_process(op.op.monitor);
+				send_async_error(op.op.id, op.op.caller, am_closed);
+			}
+			
+			// clean_multi_timers ?
 
 		} else if ((state&TCP_STATE_CONNECTING) == TCP_STATE_CONNECTING) {
 			async_error(am_closed);
