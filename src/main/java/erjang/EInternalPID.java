@@ -32,6 +32,9 @@ public class EInternalPID extends EPID implements ELocalHandle {
 	private EProc task;
 	private int id;
 	private DistEntry distEntry;
+
+	// used by JNIF to hold a unique GlobalRef to this object
+	private long gref;
 	
 	public EInternalPID testInternalPID() {
 		return this;
