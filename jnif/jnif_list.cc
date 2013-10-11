@@ -4,6 +4,7 @@
 
 static jclass    eobject_class;
 static jmethodID m_eobject__testCons;
+static jmethodID m_eobject__testNonEmptyList;
 static jmethodID m_eobject__testSeq;
 
 static jclass    elist_class;
@@ -46,7 +47,7 @@ extern int enif_get_list_cell (ErlNifEnv* ee, ERL_NIF_TERM term, ERL_NIF_TERM* h
 {
   JNIEnv *je = ee->je;
 
-  jobject cons = je->CallObjectMethod(E2J(term), m_eobject__testCons);
+  jobject cons = je->CallObjectMethod(E2J(term), m_eobject__testNonEmptyList);
   if (cons == NULL)
     return NIF_FALSE;
 
@@ -101,6 +102,9 @@ void initialize_jnif_list(JavaVM* vm, JNIEnv *je)
                                               "()Lerjang/ESeq;");
   m_eobject__testCons    = je->GetMethodID(eobject_class,
                                               "testCons",
+                                              "()Lerjang/ECons;");
+  m_eobject__testNonEmptyList    = je->GetMethodID(eobject_class,
+                                              "testNonEmptyList",
                                               "()Lerjang/ECons;");
 
   elist_class      = je->FindClass("erjang/EList");
