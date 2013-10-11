@@ -1046,6 +1046,14 @@ public class ERT {
 			return 10;
 	}
 
+	public static int processLimit() {
+		String threads = ErjangConfig.getString("erjang.beam.option.P");
+		if (threads != null)
+			return Integer.parseInt(threads);
+		else
+			return 500000;
+	}
+
 	public static ESeq registered() {
 		ESeq res = ERT.NIL;
 		for (EAtom reg : register.keySet()) {

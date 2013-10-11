@@ -65,11 +65,13 @@ public class ErlProc {
 	private static Logger log = Logger.getLogger("erjang.module.proc");
 
 	private static final EAtom am_smp_support = EAtom.intern("smp_support");
+	private static final EAtom am_process_limit = EAtom.intern("process_limit");
+	private static final EAtom am_fullsweep_after = EAtom.intern("fullsweep_after");
 	private static final EAtom am_schedulers = EAtom.intern("schedulers");
 	private static final EAtom am_schedulers_online = EAtom.intern("schedulers_online");
 	private static final EAtom am_break_ignored = EAtom.intern("break_ignored");
 	private static final EAtom am_threads = EAtom.intern("threads");
-	public static final EAtom am_process = EAtom.intern("process");
+	public  static final EAtom am_process = EAtom.intern("process");
 	private static final EAtom am_wordsize = EAtom.intern("wordsize");
 	private static final EAtom am_thread_pool_size = EAtom
 			.intern("thread_pool_size");
