@@ -2856,6 +2856,13 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 						ivals[i] = values[i].value.asInt();
 						label[i] = getLabel(targets[i]);
 					}
+
+					if (!in.type.equals(ESMALL_TYPE)) {
+						push(in, EOBJECT_TYPE);
+						mv.visitMethodInsn(INVOKEVIRTUAL, EOBJECT_NAME, "testSmall", "()Lerjang/ESmall;");
+						mv.visitJumpInsn(IFNULL, getLabel(failLabel));
+					}
+
 					push(in, Type.INT_TYPE);
 
 					sort(ivals, label);
