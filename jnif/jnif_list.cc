@@ -11,6 +11,7 @@ static jmethodID m_eobject__isNil;
 static jclass    elist_class;
 static jmethodID m_elist__make;
 static jmethodID m_eseq__length;
+static jmethodID m_eseq__reverse;
 static jmethodID m_econs__head;
 static jmethodID m_econs__tail;
 
@@ -37,6 +38,20 @@ extern int enif_is_list (ErlNifEnv* ee, ERL_NIF_TERM term)
   }
 
   return NIF_FALSE;
+}
+
+extern int enif_make_reverse_list(ErlNifEnv* ee, ERL_NIF_TERM term, ERL_NIF_TERM *list)
+{
+  jobject seq;
+  if ( (seq = ee->je->CallObjectMethod(E2J(term), m_eobject__testSeq)) == NULL) {
+    return NIF_FALSE;
+  }
+
+  jobject rev = ee->je->CallObjectMethod(seq, m_eseq__reverse);
+
+  *list = jnif_retain (ee, rev);
+
+  return NIF_TRUE;
 }
 
 extern int enif_get_list_length (ErlNifEnv* ee, ERL_NIF_TERM term, unsigned* len)
@@ -126,6 +141,9 @@ void initialize_jnif_list(JavaVM* vm, JNIEnv *je)
   m_eseq__length    = je->GetMethodID(eseq_class,
                                      "length",
                                      "()I");
+  m_eseq__reverse    = je->GetMethodID(eseq_class,
+                                       "reverse",
+                                       "()Lerjang/ESeq;");
 
   jclass econs_class = je->FindClass("erjang/ECons");
   m_econs__head    = je->GetMethodID(econs_class, "head", "()Lerjang/EObject;");
