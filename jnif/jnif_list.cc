@@ -12,6 +12,7 @@ static jclass    elist_class;
 static jmethodID m_elist__make;
 static jmethodID m_eseq__length;
 static jmethodID m_eseq__reverse;
+static jmethodID m_eseq__cons;
 static jmethodID m_econs__head;
 static jmethodID m_econs__tail;
 
@@ -94,20 +95,18 @@ extern ERL_NIF_TERM enif_make_list_from_array(ErlNifEnv* ee, const ERL_NIF_TERM 
 {
   JNIEnv *je = ee->je;
 
-  if (cnt == 0) {
-    return (ERL_NIF_TERM) empty_list;
+  // special case because empty_list already is a GlobalRef
+  if (cnt == 0)
+    return J2E(empty_list);
+
+  jobject head = empty_list;
+  for (int i = cnt-1; i >= 0; i++) {
+    head = je->CallObjectMethod( head, m_eseq__cons, earr[i] );
   }
 
-  jobjectArray arr = je->NewObjectArray(cnt, eobject_class, NULL);
-  for (int i = 0; i < cnt; i++)
-    {
-      ee->je->SetObjectArrayElement(arr, i, E2J(earr[i]));
-    }
-
-  jobject list = ee->je->CallStaticObjectMethod(elist_class, m_elist__make, arr);
-  return jnif_retain(ee, list);
-
+  return jnif_retain(ee, head);
 }
+
 
 extern ERL_NIF_TERM enif_make_list (ErlNifEnv* ee, unsigned cnt, ...)
 {
@@ -163,6 +162,9 @@ void initialize_jnif_list(JavaVM* vm, JNIEnv *je)
   m_eseq__reverse    = je->GetMethodID(eseq_class,
                                        "reverse",
                                        "()Lerjang/ESeq;");
+  m_eseq__cons    = je->GetMethodID(eseq_class,
+                                    "cons",
+                                    "(Lerjang/EObject;)Lerjang/ESeq;");
 
   jclass econs_class = je->FindClass("erjang/ECons");
   m_econs__head    = je->GetMethodID(econs_class, "head", "()Lerjang/EObject;");
