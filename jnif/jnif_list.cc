@@ -6,6 +6,7 @@ static jclass    eobject_class;
 static jmethodID m_eobject__testCons;
 static jmethodID m_eobject__testNonEmptyList;
 static jmethodID m_eobject__testSeq;
+static jmethodID m_eobject__isNil;
 
 static jclass    elist_class;
 static jmethodID m_elist__make;
@@ -17,6 +18,11 @@ static jclass    ERT_class;
 static jmethodID m_ERT__cons;
 
 static jobject empty_list;
+
+extern int enif_is_empty_list(ErlNifEnv *ee, ERL_NIF_TERM term)
+{
+  return ee->je->CallBooleanMethod( E2J(term), m_eobject__isNil ) ? NIF_TRUE : NIF_FALSE;
+}
 
 extern int enif_is_list (ErlNifEnv* ee, ERL_NIF_TERM term)
 {
@@ -106,6 +112,9 @@ void initialize_jnif_list(JavaVM* vm, JNIEnv *je)
   m_eobject__testNonEmptyList    = je->GetMethodID(eobject_class,
                                               "testNonEmptyList",
                                               "()Lerjang/ECons;");
+  m_eobject__isNil    = je->GetMethodID(eobject_class,
+                                              "isNil",
+                                              "()Z");
 
   elist_class      = je->FindClass("erjang/EList");
   elist_class      = (jclass) je->NewGlobalRef(elist_class);

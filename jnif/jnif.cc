@@ -14,6 +14,8 @@
 static JavaVM *jvm;
 
 static jmethodID m_eobject__testReference;
+static jmethodID m_eobject__testFunction;
+static jmethodID m_eobject__testPort;
 
 static jclass    ERT_class;
 static jmethodID m_ERT__badarg;
@@ -38,6 +40,20 @@ int enif_is_ref(ErlNifEnv* ee, ERL_NIF_TERM term)
 {
   JNIEnv *je = ee->je;
   jobject ok = je->CallObjectMethod((jobject)term, m_eobject__testReference);
+  return ok != JVM_NULL;
+}
+
+int enif_is_fun(ErlNifEnv* ee, ERL_NIF_TERM term)
+{
+  JNIEnv *je = ee->je;
+  jobject ok = je->CallObjectMethod((jobject)term, m_eobject__testFunction);
+  return ok != JVM_NULL;
+}
+
+int enif_is_port(ErlNifEnv* ee, ERL_NIF_TERM term)
+{
+  JNIEnv *je = ee->je;
+  jobject ok = je->CallObjectMethod((jobject)term, m_eobject__testPort);
   return ok != JVM_NULL;
 }
 
@@ -229,6 +245,8 @@ static void init_jvm_data(JavaVM *vm, JNIEnv* je)
 
   jclass eobject_class      = je->FindClass("erjang/EObject");
   m_eobject__testReference  = je->GetMethodID(eobject_class, "testReference", "()Lerjang/ERef;");
+  m_eobject__testFunction   = je->GetMethodID(eobject_class, "testFunction", "()Lerjang/EFun;");
+  m_eobject__testPort       = je->GetMethodID(eobject_class, "testPort", "()Lerjang/EPort;");
 
   ERT_class = je->FindClass("erjang/ERT");
   ERT_class = (jclass)je->NewGlobalRef(ERT_class);
