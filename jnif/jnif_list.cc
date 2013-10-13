@@ -90,6 +90,25 @@ extern ERL_NIF_TERM enif_make_list_cell (ErlNifEnv* ee, ERL_NIF_TERM car, ERL_NI
 }
 
 
+extern ERL_NIF_TERM enif_make_list_from_array(ErlNifEnv* ee, const ERL_NIF_TERM earr[], unsigned cnt)
+{
+  JNIEnv *je = ee->je;
+
+  if (cnt == 0) {
+    return (ERL_NIF_TERM) empty_list;
+  }
+
+  jobjectArray arr = je->NewObjectArray(cnt, eobject_class, NULL);
+  for (int i = 0; i < cnt; i++)
+    {
+      ee->je->SetObjectArrayElement(arr, i, E2J(earr[i]));
+    }
+
+  jobject list = ee->je->CallStaticObjectMethod(elist_class, m_elist__make, arr);
+  return jnif_retain(ee, list);
+
+}
+
 extern ERL_NIF_TERM enif_make_list (ErlNifEnv* ee, unsigned cnt, ...)
 {
 
