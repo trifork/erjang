@@ -182,3 +182,9 @@ extern ERL_NIF_TERM enif_make_uint64 (ErlNifEnv* ee, ErlNifUInt64 i)
 
   return jnif_retain(ee, boxed);
 }
+
+extern ERL_NIF_TERM enif_make_double(ErlNifEnv* ee, double d)
+{
+  jobject boxed = ee->je->CallStaticObjectMethod(ERT_class, m_ERT__box_double, d);
+  return jnif_retain(ee, boxed);
+}
