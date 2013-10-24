@@ -32,7 +32,10 @@ static void* jnif_macos_start_routine(void* a)
 
 #endif
 
-
+int enif_equal_tids(ErlNifTid tid1, ErlNifTid tid2)
+{
+  return pthread_equal((pthread_t)tid1, (pthread_t)tid2) ? NIF_TRUE : NIF_FALSE;
+}
 
 int enif_thread_create(char *name,
                        ErlNifTid *tid,

@@ -16,9 +16,12 @@ static JavaVM *jvm;
 static jmethodID m_eobject__testReference;
 static jmethodID m_eobject__testFunction;
 static jmethodID m_eobject__testPort;
+static jmethodID m_eobject__equals;
+static jmethodID m_eobject__compare;
 
 static jclass    ERT_class;
 static jmethodID m_ERT__badarg;
+static jmethodID m_ERT__make_ref;
 
 
 void* enif_realloc(void* ptr, size_t size)
@@ -34,6 +37,62 @@ void *enif_alloc(size_t size)
 void enif_free(void *data)
 {
   free(data);
+}
+
+int enif_fprintf(void/* FILE* */ *filep, const char *format, ...)
+{
+  va_list vl;
+  va_start(vl, format);
+  int result = vfprintf((FILE*) filep, format, vl);
+  va_end(vl);
+  return result;
+}
+
+int enif_consume_timeslice(ErlNifEnv* env, int percent)
+{
+  // TODO: Figure out if this is really needed.
+  // We can definitively do something reasonable, but need to understand what.
+  return 0;
+}
+
+int enif_is_identical(ERL_NIF_TERM term1, ERL_NIF_TERM term2)
+{
+  if (term1 == term2)
+    return NIF_TRUE;
+
+  jobject o1 = E2J(term1);
+  jobject o2 = E2J(term2);
+
+  JNIEnv *je;
+  if (jvm->AttachCurrentThreadAsDaemon((void**)&je, NULL) == JNI_OK) {
+    if (je->CallBooleanMethod(o1, m_eobject__equals, o2)) {
+      return NIF_TRUE;
+    } else {
+      return NIF_FALSE;
+    }
+  }
+
+  return NIF_FALSE;
+}
+
+int enif_compare(ERL_NIF_TERM term1, ERL_NIF_TERM term2)
+{
+  if (term1 == term2)
+    return 0;
+
+  jobject o1 = E2J(term1);
+  jobject o2 = E2J(term2);
+
+  JNIEnv *je;
+  if (jvm->AttachCurrentThreadAsDaemon((void**)&je, NULL) == JNI_OK) {
+    return je->CallIntMethod(o1, m_eobject__compare, o2);
+  }
+
+  abort();
+}
+
+ERL_NIF_TERM enif_make_ref(ErlNifEnv *ee) {
+  return jnif_retain( ee, ee->je->CallStaticObjectMethod(ERT_class, m_ERT__make_ref));
 }
 
 int enif_is_ref(ErlNifEnv* ee, ERL_NIF_TERM term)
@@ -247,10 +306,15 @@ static void init_jvm_data(JavaVM *vm, JNIEnv* je)
   m_eobject__testReference  = je->GetMethodID(eobject_class, "testReference", "()Lerjang/ERef;");
   m_eobject__testFunction   = je->GetMethodID(eobject_class, "testFunction", "()Lerjang/EFun;");
   m_eobject__testPort       = je->GetMethodID(eobject_class, "testPort", "()Lerjang/EPort;");
+  m_eobject__equals         = je->GetMethodID(eobject_class, "equalsExactly", "(Lerjang/EObject;)Z");
+  m_eobject__compare        = je->GetMethodID(eobject_class, "erlangCompareTo", "(Lerjang/EObject;)I");
+
+  jclass ERT_class      = je->FindClass("erjang/ERT");
 
   ERT_class = je->FindClass("erjang/ERT");
   ERT_class = (jclass)je->NewGlobalRef(ERT_class);
-  m_ERT__badarg  = je->GetStaticMethodID(ERT_class, "badarg", "()Lerjang/ErlangError;");
+  m_ERT__badarg   = je->GetStaticMethodID(ERT_class, "badarg", "()Lerjang/ErlangError;");
+  m_ERT__make_ref = je->GetStaticMethodID(ERT_class, "make_ref", "()Lerjang/ERef;");
 }
 
 

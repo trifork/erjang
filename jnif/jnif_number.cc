@@ -1,8 +1,9 @@
 
 #include "jnif.h"
-
+#include <limits>
 
 static jmethodID m_eobject__testNumber;
+static jmethodID m_eobject__testInteger;
 static jmethodID m_enumber__doubleValue;
 static jmethodID m_enumber__intValue;
 static jmethodID m_enumber__longValue;
@@ -24,6 +25,9 @@ void initialize_jnif_number(JavaVM* vm, JNIEnv *je)
   m_eobject__testNumber     = je->GetMethodID(eobject_class,
                                               "testNumber",
                                               "()Lerjang/ENumber;");
+  m_eobject__testInteger    = je->GetMethodID(eobject_class,
+                                              "testInteger",
+                                              "()Lerjang/EInteger;");
 
   jclass enumber_class      = je->FindClass("erjang/ENumber");
   m_enumber__doubleValue    = je->GetMethodID(enumber_class,
@@ -87,9 +91,48 @@ int enif_get_int(ErlNifEnv* ee, ERL_NIF_TERM term, int* ip)
   return NIF_TRUE;
 }
 
+int enif_get_ulong(ErlNifEnv* ee, ERL_NIF_TERM term, unsigned long* ip)
+{
+  jobject o = ee->je->CallObjectMethod(E2J(term), m_eobject__testInteger);
+  if (o == NULL)
+    return NIF_FALSE;
+
+  *ip = ee->je->CallIntMethod(o, m_enumber__intValue);
+  return NIF_TRUE;
+}
+
+int enif_get_long(ErlNifEnv* ee, ERL_NIF_TERM term, long* ip)
+{
+  jobject o = ee->je->CallObjectMethod(E2J(term), m_eobject__testNumber);
+  if (o == NULL)
+    return NIF_FALSE;
+
+  if (sizeof(jint) == sizeof(long)) {
+    *ip = ee->je->CallIntMethod(o, m_enumber__intValue);
+  } else {
+    jlong val = ee->je->CallLongMethod(o, m_enumber__longValue);
+    if (val < std::numeric_limits<long>::min()
+        || val > std::numeric_limits<long>::max()) {
+      return NIF_FALSE;
+    }
+    *ip = val;
+  }
+  return NIF_TRUE;
+}
+
 int enif_get_int64(ErlNifEnv* ee, ERL_NIF_TERM term, ErlNifSInt64* ip)
 {
   jobject o = ee->je->CallObjectMethod(E2J(term), m_eobject__testNumber);
+  if (o == NULL)
+    return NIF_FALSE;
+
+  *ip = (jlong) ee->je->CallLongMethod(o, m_enumber__longValue);
+  return NIF_TRUE;
+}
+
+int enif_get_uint64(ErlNifEnv* ee, ERL_NIF_TERM term, ErlNifUInt64* ip)
+{
+  jobject o = ee->je->CallObjectMethod(E2J(term), m_eobject__testInteger);
   if (o == NULL)
     return NIF_FALSE;
 
@@ -180,6 +223,20 @@ extern ERL_NIF_TERM enif_make_uint64 (ErlNifEnv* ee, ErlNifUInt64 i)
     boxed = ee->je->CallStaticObjectMethod(ERT_class, m_ERT__box_int, (jint) i);
   }
 
+  return jnif_retain(ee, boxed);
+}
+
+extern ERL_NIF_TERM enif_make_int64 (ErlNifEnv* ee, ErlNifSInt64 i)
+{
+  jobject boxed;
+  boxed = ee->je->CallStaticObjectMethod(ERT_class, m_ERT__box_long, (jlong) i);
+  return jnif_retain(ee, boxed);
+}
+
+extern ERL_NIF_TERM enif_make_long (ErlNifEnv* ee, long i)
+{
+  jobject boxed;
+  boxed = ee->je->CallStaticObjectMethod(ERT_class, m_ERT__box_long, (jlong) i);
   return jnif_retain(ee, boxed);
 }
 

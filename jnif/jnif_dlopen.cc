@@ -7,7 +7,7 @@ typedef ErlNifEntry* (*nif_init_t)();
 void* enif_dlopen(const char* lib,
 		  void (*err_handler)(void*,const char*), void* err_arg)
 {
-  char buffer[NAME_MAX];
+  char buffer[strlen(lib)+4];
   void *so_handle;
 
   sprintf(buffer, "%s.so", lib);

@@ -1001,6 +1001,10 @@ public class ERT {
 		throw new ErlangError(am_function_clause, args);
 	}
 
+	public static ERef make_ref() {
+		return getLocalNode().createRef();
+	}
+	
 	/**
 	 * @param command
 	 * @return

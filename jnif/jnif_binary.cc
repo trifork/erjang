@@ -12,6 +12,7 @@ static jclass    ErlConvert_class;
 static jclass    ebinary_class;
 static jmethodID m_ebinary__make;
 static jmethodID m_ErlConvert__iolist_to_binary;
+static jmethodID m_ebitstring_substring;
 
 
 void initialize_jnif_binary(JavaVM* vm, JNIEnv *je)
@@ -35,6 +36,11 @@ void initialize_jnif_binary(JavaVM* vm, JNIEnv *je)
     je->GetStaticMethodID(ErlConvert_class,
                           "iolist_to_binary",
                           "(Lerjang/EObject;)Lerjang/EBitString;");
+
+  ebitstring_class = je->FindClass("erjang/EBitString");
+  m_ebitstring_substring = je->GetMethodID(ebitstring_class,
+                                           "substring",
+                                           "(JJ)Lerjang/EBitString;");
 }
 
 static void jnif_release_binary(struct jnif_bin_data *bd);
@@ -225,4 +231,14 @@ unsigned char *enif_make_new_binary(ErlNifEnv* ee,
   }
 
   return (unsigned char*) arr;
+}
+
+ERL_NIF_TERM enif_make_sub_binary(ErlNifEnv* ee, ERL_NIF_TERM bin_term, size_t pos, size_t size)
+{
+  jobject binary = E2J(bin_term);
+  jobject sub_bin = ee->je->CallObjectMethod(binary,
+                                             m_ebitstring_substring,
+                                             (jlong)(pos*8),
+                                             (long)(size*8));
+  return jnif_retain(ee, sub_bin);
 }
