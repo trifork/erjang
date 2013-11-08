@@ -8,11 +8,17 @@ while LINK=`readlink "$EJ_CMD"`; do EJ_CMD=$LINK; done
 ERJANG_DIR=`dirname "$EJ_CMD"`
 
 ##      -Xdebug -Xnoagent -Xrunjdwp:transport=dt_socket,address=8787,server=n,suspend=n \
+##     -Xdebug -Xrunjdwp:server=y,transport=dt_socket,address=4000,suspend=n \
+
+##    -XX:+UnlockCommercialFeatures \
+##    -XX:+FlightRecorder \
+##    -XX:FlightRecorderOptions=disk=true,dumponexit=true,defaultrecording=true \
 
 exec java \
     -server \
-    -XX:MaxJavaStackTraceDepth=100000 \
     -Derjang.inline_calls=true \
+    -Derjang.declare_missing_imports=true \
+    -Djava.library.path=/Users/krab/Projects/erjang/jnif \
     -Xmx1g -Xss50m \
     -XX:PermSize=128m \
     -jar $ERJANG_DIR/erjang-0.2.jar \

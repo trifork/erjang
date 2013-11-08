@@ -29,6 +29,7 @@ import com.trifork.clj_ds.ISeq;
 import com.trifork.clj_ds.PersistentHashSet;
 import com.trifork.clj_ds.PersistentHashMap;
 import com.trifork.clj_ds.Seqable;
+
 import erjang.EAtom;
 import erjang.ECons;
 import erjang.EInteger;
@@ -46,6 +47,7 @@ import erjang.NotImplemented;
 /**
  * 
  */
+@SuppressWarnings("rawtypes")
 public class ETableBag extends ETable {
 
 	/** holds an Integer with the bag size */
@@ -207,6 +209,7 @@ public class ETableBag extends ETable {
 		return sizeRef.get();
 	}
 
+	@SuppressWarnings("rawtypes")
 	@Override
 	public ESeq match(EPattern matcher) {		
 		
@@ -237,6 +240,7 @@ public class ETableBag extends ETable {
 	}
 	
 
+	@SuppressWarnings("rawtypes")
 	@Override
 	public ESeq match_object(final EPattern matcher) {		
 		

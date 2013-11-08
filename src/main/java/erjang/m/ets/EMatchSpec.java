@@ -463,6 +463,10 @@ public class EMatchSpec extends EPseudoTerm {
 			}
 			
 			this.bif = BIFUtil.getMethod("erlang", guard.getName(), args.length, true, false);
+			
+			if (bif == null) {
+				System.err.println("NO GUARD BIF erlang:"+guard.toString()+"/"+args.length);
+			}
 		}
 
 		/**

@@ -77,6 +77,7 @@ import erjang.beam.Arg.Kind;
 
 import erjang.beam.repr.Insn;
 import erjang.beam.repr.ExtFun;
+import erjang.beam.repr.Insn.S;
 import erjang.beam.repr.Operands;
 import erjang.beam.repr.Operands.Int;
 import erjang.beam.repr.Operands.XReg;
@@ -905,7 +906,16 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						break;
 					}
 
-					case K_try:
+					case K_try:{
+						Insn.YL insn = (Insn.YL) insn_;
+						TypeMap type_map_after = this.map[insn_idx+1];
+						vis.visitCatchBlockStart(opcode,
+												 decode_labelref(insn.label, type_map.exh),
+												 src_arg(insn_idx, insn.y),
+												 type_map_after.exh);
+						break;
+					}
+					
 					case K_catch: {
 						Insn.YL insn = (Insn.YL) insn_;
 						TypeMap type_map_after = this.map[insn_idx+1];
@@ -2153,7 +2163,12 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 				case K_catch:
 				case try_end:
 				case catch_end:
+				case line:
+				case try_case:
+				case is_eq_exact:
 					return false;
+					
+				case case_end:
 				default:
 					return true;
 				}

@@ -30,6 +30,7 @@ import com.trifork.clj_ds.PersistentHashMap;
 import erjang.EObject;
 import erjang.ETuple;
 
+@SuppressWarnings("rawtypes")
 class TypeMap {
 	private static Logger log = Logger.getLogger("erjang.beam");
 	private static Type TYPE_EOBJECT = Type.getType(EObject.class);

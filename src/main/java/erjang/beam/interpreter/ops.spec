@@ -243,6 +243,12 @@ gc_bif1 bif arg1 dest onFail:
 
 gc_bif2 bif arg1 arg2 dest onFail:
 	{EObject tmp = GET(bif).invoke(proc, new EObject[]{GET(arg1), GET(arg2)}); if (tmp==null) GOTO(onFail); SET(dest, tmp);}
+
+%class GcBif(ext_fun:EG args[0]:S args[1]:S args[2]:S dest:D label:L)
+
+gc_bif3 bif arg1 arg2 arg3 dest onFail:
+	{EObject tmp = GET(bif).invoke(proc, new EObject[]{GET(arg1), GET(arg2), GET(arg3)}); if (tmp==null) GOTO(onFail); SET(dest, tmp);}
+
 # TODO: Streamline these calls - e.g. cast to EFun2 instead of creating array
 
 

@@ -34,7 +34,6 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import kilim.Pausable;
 import kilim.analysis.ClassInfo;
@@ -50,9 +49,8 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
-import com.trifork.clj_ds.IPersistentCollection;
-
 import erjang.EAtom;
+import erjang.EBig;
 import erjang.EBinMatchState;
 import erjang.EBinary;
 import erjang.EBitString;
@@ -61,7 +59,6 @@ import erjang.ECons;
 import erjang.EDouble;
 import erjang.EFun;
 import erjang.EInteger;
-import erjang.EBig;
 import erjang.EInternalPID;
 import erjang.EList;
 import erjang.EModuleManager;
@@ -92,7 +89,6 @@ import erjang.beam.Arg.Kind;
 import erjang.beam.ModuleAnalyzer.FunInfo;
 import erjang.beam.repr.ExtFun;
 import erjang.beam.repr.Insn;
-import erjang.m.erlang.ErlBif;
 import erjang.m.erlang.ErlConvert;
 
 /**

@@ -1491,7 +1491,6 @@ public class EFile extends EDriverInstance {
 			break;
 		}
 
-
 		case FILE_PWD: {
 			d = new FileAsync() {
 

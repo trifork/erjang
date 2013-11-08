@@ -61,7 +61,7 @@ public class Main {
 				ErjangConfig.setenv(args[i+1], args[i+2]);
 				i += 2;
 			} else if ("+e".equals(args[i]) && i < args.length) {
-				erts_version = "erts-" + args[i+1];
+				erts_version = args[i+1];
 				i += 1;
 			}
 		}

@@ -229,6 +229,7 @@ public class Interpreter extends AbstractInterpreter {
 				return interpret(proc, pc, reg);
 			}
 
+			@SuppressWarnings("unused")
 			public EObject interpret(final EProc proc, int pc, EObject[] reg) throws Pausable {
 				final char[] code = Module.this.code;
 				EObject stack[] = proc.stack;
@@ -260,6 +261,7 @@ public class Interpreter extends AbstractInterpreter {
 							}
 							log.finer("INTP|"+proc.self_handle()+" (pc="+(pc-1)+"; sp="+sp+")"+opcode+"   "+reg[0]);
 							*/
+						insn_switch:
 							switch (opcode) {
 							case ENSURE_REG_CAPACITY: {
 								int max_x = code[pc++];

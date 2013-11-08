@@ -50,6 +50,7 @@ import erjang.m.erlang.ErlBif;
 /**
  * 
  */
+@SuppressWarnings("rawtypes")
 public class ETableSet extends ETable {
 	private boolean ordered;
 

@@ -18,7 +18,7 @@
 
 -module(estone_SUITE).
 %% Test functions
--export([all/1,estone/1]).
+-export([all/1,all/0,estone/1]).
 -export([init_per_testcase/2, fin_per_testcase/2]).
 
 %% Internal exports for EStone tests
@@ -76,6 +76,7 @@ fin_per_testcase(_Case, Config) ->
     ?t:timetrap_cancel(Dog),
     ok.
 
+all() -> all(suite).
 all(suite) -> [estone].
 
 estone(suite) ->

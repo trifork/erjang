@@ -71,7 +71,12 @@ public class NIOSelector extends Thread {
 		try {
 			run0();
 		} catch (Throwable e) {
+			System.err.println("Exception in select loop");
+			System.err.println("Exception in select loop: " + e.getClass());
+			System.err.println("Exception in select loop: " + e);
+			log.severe("unhandled exception in Select loop: " +e);
 			log.severe("unhandled exception in Select loop: " +e.getMessage());
+			e.printStackTrace(System.err);
 			log.log(Level.FINE, "details: ", e);
 		}
 	}

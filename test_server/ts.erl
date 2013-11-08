@@ -25,7 +25,7 @@ list(Mod) when is_atom(Mod) ->
     {module, ModSuite} = compile_and_load(Mod),
     
     lists:map(fun(Test) -> get_list(ModSuite,Test) end,
-	      ModSuite:all(suite)).
+	      ModSuite:all()).
 
 get_list(Mod,Test) ->
     case catch Mod:Test(suite) of

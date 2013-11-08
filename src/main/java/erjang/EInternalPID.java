@@ -34,6 +34,7 @@ public class EInternalPID extends EPID implements ELocalHandle {
 	private DistEntry distEntry;
 
 	// used by JNIF to hold a unique GlobalRef to this object
+	// TODO: figure out a way to garbage collect such global refs.
 	private long gref;
 	
 	public EInternalPID testInternalPID() {

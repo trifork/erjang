@@ -29,6 +29,7 @@ import com.trifork.clj_ds.PersistentTreeMap;
 /**
  * 
  */
+@SuppressWarnings("rawtypes")
 public class PersistentBag extends Object implements IPersistentBag {
 
 	public static PersistentBag EMPTY = new PersistentBag(PersistentHashMap.EMPTY, 0);

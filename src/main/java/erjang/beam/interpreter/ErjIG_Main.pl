@@ -199,7 +199,7 @@ sub access_expr($$) {
     } elsif ($macro eq 'SET') {
 	return "$var = (";
     } elsif ($macro eq 'GOTO') {
-	return "pc = $var";
+	return "do { pc = $var; break insn_switch; } while(false)";
     } elsif ($macro eq 'TABLEJUMP') {
 	return "pc = $var.lookup(";
     } else {die;}

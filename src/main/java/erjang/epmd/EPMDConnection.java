@@ -37,6 +37,7 @@ public class EPMDConnection extends PacketConnection {
 		this.epmdPort = epmdPort;
 	}
 
+	@SuppressWarnings("unused")
 	@Override
 	protected void receivePacket(ByteBuffer buf) {
 		
