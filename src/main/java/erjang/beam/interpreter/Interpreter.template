@@ -245,7 +245,7 @@ public class Interpreter extends AbstractInterpreter {
 				// For bitstring construction:
 				EBitStringBuilder bit_string_builder = null;
 
-				EObject prefetched1 = null, prefetched2 = null;
+				EObject prefetched1 = null, prefetched2 = null, prefetched3 = null;
 				int last_pc = pc;
 
 				while (true) try {
