@@ -478,6 +478,15 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						Arg src  = src_arg(insn_idx, insn.src);
 						Arg dest = dest_arg(insn_idx, insn.dest);
 
+						if (insns.size() > insn_idx+1) {
+						Insn next_insn = insns.get(insn_idx+1);
+						if (next_insn.opcode() == BeamOpcode.K_return) {
+							vis.visitInsn(BeamOpcode.K_return, src);
+							insn_idx += 1;
+							break;
+						}
+						}
+						
 						if (dest.kind != Kind.F) {
 							if (src.kind == Kind.F) {
 								dest = new Arg(dest, EDOUBLE_TYPE);

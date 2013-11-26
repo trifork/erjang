@@ -39,4 +39,13 @@ public class ExtFun {
 	public ETuple toSymbolic() {
 		return ETuple.make(EXTFUNC_ATOM, mod, fun, new ESmall(arity));
 	}
+	
+	public int hashCode() { return mod.hash + fun.hash + arity; }
+	public boolean equals(Object o) {
+		if (o instanceof ExtFun) {
+			ExtFun ext = (ExtFun) o;
+			return mod == ext.mod && fun == ext.fun && arity == ext.arity;
+		}
+		return false;
+	}
 }

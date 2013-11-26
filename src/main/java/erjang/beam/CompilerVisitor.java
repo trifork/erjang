@@ -613,6 +613,33 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			+ EFUN_DESCRIPTOR + ")V";
 
 	class ASMFunctionAdapter implements FunctionVisitor2 {
+		public class FunWithArgs {
+
+			private ExtFun fun;
+			private Arg[] args;
+
+			public FunWithArgs(ExtFun fun, Arg[] args) {
+				this.fun = fun;
+				this.args = args;
+			}
+			
+			@Override
+			public int hashCode() {
+				return fun.hashCode();
+			}
+			
+			@Override
+			public boolean equals(Object obj) {
+				if (obj instanceof FunWithArgs) {
+					FunWithArgs fwa = (FunWithArgs) obj;
+					return fun.equals(fwa.fun)
+							&& Arrays.equals(args, fwa.args);
+				}
+				return false;
+			}
+
+		}
+
 		private final EAtom fun_name;
 		private final int arity;
 		private final int startLabel;
@@ -640,6 +667,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 		private int bit_string_save;
 		private FunInfo funInfo;
 		private Collection<Integer> deadBlocks;
+		public Map<FunWithArgs,Label> local_self_call = new HashMap<FunWithArgs,Label>();
 
 		Label getLabel(int i) {
 			if (i <= 0)
@@ -3149,6 +3177,17 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 				}
 
+				Label label;
+				FunWithArgs fwa = new FunWithArgs(fun, args);
+				if (is_tail && (label = local_self_call.get(fwa)) != null) {
+					mv.visitJumpInsn(GOTO, label);
+					return;
+				} else if (is_tail) {
+					label = new Label();
+					mv.visitLabel(label);
+					ASMFunctionAdapter.this.local_self_call.put(fwa, label);
+				}
+				
 				BuiltInFunction bif = null;
 
 				bif = BIFUtil.getMethod(fun.mod.getName(), fun.fun.getName(),
