@@ -76,6 +76,8 @@ import erjang.Module;
 import erjang.NIF;
 import erjang.NotImplemented;
 import erjang.BIF.Type;
+import erjang.beam.BIFUtil;
+import erjang.beam.BuiltInFunction;
 import erjang.driver.IO;
 import erjang.m.ets.EMatchSpec;
 import erjang.m.java.JavaObject;
@@ -2335,5 +2337,17 @@ public class ErlBif {
 
 	}
 	
+	@BIF
+	public static EAtom is_builtin(EObject m, EObject f, EObject a) {
+		EAtom mod  = m.testAtom();
+		EAtom fun  = f.testAtom();
+		ESmall ary = a.testSmall();
+		
+		if (mod == null || fun == null || ary == null)
+			throw ERT.badarg(m, f, a);
+		
+		BuiltInFunction bif = BIFUtil.getMethod(mod, fun, ary.value, false, false);
+		return ERT.box( bif != null );
+	}
     
 }
