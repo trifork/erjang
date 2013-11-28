@@ -1478,21 +1478,45 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				}
 				// {test,bs_get_integer2,{f,348},[{x,3},4,{integer,32},1,{field_flags,0},{x,4}]}
 				case bs_get_integer2: {
-					push(in, EBINMATCHSTATE_TYPE);
-					push(bits, Type.INT_TYPE);
-					push_int(unit);
-					push_int(flags);
-					mv.visitMethodInsn(INVOKEVIRTUAL,
-							EBINMATCHSTATE_TYPE.getInternalName(), test.name(),
-							"(III)" + EINTEGER_TYPE.getDescriptor());
+					ESmall small;
+					int int_bits;
+					if (bits.kind == Kind.IMMEDIATE 
+							&& bits.value != null
+							&& (small=bits.value.testSmall()) != null
+							&& (int_bits = (small.value * unit)) <= 32
+							&& flags == 0) {
+						
+						push(in, EBINMATCHSTATE_TYPE);
+						push_int(int_bits);
+						
+						mv.visitMethodInsn(INVOKEVIRTUAL, EBINMATCHSTATE_TYPE.getInternalName(), 
+								"bs_get_integer2__0", "(I)L" + ESMALL_NAME + ";");
+						
+						mv.visitInsn(DUP);
+						mv.visitVarInsn(ASTORE, scratch_reg);
+						mv.visitJumpInsn(IFNULL, getLabel(failLabel));
+						mv.visitVarInsn(ALOAD, scratch_reg);
+						
+						pop(dst, ESMALL_TYPE);
+						return;
+						
+					} else {					
+						push(in, EBINMATCHSTATE_TYPE);
+						push(bits, Type.INT_TYPE);
+						push_int(unit);
+						push_int(flags);
+						mv.visitMethodInsn(INVOKEVIRTUAL,
+								EBINMATCHSTATE_TYPE.getInternalName(), test.name(),
+								"(III)" + EINTEGER_TYPE.getDescriptor());
 
-					mv.visitInsn(DUP);
-					mv.visitVarInsn(ASTORE, scratch_reg);
-					mv.visitJumpInsn(IFNULL, getLabel(failLabel));
-					mv.visitVarInsn(ALOAD, scratch_reg);
+						mv.visitInsn(DUP);
+						mv.visitVarInsn(ASTORE, scratch_reg);
+						mv.visitJumpInsn(IFNULL, getLabel(failLabel));
+						mv.visitVarInsn(ALOAD, scratch_reg);
 
-					pop(dst, EOBJECT_TYPE);
-					return;
+						pop(dst, EOBJECT_TYPE);
+						return;
+					}
 				}
 				case bs_get_float2: {
 					push(in, EBINMATCHSTATE_TYPE);
@@ -2436,6 +2460,21 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			@Override
 			public void visitTest(BeamOpcode test, int failLabel, Arg arg1,
 					Type out) {
+				
+				if (test == BeamOpcode.is_integer 
+						&& (arg1.type.equals(ESMALL_TYPE) || arg1.type.equals(EINTEGER_TYPE))) {
+					return;
+				}
+				
+				
+				if (test == BeamOpcode.is_integer 
+						&& (arg1.type.equals(Type.INT_TYPE))) {
+					push(arg1, arg1.type);
+					mv.visitMethodInsn(INVOKESTATIC, ERT_NAME, "box", "(I)L" + ESMALL_TYPE + ";");
+				}
+				
+				
+				
 				Method test_bif = get_test_bif(test, arg1.type);
 
 				// System.err.println(test_bif);

@@ -205,6 +205,13 @@ public class EBinMatchState extends EPseudoTerm {
 		return null;
 	}
 		
+	public ESmall bs_get_integer2__0(int bits) {
+		if ((bin.bitSize()-offset) < bits) return null;
+		int value = bin.intBitsAt(offset, bits);
+		offset += bits;
+		return new ESmall(value);	
+	}
+	
 	public EInteger bs_get_integer2(int size, int unit, int flags) {
 
 		size *= unit;

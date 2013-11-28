@@ -74,16 +74,15 @@ import erjang.beam.FunctionVisitor2;
 import erjang.beam.ModuleAdapter;
 import erjang.beam.ModuleVisitor;
 import erjang.beam.Arg.Kind;
-
 import erjang.beam.repr.Insn;
 import erjang.beam.repr.ExtFun;
 import erjang.beam.repr.Insn.S;
 import erjang.beam.repr.Operands;
 import erjang.beam.repr.Operands.Int;
+import erjang.beam.repr.Operands.SourceOperand;
 import erjang.beam.repr.Operands.XReg;
 import static erjang.beam.repr.Operands.SourceOperand;
 import static erjang.beam.repr.Operands.DestinationOperand;
-
 import static erjang.beam.CodeAtoms.*;
 
 public class BeamTypeAnalysis extends ModuleAdapter {
@@ -2308,6 +2307,13 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						throw new Error("matching without a state");
 					}
 
+					Int bits = insn.src4.testInt();
+					int unit = insn.i5;
+					int flags = insn.i6;
+					if (unit == 1 && flags == 0 && bits != null && (bits.value*unit) <= 32 ) {
+						return setType(current, insn.dest7, ESMALL_TYPE);
+					}
+					
 					/* DISABLED because it triggers a get_test_bif()-related bug
 					if (insn.i5 <= 32) {
 						return setType(current, insn.dest7, Type.INT_TYPE);
@@ -2363,6 +2369,16 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					return setType(current, insn.dest5, ESMALL_TYPE);
 				}
 
+				case is_integer:
+				{
+					Insn.LD insn = (Insn.LD) insn_;
+					checkArg(current, insn.dest);
+					if (getType(current, insn.dest) == Type.INT_TYPE
+							|| getType(current, insn.dest).equals(ESMALL_TYPE) ) {
+						return setType(current, insn.dest, ESMALL_TYPE);
+					}
+				}
+				
 				default: { // All type tests:
 					Insn.LD insn = (Insn.LD) insn_;
 					checkArg(current, insn.dest);
