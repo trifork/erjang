@@ -23,8 +23,10 @@ import static erjang.beam.CodeAtoms.FALSE_ATOM;
 import static erjang.beam.CodeAtoms.TRUE_ATOM;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -270,6 +272,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 	}
 
 	Map<EObject, String> constants = new HashMap<EObject, String>();
+	Map<BitSet, String> bitsets = new HashMap<BitSet, String>();
 
 	/*
 	 * (non-Javadoc)
@@ -410,6 +413,24 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 		}
 
+		for (Map.Entry<BitSet,String> ent : bitsets.entrySet()) {
+			BitSet bs = ent.getKey();
+			String name = ent.getValue();
+			
+			FieldVisitor fv = cv.visitField(ACC_STATIC, name, Type.getDescriptor(BitSet.class), null, null);
+			fv.visitEnd();
+			
+			byte[] bytes = bs.toByteArray();
+			mv.visitLdcInsn(new String(bytes, StandardCharsets.ISO_8859_1));
+			mv.visitLdcInsn("ISO-8859-1");
+			mv.visitMethodInsn(INVOKEVIRTUAL, Type.getInternalName(String.class),
+					"getBytes", "(Ljava/lang/String;)[B");
+			
+			mv.visitMethodInsn(INVOKESTATIC, 
+					Type.getInternalName(BitSet.class), "valueOf", "([B)" + Type.getDescriptor(BitSet.class));
+			mv.visitFieldInsn(PUTSTATIC, self_type.getInternalName(), name, Type.getDescriptor(BitSet.class));
+		}
+		
 		cv.visitField(ACC_STATIC, "attributes", ESEQ_DESC, 
 				null, null).visitEnd();
 		constants.put(atts.reverse(), "attributes");
@@ -2014,7 +2035,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			 * @param size
 			 * @return
 			 */
-			private String getConstantName(EObject value, int size) {
+			private String getConstantName(Object value, int size) {
 				if (value instanceof EAtom)
 					return "atom_" + EUtil.toJavaIdentifier((EAtom) value);
 				if (value instanceof ENumber)
@@ -2023,6 +2044,8 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 									.replace('-', '_'));
 				if (value instanceof EString)
 					return "str_" + size;
+				if (value instanceof BitSet)
+					return "bitset_" + size;
 				else
 					return "cst_" + size;
 			}
