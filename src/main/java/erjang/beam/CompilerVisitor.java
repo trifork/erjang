@@ -2898,23 +2898,85 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				if (all_small_ints) {
 					int[] ivals = new int[values.length];
 					Label[] label = new Label[values.length];
+					Set<Label> targetset = new HashSet<Label>();
 
 					for (int i = 0; i < values.length; i++) {
 						ivals[i] = values[i].value.asInt();
 						label[i] = getLabel(targets[i]);
+						targetset.add(label[i]);
 					}
 
-					if (!in.type.equals(ESMALL_TYPE)) {
+					if (!in.type.equals(ESMALL_TYPE) && !in.type.equals(Type.INT_TYPE)) {
 						push(in, EOBJECT_TYPE);
 						mv.visitMethodInsn(INVOKEVIRTUAL, EOBJECT_NAME, "testSmall", "()Lerjang/ESmall;");
 						mv.visitJumpInsn(IFNULL, getLabel(failLabel));
 					}
 
-					push(in, Type.INT_TYPE);
-
 					sort(ivals, label);
 
-					mv.visitLookupSwitchInsn(getLabel(failLabel), ivals, label);
+					if (targetset.size() == 2 && ivals.length > 8 && is_byte_values(ivals)) {
+						
+						Label[] labelset = targetset.toArray(new Label[2]);
+						BitSet bs0 = new BitSet(16);
+						BitSet bs1 = new BitSet(16);
+						for (int i = 0; i < ivals.length; i++) {
+							if (label[i] == labelset[0]) {
+								bs0.set(ivals[i], true);
+							} else {
+								bs1.set(ivals[i], true);
+							}
+						}
+
+						String name0;
+						if((name0=bitsets.get(bs0)) == null) {
+							name0 = getConstantName(bs0, bitsets.size());
+							bitsets.put(bs0, name0);
+						}
+
+						String name1;
+						if((name1=bitsets.get(bs1)) == null) {
+							name1 = getConstantName(bs1, bitsets.size());
+							bitsets.put(bs1, name1);
+						}
+
+						mv.visitFieldInsn(GETSTATIC, self_type.getInternalName(), name0, Type.getDescriptor(BitSet.class));
+						push(in, Type.INT_TYPE);
+						mv.visitMethodInsn(INVOKEVIRTUAL, Type.getInternalName(BitSet.class), "get", "(I)Z");
+						mv.visitJumpInsn(IFNE, labelset[0]);
+						
+						mv.visitFieldInsn(GETSTATIC, self_type.getInternalName(), name1, Type.getDescriptor(BitSet.class));
+						push(in, Type.INT_TYPE);
+						mv.visitMethodInsn(INVOKEVIRTUAL, Type.getInternalName(BitSet.class), "get", "(I)Z");
+						mv.visitJumpInsn(IFNE, labelset[1]);
+						
+						mv.visitJumpInsn(GOTO, getLabel(failLabel));
+						
+						
+					} else if (ivals.length > 4 && is_bitset_member_test(ivals, label)) {
+						
+						BitSet bs = new BitSet(16);
+						for (int i = 0; i < ivals.length; i++) {
+							bs.set(ivals[i], true);
+						}
+
+						String name;
+						if((name=bitsets.get(bs)) == null) {
+							name = getConstantName(bs, bitsets.size());
+							bitsets.put(bs, name);
+						}
+						mv.visitFieldInsn(GETSTATIC, self_type.getInternalName(), name, Type.getDescriptor(BitSet.class));
+						
+						push(in, Type.INT_TYPE);
+						
+						mv.visitMethodInsn(INVOKEVIRTUAL, Type.getInternalName(BitSet.class), "get", "(I)Z");
+
+						mv.visitJumpInsn(IFEQ, getLabel(failLabel));
+						mv.visitJumpInsn(GOTO, label[0]);
+						
+					} else {				
+						push(in, Type.INT_TYPE);
+						mv.visitLookupSwitchInsn(getLabel(failLabel), ivals, label);
+					}
 					return;
 				}
 
@@ -3045,6 +3107,25 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					mv.visitJumpInsn(GOTO, getLabel(failLabel));
 				}
 
+			}
+
+			private boolean is_byte_values(int[] ivals)
+			{
+				for (int i = 0; i < ivals.length; i++) 
+				{
+					if (ivals[i] < 0) return false;
+					if (ivals[i] >= (1<<16)) return false;
+				}
+				return true;
+			}
+			
+			private boolean is_bitset_member_test(int[] ivals, Label[] label) {
+				if (ivals.length < 2) return false;
+				for (int i = 0; i < ivals.length; i++) {
+					if (label[i] != label[0]) return false;
+					if (ivals[i] < 0 || ivals[i] >= 1<<16) return false;
+				}				
+				return true;
 			}
 
 			/**
