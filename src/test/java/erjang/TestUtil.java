@@ -31,7 +31,7 @@ public abstract class TestUtil {
 	static final String ERLC_PRG = OTP_HOME + File.separator + "bin" + File.separator + "erlc";
 	static final String ERL_PRG  = OTP_HOME + File.separator + "bin" + File.separator + "erl";
 
-    static final String EJ_PRG  = "./ej";
+    static final String EJ_PRG  = "./jerl";
 	static final String TEST_BEAM_DIR = "target/test-beam";
 
 	static final String TRIQ_HOME = ErjangConfig.getString("erjang.triq.root");
