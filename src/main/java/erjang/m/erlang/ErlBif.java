@@ -908,17 +908,17 @@ public class ErlBif {
 	}
 
 	@BIF(name = "div")
-	static public ENumber div(EObject v1, int v2) {
+	static public EInteger div(EObject v1, int v2) {
 		return v1.idiv(v2);
 	}
 
 	@BIF(name = "div")
-	static public ENumber div(ENumber n1, int v2) {
+	static public EInteger div(ENumber n1, int v2) {
 		return n1.idiv(v2);
 	}
 
 	@BIF(name = "div", type = Type.GUARD)
-	static public ENumber div$g(EObject v1, EObject v2) {
+	static public EInteger div$g(EObject v1, EObject v2) {
 		ENumber n1, n2;
 		if ((n1 = v1.testInteger()) != null &&
 		    (n2 = v2.testInteger()) != null)
