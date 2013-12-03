@@ -868,6 +868,11 @@ public class EFile extends EDriverInstance {
 								result_ok = false;
 								posix_errno = Posix.ENOMEM;
 							}
+
+							if (this.size == 0) {
+								result_ok = true;
+								this.again = false;
+							}
 						}
 					}
 
