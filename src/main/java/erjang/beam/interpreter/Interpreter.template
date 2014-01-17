@@ -302,6 +302,8 @@ public class Interpreter extends AbstractInterpreter {
 							log.warning("DB| Error when interpreting "+module_name()+"@"+last_pc+"; opcode="+(int)(code[last_pc])+"; prefetched1="+prefetched1+"; prefetched2="+prefetched2+" : "+e);
                             StringBuilder sb = new StringBuilder("Code:\n");
 							for (int i=Math.max(0,last_pc-15); i<Math.min(code.length,last_pc+5); i++) sb.append("  "+i+": "+(int)code[i]+"\n");
+                            sb.append("\nRegisters:\n");
+                            for (int i=0; i<Math.min(reg.length,10); i++) sb.append("  r"+i+" = "+reg[i]+"\n");
 							log.warning(sb.toString());
                             e.printStackTrace(System.err);
 						}
@@ -335,4 +337,10 @@ public class Interpreter extends AbstractInterpreter {
 		}
 
     } // class Module
+
+    /** For debugging purposes. */
+    private static EObject dump(String msg, EObject v) {
+        System.err.println("INTP| dump "+msg+": "+v);
+        return v;
+    }
 } // class Interpreter
