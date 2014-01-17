@@ -81,11 +81,12 @@ sub process_instruction {
 	$encoder_code .= "// DB| fetch_arg: $fetch_arg_name\n";
 	$varmap->{$fetch_arg_name} = "prefetched".++$i;
      }}
+    my $vartypemap = {};
 
     process_instruction_rec($insname, $directives,
 			    $ins_arg_map, $ins_arg_names, $ins_arg_types,
 			    $action,
-			    $code_acc, $varmap);
+			    $code_acc, $varmap, $vartypemap);
 }
 
 
@@ -110,11 +111,18 @@ for the instruction in question.
 Each instruction spec may give rise to more than one variant, with
 different encodings and action code, as determined by (primarily)
 %TYPES_SUBTYPES for the involved parameters.
+
+I<argmap> is the name-to-position map for all of the instruction's arguments.
+
+I<varmap> is the variable names for the current branched-on arguments.
+
+I<vartypemap> is the currenct argument base types for the current branched-on arguments.
+Its keyset is identical to that of I<varmap>.
 =cut
 sub process_instruction_rec {
     my ($insname, $directives,
 	$argmap, $ins_arg_names, $ins_arg_types,
-	$action, $code_acc, $varmap) = @_;
+	$action, $code_acc, $varmap, $vartypemap) = @_;
   again:
     my $eindent = "\t" x (1 + scalar keys %{$varmap});
     # First process all GETs, GET_PCs and IS_GUARDs, then the rest:
@@ -127,7 +135,7 @@ sub process_instruction_rec {
     {
 	my ($macro,$arg) = ($1,$2);
 	if (exists $varmap->{$arg}) { # Replacement is already known.
-	    $action = "$`".access_expr($macro, $varmap->{$arg})."$'";
+	    $action = "$`".access_expr($macro, $varmap->{$arg}, $vartypemap->{$arg})."$'";
 	    goto again;
 	} else { # Replacement is not known.
 	    $encoder_code .= "//DB| \$varmap{$arg}\n";
@@ -164,12 +172,15 @@ sub process_instruction_rec {
 
 		# Setup args for recursive call:
 		my %new_varmap = %{$varmap};
-
+		my %new_vartypemap = %{$vartypemap};
 		$new_varmap{$arg} = ErjIG_Operands::basetype_decoding_exp($base_type, "_$arg");
+		$new_vartypemap{$arg} = $base_type;
+
 		my $argno1 = $argno + $emitted;
 		process_instruction_rec("${insname}_$argno1$base_type", $directives,
-				    $argmap, $ins_arg_names, $ins_arg_types,
-				    $action, $new_code_acc, \%new_varmap);
+                                        $argmap, $ins_arg_names, $ins_arg_types,
+                                        $action, $new_code_acc,
+                                        \%new_varmap, \%new_vartypemap);
 		$encoder_code .= $eindent."} else ";
 		$first_bt = 0;
 	    }
@@ -191,11 +202,12 @@ sub process_instruction_rec {
 }
 
 sub access_expr($$) {
-    my ($macro, $var) = @_;
+    my ($macro, $var, $vartype) = @_;
     if ($macro eq 'GET' || $macro eq 'GET_PC') {
 	return $var;
     } elsif ($macro eq 'IS_GUARD') {
-	return $var ? "true" : "false";
+        my $is_guard = $ErjIG_Operands::TYPES_ALLOWED_OPS{$vartype}->{'IS_GUARD'};
+	return $is_guard ? "true" : "false";
     } elsif ($macro eq 'SET') {
 	return "$var = (";
     } elsif ($macro eq 'GOTO') {
