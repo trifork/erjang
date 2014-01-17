@@ -299,9 +299,11 @@ public class Interpreter extends AbstractInterpreter {
 						} else throw(e);
 					} catch (RuntimeException e) {
 						if (log.isLoggable(Level.WARNING)) {
-							log.warning("DB| Error when interpreting "+module_name()+"@"+(pc-1)+"; opcode="+code[last_pc]+"; prefetched1="+prefetched1+"; prefetched2="+prefetched2+" : "+e);
-							log.warning("Code:");
-							for (int i=Math.max(0,pc-15); i<Math.min(code.length,pc+5); i++) log.warning("  "+i+": "+(int)code[i]);
+							log.warning("DB| Error when interpreting "+module_name()+"@"+last_pc+"; opcode="+(int)(code[last_pc])+"; prefetched1="+prefetched1+"; prefetched2="+prefetched2+" : "+e);
+                            StringBuilder sb = new StringBuilder("Code:\n");
+							for (int i=Math.max(0,last_pc-15); i<Math.min(code.length,last_pc+5); i++) sb.append("  "+i+": "+(int)code[i]+"\n");
+							log.warning(sb.toString());
+                            e.printStackTrace(System.err);
 						}
 						throw e;
 					}
