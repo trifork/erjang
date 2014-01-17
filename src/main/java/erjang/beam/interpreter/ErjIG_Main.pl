@@ -143,7 +143,7 @@ sub process_instruction_rec {
 		my $new_code_acc = $code_acc;
 
 		$encoder_code .= $eindent if ($first_bt);
-		my $opClass = $ErjIG_Operands::TYPES_OPERAND_CLASS{$base_type};
+		my $opClass;
 		my $test_exp;
 		($test_exp, $opClass) = ErjIG_Operands::basetype_test_exp($base_type, "typed_insn.$arg_src_name");
 		$test_exp =~ s/\$([\w\d]+)/typed_insn.$ins_arg_names->[$argmap->{$1}]/g;
