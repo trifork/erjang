@@ -862,7 +862,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 				byte[] data = CompilerVisitor.make_invoker(
 						module_name.getName(), fun_name.getName(), self_type,
-						mname, mname, arity, true, is_exported, lambda,
+						mname, mname, arity, true, is_exported, false, lambda,
 						EOBJECT_TYPE, funInfo.may_return_tail_marker,
 						funInfo.is_pausable | funInfo.call_is_pausable);
 
@@ -3612,9 +3612,10 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 	static public byte[] make_invoker(String module, String function,
 			Type self_type, String mname, String fname, int arity,
-			boolean proc, boolean exported, Lambda lambda, Type return_type,
+                                      boolean proc, boolean exported, boolean is_guard,
+                                      Lambda lambda, Type return_type,
 			boolean is_tail_call, final boolean is_pausable) {
-
+        if (is_guard) exported = false;
 		int freevars = lambda == null ? 0 : lambda.freevars;
 
 		String outer_name = self_type.getInternalName();
@@ -3625,8 +3626,11 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				| ClassWriter.COMPUTE_MAXS);
 		int residual_arity = arity - freevars;
 		String super_class_name = EFUN_NAME + residual_arity
-				+ (exported ? "Exported" : "");
-		if (exported)
+            + (is_guard ? "Guard" : exported ? "Exported" : "");
+;
+		if (is_guard)
+			EFun.ensure_guard(residual_arity);
+		else if (exported)
 			EFun.ensure_exported(residual_arity);
 		else
 			EFun.ensure(residual_arity);

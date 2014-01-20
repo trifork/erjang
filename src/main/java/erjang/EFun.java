@@ -149,7 +149,6 @@ public abstract class EFun extends EObject implements Opcodes {
 	}
 
 	private static EFun do_make(Method method, String module) {
-
 		assert (Modifier.isStatic(method.getModifiers()));
 		assert (!Modifier.isPrivate(method.getModifiers()));
 
@@ -160,11 +159,12 @@ public abstract class EFun extends EObject implements Opcodes {
 			ary -= 1;
 		String fname = erlangNameOfMethod(method);
 		String mname = EUtil.getJavaName(EAtom.intern(fname), ary);
+        boolean is_guard = isGuardBifMethod(method);
 
 		Class<?> declaringClass = method.getDeclaringClass();
 		Type type = Type.getType(declaringClass);
 		byte[] data = CompilerVisitor.make_invoker(module, fname, type, mname, method
-				.getName(), ary, proc, true, null, Type.getType(method.getReturnType()), true, true);
+                                                   .getName(), ary, proc, true, is_guard, null, Type.getType(method.getReturnType()), true, true);
 
 		ClassLoader cl = declaringClass.getClassLoader();
 
@@ -195,6 +195,11 @@ public abstract class EFun extends EObject implements Opcodes {
 		}
 	}
 
+	private static boolean isGuardBifMethod(Method method) {
+		BIF bif_ann = method.getAnnotation(BIF.class);
+		return (bif_ann != null &&
+                bif_ann.type() == BIF.Type.GUARD);
+    }
 
 	/*==================== Code generation of EFun{arity}: ==================*/
 	@SuppressWarnings("unchecked")
@@ -619,6 +624,73 @@ public abstract class EFun extends EObject implements Opcodes {
 
 	/*^^^^^^^^^^^^^^^^^^^^ Code generation of EFun{arity}Exported ^^^^^^^^^^*/
 
+	/*==================== Code generation of EFun{arity}Guard: ==========*/
+	@SuppressWarnings("unchecked")
+	private static Class<? extends EFun> get_guard_fun_class(int arity) {
+		String className = EFUN_TYPE.getClassName() + arity + "Guard";
+		try {
+			return (Class<? extends EFun>) Class.forName(className, true, EFun.class.getClassLoader());
+		} catch (ClassNotFoundException ex) {
+			// that's what we'll do here...
+		}
+
+		byte[] data = get_guard_fun_class_data(arity);
+		data = weave(data);
+        System.err.println("ERK| Generating "+className+"!");
+		return ERT.defineClass(EFun.class.getClassLoader(), className, data);
+	}
+
+	private static byte[] get_guard_fun_class_data(int arity) {
+		/* Code template:
+		 * public abstract class EFun{arity}Guard extends EFun{arity} {
+         *   public <init>() {super();}
+         *   public erjang.EObject invoke(erjang.EProc, erjang.EObject[], kilim.Fiber) throws kilim.Pausable {
+         *     // Same as EFun.invoke, but without the tail-call loop.
+         *   }
+		 * }
+		 */
+
+		ensure(arity); // Ensure presence of superclass.
+		String super_type = EFUN_TYPE.getInternalName() + arity;
+		String self_type = super_type + "Guard";
+
+		ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES|ClassWriter.COMPUTE_MAXS);
+		cw.visit(Opcodes.V1_5, Opcodes.ACC_PUBLIC | Opcodes.ACC_ABSTRACT,
+				self_type, null, super_type, null);
+
+        // TODO: Factor out default-constructor creation.
+		MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PUBLIC/*PROTECTED*/, "<init>", "()V", null, null);
+        mv.visitCode();
+		mv.visitVarInsn(Opcodes.ALOAD, 0);
+		mv.visitMethodInsn(Opcodes.INVOKESPECIAL, super_type, "<init>", "()V");
+		mv.visitInsn(Opcodes.RETURN);
+		mv.visitMaxs(1, 1);
+		mv.visitEnd();
+
+		make_invoke_method_for_guard(cw, self_type, arity);
+        cw.visitEnd();
+
+        byte[] data = cw.toByteArray();
+		return data;
+	}
+
+    private static void make_invoke_method_for_guard(ClassWriter cw, String className, int arity) {
+		MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "invoke", EUtil
+				.getSignature(arity, true), null, PAUSABLE_EX);
+		mv.visitCode();
+		mv.visitVarInsn(ALOAD, 0);
+		mv.visitVarInsn(ALOAD, 1);
+		for (int i = 0; i < arity; i++) {
+			mv.visitVarInsn(ALOAD, i + 2);
+		}
+		mv.visitMethodInsn(INVOKEVIRTUAL, className, "invoke_tail", EUtil
+				.getSignature(arity, true));
+		mv.visitInsn(ARETURN);
+		mv.visitMaxs(arity + 2, arity + 2);
+		mv.visitEnd();
+    }
+	/*^^^^^^^^^^^^^^^^^^^^ Code generation of EFun{arity}Guard: ^^^^^^^^^^*/
+
 	/*==================== Code generation utilities:  ==================*/
 	/**
 	 * @param mv
@@ -669,6 +741,9 @@ public abstract class EFun extends EObject implements Opcodes {
 	}
 	public static void ensure_exported(int arity) {
 		get_exported_fun_class(arity);
+	}
+	public static void ensure_guard(int arity) {
+		get_guard_fun_class(arity);
 	}
 
 	/**
