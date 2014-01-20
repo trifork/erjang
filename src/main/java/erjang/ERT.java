@@ -34,6 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import erjang.codegen.EFunCG;
 import kilim.Mailbox;
 import kilim.Pausable;
 import kilim.Task;
@@ -649,15 +650,15 @@ public class ERT {
 				
 				final EFun pfun = EModuleManager.resolve(new FunID(pmod, f, arity+1));
 				
-				return EFun.get_fun_with_handler(pmod.getName(), f.getName(), arity, new EFunHandler() {
-					@Override
-					public EObject invoke(EProc proc, EObject[] args) throws Pausable {
-						EObject[] real_args = new EObject[args.length+1];
-						System.arraycopy(args, 0, real_args, 0, args.length);
-						real_args[args.length] = tup;
-						return pfun.invoke(proc, real_args);
-					}
-				}, ERT.class.getClassLoader());
+				return EFunCG.get_fun_with_handler(pmod.getName(), f.getName(), arity, new EFunHandler() {
+                    @Override
+                    public EObject invoke(EProc proc, EObject[] args) throws Pausable {
+                        EObject[] real_args = new EObject[args.length + 1];
+                        System.arraycopy(args, 0, real_args, 0, args.length);
+                        real_args[args.length] = tup;
+                        return pfun.invoke(proc, real_args);
+                    }
+                }, ERT.class.getClassLoader());
 				
 			}
 			

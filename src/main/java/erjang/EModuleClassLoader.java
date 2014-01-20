@@ -25,6 +25,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 
 import erjang.beam.RamClassRepo;
+import erjang.codegen.EFunCG;
 
 /**
  * Each module has its own class loader.
@@ -66,10 +67,10 @@ public class EModuleClassLoader extends URLClassLoader {
 				int num_start  = EFUN_NAME.length();
 				int num_end    = name.length() - "Exported".length();
 				int arity = Integer.parseInt(name.substring(num_start, num_end));
-				return EFun.get_exported_fun_class(arity);
+				return EFunCG.get_exported_fun_class(arity);
 			} else {
 				int arity = Integer.parseInt(name.substring(EFUN_NAME.length()));
-				return EFun.get_fun_class(arity);
+				return EFunCG.get_fun_class(arity);
 			}
 		}
 

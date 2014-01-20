@@ -22,6 +22,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
+import erjang.codegen.EFunCG;
 import kilim.Pausable;
 
 
@@ -144,7 +145,7 @@ public abstract class EModule {
 
 				//System.out.println("N export " + f);
 
-				EModuleManager.add_export(this, f, EFun.make(method, mod));
+				EModuleManager.add_export(this, f, EFunCG.funForMethod(method, mod));
 			}
 
 		}

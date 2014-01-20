@@ -34,6 +34,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import erjang.beam.Compiler;
+import erjang.codegen.EFunCG;
 import erjang.m.erlang.ErlBif;
 import erjang.m.java.JavaObject;
 import kilim.Pausable;
@@ -120,73 +121,73 @@ public class EModuleManager {
 		}
 
 		private EFun makeErrorHandler() {
-			return EFun.get_fun_with_handler(fun.module.getName(), fun.function.getName(), fun.arity,
-					new EFunHandler() {
-				
-					@Override
-						public String toString() {
-							return "#EFunHandler<" + fun.toString() + ">";
-						}
-				
-					public EObject invoke(EProc proc, EObject[] args)
-								throws Pausable {
-							
-							/** Get reference to error_handler:undefined_function/3 */
-						
-							EFun uf = proc.undefined_function.resolved_value;
+			return EFunCG.get_fun_with_handler(fun.module.getName(), fun.function.getName(), fun.arity,
+                    new EFunHandler() {
 
-							/** this is just some debugging info to help understand downstream errors */
-							if (get_module_info(fun.module).is_loaded()) {
-								if (Boolean.getBoolean("erjang.declare_missing_imports") && fun.function != am_prep_stop && fun.function != am___info__)
-									log.log(Level.INFO, "MISSING "+fun);
-							} else {
-								log.log(Level.FINER, "resolving"+fun);
-							}
+                        @Override
+                        public String toString() {
+                            return "#EFunHandler<" + fun.toString() + ">";
+                        }
 
-							Class<?> c = null;
-							try {
-								c = Class.forName(fun.module.getName());
-							} catch (ClassNotFoundException e) {
-							}
+                        public EObject invoke(EProc proc, EObject[] args)
+                                throws Pausable {
 
-							if (c != null) {
-								if (fun.function == ERT.am_new) {
-									Constructor[] cons = c.getConstructors();
-									return JavaObject.choose_and_invoke_constructor(proc, args, cons);
-								} else {
-									Method[] methods = c.getMethods();
-									return JavaObject.choose_and_invoke_method(proc, null, fun.function, args, methods, true);
-								}
-							}
-							
-							if (uf == null) {
-								if (!module_loaded(fun.module)) {
-									try {
-										EModuleLoader.find_and_load_module(fun.module.getName());
-									} catch (IOException e) {
-										// we don't report this separately; it ends up causing an undefined below...
-									}
-								}
-								
-								if (resolved_value != null) {
-									return resolved_value.invoke(proc, args);
-								}
-								
-								/** this is just some debugging info to help understand downstream errors */
-								log.log(Level.INFO, "failed to load "+fun+" ("+proc.undefined_function+" not found)");
-								
-								throw new ErlangUndefined(fun.module,
-										fun.function, fun.arity);
-							} else {
-								ESeq arg_list = ESeq.fromArray(args);
-								ESeq ufa = ESeq.fromArray(new EObject[] {
-										fun.module, fun.function, arg_list });
-								return ErlBif.apply_last(proc, uf, ufa);
-							//	return uf.apply(proc, ufa);
-							}
-						}
-					},
-							 getModuleClassLoader());
+                            /** Get reference to error_handler:undefined_function/3 */
+
+                            EFun uf = proc.undefined_function.resolved_value;
+
+                            /** this is just some debugging info to help understand downstream errors */
+                            if (get_module_info(fun.module).is_loaded()) {
+                                if (Boolean.getBoolean("erjang.declare_missing_imports") && fun.function != am_prep_stop && fun.function != am___info__)
+                                    log.log(Level.INFO, "MISSING " + fun);
+                            } else {
+                                log.log(Level.FINER, "resolving" + fun);
+                            }
+
+                            Class<?> c = null;
+                            try {
+                                c = Class.forName(fun.module.getName());
+                            } catch (ClassNotFoundException e) {
+                            }
+
+                            if (c != null) {
+                                if (fun.function == ERT.am_new) {
+                                    Constructor[] cons = c.getConstructors();
+                                    return JavaObject.choose_and_invoke_constructor(proc, args, cons);
+                                } else {
+                                    Method[] methods = c.getMethods();
+                                    return JavaObject.choose_and_invoke_method(proc, null, fun.function, args, methods, true);
+                                }
+                            }
+
+                            if (uf == null) {
+                                if (!module_loaded(fun.module)) {
+                                    try {
+                                        EModuleLoader.find_and_load_module(fun.module.getName());
+                                    } catch (IOException e) {
+                                        // we don't report this separately; it ends up causing an undefined below...
+                                    }
+                                }
+
+                                if (resolved_value != null) {
+                                    return resolved_value.invoke(proc, args);
+                                }
+
+                                /** this is just some debugging info to help understand downstream errors */
+                                log.log(Level.INFO, "failed to load " + fun + " (" + proc.undefined_function + " not found)");
+
+                                throw new ErlangUndefined(fun.module,
+                                        fun.function, fun.arity);
+                            } else {
+                                ESeq arg_list = ESeq.fromArray(args);
+                                ESeq ufa = ESeq.fromArray(new EObject[]{
+                                        fun.module, fun.function, arg_list});
+                                return ErlBif.apply_last(proc, uf, ufa);
+                                //	return uf.apply(proc, ufa);
+                            }
+                        }
+                    },
+                    getModuleClassLoader());
 		}
 
 		/**
@@ -384,7 +385,7 @@ public class EModuleManager {
 			
 			if (maker == null || !md5.equals(module_md5)) {
 				LocalFunID fid = new LocalFunID(module, ERT.am_undefined, arity, old_index, index, old_uniq, md5);
-				return EFun.get_fun_with_handler(this.module.getName(), "badfun", 0, new EFunHandler() {					
+				return EFunCG.get_fun_with_handler(this.module.getName(), "badfun", 0, new EFunHandler() {					
 					@Override
 					public EObject invoke(EProc proc, EObject[] args) throws Pausable {
 						throw new ErlangError(am_badfun, args);
@@ -408,7 +409,7 @@ public class EModuleManager {
 			
 			if (maker==null) {				
 				LocalFunID fid = new LocalFunID(module, ERT.am_undef, 0, old_index, 0, old_uniq, empty_md5);
-				return EFun.get_fun_with_handler(module.getName(), "badfun", 0, new EFunHandler() {					
+				return EFunCG.get_fun_with_handler(module.getName(), "badfun", 0, new EFunHandler() {					
 					@Override
 					public EObject invoke(EProc proc, EObject[] args) throws Pausable {
 						throw new ErlangError(am_badfun, args);
@@ -438,7 +439,7 @@ public class EModuleManager {
 				loader = resident.getModuleClassLoader();
 			}
 			
-            EFun fun = EFun.get_fun_with_handler(
+            EFun fun = EFunCG.get_fun_with_handler(
             		id.module.getName(), 
             		id.function.getName(), 
             		id.arity, 

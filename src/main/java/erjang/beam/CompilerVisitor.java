@@ -37,6 +37,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.logging.Level;
 
+import erjang.codegen.EFunCG;
 import kilim.Pausable;
 import kilim.analysis.ClassInfo;
 import kilim.analysis.ClassWeaver;
@@ -325,7 +326,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 			FieldVisitor fv = cv.visitField(ACC_STATIC, ent.getKey(), "L"
 					+ EFUN_NAME + f.arity + ";", null, null);
-			EFun.ensure(f.arity);
+			EFunCG.ensure(f.arity);
 			AnnotationVisitor av = fv.visitAnnotation(
 					IMPORT_ANN_TYPE.getDescriptor(), true);
 			av.visit("module", f.mod.getName());
@@ -825,7 +826,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				if (funInfo.mustHaveFun() || uses_on_load) {
 					FieldVisitor fv = cv.visitField(ACC_STATIC | (uses_on_load ? 0 : ACC_FINAL),
 							mname, "L" + fun_type + ";", null, null);
-					EFun.ensure(arity);
+					EFunCG.ensure(arity);
 
 					if (is_exported) {
 						if (ModuleAnalyzer.log.isLoggable(Level.FINE))
@@ -850,7 +851,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 					funs.put(mname, full_inner_name);
 					funt.put(mname, fun_type);
-					EFun.ensure(arity);
+					EFunCG.ensure(arity);
 					make_fun = true;
 				}
 			}
@@ -3349,7 +3350,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 							field = EUtil.getJavaName(fun.fun, fun.arity);
 
 						String funTypeName = EFUN_NAME + args.length;
-						EFun.ensure(args.length);
+						EFunCG.ensure(args.length);
 						mv.visitFieldInsn(GETSTATIC,
 								self_type.getInternalName(), field, "L"
 										+ funTypeName + ";");
@@ -3629,13 +3630,13 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
         if (is_guard) {
             super_class_name = EFUN_NAME + residual_arity + "Guard";
-			EFun.ensure_guard(residual_arity);
+			EFunCG.ensure_guard(residual_arity);
         } else if (exported) {
             super_class_name = EFUN_NAME + residual_arity + "Exported";
-			EFun.ensure_exported(residual_arity);
+			EFunCG.ensure_exported(residual_arity);
         } else {
             super_class_name = EFUN_NAME + residual_arity;
-			EFun.ensure(residual_arity);
+			EFunCG.ensure(residual_arity);
         }
 
 		cw.visit(V1_6, ACC_FINAL | ACC_PUBLIC, full_inner_name, null,

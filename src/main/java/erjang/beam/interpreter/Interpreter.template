@@ -24,6 +24,7 @@ import erjang.EModule;
 import erjang.EModuleManager;
 import erjang.EFun;
 import erjang.EFunHandler;
+import erjang.codegen.EFunCG;
 import erjang.FunID;
 
 import erjang.ERT;
@@ -172,7 +173,7 @@ public class Interpreter extends AbstractInterpreter {
 
 				if (bif != null && java.lang.reflect.Modifier.isStatic(bif.javaMethod.getModifiers())) {
 					//TODO: make this work for virtual methods as well
-					ext_funs[i] = EFun.make(bif.javaMethod, this.module_name());
+					ext_funs[i] = EFunCG.funForMethod(bif.javaMethod, this.module_name());
 				} else {
 					EModuleManager.add_import(imp, new VectorFunBinder(ext_funs, imp, i));
 				}
@@ -181,7 +182,7 @@ public class Interpreter extends AbstractInterpreter {
 			int j=0;
 			for (FunIDWithEntry fi : exports) {
 				log.finer("INT| Export #"+(j++)+": "+fi);
-				EFun fun = EFun.get_fun_with_handler(fi.module.toString(), fi.function.toString(), fi.arity, new Function(fi.start_pc), getModuleClassLoader());
+				EFun fun = EFunCG.get_fun_with_handler(fi.module.toString(), fi.function.toString(), fi.arity, new Function(fi.start_pc), getModuleClassLoader());
 				EModuleManager.add_export(this, fi, fun);
 			}
 
@@ -276,7 +277,7 @@ public class Interpreter extends AbstractInterpreter {
 #INTERPRET<-REGS_AS_SEQ(arity) xregsSeq(reg,arity)#
 #INTERPRET<-REGS_AS_ARRAY(arity) xregsArray(reg,arity)#
 #INTERPRET<-LOCAL_CALL(keep,label) invoke_local(proc, reg, keep,label)#
-#INTERPRET<-MAKE_CLOSURE(env,arity,label) (EFun.get_fun_with_handler("erlang", "make_fun2", arity, new Closure(env, label), getModuleClassLoader()))#
+#INTERPRET<-MAKE_CLOSURE(env,arity,label) (EFunCG.get_fun_with_handler("erlang", "make_fun2", arity, new Closure(env, label), getModuleClassLoader()))#
 #INTERPRET<-MAKE_EXH_LINK(new_exh_pc, is_try) (is_try ? new TryExceptionHandler(new_exh_pc, exh) : new CatchExceptionHandler(new_exh_pc, exh))#
 #INTERPRET<-RESTORE_EXH(exh_elm) {exh = (ExceptionHandlerStackElement) exh_elm;}#
 
