@@ -665,9 +665,8 @@ public abstract class EFun extends EObject implements Opcodes {
 		/* Code template:
 		 * public abstract class EFun{arity}Guard extends EFun{arity} {
          *   public <init>() {super();}
-         *   public erjang.EObject invoke(erjang.EProc, erjang.EObject[], kilim.Fiber) throws kilim.Pausable {
-         *     // Same as EFun.invoke, but without the tail-call loop.
-         *   }
+         *
+         * // In subclasses: override invoke(), to do a direct call.
 		 * }
 		 */
 
@@ -687,8 +686,6 @@ public abstract class EFun extends EObject implements Opcodes {
 		mv.visitInsn(Opcodes.RETURN);
 		mv.visitMaxs(1, 1);
 		mv.visitEnd();
-
-		make_invoke_method_for_guard(cw, self_type, arity);
         cw.visitEnd();
 
         byte[] data = cw.toByteArray();

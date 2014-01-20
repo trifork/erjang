@@ -3610,7 +3610,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 		return lambdas_xx.get(new FunID(module_name, fun, arity_plus));
 	}
 
-	static public byte[] make_invoker(String module, String function,
+	public static byte[] make_invoker(String module, String function,
 			Type self_type, String mname, String fname, int arity,
                                       boolean proc, boolean exported, boolean is_guard,
                                       Lambda lambda, Type return_type,
@@ -3625,15 +3625,18 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 		ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES
 				| ClassWriter.COMPUTE_MAXS);
 		int residual_arity = arity - freevars;
-		String super_class_name = EFUN_NAME + residual_arity
-            + (is_guard ? "Guard" : exported ? "Exported" : "");
-;
-		if (is_guard)
+		final String super_class_name;
+
+        if (is_guard) {
+            super_class_name = EFUN_NAME + residual_arity + "Guard";
 			EFun.ensure_guard(residual_arity);
-		else if (exported)
+        } else if (exported) {
+            super_class_name = EFUN_NAME + residual_arity + "Exported";
 			EFun.ensure_exported(residual_arity);
-		else
+        } else {
+            super_class_name = EFUN_NAME + residual_arity;
 			EFun.ensure(residual_arity);
+        }
 
 		cw.visit(V1_6, ACC_FINAL | ACC_PUBLIC, full_inner_name, null,
 				super_class_name, null);
@@ -3706,12 +3709,15 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				outer_name,
 				super_class_name, lambda, exported);
 
-		make_go_method(cw, outer_name, fname, full_inner_name, arity, proc,
-				freevars, return_type, is_tail_call, is_pausable);
+        if (is_guard) {
+            make_direct_invoke_method(cw, outer_name, fname, arity, proc, return_type, is_pausable);
+        } else {
+            make_go_method(cw, outer_name, fname, full_inner_name, arity, proc,
+                           freevars, return_type, is_tail_call, is_pausable);
 
-		make_go2_method(cw, outer_name, fname, full_inner_name, arity, proc,
-				freevars, return_type, is_tail_call, is_pausable);
-
+            make_go2_method(cw, outer_name, fname, full_inner_name, arity, proc,
+                            freevars, return_type, is_tail_call, is_pausable);
+        }
 		return cw.toByteArray();
 
 	}
@@ -3973,6 +3979,35 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 
 		cw.visitEnd();
 	}
+
+    /** make_direct_invoke_method: Perform a direct call, with no
+     * tail-recursino handling.
+     * Used for EFunXxGuard classes.
+     */
+	private static void make_direct_invoke_method(ClassWriter cw, String outer_name,
+                                                  String mname, int arity, boolean proc, Type returnType,
+                                                  boolean isPausable)
+    {
+		MethodVisitor mv;
+		mv = cw.visitMethod(ACC_PUBLIC, "invoke", EUtil.getSignature(arity, true),
+                            null,
+                            isPausable ? PAUSABLE_EX : null);
+		mv.visitCode();
+		if (proc)
+			mv.visitVarInsn(ALOAD, 1);
+
+		for (int i = 0; i < arity; i++) {
+			mv.visitVarInsn(ALOAD, i+2);
+		}
+
+		mv.visitMethodInsn(INVOKESTATIC, outer_name, mname,
+				EUtil.getSignature(arity, proc, returnType));
+        // TODO: Special handling if returnType != EObject - or assert that this isn't the case.
+		mv.visitInsn(ARETURN);
+		mv.visitMaxs(arity + 2, arity + 2);
+		mv.visitEnd();
+	}
+
 
 	public void setFunInfos(Map<FunID, FunInfo> funInfos) {
 		this.funInfos = funInfos;
