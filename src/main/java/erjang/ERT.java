@@ -668,20 +668,8 @@ public class ERT {
 
 		return efun;
 	}
-	
-	public static EObject apply_list(EProc proc, EObject mod, EObject fun,
-			ESeq seq, int len) throws Pausable {
-		EAtom f = fun.testAtom();
-		ESeq a = seq.testSeq();
 
-		if (f == null || a == null)
-			throw ERT.badarg(mod, fun, seq);
-
-		EFun efun = resolve_fun(mod, fun, len);
-		return efun.apply(proc, a);
-	}
-
-	public static EObject apply_last(EProc proc, EObject mod, EObject fun, EObject args) throws Pausable {
+    public static EObject apply_last(EProc proc, EObject mod, EObject fun, EObject args) throws Pausable {
 		ESeq seq = args.testSeq();
 		if (seq == null) { throw ERT.badarg(mod, fun, args); }
 		return apply_list_last(proc, mod, fun, seq, seq.length());

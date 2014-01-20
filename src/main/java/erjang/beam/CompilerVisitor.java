@@ -3332,10 +3332,8 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					ASMFunctionAdapter.this.local_self_call.put(fwa, label);
 				}
 				
-				BuiltInFunction bif = null;
-
-				bif = BIFUtil.getMethod(fun.mod.getName(), fun.fun.getName(),
-						args, false, false);
+                BuiltInFunction bif = BIFUtil.getMethod(fun.mod.getName(), fun.fun.getName(),
+                        args, false, false);
 
 
 				if (bif != null || isExternal || uses_on_load) {
@@ -3813,61 +3811,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 		}
 	}
 
-	private static void make_invoke_method(ClassWriter cw, String outer_name,
-			String mname, int arity, boolean proc, int freevars,
-			Type returnType, boolean isTailCall) {
-		MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "invoke",
-				EUtil.getSignature(arity - freevars, true), null, PAUSABLE_EX);
-		mv.visitCode();
-		if (proc) {
-			mv.visitVarInsn(ALOAD, 1);
-		}
-		for (int i = 0; i < arity - freevars; i++) {
-			mv.visitVarInsn(ALOAD, i + 2);
-		}
-		for (int i = 0; i < freevars; i++) {
-			mv.visitVarInsn(ALOAD, 0);
-			mv.visitFieldInsn(GETFIELD, outer_name + "$FN_" + mname, "fv" + i,
-					EOBJECT_DESC);
-		}
-		mv.visitMethodInsn(INVOKESTATIC, outer_name, mname,
-				EUtil.getSignature(arity, proc, returnType));
-
-		if (isTailCall) {
-			mv.visitVarInsn(ASTORE, arity + 2);
-
-			Label done = new Label();
-			Label loop = new Label();
-			mv.visitLabel(loop);
-			mv.visitVarInsn(ALOAD, arity + 2);
-			if (EProc.TAIL_MARKER == null) {
-				mv.visitJumpInsn(IFNONNULL, done);
-			} else {
-				mv.visitFieldInsn(GETSTATIC, EPROC_NAME, "TAIL_MARKER",
-						EOBJECT_DESC);
-				mv.visitJumpInsn(IF_ACMPNE, done);
-			}
-
-			// load proc
-			mv.visitVarInsn(ALOAD, 1);
-			mv.visitFieldInsn(GETFIELD, EPROC_NAME, "tail", EFUN_DESCRIPTOR);
-			mv.visitVarInsn(ALOAD, 1);
-
-			mv.visitMethodInsn(INVOKEVIRTUAL, EFUN_NAME, "go", GO_DESC);
-			mv.visitVarInsn(ASTORE, arity + 2);
-
-			mv.visitJumpInsn(GOTO, loop);
-
-			mv.visitLabel(done);
-			mv.visitVarInsn(ALOAD, arity + 2);
-		}
-
-		mv.visitInsn(ARETURN);
-		mv.visitMaxs(arity + 2, arity + 2);
-		mv.visitEnd();
-	}
-
-	public static void make_invoketail_method(ClassWriter cw,
+    public static void make_invoketail_method(ClassWriter cw,
 			String full_inner, int arity, int freevars) {
 		MethodVisitor mv;
 		mv = cw.visitMethod(ACC_PUBLIC | ACC_FINAL, "invoke_tail",

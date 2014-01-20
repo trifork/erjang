@@ -96,8 +96,6 @@ Subclasses should
 - override either `go()` or `go2()`, depending
   on whether the implementation might throw Pausable or not.
 
-<!-- Q: Can ERT.apply_list() be thrown out? -->
-
 
 #### Introspection methods
 
