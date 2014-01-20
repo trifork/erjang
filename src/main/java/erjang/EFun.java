@@ -46,6 +46,13 @@ import erjang.beam.EUtil;
 import erjang.m.ets.EMatchContext;
 import erjang.m.ets.ETermPattern;
 
+/** Representation of an Erlang function object.
+ * At present this class also contains a lot of code generation code for
+ * EFun's dynamically-created subclasses.
+ *
+ * Please see <code>doc/RuntimeClassHierarchy.md</code> for more about
+ * the dynamically-created classes.
+ */
 public abstract class EFun extends EObject implements Opcodes {
 
 	public abstract int arity();
@@ -221,6 +228,21 @@ public abstract class EFun extends EObject implements Opcodes {
 		return ERT.defineClass(EFun.class.getClassLoader(), self_type, data);
 	}
 
+    /**
+     * Generates the base for all function objects of arity <em>arity</em>.
+     * The template is as follows:
+     * public class EFun{arity} {
+     *   public &lt;init&gt;() {super();}
+     *   @Override public int arity() {return the_arity;}
+     *   @Override EObject invoke(EProc proc, EObject[] args) {
+     *     return invoke(proc, args[0], ..., args[the_arity-1]);
+         }
+     *   public EObject invoke_tail(proc, arg1, ..., argN) {
+     *     proc.arg0 = args[0]; ... proc.argN_minus_1 = args[N-1];
+     *     return TAIL_MARKER;
+     *   }
+     * }
+     */
 	static byte[] gen_fun_class_data(int arity) {
 
 		String self_type = EFUN_TYPE.getInternalName() + arity;
@@ -636,7 +658,6 @@ public abstract class EFun extends EObject implements Opcodes {
 
 		byte[] data = get_guard_fun_class_data(arity);
 		data = weave(data);
-        System.err.println("ERK| Generating "+className+"!");
 		return ERT.defineClass(EFun.class.getClassLoader(), className, data);
 	}
 
