@@ -1,5 +1,10 @@
 target
 *_TEST.java
-x86_64-apple-darwin12.4.0
-x86_64-unknown-linux-gnu
+/x86_64-apple-darwin12.4.0
+/x86_64-unknown-linux-gnu
 test-outputs
+
+# IDE specifics:
+/.idea
+*.iml
+
