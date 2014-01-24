@@ -136,7 +136,17 @@ JNIEXPORT jlong JNICALL Java_erjang_NIF_jni_1load
   const char *path = je->GetStringUTFChars(library, &isCopy);
   if (path == NULL)
     return 0;
-  void * so_handle = dlopen( path, /* RTLD_LAZY | */ RTLD_FIRST);
+  void * so_handle = dlopen( path, /* RTLD_LAZY | */
+#ifdef __MACH
+ RTLD_LOCAL | RTLD_FIRST
+#else
+#ifdef __GNU
+RTLD_LOCAL | RTLD_DEEPBIND
+#else
+RTLD_LOCAL
+#endif
+#endif
+);
 
   if (so_handle == NULL) {
     fprintf(stderr, "did not load %s (err: %i)\n", path, errno);

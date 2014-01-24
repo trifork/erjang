@@ -1,6 +1,8 @@
 
 #include "jnif.h"
+
 #include <dlfcn.h>
+#include <cstring>
 
 typedef ErlNifEntry* (*nif_init_t)();
 

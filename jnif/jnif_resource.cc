@@ -1,6 +1,9 @@
-
+// -*- c-basic-offset: 2 -*-
 #include "jnif.h"
 #include "erjang_EResource.h"
+
+#include <cstring>
+#include <cstdint>
 
 struct enif_resource_type_t
 {
@@ -16,7 +19,7 @@ struct enif_resource_type_t
 #define RESOURCE_MAGIC 0x52535253UL
 
 struct jnif_resource_hdr {
-  uint32_t magic;
+  std::uint32_t magic;
   ErlNifResourceType *type;
   size_t size;
   int refcount;

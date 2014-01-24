@@ -1,6 +1,7 @@
 
 #include "jnif.h"
 
+#include <cstring>
 
 static jmethodID m_eobject__testAtom;
 static jclass    eatom_class;
