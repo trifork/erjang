@@ -7,7 +7,7 @@ BASE_DIR=`dirname "$BASH_SOURCE"`"/../../.."
 OUTPUT_FILE="$OUTPUT_BASE.csv"
 OUTPUT_REL_FILE="$OUTPUT_BASE-relative.csv"
 
-EJ_EXE="$BASE_DIR/ej"
+EJ_EXE="$BASE_DIR/jerl"
 
 CACHE_DIR="$BASE_DIR/boot-test-cache"
 mkdir $CACHE_DIR
@@ -22,15 +22,20 @@ function error() {
 
 function measure() {
     local outfile="$1"; shift # Rest of arguments are passed to ej
-    /usr/bin/time --format '%e\t%U\t%S\t%M' --output boot-stats.tmp1 \
-      ./ej "$@" -noshell -sasl sasl_error_logger false -eval \
+    if /usr/bin/time --format '%e\t%U\t%S\t%M' --output boot-stats.tmp1 \
+      "${EJ_EXE}" "$@" -noshell -sasl sasl_error_logger false -eval \
 	'erlang:garbage_collect(),
          AA=hd([V || {T,_,V}<-erlang:system_info(allocated_areas), (T=='"'non_heap:Perm Gen'"' orelse T=='"'non_heap:PS Perm Gen'"')]),
          GHS=erlang:system_info(global_heaps_size),
          io:format("~b\t~b\n", [AA,GHS]),
          erlang:halt().' \
 	< /dev/null > boot-stats.tmp2
-    paste boot-stats.tmp1 boot-stats.tmp2 >> "$outfile"
+    then
+        paste boot-stats.tmp1 boot-stats.tmp2 >> "$outfile"
+    else
+        (echo "Run for measure failed:"; cat boot-stats.tmp2) >&2
+            exit 1
+    fi
 }
 
 # Prepare cache dir and ensure no old result files remain:
@@ -39,6 +44,7 @@ rm boot-measurement-{empty,populated,interpreted}.dat 2>/dev/null
 
 # Run and measure:
 for ((i=1; i<=3; i++)) ; do
+    echo "Run #$i..." >&2
     # Test from empty cache:
     measure boot-measurement-empty.dat
 
