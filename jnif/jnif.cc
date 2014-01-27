@@ -203,7 +203,9 @@ RTLD_NOW | RTLD_LOCAL
 
   // when nif_init is done, we may need to "commit" data that
   // was made available to the NIF as char* data.
-  jnif_commit_env(mod->global);
+  if (mod != NULL) {
+    jnif_commit_env(mod->global);
+  }
 
   // mod->global should be released when unloading
   return reinterpret_cast<jlong>(mod);

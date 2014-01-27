@@ -1,3 +1,4 @@
+/* -*- c-basic-offset: 2 -*- */
 
 #include "jnif.h"
 
@@ -14,23 +15,24 @@ void* enif_dlopen(const char* lib,
 
   sprintf(buffer, "%s.so", lib);
 
-  so_handle = dlopen(buffer, 0);
+  so_handle = dlopen(buffer, RTLD_NOW);
   if (so_handle == NULL) {
-    fprintf(stderr, "could not load %s\n", buffer);
+      const char *err = dlerror();
+      fprintf(stderr, "could not load %s (error: %s)\n", buffer, err);
 
     if (err_handler != NULL) {
-      const char *err = dlerror();
       (*err_handler) (err_arg, err);
     }
     return NULL;
   }
 
+  dlerror(); // Clear error flag
   void *address =  dlsym( so_handle, "nif_init" );
   if (address == NULL) {
-    fprintf(stderr, "could not find nif_init in %s\n", buffer);
+      const char *err = dlerror();
+      fprintf(stderr, "could not find nif_init in %s (error: %s)\n", buffer, err);
 
     if (err_handler != NULL) {
-      const char *err = dlerror();
       (*err_handler) (err_arg, err);
     }
     dlclose(so_handle);
