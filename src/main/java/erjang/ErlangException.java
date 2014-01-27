@@ -247,6 +247,18 @@ public abstract class ErlangException extends RuntimeException {
 			mname.equals("invoke"))
 			return null;
 
+        if (mname.equals("interpret") &&
+            cname.equals("erjang.beam.interpreter.Interpreter$Module$Function"))
+        {
+			ETuple4 res = new ETuple4();
+			res.elem1 = EAtom.intern("<interpreted>");
+			res.elem2 = EAtom.intern("<interpreted>");
+			res.elem3 = new ESmall(-1);
+			res.elem4 = EList.make(new ETuple2(am_file, new EString("<unknown>")),
+                                   new ETuple2(am_line, ERT.box(st.getLineNumber())));
+			return res;
+        }
+
 		Class<?> clazz = null;
 		try {
 			clazz = Class.forName(cname);
