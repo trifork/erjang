@@ -663,15 +663,8 @@ public class Native extends ENative {
 			throw ERT.badarg(tab, pid, giftData);
 		}
 
-		table.owner = new WeakReference<EProc>(giveTo.task());
-		
-		ETuple msg = ETuple.make(EAtom.intern("ETS-TRANSFER"),
-				tab,
-				proc.self_handle(),
-				giftData);
-		
-		giveTo.send(proc.self_handle(), msg);
-		
+        table.transfer_ownership_to(giveTo, giftData);
+
 		return ERT.TRUE;
 	}
 

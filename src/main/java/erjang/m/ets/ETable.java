@@ -168,27 +168,11 @@ abstract class ETable implements ExitHook {
 		if (dyingPID == owner_pid()) {
 			
 			EInternalPID heirPID = this.heirPID;
-			EProc new_owner;
-			if (heirPID != null 
-					&& heirPID != dyingPID 
-					&& (new_owner = heirPID.task()) != null) {
-				//System.err.println("received exit from owner "+dyingPID
-				//					+" => transfer to "+heirPID);
-
-				ETuple msg = ETuple.make(EAtom.intern("ETS-TRANSFER"),
-										 this.aname,
-										 dyingPID,
-										 this.heirData == null 
-										 	? ERT.NIL 
-										 	: this.heirData);
-				
-				this.owner = new WeakReference<EProc>(new_owner);
-				new_owner.add_exit_hook(this);
-				
-				heirPID.send(dyingPID, msg);
-				
-			} else {				
-				//System.err.println("received exit from owner "+dyingPID+" => delete");
+            if (heirPID != null && heirPID != dyingPID) {
+                transfer_ownership_to(heirPID,
+                        this.heirData == null ? ERT.NIL : this.heirData);
+            } else {
+                //System.err.println("received exit from owner "+dyingPID+" => delete");
 				delete();
 			}
 			
@@ -197,7 +181,28 @@ abstract class ETable implements ExitHook {
 		}
 	}
 
-	void delete() {
+    public void transfer_ownership_to(EInternalPID new_owner, EObject transfer_data) throws Pausable {
+        EInternalPID former_owner = owner_pid();
+        System.err.println("DB| transfer ownership of "+tid+" from "+former_owner+" to "+new_owner+" with tag "+transfer_data);
+        EProc new_owner_task;
+        if ((new_owner_task = new_owner.task()) != null) {
+            //System.err.println("received exit from owner "+former_owner
+            //					+" => transfer to "+new_owner_task);
+
+            ETuple msg = ETuple.make(EAtom.intern("ETS-TRANSFER"),
+                    this.is_named ? this.aname : this.tid,
+                    former_owner,
+                    transfer_data);
+
+            //TODO: Remove exit hook from old process
+            this.owner = new WeakReference<EProc>(new_owner_task);
+            new_owner_task.add_exit_hook(this);
+
+            new_owner.send(former_owner, msg);
+        }
+    }
+
+    void delete() {
 		EInternalPID p = owner_pid();
 		if (p != null) p.remove_exit_hook(this);
 		
