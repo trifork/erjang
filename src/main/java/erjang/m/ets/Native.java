@@ -659,7 +659,11 @@ public class Native extends ENative {
 	{
 		EInternalPID giveTo = pid.testInternalPID();
 		ETable table = resolve(proc, tab, true);		
-		if (table == null || giveTo==null || !giveTo.is_alive() || table.owner_pid() != proc.self_handle()) {
+		if (table == null
+                || giveTo==null || !giveTo.is_alive() /* "Pid must be alive and local" */
+                || giveTo == table.owner_pid()        /* "... and not already the owner of the table" */
+                || table.owner_pid() != proc.self_handle()) /* "The calling process must be the table owner" */
+        {
 			throw ERT.badarg(tab, pid, giftData);
 		}
 
