@@ -1,3 +1,4 @@
+/* -*- c-basic-offset: 2 -*- */
 
 #include "jnif.h"
 #include <stdlib.h>
@@ -5,7 +6,6 @@
 #include <assert.h>
 #include <list>
 #include <dlfcn.h>
-#include <errno.h>
 
 #include "erjang_NIF.h"
 
@@ -138,18 +138,18 @@ JNIEXPORT jlong JNICALL Java_erjang_NIF_jni_1load
     return 0;
   void * so_handle = dlopen( path, /* RTLD_LAZY | */
 #ifdef __MACH
- RTLD_LOCAL | RTLD_FIRST
+RTLD_NOW | RTLD_LOCAL | RTLD_FIRST
 #else
 #ifdef __GNU
-RTLD_LOCAL | RTLD_DEEPBIND
+RTLD_NOW | RTLD_LOCAL //RTLD_DEEPBIND
 #else
-RTLD_LOCAL
+RTLD_NOW | RTLD_LOCAL
 #endif
 #endif
 );
 
   if (so_handle == NULL) {
-    fprintf(stderr, "did not load %s (err: %i)\n", path, errno);
+    fprintf(stderr, "did not load %s (error: %s)\n", path, dlerror());
     je->ReleaseStringUTFChars(library, path);
     return 0;
   }
@@ -158,7 +158,7 @@ RTLD_LOCAL
 
   void *address =  dlsym( so_handle, "nif_init" );
   if (address == NULL) {
-    fprintf(stderr, "did not find nif_init (err: %i)\n", errno);
+    fprintf(stderr, "did not find nif_init (error: %s)\n", dlerror());
     dlclose(so_handle);
     return 0L;
   }
