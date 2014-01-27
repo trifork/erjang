@@ -194,11 +194,13 @@ abstract class ETable implements ExitHook {
                     former_owner,
                     transfer_data);
 
-            //TODO: Remove exit hook from old process
             this.owner = new WeakReference<EProc>(new_owner_task);
             new_owner_task.add_exit_hook(this);
+            former_owner.remove_exit_hook(this);
 
             new_owner.send(former_owner, msg);
+        } else {
+            delete();
         }
     }
 
