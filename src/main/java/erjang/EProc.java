@@ -235,6 +235,7 @@ public final class EProc extends ETask<EInternalPID> {
 			} else {
 				hooks = exit_hooks.toArray(new ExitHook[exit_hooks.size()]);
 			}
+            //TODO: Within this lock, mark process as terminated so that race conditions can be handled in add_exit_hook().
 		}
 		
 		for (int i = 0; i < hooks.length; i++) {
@@ -726,7 +727,7 @@ public final class EProc extends ETask<EInternalPID> {
 		return ps == STATE.INIT || ps == STATE.RUNNING;
 	}
 
-	List<ExitHook> exit_hooks = new ArrayList<ExitHook>();
+	private final List<ExitHook> exit_hooks = new ArrayList<ExitHook>();
 
 	public long timeout_start;
 
