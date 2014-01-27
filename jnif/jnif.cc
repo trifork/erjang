@@ -11,6 +11,8 @@
 
 /** global data */
 
+static void* self_so_handle;
+
 static JavaVM *jvm;
 
 static jmethodID m_eobject__testReference;
@@ -329,11 +331,25 @@ static void init_jvm_data(JavaVM *vm, JNIEnv* je)
   m_ERT__make_ref = je->GetStaticMethodID(ERT_class, "make_ref", "()Lerjang/ERef;");
 }
 
+/** Makes the exported symbols in the JNIF library visible from libraries
+ *  to be loaded later.
+ *  This is necessary at least on OpenJDK 1.7.0_25 on Linux;
+ *  apparently, java.lang.System.loadLibrary() does not load with the
+ *  RTLD_GLOBAL flag.
+ */
+static int export_jnif_symbols() {
+  self_so_handle = dlopen("libjnif.so", RTLD_NOW | RTLD_GLOBAL);
+  if (self_so_handle == NULL) {
+    fprintf(stderr, "JNIF: self-exporting failed (error: %s)\n", dlerror());
+  }
+}
+
 
 extern "C" jint JNI_OnLoad(JavaVM *vm, void *reserved)
 {
   JNIEnv *je;
-  if (vm->AttachCurrentThreadAsDaemon((void**)&je, NULL) == JNI_OK) {
+  if (export_jnif_symbols() &&
+      vm->AttachCurrentThreadAsDaemon((void**)&je, NULL) == JNI_OK) {
     init_jvm_data(vm, je);
     initialize_jnif_env(vm,je);
     initialize_jnif_binary(vm,je);
@@ -357,5 +373,9 @@ extern "C" void JNI_OnUnload(JavaVM *vm, void *reserved)
       uninitialize_jnif_binary(vm, je);
     }
     jvm = NULL;
+
+    if (self_so_handle != NULL) {
+      dlclose(self_so_handle);
+    }
   }
 }
