@@ -428,7 +428,7 @@ abstract class ETable implements ExitHook {
 				if (old != null) {
 					old.remove_exit_hook(this);
 				}
-				
+				return;
 			}
 			
 		}
