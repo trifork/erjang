@@ -253,10 +253,11 @@ public final class EProc extends ETask<EInternalPID> {
 	
 	protected void process_incoming_exit(EHandle from, EObject reason, boolean is_erlang_exit2) throws Pausable
 	{
-		if (pstate == STATE.EXIT_SIG || pstate == STATE.SENDING_EXIT) {
+		if (pstate == STATE.EXIT_SIG || pstate == STATE.SENDING_EXIT || pstate == STATE.DONE) {
 			if (log.isLoggable(Level.FINE)) {
 				log.fine("Ignoring incoming exit reason="+reason+", as we're already exiting reason="+exit_reason);
 			}
+            return;
 		}
 		
 		if (log.isLoggable(Level.FINE)) {
