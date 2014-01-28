@@ -329,25 +329,15 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 				// TODO: warn that this process is not yet dead. why?
 				return;
 
-				// the process is not running yet, this should not happen
 			case INIT:
-				if (reason == EProc.am_kill) {
-					this.exit_reason = EProc.am_killed;
-				} else {
-					this.exit_reason = reason;
-				}
-				this.pstate = STATE.EXIT_SIG;
-				return;
-
-			default:
-				throw new Error("unknown state? "+pstate);
-
 			case RUNNING:
-			}
+                process_incoming_exit(from, reason, is_erlang_exit2);
+                return;
+
+            default:
+                throw new Error("unknown state? "+pstate);
+            }
 		}
-
-		process_incoming_exit(from, reason, is_erlang_exit2);
-
 	}
 
 	protected abstract void process_incoming_exit(EHandle from, EObject reason, boolean is_erlang_exit2) throws Pausable
