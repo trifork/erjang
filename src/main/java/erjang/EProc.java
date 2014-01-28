@@ -731,10 +731,6 @@ public final class EProc extends ETask<EInternalPID> {
 		return ps == STATE.INIT || ps == STATE.RUNNING;
 	}
 
-    public Map<Integer, EAtom> getAtomCacheMap() {
-        return null;
-    }
-
 	/**
 	 * @param hook
 	 */
