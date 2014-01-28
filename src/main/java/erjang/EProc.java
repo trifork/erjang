@@ -223,23 +223,269 @@ public final class EProc extends ETask<EInternalPID> {
 		}
 	}
 
-    /*==================== Public interface =========================*/
+    /*==================== Public interface - runtime ===============*/
+    public EInternalPID self_handle() {
+        return self;
+    }
+
+    public ErlangException getLastException() {
+        return last_exception;
+    }
+
+    /*==================== Public interface - Erlang operations =====*/
+
+    /**
+     * @return
+     */
+    public EPID group_leader() {
+        return group_leader;
+    }
+
+    /**
+     * Only called from ELocalPID
+     *
+     * @param group_leader
+     */
+    void set_group_leader(EPID group_leader) {
+        this.group_leader = group_leader;
+    }
+
+    /*--------- Process dictionary --------------------------*/
+    public EObject put(EObject key, EObject value) {
+        EObject res = pdict.put(key, value);
+        if (res == null)
+            return ERT.am_undefined;
+        return res;
+    }
+
+    public EObject get(EObject key) {
+        EObject res = pdict.get(key);
+        return (res == null) ? ERT.am_undefined : res;
+    }
+
+    /**
+     * @return list of the process dictionary
+     */
+    public ESeq get() {
+        ESeq res = ERT.NIL;
+        for (Map.Entry<EObject, EObject> ent : pdict.entrySet()) {
+            res = res.cons(ETuple.make(ent.getKey(), ent.getValue()));
+        }
+        return res;
+    }
+
+    /**
+     * @param key
+     * @return
+     */
+    public EObject erase(EObject key) {
+        EObject res = pdict.remove(key);
+        if (res == null)
+            res = ERT.am_undefined;
+        return res;
+    }
+
+    /**
+     * @return
+     */
+    public EObject erase() {
+        EObject res = get();
+        pdict.clear();
+        return res;
+    }
+
+    /*--------- Process flags --------------------------*/
+    /**
+     * @param testAtom
+     * @param a2
+     * @return
+     * @throws Pausable
+     */
+    public EObject process_flag(EAtom flag, EObject value) {
+
+        if (flag == am_trap_exit) {
+            EAtom old = this.trap_exit;
+            trap_exit = value.testBoolean();
+            return ERT.box(old==ERT.TRUE);
+        }
+
+        if (flag == am_priority) {
+            EAtom old = priorities[getPriority()];
+            for (int i = 0; i < priorities.length; i++) {
+                if (value == priorities[i]) {
+                    setPriority(i);
+                    return old;
+                }
+            }
+            throw ERT.badarg(flag, value);
+        }
+
+        if (flag == am_error_handler) {
+            EAtom val;
+            if ((val = value.testAtom()) != null) {
+                EAtom old = this.error_handler;
+                this.error_handler = val;
+
+                FunID uf = new FunID(error_handler, am_undefined_function, 3);
+                undefined_function = EModuleManager.get_module_info(error_handler).get_function_info(uf);
+
+                return old;
+            } else {
+                throw ERT.badarg(flag,  value);
+            }
+        }
+
+        if (flag == am_monitor_nodes) {
+            if (!value.isBoolean()) throw ERT.badarg(flag, value);
+            boolean activate = value==ERT.TRUE;
+            Boolean old = EAbstractNode.monitor_nodes(self_handle(), activate, ERT.NIL);
+            if (old == null) throw ERT.badarg(flag, value);
+            return ERT.box(old.booleanValue());
+        }
+
+        if (flag == am_trap_exit) {
+            EAtom old = this.trap_exit;
+            trap_exit = value.testBoolean();
+            return ERT.box(old==ERT.TRUE);
+        }
+
+        if (flag == am_sensitive) {
+            EAtom old = this.sensitive;
+            sensitive = value.testBoolean();
+            return ERT.box(old==ERT.TRUE);
+        }
+
+        ETuple2 tup;
+        if ((tup = ETuple2.cast(flag)) != null && tup.elem1==am_monitor_nodes) {
+            ESeq opts = tup.elem2.testSeq();
+            if (opts == null) throw ERT.badarg(flag, value);
+
+            if (!value.isBoolean()) throw ERT.badarg(flag, value);
+            boolean activate = value.testBoolean()==ERT.TRUE;
+
+            Boolean old = EAbstractNode.monitor_nodes(self_handle(), activate, opts);
+            if (old == null) throw ERT.badarg(flag, value);
+            return ERT.box(old.booleanValue());
+        }
+
+        throw new NotImplemented("process_flag flag="+flag+", value="+value);
+    }
+
+    private int getPriority() {
+        return this.priority;
+    }
+
+    private void setPriority(int i) {
+        this.priority  = i;
+    }
+
+
+    /*--------- Process info --------------------------*/
+
+    public EObject process_info() {
+
+        ESeq res = ERT.NIL;
+
+        res = res.cons(process_info(am_trap_exit));
+        res = res.cons(process_info(am_messages));
+        res = res.cons(process_info(am_message_queue_len));
+        res = res.cons(process_info(am_dictionary));
+        res = res.cons(process_info(am_group_leader));
+        res = res.cons(process_info(am_links));
+        res = res.cons(process_info(am_heap_size));
+        res = res.cons(process_info(am_initial_call));
+        res = res.cons(process_info(am_reductions));
+
+        EObject reg_name = self_handle().name;
+        if (reg_name != ERT.am_undefined)
+            res = res.cons(new ETuple2(am_registered_name, reg_name));
+
+        if (res == ERT.NIL) return ERT.am_undefined;
+        return res;
+    }
+
+    /**
+     * @param spec
+     * @return
+     */
+    public EObject process_info(EObject spec) {
+        if (spec == am_registered_name) {
+            return self_handle().name == ERT.am_undefined
+                    ? ERT.NIL
+                    : new ETuple2(am_registered_name, self_handle().name);
+        } else if (spec == am_trap_exit) {
+            return new ETuple2(am_trap_exit, trap_exit);
+        } else if (spec == am_message_queue_len) {
+            return new ETuple2(am_message_queue_len,
+                    new ESmall(mbox.size()));
+        } else if (spec == am_messages) {
+            ESeq messages = EList.make((Object[])mbox.messages());
+            return new ETuple2(am_messages, messages);
+        } else if (spec == am_dictionary) {
+            return new ETuple2(am_dictionary, get());
+        } else if (spec == am_group_leader) {
+            return new ETuple2(am_group_leader, group_leader);
+        } else if (spec == am_links) {
+            ESeq links = links();
+            return new ETuple2(am_links, links);
+        } else if (spec == am_status) {
+            if (this.running) {
+                return new ETuple2(am_status, am_running);
+            } else if (this.pauseReason != null) {
+                return new ETuple2(am_status, am_waiting);
+            } else {
+                return new ETuple2(am_status, am_runnable);
+            }
+        } else if (spec == am_heap_size) {
+            return new ETuple2(am_heap_size,
+                    ERT.box(Runtime.getRuntime().totalMemory()
+                            - Runtime.getRuntime().freeMemory()));
+        } else if (spec == am_stack_size) {
+            // TODO: Maybe use HotSpotDiagnosticMXBean ThreadStackSize property?
+            return new ETuple2(am_stack_size,
+                    ERT.box(0));
+
+        } else if (spec == am_reductions) {
+            return new ETuple2(am_reductions, ERT.box(this.reds));
+
+        } else if (spec == am_initial_call) {
+            return new ETuple2(am_initial_call,
+                    ETuple.make(spawn_mod, spawn_fun, ERT.box(spawn_args)));
+
+        } else if (spec == am_current_function) {
+            /** TODO: fix this so we return something meaningful... */
+            return new ETuple2(am_current_function,
+                    ETuple.make(spawn_mod, spawn_fun, ERT.box(spawn_args)));
+
+        } else if (spec == am_memory) {
+            return new ETuple2(am_memory, ERT.box(50000));
+
+        } else if (spec == am_error_handler) {
+            return new ETuple2(am_error_handler, am_error_handler);
+
+        } else {
+            log.warning("NotImplemented: process_info("+spec+")");
+            throw new NotImplemented("process_info("+spec+")");
+        }
+    }
+
     /*==================== Internals ================================*/
 
     private int key() {
 		int key = (self.serial() << 15) | (self.id() & 0x7fff);
 		return key;
 	}
-	
-	/**
-	 * @return
-	 */
-	public EInternalPID self_handle() {
-		return self;
-	}
 
 
-	protected void link_failure(EHandle h) throws Pausable {
+    /*--------- Process lifecycle --------------------------*/
+
+    public boolean is_alive() {
+        erjang.ETask.STATE ps = pstate;
+        return ps == STATE.INIT || ps == STATE.RUNNING;
+    }
+
+
+    protected void link_failure(EHandle h) throws Pausable {
 		if (trap_exit == ERT.TRUE || h.testLocalHandle()==null) {
 			send_exit(h, am_noproc, false);
 		} else {
@@ -337,153 +583,7 @@ public final class EProc extends ETask<EInternalPID> {
 			this.resume();
 		}
 	}
-	
-	public EObject put(EObject key, EObject value) {
-		EObject res = pdict.put(key, value);
-		if (res == null)
-			return ERT.am_undefined;
-		return res;
-	}
 
-	public EObject get(EObject key) {
-		EObject res = pdict.get(key);
-		return (res == null) ? ERT.am_undefined : res;
-	}
-
-	/**
-	 * @return list of the process dictionary
-	 */
-	public ESeq get() {
-		ESeq res = ERT.NIL;
-		for (Map.Entry<EObject, EObject> ent : pdict.entrySet()) {
-			res = res.cons(ETuple.make(ent.getKey(), ent.getValue()));
-		}
-		return res;
-	}
-
-	/**
-	 * @param key
-	 * @return
-	 */
-	public EObject erase(EObject key) {
-		EObject res = pdict.remove(key);
-		if (res == null)
-			res = ERT.am_undefined;
-		return res;
-	}
-
-	/**
-	 * @return
-	 */
-    public EObject erase() {
-		EObject res = get();
-		pdict.clear();
-		return res;
-	}
-
-	/**
-	 * @return
-	 */
-	public EPID group_leader() {
-		return group_leader;
-	}
-
-	/**
-	 * Only called from ELocalPID
-	 * 
-	 * @param group_leader
-	 */
-	void set_group_leader(EPID group_leader) {
-		this.group_leader = group_leader;
-	}
-
-	public ErlangException getLastException() {
-		return last_exception;
-	}
-
-	/**
-	 * @param testAtom
-	 * @param a2
-	 * @return
-	 * @throws Pausable 
-	 */
-	public EObject process_flag(EAtom flag, EObject value) {
-
-		if (flag == am_trap_exit) {
-			EAtom old = this.trap_exit;
-			trap_exit = value.testBoolean();
-			return ERT.box(old==ERT.TRUE);
-		}
-
-		if (flag == am_priority) {
-			EAtom old = priorities[getPriority()];
-			for (int i = 0; i < priorities.length; i++) {
-				if (value == priorities[i]) {
-					setPriority(i);
-					return old;
-				}
-			}
-			throw ERT.badarg(flag, value);
-		}
-		
-		if (flag == am_error_handler) {
-			EAtom val;
-			if ((val = value.testAtom()) != null) {
-				EAtom old = this.error_handler;
-				this.error_handler = val;
-				
-				FunID uf = new FunID(error_handler, am_undefined_function, 3); 
-				undefined_function = EModuleManager.get_module_info(error_handler).get_function_info(uf);
-
-				return old;
-			} else {
-				throw ERT.badarg(flag,  value);
-			}
-		}
-		
-		if (flag == am_monitor_nodes) {
-			if (!value.isBoolean()) throw ERT.badarg(flag, value);
-			boolean activate = value==ERT.TRUE;
- 			Boolean old = EAbstractNode.monitor_nodes(self_handle(), activate, ERT.NIL);
-			if (old == null) throw ERT.badarg(flag, value);
-			return ERT.box(old.booleanValue());
-		}
-
-		if (flag == am_trap_exit) {
-			EAtom old = this.trap_exit;
-			trap_exit = value.testBoolean();
-			return ERT.box(old==ERT.TRUE);
-		}
-
-		if (flag == am_sensitive) {
-			EAtom old = this.sensitive;
-			sensitive = value.testBoolean();
-			return ERT.box(old==ERT.TRUE);
-		}
-
-		ETuple2 tup;
-		if ((tup = ETuple2.cast(flag)) != null && tup.elem1==am_monitor_nodes) {
-			ESeq opts = tup.elem2.testSeq();
-			if (opts == null) throw ERT.badarg(flag, value);
-
-			if (!value.isBoolean()) throw ERT.badarg(flag, value);
-			boolean activate = value.testBoolean()==ERT.TRUE;
-
- 			Boolean old = EAbstractNode.monitor_nodes(self_handle(), activate, opts);
-			if (old == null) throw ERT.badarg(flag, value);
-			return ERT.box(old.booleanValue());
-		}
-
-		throw new NotImplemented("process_flag flag="+flag+", value="+value);
-	}
-
-	private int getPriority() {
-		return this.priority;
-	}
-
-	private void setPriority(int i) {
-		this.priority  = i;
-	}
 
 	@Override
 	public void execute() throws Pausable {
@@ -598,109 +698,33 @@ public final class EProc extends ETask<EInternalPID> {
 		return result;
 	}
 
-	/**
-	 * @return
-	 */
-	public EObject process_info() {
-		
-		ESeq res = ERT.NIL;
-		
-		res = res.cons(process_info(am_trap_exit));
-		res = res.cons(process_info(am_messages));
-		res = res.cons(process_info(am_message_queue_len));
-		res = res.cons(process_info(am_dictionary));
-		res = res.cons(process_info(am_group_leader));
-		res = res.cons(process_info(am_links));
-		res = res.cons(process_info(am_heap_size));
-		res = res.cons(process_info(am_initial_call));
-		res = res.cons(process_info(am_reductions));
+    public void add_exit_hook(ExitHook hook) {
+        synchronized(exit_hooks) {
+            exit_hooks.add(hook);
+        }
+    }
 
-		EObject reg_name = self_handle().name;
-		if (reg_name != ERT.am_undefined)
-			res = res.cons(new ETuple2(am_registered_name, reg_name));
-		
-		if (res == ERT.NIL) return ERT.am_undefined;
-		return res;
-	}
+    public void remove_exit_hook(ExitHook hook) {
+        synchronized(exit_hooks) {
+            exit_hooks.remove(hook);
+        }
+    }
 
-	/**
-	 * @param spec
-	 * @return
-	 */
-	public EObject process_info(EObject spec) {
-		if (spec == am_registered_name) {
-			return self_handle().name == ERT.am_undefined 
-				? ERT.NIL 
-				: new ETuple2(am_registered_name, self_handle().name);
-		} else if (spec == am_trap_exit) {
-			return new ETuple2(am_trap_exit, trap_exit);
-		} else if (spec == am_message_queue_len) {
-			return new ETuple2(am_message_queue_len,
-					   new ESmall(mbox.size()));
-		} else if (spec == am_messages) {
-			ESeq messages = EList.make((Object[])mbox.messages());
-			return new ETuple2(am_messages, messages);
-		} else if (spec == am_dictionary) {
-			return new ETuple2(am_dictionary, get());
-		} else if (spec == am_group_leader) {
-			return new ETuple2(am_group_leader, group_leader);
-		} else if (spec == am_links) {
-			ESeq links = links();
-			return new ETuple2(am_links, links);
-		} else if (spec == am_status) {
-			if (this.running) {
-				return new ETuple2(am_status, am_running);
-			} else if (this.pauseReason != null) {
-				return new ETuple2(am_status, am_waiting);
-			} else {
-				return new ETuple2(am_status, am_runnable);
-			}
-		} else if (spec == am_heap_size) {
-			return new ETuple2(am_heap_size, 
-							   ERT.box(Runtime.getRuntime().totalMemory() 
-									   - Runtime.getRuntime().freeMemory()));
-		} else if (spec == am_stack_size) {
-			// TODO: Maybe use HotSpotDiagnosticMXBean ThreadStackSize property?
-			return new ETuple2(am_stack_size, 
-							   ERT.box(0));
-			
-		} else if (spec == am_reductions) {
-			return new ETuple2(am_reductions, ERT.box(this.reds));
-			
-		} else if (spec == am_initial_call) {
-			return new ETuple2(am_initial_call, 
-							   ETuple.make(spawn_mod, spawn_fun, ERT.box(spawn_args)));
-			
-		} else if (spec == am_current_function) {
-			/** TODO: fix this so we return something meaningful... */
-			return new ETuple2(am_current_function, 
-							   ETuple.make(spawn_mod, spawn_fun, ERT.box(spawn_args)));
-			
-		} else if (spec == am_memory) {
-			return new ETuple2(am_memory, ERT.box(50000));
-			
-		} else if (spec == am_error_handler) {
-			return new ETuple2(am_error_handler, am_error_handler);
-			
-		} else {
-			log.warning("NotImplemented: process_info("+spec+")");
-			throw new NotImplemented("process_info("+spec+")");
-		}
-	}
 
-	/* (non-Javadoc)
-	 * @see kilim.Task#toString()
-	 */
+    /*--------- Convenience --------------------------------*/
+
+    /* (non-Javadoc)
+      * @see kilim.Task#toString()
+      */
 	@Override
 	public String toString() {
 		return self.toString() + super.toString() +
 			"::" + spawn_mod + ":" + spawn_fun + "/" + spawn_args;
 	}
-	
-	
-	/**
-	 * @return
-	 */
+
+
+    /*==================== Globals - public interface ===============*/
+
 	public static ESeq processes() {
 		ESeq res = ERT.NIL;
 		for (EProc proc : all_tasks.values()) {
@@ -722,33 +746,6 @@ public final class EProc extends ETask<EInternalPID> {
 	}
 
 
-
-	/**
-	 * @return
-	 */
-	public boolean is_alive() {
-		erjang.ETask.STATE ps = pstate;
-		return ps == STATE.INIT || ps == STATE.RUNNING;
-	}
-
-	/**
-	 * @param hook
-	 */
-	public void add_exit_hook(ExitHook hook) {
-		synchronized(exit_hooks) {
-			exit_hooks.add(hook);
-		}
-	}
-
-	/**
-	 * @param hook
-	 */
-	public void remove_exit_hook(ExitHook hook) {
-		synchronized(exit_hooks) {
-			exit_hooks.remove(hook);
-		}
-	}
-
 	public static EInternalPID find(int id, int serial) {
 		int key = (serial << 15) | (id & 0x7fff);
 		EProc task = all_tasks.get(key);
@@ -757,8 +754,10 @@ public final class EProc extends ETask<EInternalPID> {
 	}
 
 
-	
-	static {
+
+    /*==================== Globals - internal ===============*/
+
+    static {
 		if (ErjangConfig.getBoolean("erjang.dump_on_exit"))
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 			@Override
