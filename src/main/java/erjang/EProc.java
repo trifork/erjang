@@ -782,23 +782,4 @@ public final class EProc extends ETask<EInternalPID> {
 			}
 		});
 	}
-
-
-
-}
-
-/** Eventually, EProc.TAIL_MARKER should just be NULL, but this may aid debugging */
-class ETailMarker extends EPseudoTerm {
-
-	@Override
-	int compare_same(EObject rhs) {
-		if (rhs == EProc.TAIL_MARKER)
-			return 0;
-		return -1;
-	}
-
-	@Override
-	public int hashCode() { // Shouldn't be called.
-		return 0;
-	}
 }
