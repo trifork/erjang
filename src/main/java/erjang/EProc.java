@@ -402,13 +402,6 @@ public final class EProc extends ETask<EInternalPID> {
 	}
 
 	/**
-	 * @return
-	 */
-	public ELocalNode getLocalNode() {
-		return ERT.getLocalNode();
-	}
-
-	/**
 	 * @param testAtom
 	 * @param a2
 	 * @return
