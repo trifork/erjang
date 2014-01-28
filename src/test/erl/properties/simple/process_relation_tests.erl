@@ -9,6 +9,14 @@
 % c(process_relation_tests, [{i, "../../../../../triq/include"}]).
 % process_relation_tests:test().
 
+child_survives_tail_spawn_nonlink_test() ->
+    N = 1000,
+    expect_to_leave_N_processes(N,
+                                fun() ->
+                                        [tail_nonlink_permanent_child()
+                                         || _ <- lists:seq(1,N)]
+                                end).
+
 child_survives_tail_spawn_link_normal_exit_test() ->
     N = 1000,
     expect_to_leave_N_processes(N,
@@ -52,6 +60,13 @@ nontail_spawn_link_child_with_siblings_exits_abnormally_test() ->
                                          || _ <- lists:seq(1,N)]
                                 end).
 
+
+tail_nonlink_permanent_child() ->
+    spawn(fun() ->
+                  spawn_link(fun() ->
+                               receive never -> ok end
+                       end) % In tail position
+          end).
 
 tail_spawn_link_permanent_child_normal_exit() ->
     spawn(fun() ->
