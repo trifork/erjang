@@ -38,8 +38,10 @@ import erjang.m.java.JavaObject;
 public final class EProc extends ETask<EInternalPID> {
 	
 	static Logger log = Logger.getLogger("erjang.proc");
-	
-	public static final EObject TAIL_MARKER = null; //new ETailMarker();
+
+    /*==================== Constants =============================*/
+
+    public static final EObject TAIL_MARKER = null;
 	
 	public static final EAtom am_trap_exit = EAtom.intern("trap_exit");
 	public static final EAtom am_sensitive = EAtom.intern("sensitive");
@@ -76,31 +78,72 @@ public final class EProc extends ETask<EInternalPID> {
 	private static final EAtom am_error_logger = EAtom.intern("error_logger");
 	private static final EAtom am_info_report = EAtom.intern("info_report");
 
-	private static final EObject am_DOWN = EAtom.intern("DOWN");
 	private static final EObject am_noproc = EAtom.intern("noproc");
 
-	public EFun tail;
-	public EObject arg0, arg1, arg2, arg3, arg4, arg5, 
-				   arg6, arg7, arg8, arg9, arg10, arg11, 
-				   arg12, arg13, arg14, arg15, arg16, arg17;
-	public ErlangException last_exception;
+    private static final EAtom[] priorities = new EAtom[] {
+            EAtom.intern("max"),
+            EAtom.intern("high"),
+            EAtom.intern("normal"),
+            EAtom.intern("low"),
+    };
 
-	private EInternalPID self;
+    private static final ExitHook[] NO_HOOKS = new ExitHook[0];
 
-	private EPID group_leader;
 
-	private EAtom spawn_mod;
+    /*==================== Global state ====================================*/
+    public static ConcurrentHashMap<Integer,EProc> all_tasks
+            = new ConcurrentHashMap<Integer,EProc> ();
 
-	private EAtom spawn_fun;
+    /*==================== Process state ====================================*/
+    /*========= Immutable state =========================*/
+    private final EInternalPID self;
 
-	private int spawn_args;
+    // TODO: Make final (and set in constructor rather than in setTarget)
+    private EAtom spawn_mod;
+    private EAtom spawn_fun;
+    private int spawn_args;
+
+    /*========= Mutable Erlang-dictated state ===========*/
+    private EPID group_leader;
+    public ErlangException last_exception; // TODO: Make private
+    private final Map<EObject, EObject> pdict = new HashMap<EObject, EObject>();
+    private EAtom trap_exit = ERT.FALSE;
+    private EAtom sensitive = ERT.FALSE;
+    private EAtom error_handler = am_error_handler;
+
+    private int priority = 2;
+
+    /*========= Mutable implementation-related state ====*/
+
+    // TODO - make private. (Only accessed from ERT.) Add accessors/operations.
+    // Message receive group:
+    /** Message box index - used for selective receive */
+    public int midx = 0;
+    public long timeout_start;
+    public boolean in_receive;
+
+    /** Used for implementing tail calls. */
+    public EFun tail;
+    public EObject arg0, arg1, arg2, arg3, arg4, arg5,
+    arg6, arg7, arg8, arg9, arg10, arg11,
+    arg12, arg13, arg14, arg15, arg16, arg17;
 
 	// For interpreter use:
 	public EObject[] stack = new EObject[10];
 	public int sp = 0;
-// 	double[] fregs = new double[16];
-	public EDouble[] fregs = new EDouble[16];
-	
+    public EObject[] regs;
+    public EDouble[] fregs = new EDouble[16];
+
+    public EModuleManager.FunctionInfo undefined_function
+            = EModuleManager.get_module_info(error_handler).
+            get_function_info(new FunID(error_handler, am_undefined_function, 3));
+
+    /** For process clean-up. */
+    private final List<ExitHook> exit_hooks = new ArrayList<ExitHook>();
+
+
+    /*==================== Construction =============================*/
+
 	public EProc(EPID group_leader, EAtom m, EAtom f, Object[] a) {
 		self = new EInternalPID(this);
 
@@ -179,8 +222,11 @@ public final class EProc extends ETask<EInternalPID> {
 		case 0:
 		}
 	}
-	
-	private int key() {
+
+    /*==================== Public interface =========================*/
+    /*==================== Internals ================================*/
+
+    private int key() {
 		int key = (self.serial() << 15) | (self.id() & 0x7fff);
 		return key;
 	}
@@ -192,39 +238,15 @@ public final class EProc extends ETask<EInternalPID> {
 		return self;
 	}
 
-	/**
-	 * @param key
-	 * @param value
-	 * @return
-	 */
-
-	Map<EObject, EObject> pdict = new HashMap<EObject, EObject>();
-
-	private EAtom trap_exit = ERT.FALSE;
-	private EAtom sensitive = ERT.FALSE;
-
-	public int midx = 0;
-
-	private int priority = 2;
-
-	private EAtom error_handler = am_error_handler;
-	EModuleManager.FunctionInfo undefined_function;
-
-	{
-		   FunID uf = new FunID(error_handler, am_undefined_function, 3); 
-		   undefined_function = EModuleManager.get_module_info(error_handler).get_function_info(uf);
-	}
 
 	protected void link_failure(EHandle h) throws Pausable {
 		if (trap_exit == ERT.TRUE || h.testLocalHandle()==null) {
-			send_exit(h, ERT.am_noproc, false);
+			send_exit(h, am_noproc, false);
 		} else {
-			throw new ErlangError(ERT.am_noproc);
+			throw new ErlangError(am_noproc);
 		}
 	}
 
-	static ExitHook[] NO_HOOKS = new ExitHook[0];
-	
 	@Override
 	protected void do_proc_termination(EObject result) throws Pausable {
 		
@@ -280,7 +302,7 @@ public final class EProc extends ETask<EInternalPID> {
 			} else {
 				this.exit_reason = reason;
 			}
-			
+
 			this.pstate = STATE.EXIT_SIG;
 			this.killer = new Throwable();
 			this.resume();
@@ -316,8 +338,6 @@ public final class EProc extends ETask<EInternalPID> {
 		}
 	}
 	
-	// private Thread runner;
-
 	public EObject put(EObject key, EObject value) {
 		EObject res = pdict.put(key, value);
 		if (res == null)
@@ -387,13 +407,6 @@ public final class EProc extends ETask<EInternalPID> {
 	public ELocalNode getLocalNode() {
 		return ERT.getLocalNode();
 	}
-
-	static final EAtom[] priorities = new EAtom[] {
-		EAtom.intern("max"),
-		EAtom.intern("high"),
-		EAtom.intern("normal"),
-		EAtom.intern("low"),
-	};
 
 	/**
 	 * @param testAtom
@@ -692,9 +705,6 @@ public final class EProc extends ETask<EInternalPID> {
 	}
 	
 	
-	public static ConcurrentHashMap<Integer,EProc> all_tasks 
-		= new ConcurrentHashMap<Integer,EProc> ();
-	
 	/**
 	 * @return
 	 */
@@ -728,14 +738,10 @@ public final class EProc extends ETask<EInternalPID> {
 		return ps == STATE.INIT || ps == STATE.RUNNING;
 	}
 
-	private final List<ExitHook> exit_hooks = new ArrayList<ExitHook>();
+    public Map<Integer, EAtom> getAtomCacheMap() {
+        return null;
+    }
 
-	public long timeout_start;
-
-	public boolean in_receive;
-
-	public EObject[] regs;
-	
 	/**
 	 * @param hook
 	 */
@@ -752,10 +758,6 @@ public final class EProc extends ETask<EInternalPID> {
 		synchronized(exit_hooks) {
 			exit_hooks.remove(hook);
 		}
-	}
-
-	public Map<Integer, EAtom> getAtomCacheMap() {
-		return null;
 	}
 
 	public static EInternalPID find(int id, int serial) {
