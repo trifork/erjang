@@ -315,30 +315,28 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 		if (!is_erlang_exit2)
 			unlink_oneway(from);
 
-		synchronized (this) {
-			switch (pstate) {
+        switch (pstate) {
 
-			// process is already "done", just ignore exit signal
-			case DONE:
-				return;
+          // process is already "done", just ignore exit signal
+          case DONE:
+            return;
 
-				// we have already received one exit signal, ignore
-				// subsequent ones...
-			case EXIT_SIG:
-			case SENDING_EXIT:
-				// TODO: warn that this process is not yet dead. why?
-				return;
+          // we have already received one exit signal, ignore
+          // subsequent ones...
+          case EXIT_SIG:
+          case SENDING_EXIT:
+            // TODO: warn that this process is not yet dead. why?
+            return;
 
-			case INIT:
-			case RUNNING:
-                process_incoming_exit(from, reason, is_erlang_exit2);
-                return;
+          case INIT:
+          case RUNNING:
+            break;
 
-            default:
-                throw new Error("unknown state? "+pstate);
-            }
-		}
-	}
+          default:
+            throw new Error("unknown state? "+pstate);
+        }
+        process_incoming_exit(from, reason, is_erlang_exit2);
+    }
 
 	protected abstract void process_incoming_exit(EHandle from, EObject reason, boolean is_erlang_exit2) throws Pausable
 			;
