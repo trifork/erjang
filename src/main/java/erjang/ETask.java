@@ -68,6 +68,14 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
      *     \              \                /
      *      -------------------> EXITING --
      *
+     * For reliability (trigger-once guarantee) of exit-actions, the following invariant is enforced:
+     * Once the state is DONE, the set of exit-actions (links, monitors, and exit hooks) MUST NOT
+     * change (as there would be e.g. add/perform race conditions in that case),
+     * This is accompliced by keeping the pstate in an AtomicInteger together with the number of current exit-action
+     * mutators, in such a manner that the transition to DONE can only occur when there are zero mutators.
+     * (Value: (n_mutators << 4) | (STATE value)
+     * Changes to links/monitors/exit hooks must honour this updating pattern.
+     * TODO: Follow through on this.
      */
     protected volatile STATE pstate = STATE.INIT;
 
