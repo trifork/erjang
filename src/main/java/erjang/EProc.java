@@ -694,16 +694,18 @@ public final class EProc extends ETask<EInternalPID> {
 		return result;
 	}
 
-    public void add_exit_hook(ExitHook hook) {
+    public boolean add_exit_hook(ExitHook hook) {
         synchronized(exit_hooks) {
             exit_hooks.add(hook);
         }
+        return true; // TODO
     }
 
-    public void remove_exit_hook(ExitHook hook) {
+    public boolean remove_exit_hook(ExitHook hook) {
         synchronized(exit_hooks) {
             exit_hooks.remove(hook);
         }
+        return true; // TODO
     }
 
 

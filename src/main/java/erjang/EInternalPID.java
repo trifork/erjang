@@ -184,19 +184,19 @@ public class EInternalPID extends EPID implements ELocalHandle {
 	/**
 	 * @param eTimerTask
 	 */
-	public void add_exit_hook(ExitHook hook) {
+	public boolean add_exit_hook(ExitHook hook) {
 		EProc task = this.task;
-		if (task != null && is_alive())
+		return (task != null && task.is_alive()) &&
 			task.add_exit_hook(hook);
 	}
 
 	/**
 	 * @param eTimerTask
 	 */
-	public void remove_exit_hook(ExitHook hook) {
+	public boolean remove_exit_hook(ExitHook hook) {
 		EProc task = this.task;
-		if (task != null)
-			task.remove_exit_hook(hook);
+		return (task != null && task.is_alive()) &&
+            task.remove_exit_hook(hook);
 	}
 
 	/**

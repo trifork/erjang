@@ -195,10 +195,14 @@ abstract class ETable implements ExitHook {
                     transfer_data);
 
             this.owner = new WeakReference<EProc>(new_owner_task);
-            new_owner_task.add_exit_hook(this);
-            former_owner.remove_exit_hook(this);
 
-            new_owner.send(former_owner, msg);
+            if (new_owner_task.add_exit_hook(this)) {
+                // OK - transfered
+                new_owner.send(former_owner, msg);
+            } else {
+                delete();
+            }
+
         } else {
             delete();
         }
@@ -402,10 +406,9 @@ abstract class ETable implements ExitHook {
 				this.heirData = tup.elem3;
 				this.heirPID = pid;
 
-				pid.add_exit_hook(this);
 
-				if (old != null) {
-					old.remove_exit_hook(this);
+                if (old == null || old.remove_exit_hook(this)) {
+                    pid.add_exit_hook(this);
 				}
 				
 				return;

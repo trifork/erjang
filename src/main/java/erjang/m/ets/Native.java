@@ -658,16 +658,19 @@ public class Native extends ENative {
 	@BIF static public EObject give_away(EProc proc, EObject tab, EObject pid, EObject giftData) throws Pausable
 	{
 		EInternalPID giveTo = pid.testInternalPID();
-		ETable table = resolve(proc, tab, true);		
-		if (table == null
+		ETable table = resolve(proc, tab, true);
+        EInternalPID former_owner = proc.self_handle();
+        if (table == null
                 || giveTo==null || !giveTo.is_alive() /* "Pid must be alive and local" */
                 || giveTo == table.owner_pid()        /* "... and not already the owner of the table" */
-                || table.owner_pid() != proc.self_handle()) /* "The calling process must be the table owner" */
+                || table.owner_pid() != former_owner) /* "The calling process must be the table owner" */
         {
 			throw ERT.badarg(tab, pid, giftData);
 		}
 
-        table.transfer_ownership_to(giveTo, giftData);
+        if (former_owner.remove_exit_hook(table)) {
+            table.transfer_ownership_to(giveTo, giftData);
+        }
 
 		return ERT.TRUE;
 	}

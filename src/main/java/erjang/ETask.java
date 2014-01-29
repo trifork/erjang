@@ -237,17 +237,18 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
      */
     public boolean add_monitor(EHandle target, ERef ref) {
         monitors.put(ref, target);
-        return true;
+        return true; //TODO
     }
 
     /**
      * @param r
      */
-    public void remove_monitor(ERef r, boolean flush) {
+    public boolean remove_monitor(ERef r, boolean flush) {
         EHandle val = monitors.remove(r);
         if (flush) {
             // TODO: do we need to represent flush somehow?
         }
+        return true; //TODO
     }
 
     public EHandle get_monitored_process(ERef monitor) {
