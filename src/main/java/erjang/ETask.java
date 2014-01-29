@@ -89,7 +89,9 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 	}
 
 	public void link_to(EHandle handle) throws Pausable {
-		if (!link_oneway(handle) || !handle.link_oneway((EHandle) self_handle())) {
+		if (link_oneway(handle)) {
+          handle.link_oneway((EHandle) self_handle()); // Ignore failure if linker has received SIG_EXIT
+        } else {
 			link_failure(handle);
 		}		
 	}
@@ -301,7 +303,6 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 	 * @param is_erlang_exit2 TODO
 	 */
 	public final void send_exit(EHandle from, EObject reason, boolean is_erlang_exit2) throws Pausable {
-
 		if (log.isLoggable(Level.FINE)) {
 			log.log (Level.FINE, "exit " + from + " -> " + this + ", reason="+reason, new Throwable("trace"));
 		}
@@ -403,9 +404,10 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 
 	/**
 	 * @return
-	 */
-	public boolean exists() {
-		return pstate == STATE.INIT || pstate == STATE.RUNNING;
-	}
+     */
+    public boolean exists() {
+      STATE ps = pstate; // Read volatile just once!
+      return ps == STATE.INIT || ps == STATE.RUNNING;
+    }
 
 }

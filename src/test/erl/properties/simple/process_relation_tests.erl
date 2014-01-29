@@ -51,7 +51,7 @@ nontail_spawn_link_child_exits_abnormally_test() ->
                                          || _ <- lists:seq(1,N)]
                                 end).
 
-%%% Tests propgation.
+%%% Tests propagation.
 nontail_spawn_link_child_with_siblings_exits_abnormally_test() ->
     N = 1000,
     expect_to_leave_N_processes(0,
@@ -60,6 +60,15 @@ nontail_spawn_link_child_with_siblings_exits_abnormally_test() ->
                                          || _ <- lists:seq(1,N)]
                                 end).
 
+
+%%% Tests propagation + possibility of having been sent exit when trying to link
+link_kill_race_test() ->
+    N = 10000,
+    expect_to_leave_N_processes(0,
+                                fun() ->
+                                        [link_kill_race()
+                                         || _ <- lists:seq(1,N)]
+                                end).
 
 tail_nonlink_permanent_child() ->
     spawn(fun() ->
@@ -135,6 +144,17 @@ nontail_spawn_link_child_with_siblings_exits_abnormally() ->
                                      receive never -> ok end
                              end)
           end).
+
+link_kill_race() ->
+    Pid = spawn(fun() ->
+                        io:format("B"),
+                        spawn_link(fun() ->
+                                           io:format("C"),
+                                           receive never -> ok end
+                                   end),
+                        receive never -> ok end
+                end),
+    exit(Pid,go_away).
 
 expect_to_leave_N_processes(N, Action) when is_integer(N),
                                             is_function(Action,0) ->

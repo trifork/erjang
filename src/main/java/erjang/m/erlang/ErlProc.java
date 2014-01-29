@@ -174,7 +174,7 @@ public class ErlProc {
 		
 		EProc p2 = new EProc(proc.group_leader(), m, f, a);
 		
-		p2.link_to(proc);
+		proc.link_to(p2);
 		
 		ERT.run(p2);
 		
@@ -225,7 +225,7 @@ public class ErlProc {
 		EProc p2 = new EProc(self.group_leader(), m, f, a);
 		
 		if (link) {
-			p2.link_to(self);
+			self.link_to(p2);
 		}
 		
 		if (priority != null) {

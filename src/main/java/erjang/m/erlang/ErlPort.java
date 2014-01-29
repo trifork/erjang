@@ -320,7 +320,7 @@ public class ErlPort {
 
 		if (task != null) {
 			// link this proc and the driver task
-			task.link_to(proc);
+			proc.link_to(task);
 			ERT.run(task);
 
 			return task.self_handle();
