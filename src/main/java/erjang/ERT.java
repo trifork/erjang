@@ -29,7 +29,6 @@ import java.lang.reflect.Method;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -603,11 +602,8 @@ public class ERT {
 	}
 
 	private static void send_to_handle(EProc proc, EHandle handle, EObject msg) throws Pausable {
-		proc.reds += handle.send(proc.self_handle(), msg);
-		if (proc.reds > 1000) {
-			proc.reds = 0;
-			Task.yield();
-		}
+        int penalty = handle.send(proc.self_handle(), msg);
+        proc.bump_reductions(penalty);
 	}
 
 	/**

@@ -446,7 +446,7 @@ public final class EProc extends ETask<EInternalPID> {
                     ERT.box(0));
 
         } else if (spec == am_reductions) {
-            return new ETuple2(am_reductions, ERT.box(this.reds));
+            return new ETuple2(am_reductions, ERT.box(this.get_reductions()));
 
         } else if (spec == am_initial_call) {
             return new ETuple2(am_initial_call,

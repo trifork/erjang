@@ -761,7 +761,7 @@ public class ErlBif {
 			return ETuple.make(ERT.box(since_epoch), ERT.box(since_last));
 
 		} else if (spec == am_reductions) {
-			long current_reds = proc.reds;
+			long current_reds = proc.get_reductions();
 			long since_last = current_reds - last_reductions;
 			last_reductions = current_reds;
 			
@@ -771,7 +771,7 @@ public class ErlBif {
 			
 			long current_reds = 0L;
 			for (EProc p : EProc.all_tasks.values()) {
-				current_reds += p.reds;
+				current_reds += p.get_reductions();
 			}
 			long since_last = current_reds - last_exact_reductions;
 			last_exact_reductions = current_reds;

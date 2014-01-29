@@ -32,6 +32,7 @@ import kilim.Pausable;
 
 import com.trifork.clj_ds.IPersistentSet;
 import com.trifork.clj_ds.PersistentHashSet;
+import kilim.Task;
 
 /**
  * An ETask is what is common for processes and open ports
@@ -260,7 +261,8 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 	protected volatile STATE  pstate = STATE.INIT;
 	protected EObject exit_reason;
 
-	public int reds;
+    /** Reduction counter. */
+	private int reds;
 
 	protected Throwable killer;
 
@@ -296,6 +298,17 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 	public void mbox_remove_one() throws Pausable {
 		mbox.get();
 	}
+
+    public int get_reductions() { return reds;}
+
+    public void bump_reductions(int amount) throws Pausable {
+        reds += amount;
+        if (reds > 1000) {
+            reds = 0;
+            Task.yield();
+        }
+
+    }
 
 	/**
 	 * @param from
