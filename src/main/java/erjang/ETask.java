@@ -53,11 +53,22 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 
     /*==================== Typedefs ==============================*/
     public enum STATE {
-        INIT, RUNNING, EXIT_SIG, SENDING_EXIT, DONE
+        INIT, RUNNING, EXITING, DONE
     };
 
     /*==================== Process state ====================================*/
 
+    /** Process lifecycle:
+     *
+     *   INIT -----> RUNNING --------------------> DONE
+     *     \           \                       /
+     *     v           v                      /
+     *   INIT w/      RUNNING w/             /
+     *   exit_reason  exit_reason           /
+     *     \              \                /
+     *      -------------------> EXITING --
+     *
+     */
     protected volatile STATE pstate = STATE.INIT;
 
     private AtomicReference<PersistentHashSet<EHandle>>
@@ -75,8 +86,11 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
     /** Reduction counter. */
     private int reds;
 
-    /** null when task is alive or terminated normally; non-null when task is terminated/terminating abnormally. */
-    protected EObject exit_reason;
+    /** Exit signal and reason -
+     *  null when task is alive or terminated normally; non-null when task is terminated/terminating abnormally.
+     *  Killer and exit_reason are always set together.
+     * */
+    protected volatile EObject exit_reason;
     protected Throwable killer;
 
     private Mailbox<EObject> print_trace;
@@ -264,9 +278,7 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
      * trapping)
      */
     public final void check_exit() {
-        if (this.pstate == STATE.EXIT_SIG) {
-            do_check_exit();
-        }
+        do_check_exit();
 
         if (print_trace != null) {
             Mailbox<EObject> mb = print_trace;
@@ -285,7 +297,7 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
     /** because the above is called a bazillion times, we split this out to make it easier to inline */
     private void do_check_exit() throws ErlangExitSignal {
         if (exit_reason != null) {
-            this.pstate = STATE.SENDING_EXIT;
+            this.pstate = STATE.EXITING;
             EObject reason = exit_reason;
             //System.err.println("---- [" + killer + "]");
             ErlangExitSignal e = new ErlangExitSignal(reason, killer);
@@ -401,8 +413,7 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 
           // we have already received one exit signal, ignore
           // subsequent ones...
-          case EXIT_SIG:
-          case SENDING_EXIT:
+          case EXITING:
             // TODO: warn that this process is not yet dead. why?
             return;
 

@@ -28,8 +28,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import kilim.Pausable;
-import erjang.m.erlang.ErlFun;
-import erjang.m.erlang.ErlProc;
 import erjang.m.java.JavaObject;
 
 /**
@@ -521,7 +519,7 @@ public final class EProc extends ETask<EInternalPID> {
 	
 	protected void process_incoming_exit(EHandle from, EObject reason, boolean is_erlang_exit2) throws Pausable
 	{
-		if (pstate == STATE.EXIT_SIG || pstate == STATE.SENDING_EXIT || pstate == STATE.DONE) {
+		if (pstate == STATE.EXITING || pstate == STATE.DONE) {
 			if (log.isLoggable(Level.FINE)) {
 				log.fine("Ignoring incoming exit reason="+reason+", as we're already exiting reason="+exit_reason);
 			}
@@ -533,9 +531,9 @@ public final class EProc extends ETask<EInternalPID> {
 		}
 		
 		if (is_erlang_exit2) {
+            EObject exit_reason_to_set;
 			if (reason == am_kill) {
-				exit_reason = am_killed;
-				
+				exit_reason_to_set = am_killed;
 			} else if (trap_exit == ERT.TRUE) {
 				// we're trapping exits, so we in stead send an {'EXIT', from,
 				// reason} to self
@@ -546,10 +544,10 @@ public final class EProc extends ETask<EInternalPID> {
 				return;
 				
 			} else {
-				this.exit_reason = reason;
+				exit_reason_to_set = reason;
 			}
 
-			this.pstate = STATE.EXIT_SIG;
+			this.exit_reason = exit_reason_to_set;
 			this.killer = new Throwable();
 			this.resume();
 			return;
@@ -570,7 +568,6 @@ public final class EProc extends ETask<EInternalPID> {
 			
 		} else if (reason == am_kill) {
 			this.exit_reason = am_killed;
-			this.pstate = STATE.EXIT_SIG;
 			this.killer = new Throwable();
 			this.resume();
 
@@ -578,7 +575,6 @@ public final class EProc extends ETask<EInternalPID> {
 			// System.err.println("kill signal: " +reason + " from "+from);
 			// try to kill this thread
 			this.exit_reason = reason;
-			this.pstate = STATE.EXIT_SIG;
 			this.killer = new Throwable();
 			this.resume();
 		}
