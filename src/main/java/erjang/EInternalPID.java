@@ -72,7 +72,8 @@ public class EInternalPID extends EPID implements ELocalHandle {
 	 */
 	@Override
 	public boolean is_alive() {
-		return task != null && task.is_alive();
+        EProc task = this.task; // Take local copy
+        return task != null && task.is_alive();
 	}
 	
 	public ELocalHandle testLocalHandle() {
