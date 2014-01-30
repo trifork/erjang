@@ -484,16 +484,16 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 
     /** Returns the state value.
      * Must be paired with exit_action_mutator_unlock! */
-    protected int exit_action_mutator_lock() {
+    protected final int exit_action_mutator_lock() {
         int v = pstate_and_mutator_count.getAndAdd(MUTATOR_COUNT_ONE);
         return v & PSTATE_MASK;
     }
 
-    protected void exit_action_mutator_unlock() {
+    protected final void exit_action_mutator_unlock() {
         pstate_and_mutator_count.getAndAdd(-MUTATOR_COUNT_ONE);
     }
 
-    protected void set_state_to_done_and_wait_for_stability() throws Pausable {
+    protected final void set_state_to_done_and_wait_for_stability() throws Pausable {
         // Set state to DONE:
         int state_and_mutator_count = try_set_state(STATE.DONE);
 
@@ -501,7 +501,7 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
         int iter_count = 0;
         while ((state_and_mutator_count & MUTATOR_COUNT_MASK) != 0) {
             if ((++iter_count) % 16 == 0) Task.yield();
-            state_and_mutator_count = get_state_dirtyread();
+            state_and_mutator_count = pstate_and_mutator_count.get();
         }
 
         // Invariant: state is DONE and there are no exit-action mutators.
@@ -509,7 +509,7 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
     }
 
     /** Returns old state and mutator count (packed) */
-    protected void set_state(STATE new_state) {
+    protected final void set_state(STATE new_state) {
         if (try_set_state(new_state) == -1) {
             System.err.println("Internal consistency error: bad process state transition to "+new_state+" ("+pstate_and_mutator_count.get()+")");
             // But go on regardless...
@@ -517,7 +517,7 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
     }
 
     /** Returns old state and mutator count (packed) - or (-1) if state transition is invalid. */
-    protected int try_set_state(STATE new_state) {
+    private final int try_set_state(STATE new_state) {
         int old_value, new_value;
         int new_state_value = new_state.ordinal();
         do {
@@ -529,8 +529,12 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
         return old_value;
     }
 
-    protected int get_state_dirtyread() {
+    protected final int get_state_dirtyread() {
         return pstate_and_mutator_count.get() & PSTATE_MASK;
+    }
+
+    protected final int get_pstate_for_debug() {
+        return pstate_and_mutator_count.get();
     }
 
     /*--------- Miscellaneous ---------------------------*/

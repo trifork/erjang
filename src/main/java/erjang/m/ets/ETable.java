@@ -183,7 +183,6 @@ abstract class ETable implements ExitHook {
 
     public void transfer_ownership_to(EInternalPID new_owner, EObject transfer_data) throws Pausable {
         EInternalPID former_owner = owner_pid();
-        System.err.println("DB| transfer ownership of "+tid+" from "+former_owner+" to "+new_owner+" with tag "+transfer_data);
         EProc new_owner_task;
         if ((new_owner_task = new_owner.task()) != null) {
             //System.err.println("received exit from owner "+former_owner
