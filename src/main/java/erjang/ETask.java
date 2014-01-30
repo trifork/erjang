@@ -342,7 +342,8 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
     /** because the above is called a bazillion times, we split this out to make it easier to inline */
     private void do_check_exit() throws ErlangExitSignal {
         if (exit_reason != null) {
-            set_state(STATE.EXITING);
+            set_state_if_later(STATE.EXITING); // The state might be done, in case
+                                               // this is called from a subsequent yield
 
             // Build and throw exception
             EObject reason = exit_reason;
@@ -508,12 +509,15 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
         assert pstate_and_mutator_count.get() == STATE.DONE.ordinal();
     }
 
-    /** Returns old state and mutator count (packed) */
     protected final void set_state(STATE new_state) {
         if (try_set_state(new_state) == -1) {
             System.err.println("Internal consistency error: bad process state transition to "+new_state+" ("+pstate_and_mutator_count.get()+")");
             // But go on regardless...
         }
+    }
+
+    protected final void set_state_if_later(STATE new_state) {
+        try_set_state(new_state); // ignore any error result
     }
 
     /** Returns old state and mutator count (packed) - or (-1) if state transition is invalid. */
