@@ -667,15 +667,11 @@ public class Native extends ENative {
 			throw ERT.badarg(tab, pid, giftData);
 		}
 
-        if (former_owner.remove_exit_hook(table)) {
-            if (table.transfer_ownership_to(giveTo, giftData)) {
-                return ERT.TRUE;
-            } else {
-                // Process is gone after all.
-                throw ERT.badarg(tab, pid, giftData);
-            }
+        if (table.transfer_ownership_to(giveTo, giftData)) {
+            former_owner.remove_exit_hook(table);
+            return ERT.TRUE;
         } else {
-            log.severe("Internal consistency error: process calls ets:give_away while dead!? "+proc);
+            // Process is gone after all.
             throw ERT.badarg(tab, pid, giftData);
         }
 	}

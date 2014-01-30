@@ -193,13 +193,18 @@ abstract class ETable implements ExitHook {
                     former_owner,
                     transfer_data);
 
+            WeakReference<EProc> former_owner_ref = this.owner;
             this.owner = new WeakReference<EProc>(new_owner_task);
 
             if (new_owner_task.add_exit_hook(this)) {
                 // OK - transfered
                 new_owner.send(former_owner, msg);
                 return true;
-            } // Else the process is done and did not accept the hook
+            } else {
+                // The process is done and did not accept the hook
+                // Roll back:
+                this.owner = former_owner_ref;
+            }
         }
         return false;
     }
