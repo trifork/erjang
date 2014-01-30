@@ -395,7 +395,7 @@ abstract class ETable implements ExitHook {
 			if (tup.elem1 == Native.am_heir
 					&& (pid=tup.elem2.testInternalPID()) != null)
 			{
-				if (!pid.is_alive()) {
+				if (!pid.is_alive_dirtyread()) {
 					this.heirPID = null;
 					this.heirData = ERT.NIL;
 					return;

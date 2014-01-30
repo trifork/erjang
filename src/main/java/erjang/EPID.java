@@ -135,7 +135,7 @@ public abstract class EPID extends EHandle {
 	/**
 	 * @return
 	 */
-	public abstract boolean is_alive();
+	public abstract boolean is_alive_dirtyread();
 
 	public void encode(EOutputStream eos) {
 		eos.write_pid(node.node, id(), serial(), creation());

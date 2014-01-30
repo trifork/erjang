@@ -54,7 +54,7 @@ public class EExternalPID extends EPID {
 	}
 	
 	@Override
-	public boolean is_alive() {
+	public boolean is_alive_dirtyread() {
 		throw new erjang.NotImplemented();
 
 	}

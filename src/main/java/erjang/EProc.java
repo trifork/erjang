@@ -136,7 +136,7 @@ public final class EProc extends ETask<EInternalPID> {
             = EModuleManager.get_module_info(error_handler).
             get_function_info(new FunID(error_handler, am_undefined_function, 3));
 
-    /** For process clean-up. */
+    /** For process clean-up. Protected by exit-action mutator lock. */
     private final List<ExitHook> exit_hooks = new ArrayList<ExitHook>();
 
 
@@ -477,9 +477,9 @@ public final class EProc extends ETask<EInternalPID> {
 
     /*--------- Process lifecycle --------------------------*/
 
-    public boolean is_alive() {
-        erjang.ETask.STATE ps = pstate;
-        return ps == STATE.INIT || ps == STATE.RUNNING;
+    public boolean is_alive_dirtyread() {
+        int pstate = get_state_dirtyread();
+        return pstate == STATE.INIT.ordinal() || pstate == STATE.RUNNING.ordinal();
     }
 
 
@@ -493,17 +493,14 @@ public final class EProc extends ETask<EInternalPID> {
 
 	@Override
 	protected void do_proc_termination(EObject result) throws Pausable {
-		
-		ExitHook[] hooks = NO_HOOKS;
-		synchronized (exit_hooks) {
-			if (exit_hooks == null || exit_hooks.isEmpty()) {
-				// do nothing //
-			} else {
-				hooks = exit_hooks.toArray(new ExitHook[exit_hooks.size()]);
-			}
-            //TODO: Within this lock, mark process as terminated so that race conditions can be handled in add_exit_hook().
-		}
-		
+        // Precondition: pstate is DONE, exit-action mutator count is zero.
+		final ExitHook[] hooks;
+        if (exit_hooks == null || exit_hooks.isEmpty()) {
+            hooks = NO_HOOKS;
+        } else {
+            hooks = exit_hooks.toArray(new ExitHook[exit_hooks.size()]);
+        }
+
 		for (int i = 0; i < hooks.length; i++) {
 			hooks[i].on_exit(self);
 		}
@@ -519,8 +516,9 @@ public final class EProc extends ETask<EInternalPID> {
 	
 	protected void process_incoming_exit(EHandle from, EObject reason, boolean is_erlang_exit2) throws Pausable
 	{
-		if (pstate == STATE.EXITING || pstate == STATE.DONE) {
-			if (log.isLoggable(Level.FINE)) {
+        int pstate = get_state_dirtyread();
+        if (exit_reason != null || pstate == STATE.DONE.ordinal()) {
+            if (log.isLoggable(Level.FINE)) {
 				log.fine("Ignoring incoming exit reason="+reason+", as we're already exiting reason="+exit_reason);
 			}
             return;
@@ -637,8 +635,7 @@ public final class EProc extends ETask<EInternalPID> {
 			death[0] = e;
 
 		} finally {
-			// this.runner = null;
-			this.pstate = STATE.DONE;
+            set_state_to_done_and_wait_for_stability();
 		}
 		
 		if (result != am_normal && monitors.isEmpty() && has_no_links() && !(death[0] instanceof ErlangExitSignal)) {
@@ -672,9 +669,7 @@ public final class EProc extends ETask<EInternalPID> {
 		EObject result;
 		this.check_exit();
 
-		// synchronized(this) {
-		this.pstate = STATE.RUNNING;
-		// }
+        set_state(STATE.RUNNING);
 
 	hibernate_loop:
 		while (true) {
@@ -695,17 +690,25 @@ public final class EProc extends ETask<EInternalPID> {
 	}
 
     public boolean add_exit_hook(ExitHook hook) {
-        synchronized(exit_hooks) {
+        int ps = exit_action_mutator_lock();
+        try {
+            if (ps == STATE.DONE.ordinal()) return false; // Too late.
             exit_hooks.add(hook);
+            return true;
+        } finally {
+            exit_action_mutator_unlock();
         }
-        return true; // TODO
     }
 
     public boolean remove_exit_hook(ExitHook hook) {
-        synchronized(exit_hooks) {
+        int ps = exit_action_mutator_lock();
+        try {
+            if (ps == STATE.DONE.ordinal()) return false; // Too late.
             exit_hooks.remove(hook);
+            return true;
+        } finally {
+            exit_action_mutator_unlock();
         }
-        return true; // TODO
     }
 
 
@@ -726,7 +729,7 @@ public final class EProc extends ETask<EInternalPID> {
 	public static ESeq processes() {
 		ESeq res = ERT.NIL;
 		for (EProc proc : all_tasks.values()) {
-			if (proc.is_alive()) {
+			if (proc.is_alive_dirtyread()) {
 				res = res.cons(proc.self_handle());
 			}
 		}
@@ -736,7 +739,7 @@ public final class EProc extends ETask<EInternalPID> {
 	public static int process_count() {
 		int count = 0;
 		for (EProc proc : all_tasks.values()) {
-			if (proc.is_alive()) {
+			if (proc.is_alive_dirtyread()) {
 				count += 1;
 			}
 		}

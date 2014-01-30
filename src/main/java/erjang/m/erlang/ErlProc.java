@@ -685,7 +685,7 @@ public class ErlProc {
 	public static EAtom is_process_alive(EObject p) {
 		EPID pid = p.testPID();
 		if (pid == null) throw ERT.badarg(p);
-		return ERT.box(pid.is_alive());
+		return ERT.box(pid.is_alive_dirtyread());
 	}
 	
 	@BIF

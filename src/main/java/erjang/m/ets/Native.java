@@ -18,7 +18,6 @@
 
 package erjang.m.ets;
 
-import java.lang.ref.WeakReference;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -174,7 +173,7 @@ public class Native extends ENative {
 				if (t3.elem1 == am_heir
 						&& ((heir_pid = t3.elem2.testInternalPID()) != null)) {
 					
-					if (!heir_pid.is_alive()) {
+					if (!heir_pid.is_alive_dirtyread()) {
 						heir_pid = null;
 					} else {
 						heir_data = t3.elem3;
@@ -661,7 +660,7 @@ public class Native extends ENative {
 		ETable table = resolve(proc, tab, true);
         EInternalPID former_owner = proc.self_handle();
         if (table == null
-                || giveTo==null || !giveTo.is_alive() /* "Pid must be alive and local" */
+                || giveTo==null || !giveTo.is_alive_dirtyread() /* "Pid must be alive and local" */
                 || giveTo == table.owner_pid()        /* "... and not already the owner of the table" */
                 || table.owner_pid() != former_owner) /* "The calling process must be the table owner" */
         {
@@ -669,7 +668,7 @@ public class Native extends ENative {
 		}
 
         if (former_owner.remove_exit_hook(table)) {
-            table.transfer_ownership_to(giveTo, giftData);
+            table.transfer_ownership_to(giveTo, giftData); //TODO: Check aliveness atomically.
         }
 
 		return ERT.TRUE;
