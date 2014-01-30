@@ -168,20 +168,20 @@ abstract class ETable implements ExitHook {
 		if (dyingPID == owner_pid()) {
 			
 			EInternalPID heirPID = this.heirPID;
-            if (heirPID != null && heirPID != dyingPID) {
-                transfer_ownership_to(heirPID,
-                        this.heirData == null ? ERT.NIL : this.heirData);
+            if (heirPID != null && heirPID != dyingPID &&
+                transfer_ownership_to(heirPID, this.heirData == null ? ERT.NIL : this.heirData))
+            {
+                // Transfered
             } else {
                 //System.err.println("received exit from owner "+dyingPID+" => delete");
 				delete();
 			}
-			
 		} else {
 			Native.log.warning("table "+aname+" ("+tid+") received exit from unrelated "+dyingPID);
 		}
 	}
 
-    public void transfer_ownership_to(EInternalPID new_owner, EObject transfer_data) throws Pausable {
+    public boolean transfer_ownership_to(EInternalPID new_owner, EObject transfer_data) throws Pausable {
         EInternalPID former_owner = owner_pid();
         EProc new_owner_task;
         if ((new_owner_task = new_owner.task()) != null) {
@@ -198,13 +198,10 @@ abstract class ETable implements ExitHook {
             if (new_owner_task.add_exit_hook(this)) {
                 // OK - transfered
                 new_owner.send(former_owner, msg);
-            } else {
-                delete();
-            }
-
-        } else {
-            delete();
+                return true;
+            } // Else the process is done and did not accept the hook
         }
+        return false;
     }
 
     void delete() {
