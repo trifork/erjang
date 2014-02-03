@@ -3,6 +3,7 @@ target
 /x86_64-apple-darwin12.4.0
 /x86_64-unknown-linux-gnu
 test-outputs
+/bootstrap
 
 # IDE specifics:
 /.idea
