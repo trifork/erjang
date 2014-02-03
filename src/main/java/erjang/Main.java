@@ -70,57 +70,12 @@ public class Main {
 			return;
 		}
 
-		String root = runtimeInfo.erl_rootdir;
-		regular_args.add(0,"-root");
-        regular_args.add(1, root);
+        if (! regular_args.contains("-root")) {
+            String root = runtimeInfo.erl_rootdir;
+            regular_args.add(0,"-root");
+            regular_args.add(1, root);
+        }
 
-        /*
-		arg_loop: 
-			for (int i = 0; i < args.length; i++) {
-			String arg = args[i];
-
-			if ("-extra".equals(arg)) { // Include the rest verbatim.
-				for (int ii = i; ii < args.length; ii++) {
-					ra.add(args[ii]);
-				}
-				break;
-			}
-
-			if ("-root".equals(args[i]) && i < args.length) {
-				// skip "-root <dir>" arg, was set above
-				i++;
-				continue;
-			}
-
-			if (arg.startsWith("+")) {
-				switch (arg.charAt(1)) {
-				case 'a':
-				case 'e': // strip erts version too
-				case 'A':
-				case 'B':
-				case 'h':
-				case 'K':
-				case 'M':
-				case 'P':
-				case 'R':
-				case 'S':
-				case 's':
-				case 't':
-				case 'T':
-				case 'W':
-					System.setProperty("erjang.beam.option."+arg.substring(1), args[i+1]);
-					i += 1;
-					continue arg_loop;
-				default:
-					System.setProperty("erjang.beam.option."+arg.substring(1), "true");
-					continue arg_loop;
-				}
-			}
-
-			ra.add(arg);
-		}
-		*/
-		
 		if (! regular_args.contains("-home")) {
             regular_args.add(0, "-home");
             regular_args.add(1, System.getProperty("user.home"));
