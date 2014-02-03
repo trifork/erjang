@@ -1,0 +1,5 @@
+# Generated files:
+*.o
+*.so
+/CMakeFiles
+

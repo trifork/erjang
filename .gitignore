@@ -1,11 +1,19 @@
-target
+# Generated files:
+/target
 *_TEST.java
 /x86_64-apple-darwin12.4.0
 /x86_64-unknown-linux-gnu
 test-outputs
 /bootstrap
+/test_server/*.beam
+*/.erjang/*.jar
+*.beam
 
 # IDE specifics:
 /.idea
 *.iml
+/out
 
+# Backup files:
+*~
+.#*
