@@ -512,6 +512,8 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 		copy.empty_out_q_subs = new ArrayList<EHandle>();
 		copy.active = ActiveType.PASSIVE;
 
+        copy.tcp_clear_input(); // Do not share mutable state!
+
 		final EDriverTask this_task = port().task();
 		EDriverTask driver = new EDriverTask(caller, copy) {
 			public EObject getName() {
@@ -2791,6 +2793,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 		i_buf = null;
 		i_ptr_start = 0;
 		i_remain = 0;
+        http_state = new IntCell();
 	}
 
 	private int tcp_expand_buffer(int len) {
