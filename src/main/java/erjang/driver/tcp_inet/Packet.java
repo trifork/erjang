@@ -267,6 +267,7 @@ public class Packet {
 				name = http_hash_lookup(name_buf, 0, name_len, h, http_hdr_hash);
 			} else {
 				/* Is it ok to return original name without case adjustments? */
+                name_buf = data;
 				name_ptr = buf;
 				name = null;
 			}
