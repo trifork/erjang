@@ -2657,7 +2657,8 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 			out.flip();
 			ByteBuffer header = out;
 
-			data = new EBinList(header, EBinary.make(tail));
+            EBinary tailAsEBin = EBinary.make(tail);
+            data = header.remaining()==0 ? tailAsEBin : new EBinList(header, tailAsEBin);
 		}
 
 		msg = ETuple.make(am_tcp, port(), data);
