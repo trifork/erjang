@@ -76,10 +76,23 @@ public class EModuleLoader {
 			loaded_module = erjang.beam.interpreter.Interpreter.beamFileToEModule(bfd);
 			after = System.currentTimeMillis();
 		} else { // Use compiler
-			EModuleClassLoader moduleClassLoader = ErjangCodeCache.getModuleClassLoader(moduleName, beamBin, beamParser);
-			after = System.currentTimeMillis();
-			loaded_module = load_compiled_module(moduleName, moduleClassLoader);
-		}
+            EModuleClassLoader moduleClassLoader;
+            try {
+                 moduleClassLoader = ErjangCodeCache.getModuleClassLoader(moduleName, beamBin, beamParser);
+            } catch (RuntimeException e) {
+                moduleClassLoader = null;
+            }
+
+            if (moduleClassLoader != null) {
+                after = System.currentTimeMillis();
+                loaded_module = load_compiled_module(moduleName, moduleClassLoader);
+            } else {
+                log.warning("Compiling "+moduleName+" failed - falling back to interpreter");
+                BeamFileData bfd = beamParser.load(beamBin.toByteArray());
+                loaded_module = erjang.beam.interpreter.Interpreter.beamFileToEModule(bfd);
+                after = System.currentTimeMillis();
+            }
+        }
 		if (log.isLoggable(Level.FINE)) {
 			long after_load = System.currentTimeMillis();
 			if (use_interpreter)
