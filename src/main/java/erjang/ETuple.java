@@ -199,11 +199,19 @@ public abstract class ETuple extends EObject implements Cloneable /* , Indexed *
 
 		byte[] data = make_tuple_class_data(num_cells);
 
-		dump(ETUPLE_NAME + num_cells, data);
+		//dump(ETUPLE_NAME + num_cells, data);
 
 		String name = (ETUPLE_NAME + num_cells).replace('/', '.');
 
-		return ERT.defineClass(ETuple.class.getClassLoader(), name, data);
+        synchronized (ETuple.class) { // Avoid race conditions
+            try {
+                // Has the class been defined in the meantime?
+                return (Class<? extends ETuple>) Class.forName(ETuple.class.getName() + num_cells);
+            } catch (ClassNotFoundException e) {
+                // It is still not defined - do it
+                return ERT.defineClass(ETuple.class.getClassLoader(), name, data);
+            }
+        }
 	}
 
 	static byte[] make_tuple_class_data(int num_cells) {
