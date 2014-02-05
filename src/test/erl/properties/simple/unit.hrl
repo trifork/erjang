@@ -12,6 +12,7 @@ eunit_test(Module) ->
                                      true
                                 catch _:Err ->
                                         io:format("*** Exception: ~p\n", [Err]),
+                                        io:format("*** Trace: ~p\n", [erlang:get_stacktrace()]),
                                         false
                                 end,
                           io:format("     ----- Test ~s ~s -----\n",
