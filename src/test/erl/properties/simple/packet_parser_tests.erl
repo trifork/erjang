@@ -16,8 +16,13 @@ test() ->
 
 %%%========== Tests: ==============================
 
-http_parser_test() ->
-    N = 100,
+http_parser_wholesend_test() ->
+    do_test_http_parser(250, fun gen_tcp:send/2).
+
+http_parser_splitsend_test() ->
+    do_test_http_parser(250, fun send_piecemeal/2).
+
+do_test_http_parser(N, SendFun) ->
 
     %% Create server end:
     {SS, Port} = create_server_socket([{packet,http_bin}]),
@@ -26,24 +31,23 @@ http_parser_test() ->
     %% Create client end:
     spawn_clients(Port, N,
                   fun(CS) ->
-                          ok = gen_tcp:send(CS, "GET /foo HTTP/1.1\r\nHeader1: Value1\r\nVeryLongHeaderNameYesIndeed: And then some long value, just like, you, know, ...\r\n\r\nBody"),
+                          Request = "GET /foo HTTP/1.1\r\nHeader1: Value1\r\nVerylongheadernameyesindeed: And then some long value, just like, you, know, ...\r\n\r\nBody",
+                          ok = SendFun(CS, Request),
                           ok = gen_tcp:close(CS)
                   end),
-    timer:sleep(500),
+    timer:sleep(1000),
     Msgs = flush(),
+    lists:foreach(fun(M) ->
+                          ?assertMatch([{http_request,'GET',{abs_path, <<"/foo">>}, {1,1}},
+                                        {http_header,_,<<"Header1">>,_,<<"Value1">>},
+                                        {http_header,_,<<"Verylongheadernameyesindeed">>,_,<<"And then some long value, just like, you, know, ...">>},
+                                        http_eoh],
+                                       M),
+                          io:format(":) "),
+                          true
+                     end,
+                  Msgs),
     ?assertEqual(N, length(Msgs)),
-    ?assertEqual(true,
-                 lists:all(fun([{http_request,'GET',{abs_path, <<"/foo">>}, {1,1}},
-                                {http_header,_,<<"Header1">>,_,<<"Value1">>},
-                                {http_header,_,<<"VeryLongHeaderNameYesIndeed">>,_,<<"And then some long value, just like, you, know, ...">>},
-                                http_eoh]) ->
-                                   io:format(":) "),
-                                   true;
-                              (_) ->
-                                   io:format(">:( "),
-                                   false
-                           end,
-                           Msgs)),
     unlink(Gatherer), exit(Gatherer, shutdown).
 
 spawn_clients(Port, N, ClientAction)
@@ -99,3 +103,11 @@ flush() ->
     receive M -> [M|flush()]
     after 0 -> []
     end.
+
+send_piecemeal(_S, []) -> ok;
+send_piecemeal(S, String) ->
+    {_,_,X} = now(),
+    N = 1+(X rem length(String)),
+    {Now,Later} = lists:split(N, String),
+    gen_tcp:send(S, Now),
+    send_piecemeal(S, Later).

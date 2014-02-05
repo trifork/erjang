@@ -42,4 +42,13 @@ eunit_test(Module) ->
                                {actual_value, Act}})
         end)(Expected,Actual)).
 
+-define(assertMatch(ExpectedPattern,Actual),
+        (fun(ExpectedPattern) -> ok;
+            (ActualValue) -> error({assertion_failed,
+                                    {line,?LINE},
+                                    {expr, ??Actual},
+                                    {expected_pattern, ??ExpectedPattern},
+                                    {actual_value, ActualValue}})
+        end)(Actual)).
+
 -endif.
