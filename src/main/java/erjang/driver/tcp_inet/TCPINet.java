@@ -801,7 +801,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 		if (!is_open())
 			return;
 
-		if (ch.isOpen())
+		if (ch.isOpen() && active==ActiveType.ACTIVE)
 			select(ch, ERL_DRV_READ, SelectMode.SET);
 
 		if (log.isLoggable(Level.FINE))
@@ -3035,7 +3035,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 		return send_async_ok(op.id, op.caller);
 	}
 
-	AsyncOp deq_async() {
+	public AsyncOp deq_async() {
 		return deq_async_w_tmo();
 	}
 
