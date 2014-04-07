@@ -1414,6 +1414,39 @@ public class ErlBif {
 		return l2.prepend(ll1);
 	}
 
+        @BIF
+        public static EAtom is_record(EObject term, EObject tag) {
+            return ERT.box( is_record$g(term, tag) == ERT.TRUE );
+	}
+
+        @BIF
+        public static EAtom is_record(EObject term, EObject tag, EObject size) {
+            return ERT.box( is_record$g(term, tag, size) == ERT.TRUE );
+	}
+
+    @BIF(type=Type.GUARD, name="is_record")
+            public static EAtom is_record$g(EObject term, EObject tag) {
+                EAtom atag = tag.testAtom();
+                ETuple tup = term.testTuple();
+                boolean ok = ( (atag != null) && (tup != null)
+                                && (tup.arity() > 0)
+                                && (tup.elm(1) == atag) );
+                if (ok) return ERT.TRUE;
+                else return null;
+	}
+
+    @BIF(type=Type.GUARD, name="is_record")
+            public static EAtom is_record$g(EObject term, EObject tag, EObject size) {
+                EAtom atag = tag.testAtom();
+                ETuple tup = term.testTuple();
+                ESmall siz = size.testSmall();
+                boolean ok = ( (atag != null) && (tup != null) && (siz != null)
+                                && (tup.arity() == siz.value)
+                                && (tup.elm(1) == atag) );
+                if (ok) return ERT.TRUE;
+                else return null;
+	}
+
 	@BIF
 	public static EAtom is_list(EObject o) {
 		return ERT.box(o.testCons() != null || o.testNil() != null);
