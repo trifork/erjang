@@ -23,6 +23,7 @@ import erjang.EAtom;
 import erjang.EBitString;
 import erjang.ECons;
 import erjang.EFun;
+import erjang.EMap;
 import erjang.ENumber;
 import erjang.EObject;
 import erjang.EPID;
@@ -31,6 +32,10 @@ import erjang.ERef;
 import erjang.ETuple;
 
 public abstract class ETermPattern {
+	public boolean match(EMap m, EMatchContext r) {
+		return false;
+	}
+
 	public boolean match(ETuple t, EMatchContext r) {
 		return false;
 	}

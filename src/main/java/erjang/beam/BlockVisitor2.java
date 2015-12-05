@@ -217,4 +217,7 @@ public interface BlockVisitor2 extends BlockVisitor {
 	void visitLine(int line);
 
 	void visitMakeTuple(int arity, Arg tuple_reg, Arg[] puts);
+
+	void visitMapQuery(BeamOpcode opcode, int label, Arg src, Arg[] keys, Arg[] dest);
+	void visitMapUpdate(BeamOpcode opcode, int label, Arg src, Arg dst, Arg[] keys, Arg[] srcs);
 }

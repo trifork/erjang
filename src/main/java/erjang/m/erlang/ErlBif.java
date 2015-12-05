@@ -49,6 +49,7 @@ import erjang.EDouble;
 import erjang.EFun;
 import erjang.EIOListVisitor;
 import erjang.EInteger;
+import erjang.EMap;
 import erjang.EModule;
 import erjang.EModuleLoader;
 import erjang.EModuleManager;
@@ -2383,4 +2384,18 @@ public class ErlBif {
 		return ERT.box( bif != null );
 	}
     
+	@BIF
+    public static ESmall map_size(EObject map) {
+		EMap self = map.testMap();
+		if (self == null) throw ERT.badmap(map);
+		return ERT.box(self.map_size());
+	}
+	
+	@BIF(type=Type.GUARD, name="map_size")
+    public static ESmall map_size_g(EObject map) {
+		EMap self = map.testMap();
+		if (self == null) return null;
+		return ERT.box(self.map_size());
+	}
+	
 }

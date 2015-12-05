@@ -40,12 +40,14 @@ import erjang.beam.repr.Operands.BitString;
 import erjang.beam.repr.Operands.ByteString;
 import erjang.beam.repr.Operands.DestinationOperand;
 import erjang.beam.repr.Operands.Label;
+import erjang.beam.repr.Operands.MapList;
 import erjang.beam.repr.Operands.SelectList;
 import erjang.beam.repr.Operands.SourceOperand;
 import erjang.beam.repr.Operands.XReg;
 import erjang.beam.repr.Operands.YReg;
 
 public class Insn implements BeamInstruction {
+
 	protected final BeamOpcode opcode;
 	public Insn(BeamOpcode opcode) {this.opcode = opcode;}
 	public BeamOpcode opcode() {return opcode;}
@@ -990,6 +992,59 @@ public class Insn implements BeamInstruction {
 							   src.toSymbolic(),
 							   defaultLabel.toSymbolic(),
 							   jumpTable.toSymbolic());
+		}
+	}
+
+
+	public static class MapQuery extends Insn { // E.g. 'select_val'
+		public final SourceOperand src;
+		public final Label defaultLabel;
+		public final SelectList kvs; // TODO: Improve representation.
+		public MapQuery(BeamOpcode opcode,
+					  Label defaultLabel,
+					  SourceOperand map,
+					  SelectList kvs)
+		{
+			super(opcode);
+			this.src = map;
+			this.defaultLabel = defaultLabel;
+			this.kvs = kvs;
+		}
+		public ETuple toSymbolic() {
+			return ETuple.make(opcode.symbol,
+							   defaultLabel.toSymbolic(),
+							   src.toSymbolic(),
+							   kvs.toSymbolic());
+		}
+	}
+
+	public static class MapUpdate extends Insn { // E.g. 'select_val'
+		public final SourceOperand src;
+		public final Label defaultLabel;
+		public final SelectList kvs; // TODO: Improve representation.
+		public final DestinationOperand dest;
+		private int kvCount;
+		public MapUpdate(BeamOpcode opcode,
+					  Label defaultLabel,
+					  SourceOperand map,
+					  int kvCount, 
+					  SelectList kvs,
+					  DestinationOperand dest)
+		{
+			super(opcode);
+			this.src = map;
+			this.defaultLabel = defaultLabel;
+			this.kvs = kvs;
+			this.kvCount = kvCount;
+			this.dest = dest;
+		}
+		public ETuple toSymbolic() {
+			return ETuple.make(opcode.symbol,
+							   defaultLabel.toSymbolic(),
+							   src.toSymbolic(),
+							   dest.toSymbolic(),
+							   ESmall.make(kvCount),
+							   kvs.toSymbolic());
 		}
 	}
 

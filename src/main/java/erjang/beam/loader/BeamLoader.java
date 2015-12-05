@@ -739,6 +739,7 @@ public class BeamLoader extends CodeTables {
 				return new Insn.YL(opcode, y, label);
 			}
 
+			case is_map:
 			case is_integer:
 			case is_float:
 			case is_number:
@@ -1092,6 +1093,29 @@ public class BeamLoader extends CodeTables {
 				return new Insn.GcBif(opcode, optLabel, extFun(ext_fun_ref), save, arg1, arg2, arg3, dest);
 			}
 
+			// map operations
+			
+			case get_map_elements:
+			case has_map_fields:
+			{
+				Label optlabel = readOptionalLabel();
+				SourceOperand map = readSource();
+				SelectList mapKeys = readSelectList();
+				return new Insn.MapQuery(opcode, optlabel, map, mapKeys);
+			}
+			
+			case put_map_assoc:
+			case put_map_exact:
+			{
+				Label optlabel = readOptionalLabel();
+				SourceOperand src = readSource();
+				DestinationOperand dest = readDestination();
+				int _n = readCodeInteger();
+				SelectList mapKeyValues = readSelectList();
+				return new Insn.MapUpdate(opcode, optlabel, src, _n, mapKeyValues, dest);
+			}
+			
+			
 			default:
 				throw new IOException("Unknown instruction: "+opcode);
 			} // switch
@@ -1277,7 +1301,7 @@ public class BeamLoader extends CodeTables {
 				Operand[] list = new Operand[length];
 				for (int i=0; i<length; ) {
 					list[i++] = readOperand();
-					list[i++] = readLabel();
+					list[i++] = readOperand();
 				}
 				return new SelectList(list);
 			}

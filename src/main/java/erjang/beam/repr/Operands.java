@@ -191,6 +191,32 @@ public class Operands {
 		public int size() {return list.length / 2;}
 		public Operand getValue(int i) {return list[2*i];}
 		public Label getLabel(int i)   {return (Label)list[2*i+1];}
+		
+		// when used in MapQuery/MapUpdate insns
+		public SourceOperand getKey(int i)   {return (SourceOperand)list[2*i];}
+		public DestinationOperand getKeyDest(int i)   {return (DestinationOperand)list[2*i+1];}
+		public SourceOperand getKeySrc(int i)   {return (SourceOperand)list[2*i+1];}
+
+		public EObject toSymbolic() {
+			EObject[] elems = new EObject[list.length];
+			for (int i=0; i<list.length; i++) {
+				elems[i] = list[i].toSymbolic();
+			}
+			return ETuple.make(LIST_ATOM, ESeq.fromArray(elems));
+		}
+    }
+
+    public static class MapList extends Operand {
+		Operand[] list;
+		public MapList(Operand[] list) {this.list=list;}
+
+		@Override
+		public MapList asMapList() {return this;}
+
+		public int size() {return list.length / 2;}
+		public SourceOperand      getKey(int i)    {return list[2*i].asSource();}
+		public DestinationOperand getDest(int i)   {return list[2*i+1].asDestination();}
+		public SourceOperand      getSource(int i) {return list[2*i+1].asSource();}
 
 		public EObject toSymbolic() {
 			EObject[] elems = new EObject[list.length];

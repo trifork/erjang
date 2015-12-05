@@ -33,6 +33,7 @@ import erjang.EBitString;
 import erjang.ECons;
 import erjang.EFun;
 import erjang.EList;
+import erjang.EMap;
 import erjang.ENumber;
 import erjang.EObject;
 import erjang.EPID;
@@ -407,6 +408,11 @@ public class EPattern {
 	/** generic compare-equals matcher */
 	public static ETermPattern compilePattern(EObject epid, Set<Integer> out) {
 		return new ValuePattern(epid);
+	}
+
+	public static ETermPattern compilePattern(EMap map, Set<Integer> out) {
+		// TODO: Map matching semantics?
+		return new ValuePattern(map);
 	}
 
 	/**
