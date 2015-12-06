@@ -1,6 +1,7 @@
 
 #include "jnif.h"
 
+#include <cstring>
 
 static jmethodID m_eobject__testString;
 static jmethodID m_estring__stringValue;
