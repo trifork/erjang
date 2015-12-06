@@ -1,5 +1,7 @@
 #include "jnif.h"
+
 #include <erl_driver.h>
+#include <cstring>
 
 static jclass NIF_class;
 static jmethodID m_NIF__get_erts_version;

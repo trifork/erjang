@@ -9,12 +9,18 @@
 
 extern "C" {
 #include "erl_nif.h"
+// erl_nif.h may declare these as aliases:
+#undef enif_get_int64
+#undef enif_get_uint64
+#undef enif_make_int64
+#undef enif_make_uint64
 };
 
 #define JVM_NULL ((jobject)NULL)
 #define NIF_TRUE 1
 #define NIF_FALSE 0
-#define THE_BADARG (reinterpret_cast<ERL_NIF_TERM>(0xffffffffUL))
+// This may look odd - but we need to handle both "ERL_NIF_TERM is pointer" and "ERL_NIF_TERM is integral" cases.
+#define THE_BADARG (reinterpret_cast<ERL_NIF_TERM>(reinterpret_cast<void*>(0xffffffffUL)))
 
 struct jnif_module {
   void *so_handle;

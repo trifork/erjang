@@ -1,3 +1,4 @@
+/* -*- c-basic-offset: 2 -*- */
 
 #include "jnif.h"
 #include <stdlib.h>
@@ -5,11 +6,12 @@
 #include <assert.h>
 #include <list>
 #include <dlfcn.h>
-#include <errno.h>
 
 #include "erjang_NIF.h"
 
 /** global data */
+
+static void* self_so_handle;
 
 static JavaVM *jvm;
 
@@ -136,10 +138,20 @@ JNIEXPORT jlong JNICALL Java_erjang_NIF_jni_1load
   const char *path = je->GetStringUTFChars(library, &isCopy);
   if (path == NULL)
     return 0;
-  void * so_handle = dlopen( path, /* RTLD_LAZY | */ RTLD_FIRST);
+  void * so_handle = dlopen( path, /* RTLD_LAZY | */
+#ifdef __MACH
+RTLD_NOW | RTLD_LOCAL | RTLD_FIRST
+#else
+#ifdef __GNU
+RTLD_NOW | RTLD_LOCAL //RTLD_DEEPBIND
+#else
+RTLD_NOW | RTLD_LOCAL
+#endif
+#endif
+);
 
   if (so_handle == NULL) {
-    fprintf(stderr, "did not load %s (err: %i)\n", path, errno);
+    fprintf(stderr, "did not load %s (error: %s)\n", path, dlerror());
     je->ReleaseStringUTFChars(library, path);
     return 0;
   }
@@ -148,7 +160,7 @@ JNIEXPORT jlong JNICALL Java_erjang_NIF_jni_1load
 
   void *address =  dlsym( so_handle, "nif_init" );
   if (address == NULL) {
-    fprintf(stderr, "did not find nif_init (err: %i)\n", errno);
+    fprintf(stderr, "did not find nif_init (error: %s)\n", dlerror());
     dlclose(so_handle);
     return 0L;
   }
@@ -193,7 +205,9 @@ JNIEXPORT jlong JNICALL Java_erjang_NIF_jni_1load
 
   // when nif_init is done, we may need to "commit" data that
   // was made available to the NIF as char* data.
-  jnif_commit_env(mod->global);
+  if (mod != NULL) {
+    jnif_commit_env(mod->global);
+  }
 
   // mod->global should be released when unloading
   return reinterpret_cast<jlong>(mod);
@@ -317,11 +331,25 @@ static void init_jvm_data(JavaVM *vm, JNIEnv* je)
   m_ERT__make_ref = je->GetStaticMethodID(ERT_class, "make_ref", "()Lerjang/ERef;");
 }
 
+/** Makes the exported symbols in the JNIF library visible from libraries
+ *  to be loaded later.
+ *  This is necessary at least on OpenJDK 1.7.0_25 on Linux;
+ *  apparently, java.lang.System.loadLibrary() does not load with the
+ *  RTLD_GLOBAL flag.
+ */
+static int export_jnif_symbols() {
+  self_so_handle = dlopen("libjnif.so", RTLD_NOW | RTLD_GLOBAL);
+  if (self_so_handle == NULL) {
+    fprintf(stderr, "JNIF: self-exporting failed (error: %s)\n", dlerror());
+  }
+}
+
 
 extern "C" jint JNI_OnLoad(JavaVM *vm, void *reserved)
 {
   JNIEnv *je;
-  if (vm->AttachCurrentThreadAsDaemon((void**)&je, NULL) == JNI_OK) {
+  if (export_jnif_symbols() &&
+      vm->AttachCurrentThreadAsDaemon((void**)&je, NULL) == JNI_OK) {
     init_jvm_data(vm, je);
     initialize_jnif_env(vm,je);
     initialize_jnif_binary(vm,je);
@@ -345,5 +373,9 @@ extern "C" void JNI_OnUnload(JavaVM *vm, void *reserved)
       uninitialize_jnif_binary(vm, je);
     }
     jvm = NULL;
+
+    if (self_so_handle != NULL) {
+      dlclose(self_so_handle);
+    }
   }
 }

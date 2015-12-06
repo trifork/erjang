@@ -1,6 +1,6 @@
 
 #include "jnif.h"
-
+#include <cstring>
 
 static jmethodID m_eobject__testBinary;
 
