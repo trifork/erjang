@@ -18,11 +18,9 @@
 
  package erjang.m.maps;
 
-import com.trifork.clj_ds.PersistentHashMap;
-
 import erjang.BIF;
+import erjang.BIF.Type;
 import erjang.EAtom;
-import erjang.EList;
 import erjang.EMap;
 import erjang.ENative;
 import erjang.EObject;
@@ -30,6 +28,13 @@ import erjang.ERT;
 import erjang.ESeq;
 
 public class Native extends ENative {
+
+    @BIF public static
+    EObject find(EObject key, EObject map) {
+        EMap self = map.testMap();
+        if (self == null) throw ERT.badmap(map);
+        return self.find(key);       
+    }
 
 	@BIF public static
 	EObject get(EObject key, EObject map) {
@@ -67,13 +72,13 @@ public class Native extends ENative {
 		return self.remove(key);
 	}
 	
-	@BIF public static
-	EAtom is_key(EObject key, EObject map) {
-		EMap self = map.testMap();
-		if (self == null) throw ERT.badmap(map);
-		return self.is_key(key);		
-	}
-	
+    @BIF public static
+    EAtom is_key(EObject key, EObject map) {
+        EMap self = map.testMap();
+        if (self == null) throw ERT.badmap(map);
+        return self.is_key(key);        
+    }
+    
 	@BIF public static
 	ESeq keys(EObject map) {
 		EMap self = map.testMap();
