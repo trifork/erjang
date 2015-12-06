@@ -9,7 +9,6 @@
 % c(ets_race_tests, [{i, "../../../../../triq/include"}]).
 % ets_race_tests:test().
 
-
 give_away_die_race_test() ->
     N = 10000,
     expect_to_leave_N_tables(0,
@@ -25,8 +24,6 @@ give_away_die_race() ->
     try ets:give_away(Tab, Pid, here_you_are)
     catch _:badarg -> ets:delete(Tab)
     end.
-
-
 
 
 expect_to_leave_N_tables(N, Action) when is_integer(N),

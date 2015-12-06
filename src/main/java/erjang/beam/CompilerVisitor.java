@@ -64,6 +64,7 @@ import erjang.EFun;
 import erjang.EInteger;
 import erjang.EInternalPID;
 import erjang.EList;
+import erjang.EMap;
 import erjang.EModuleManager;
 import erjang.ENil;
 import erjang.ENumber;
@@ -139,6 +140,7 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			.getInternalName();
 	static final Type ENUMBER_TYPE = Type.getType(ENumber.class);
 	static final Type EOBJECT_TYPE = Type.getType(EObject.class);
+	static final Type EMAP_TYPE = Type.getType(EMap.class);
 	static final String EOBJECT_DESC = EOBJECT_TYPE.getDescriptor();
 	static final Type ETASK_TYPE = Type.getType(ETask.class);
 	static final String ETASK_NAME = ETASK_TYPE.getInternalName();
@@ -1555,6 +1557,66 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 				mv.visitJumpInsn(IFEQ, getLabel(failLabel));
 				return;
 			}
+			
+			@Override
+			public void visitMapQuery(BeamOpcode opcode, int failLabel, Arg src, Arg[] keys, Arg[] dest) {
+				if (! src.type.equals(EMAP_TYPE)) {
+					visitTest(BeamOpcode.is_map, failLabel, src, EMAP_TYPE);
+					src.type = EMAP_TYPE;
+				}
+				if (failLabel != 0) {
+				for (int i = 0; i < keys.length; i++) {
+					// call EMap#has_key
+					push(src, EMAP_TYPE);
+					push(keys[i], EOBJECT_TYPE);
+					mv.visitMethodInsn(INVOKEVIRTUAL, EMAP_TYPE.getInternalName(), "has_key", "(Lerjang/EObject;)Z");
+					mv.visitJumpInsn(IFEQ, getLabel(failLabel));
+				}
+				}
+				if (opcode == BeamOpcode.get_map_elements) {
+					for (int i = 0; i < keys.length; i++) {
+						// call EMap#get
+						push(src, EMAP_TYPE);
+						push(keys[i], EOBJECT_TYPE);
+						mv.visitMethodInsn(INVOKEVIRTUAL, EMAP_TYPE.getInternalName(), "get", "(Lerjang/EObject;)Lerjang/EObject;");
+						pop(dest[i], EOBJECT_TYPE);
+					}
+				}
+			}
+			
+			@Override
+			public void visitMapUpdate(BeamOpcode opcode, int failLabel, Arg src, Arg dst, Arg[] keys, Arg[] vals) {
+
+				if (! src.type.equals(EMAP_TYPE)) {
+					visitTest(BeamOpcode.is_map, failLabel, src, EMAP_TYPE);
+					src.type = EMAP_TYPE;
+				}
+				
+				boolean is_exact_no_label = (opcode == BeamOpcode.put_map_exact) && (failLabel == 0);
+
+				if (opcode == BeamOpcode.put_map_exact && !is_exact_no_label) {
+					for (int i = 0; i < keys.length; i++) 
+					{
+						push(src, EMAP_TYPE);
+						push(keys[i], EOBJECT_TYPE);
+						mv.visitMethodInsn(INVOKEVIRTUAL, EMAP_TYPE.getInternalName(), "has_key", "(Lerjang/EObject;)Z");
+						mv.visitJumpInsn(IFEQ, getLabel(failLabel));
+					}
+				}
+
+				push(src, EMAP_TYPE);
+
+				for (int i = 0; i < keys.length; i++) 
+				{
+					push(keys[i], EOBJECT_TYPE);
+					push(vals[i], EOBJECT_TYPE);
+					mv.visitMethodInsn(INVOKEVIRTUAL, EMAP_TYPE.getInternalName(), 
+							is_exact_no_label ? "update" : "put", 
+							"(Lerjang/EObject;Lerjang/EObject;)Lerjang/EMap;");
+				}
+				
+				pop(dst, EMAP_TYPE);
+			}
 
 			/*
 			 * (non-Javadoc)
@@ -2761,6 +2823,8 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 					return IS_FUNCTION_TEST;
 				case is_function2:
 					return IS_FUNCTION2_TEST;
+				case is_map:
+					return IS_MAP_TEST;
 				}
 
 				throw new Error("unhandled " + test);
@@ -3544,6 +3608,8 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			.getMethod("erjang.EFun testFunction()");
 	final static Method IS_FUNCTION2_TEST = Method
 			.getMethod("erjang.EFun testFunction(int nargs)");
+	final static Method IS_MAP_TEST = Method
+			.getMethod("erjang.EMap testMap()");
 
 	Map<String, ExtFun> imported = new HashMap<String, ExtFun>();
 

@@ -126,8 +126,8 @@ public class EFunCG {
     @SuppressWarnings("unchecked")
     public static Class<? extends EFun> get_fun_class(int arity) {
 
+        String className = EFUN_TYPE.getClassName() + arity;
         try {
-            String className = EFUN_TYPE.getClassName() + arity;
             return (Class<? extends EFun>) Class.forName(className, true, EFun.class.getClassLoader());
         } catch (ClassNotFoundException ex) {
             // that's what we'll do here...
@@ -139,7 +139,14 @@ public class EFunCG {
 
         String self_type = EFUN_TYPE.getInternalName() + arity;
         self_type = self_type.replace('/', '.');
-        return ERT.defineClass(EFun.class.getClassLoader(), self_type, data);
+        synchronized (EFunCG.class) {
+            try {
+                // Was it defined in the meantime?
+                return (Class<? extends EFun>) Class.forName(className, true, EFun.class.getClassLoader());
+            } catch (ClassNotFoundException ex) {
+                return ERT.defineClass(EFun.class.getClassLoader(), self_type, data);
+            }
+        }
     }
 
     /**

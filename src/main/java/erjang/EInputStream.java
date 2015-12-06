@@ -875,6 +875,23 @@ public class EInputStream extends ByteArrayInputStream {
 		return arity;
 	}
 
+	  public int read_map_head() throws IOException {
+		  int arity = 0;
+		  final int tag = read1skip_version();
+		  
+		  // decode the map header and get arity
+		  switch (tag) {
+		  case EExternal.mapTag:
+			  	arity = read4BE();
+			  	break;
+		  
+		  default:
+			  throw new IOException("Not valid map tag: " + tag);
+		  }
+		  
+		  return arity;
+	  }
+	
 	/**
 	 * Read a tuple header from the stream.
 	 * 
@@ -1248,6 +1265,9 @@ public class EInputStream extends ByteArrayInputStream {
 			
 		case EExternal.externalFunTag:
 			return read_external_fun();
+
+		case EExternal.mapTag:
+			return EMap.read(this);
 
 		default:
 			throw new IOException("Unknown data type: " + tag + " at position " + getPos());

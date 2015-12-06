@@ -171,7 +171,7 @@ public abstract class EDriverInstance extends EDriverControl {
 		}
 
 		
-		EBinList out = new EBinList(header, tail);
+		EObject out = header.remaining()==0 ? tail : new EBinList(header, tail);
 		task.output_from_driver(out);
 	}
 	

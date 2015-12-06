@@ -459,6 +459,40 @@ public class ErlProc {
 		return ERT.TRUE;
 	}
 
+    @BIF static EObject
+    flush_monitor_message(EProc proc, EObject arg1, EObject arg2) throws Pausable {
+	ERef ref = arg1.testReference();
+	EAtom ok = arg2.testAtom();
+	if (ref == null || ok == null) {
+	    throw ERT.badarg(arg1, arg2);
+	}
+
+      LOOP:
+	do {
+	    EObject m = ERT.loop_rec(proc);
+	    ETuple tup;
+
+	    if (m == null)
+		{
+		    if (ERT.wait_timeout(proc, ESmall.ZERO)) {
+			continue LOOP;
+		    } else {
+			ERT.timeout(proc);
+			break LOOP;
+		    }
+		}
+
+	    if ((tup = m.testTuple()) != null && tup.arity() == 4 && tup.elm(2)==ref ) {
+		ERT.remove_message(proc);
+		break LOOP;
+	    }
+
+	    ERT.loop_rec_end(proc);
+	} while (true);
+	
+	return ERT.am_ok;
+    }
+
 	@BIF
 	public static EAtom exit(EProc proc, EObject p, EObject reason) throws Pausable {
 		

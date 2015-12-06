@@ -6,7 +6,7 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *  
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
@@ -22,20 +22,20 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.FileHandler;
 import java.util.logging.Handler;
 import java.util.logging.Logger;
 
-import kilim.Pausable;
+import erjang.boot.CommandLineParser;
 import erjang.driver.EDriver;
 import erjang.driver.efile.ClassPathResource;
-import erjang.driver.efile.EFile;
 
 /**
  * This will eventually be the main entrypoint for an OTP node.
  * Loads preloaded erlang modules, and invokes otp_ring0:start/2
- * 
+ *
  */
 public class OTPMain {
 
@@ -57,7 +57,7 @@ public class OTPMain {
     	if (modules != null) {
 	    	String erl_bootstrap_ebindir = ERT.runtime_info.erl_bootstrap_ebindir;
 	    	if (ClassPathResource.isResource(erl_bootstrap_ebindir)) {
-	
+
 	    		for (String m : modules) {
 		    		String beam_path = erl_bootstrap_ebindir + "/" + m + ".beam";
 					EBinary bin = ClassPathResource.read_file(beam_path);
@@ -66,14 +66,14 @@ public class OTPMain {
 					}
 		    		EModuleLoader.load_module(m, bin);
 				}
-	    		
-	    	} else {    	
+
+	    	} else {
 		    	for (String m : modules) {
 		    		EModuleLoader.find_and_load_module(m);
 				}
 	    	}
     	}
-    	
+
     	if (drivers != null) {
 			for (EDriver d : drivers) {
 				erjang.driver.Drivers.register(d);
@@ -90,31 +90,24 @@ public class OTPMain {
 		EProc proc = new EProc(null, am_otp_ring0, am_start, ERT.NIL.cons(argv).cons(env));
 
 		ERT.run(proc);
-		
+
 		// wait for this process to terminate
 		proc.joinb();
-		
+
 		// shutdown schedulers, after the first (initial) process has stopped
 		ERT.shutdownSchedulers();
 		// shutdown timer task
 		ETimerTask.shutdown();
     }
 
-    protected static ESeq process_args(String[] args) {
+    /** Build command line as an Erlang list, with extra-args placed after an "-extra" */
+    private static ESeq buildErlangArgumentList(String[] args) {
         ESeq argv = ERT.NIL;
-        for (int i = args.length-1; i >= 0; i--) {
+        for (int i=args.length-1; i>=0; i--) {
             argv = argv.cons(EBinary.fromString(args[i]));
-            
-            //special handling for -noshell / -noinput:
-            //in this case we suppress the Progress wheel since it might break the output
-            if (args[i].equals("-noinput") || args[i].equals("-noshell")) {
-                System.setProperty("erjang.progress.suppress", "true");
-            }
         }
-
         return argv;
     }
-
 
     static void maybe_print_banner() {
         RuntimeInfo info = ERT.runtime_info;
@@ -138,7 +131,7 @@ public class OTPMain {
      * @throws IOException
      */
 	public static void main(String[] args) throws ClassNotFoundException, InstantiationException, IllegalAccessException, IOException {
-            ESeq argv = process_args(args);
+            ESeq argv = buildErlangArgumentList(args);
             maybe_print_banner();
 
 	    Handler fh = new FileHandler("erjang.log");
@@ -149,7 +142,7 @@ public class OTPMain {
 		load_modules_and_drivers(Arrays.asList(MODULES), Arrays.asList(DRIVERS));
 		load_modules_and_drivers(null, extra_drivers);
         start_otp_ring0(argv);
-		
+
         // ERT.getOutputStream().println("done.");
 	}
 

@@ -1,6 +1,7 @@
 
 #include "jnif.h"
 #include <limits>
+#include <cstdint>
 
 static jmethodID m_eobject__testNumber;
 static jmethodID m_eobject__testInteger;
@@ -14,8 +15,8 @@ static jmethodID m_ERT__box_long;
 static jmethodID m_ERT__box_double;
 static jmethodID m_ERT__box_parse;
 
-static uint32_t INT_MAX_VALUE;
-static uint64_t LONG_MAX_VALUE;
+static std::uint32_t INT_MAX_VALUE;
+static std::uint64_t LONG_MAX_VALUE;
 
 
 
@@ -160,7 +161,7 @@ extern ERL_NIF_TERM enif_make_uint (ErlNifEnv* ee, unsigned i)
 
   if (i > 0x7fffffffU) {
     boxed = ee->je->CallStaticObjectMethod(ERT_class, m_ERT__box_long,
-                                           (jlong) (uint64_t) i);
+                                           (jlong) (std::uint64_t) i);
   } else {
     boxed = ee->je->CallStaticObjectMethod(ERT_class, m_ERT__box_int,
                                            (jint) i);

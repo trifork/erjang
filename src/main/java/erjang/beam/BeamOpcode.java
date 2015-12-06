@@ -149,7 +149,12 @@ public enum BeamOpcode {
 	recv_set            (0x97),
 	gc_bif3             (0x98),
         line                (0x99),
-        
+
+        put_map_assoc       (0x9a),
+        put_map_exact       (0x9b),
+        is_map              (0x9c),
+        has_map_fields      (0x9d),
+        get_map_elements    (0x9e),
 
 	// Opcode groups
 	

@@ -23,6 +23,7 @@ import java.util.List;
 import erjang.EModule;
 import erjang.EModuleManager;
 import erjang.EFun;
+import erjang.EMap;
 import erjang.EFunHandler;
 import erjang.codegen.EFunCG;
 import erjang.FunID;

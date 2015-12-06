@@ -75,6 +75,8 @@ public class ERT {
 		throw ERT.badarg(trace, value);
 	}
 
+  public static final EAtom am_badmap = EAtom.intern("badmap");
+  public static final EAtom am_badkey = EAtom.intern("badkey");
 	public static final EAtom am_badarg = EAtom.intern("badarg");
 	public static final EAtom am_notsup = EAtom.intern("notsup");
 	public static final EAtom AM_BADMATCH = EAtom.intern("badmatch");
@@ -96,6 +98,14 @@ public class ERT {
 	public static ErlangError badarg(EObject... args) {
 		throw new ErlangError(am_badarg, args);
 	}
+
+    public static ErlangError badkey(EObject key) {
+        throw new ErlangError(am_badkey, key);
+    }
+
+    public static ErlangError badmap(EObject obj) {
+        throw new ErlangError(am_badmap, obj);
+    }
 
 	/** Utility method throws <code>erlang:error('badarg', [o1, o2])</code>. */
 	public static ErlangError badarg(EObject o1, EObject o2) throws ErlangError {

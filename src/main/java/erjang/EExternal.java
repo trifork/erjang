@@ -88,6 +88,9 @@ public class EExternal {
     /** The tag used for small atoms */
     public static final int smallAtomTag = 115;
 
+    /** The tag used for small atoms */
+    public static final int mapTag = 116;
+
     /** The tag used for old Funs */
     public static final int funTag = 117;
 

@@ -4,9 +4,10 @@ JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.7.0_25.jdk/Contents/Home
 JAVA_ARCH=darwin
 ERTS_HOME=/Users/krab/Projects/erjang/x86_64-apple-darwin12.4.0/erts-5.10.2
 
-ERJANG_JAR=/Users/krab/Projects/erjang/erjang-0.2.jar
+ERJANG_JAR=../erjang-0.2.jar
 
-CXXFLAGS=-I${JAVA_HOME}/include \
+CXXFLAGS=-std=c++0x \
+	-I${JAVA_HOME}/include \
 	-I${JAVA_HOME}/include/${JAVA_ARCH} \
 	-I${ERTS_HOME}/include \
 	-g
@@ -30,7 +31,7 @@ OFILES= jnif.o \
 
 
 all: $(OFILES)
-	c++ -dynamiclib -o libjnif.jnilib $(OFILES) -framework JavaVM
+	${CXX} -dynamiclib -o libjnif.jnilib $(OFILES) -framework JavaVM
 
 $(OFILES): jnif.h
 
