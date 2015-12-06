@@ -41,7 +41,7 @@ public class OTPMain {
 
 	public static String[] MODULES = new String[] { "erl_prim_loader",
 			"erlang", "init", "otp_ring0", "prim_file", "prim_inet",
-			"prim_zip", "zlib" };
+			"prim_zip", "zlib", "erts_internal" };
 
 	public static EDriver[] DRIVERS = new EDriver[] {
 	    new erjang.driver.efile.Driver(),

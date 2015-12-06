@@ -347,6 +347,7 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 
             // Build and throw exception
             EObject reason = exit_reason;
+            exit_reason = null;
             //System.err.println("---- [" + killer + "]");
             ErlangExitSignal e = new ErlangExitSignal(reason, killer);
             //e.printStackTrace();

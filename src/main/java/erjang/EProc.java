@@ -546,7 +546,7 @@ public final class EProc extends ETask<EInternalPID> {
 			}
 
 			this.exit_reason = exit_reason_to_set;
-			this.killer = new Throwable();
+			this.killer = new Throwable("stack of process calling exit");
 			this.resume();
 			return;
 		}
