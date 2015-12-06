@@ -23,6 +23,7 @@ package erjang;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -56,6 +57,10 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
         INIT, RUNNING, EXITING, DONE
     };
 
+    private static final int MUTATOR_COUNT_ONE = (1<<4);
+    private static final int PSTATE_MASK = MUTATOR_COUNT_ONE - 1;
+    private static final int MUTATOR_COUNT_MASK = ~PSTATE_MASK;
+
     /*==================== Process state ====================================*/
 
     /** Process lifecycle:
@@ -68,8 +73,26 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
      *     \              \                /
      *      -------------------> EXITING --
      *
+     * For reliability (trigger-once guarantee) of exit-actions, the following invariant is enforced:
+     * Once the state is DONE, the set of exit-actions (links, monitors, and exit hooks) MUST NOT
+     * change (as there would be e.g. add/perform race conditions in that case),
+     * This is accompliced by keeping the pstate in an AtomicInteger together with the number of current exit-action
+     * mutators, in such a manner that the (logical) transition to DONE can only occur when there are zero mutators.
+     * (Value: <code>(n_mutators << 4) | (STATE value)</code>,  where n_mutators is the number of actual mutators
+     * plus the number of wannabe mutators.
+     *
+     * The critical invariant here is:
+     *     <em>When the state value part is DONE, the number of actual
+     * mutators will not increase</em>.
+     * (The number of wannabe mutators may increase, but immediate decreases
+     * once the DONE-ness of the state is discovered; the distinction between
+     * wannabe mutators and non-mutators is really a performance question,
+     * allowing use of getAndAdd().)
+     *
+     * Changes to links/monitors/exit hooks must honour this updating pattern.
+     * TODO: Follow through on this.
      */
-    protected volatile STATE pstate = STATE.INIT;
+    private AtomicInteger pstate_and_mutator_count = new AtomicInteger(STATE.INIT.ordinal());
 
     private AtomicReference<PersistentHashSet<EHandle>>
             linksref = new AtomicReference<PersistentHashSet<EHandle>>(PersistentHashSet.EMPTY);
@@ -109,18 +132,26 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 		other.unlink_oneway(self_handle());
 	}
 	
-	public void unlink_oneway(EHandle handle) {
-		PersistentHashSet old, links;
-		try {
+	public boolean unlink_oneway(EHandle handle) {
+        int ps = exit_action_mutator_lock();
+        try {
+            if (ps == STATE.DONE.ordinal()) return false; // Too late.
 
-			do {
-				old = linksref.get();
-				links = (PersistentHashSet) old.disjoin(handle);
-			} while (!linksref.weakCompareAndSet(old, links));
+            PersistentHashSet old, links;
+            try {
 
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}		
+                do {
+                    old = linksref.get();
+                    links = (PersistentHashSet) old.disjoin(handle);
+                } while (!linksref.weakCompareAndSet(old, links));
+                return true;
+
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        } finally {
+            exit_action_mutator_unlock();
+        }
 	}
 	
 	protected boolean has_no_links() {
@@ -145,27 +176,25 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 	}
 
 	public boolean link_oneway(EHandle h) {
-		// TODO: check if h is valid.
+        int ps = exit_action_mutator_lock();
+        try {
+            if (ps == STATE.DONE.ordinal()) return false; // Too late.
 
-		if (h.exists()) {
+            PersistentHashSet old, links;
+            try {
+                do {
+                    old = linksref.get();
+                    links = (PersistentHashSet) old.cons(h);
+                } while (!linksref.weakCompareAndSet(old, links));
+                return true;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
 
-			PersistentHashSet old, links;
-			try {
-
-				do {
-					old = linksref.get();
-					links = (PersistentHashSet) old.cons(h);
-				} while (!linksref.weakCompareAndSet(old, links));
-
-			} catch (Exception e) {
-				throw new RuntimeException(e);
-			}
-
-			return true;
-		} else {
-			return false;
-		}
-	}
+        } finally {
+            exit_action_mutator_unlock();
+        }
+    }
 
 	public ESeq links() {
 		ESeq res = ERT.NIL;
@@ -228,18 +257,34 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
      * @return
      */
     public boolean add_monitor(EHandle target, ERef ref) {
-        monitors.put(ref, target);
-        return true;
+        int ps = exit_action_mutator_lock();
+        try {
+            if (ps == STATE.DONE.ordinal()) return false; // Too late.
+
+            monitors.put(ref, target);
+            return true;
+        } finally {
+            exit_action_mutator_unlock();
+        }
     }
 
     /**
      * @param r
      */
-    public void remove_monitor(ERef r, boolean flush) {
-        EHandle val = monitors.remove(r);
+    public boolean remove_monitor(ERef r, boolean flush) {
+        int ps = exit_action_mutator_lock();
+        try {
+            if (ps == STATE.DONE.ordinal()) return false; // Too late.
+
+            EHandle val = monitors.remove(r);
+        } finally {
+            exit_action_mutator_unlock();
+        }
+
         if (flush) {
             // TODO: do we need to represent flush somehow?
         }
+        return true; //TODO
     }
 
     public EHandle get_monitored_process(ERef monitor) {
@@ -260,8 +305,8 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
      * @return
      */
     public boolean exists() {
-        STATE ps = pstate; // Read volatile just once!
-        return ps == STATE.INIT || ps == STATE.RUNNING;
+        int ps = get_state_dirtyread();
+        return ps == STATE.INIT.ordinal() || ps == STATE.RUNNING.ordinal();
     }
 
     /*--------- Termination related ---------------------*/
@@ -297,7 +342,10 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
     /** because the above is called a bazillion times, we split this out to make it easier to inline */
     private void do_check_exit() throws ErlangExitSignal {
         if (exit_reason != null) {
-            this.pstate = STATE.EXITING;
+            set_state_if_later(STATE.EXITING); // The state might be done, in case
+                                               // this is called from a subsequent yield
+
+            // Build and throw exception
             EObject reason = exit_reason;
             //System.err.println("---- [" + killer + "]");
             ErlangExitSignal e = new ErlangExitSignal(reason, killer);
@@ -305,12 +353,12 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
             //System.err.println("---- [ ... ]");
             throw e;
         }
-
     }
 
     @SuppressWarnings("unchecked")
 	protected void do_proc_termination(EObject exit_reason) throws Pausable {
-		this.exit_reason = exit_reason;
+        // Precondition: pstate is DONE, exit-action mutator count is zero.
+        this.exit_reason = exit_reason;
 		H me = self_handle();
 		EAtom name = me.name;
 		for (EHandle handle : linksref.get()) {
@@ -405,24 +453,14 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 		if (!is_erlang_exit2)
 			unlink_oneway(from);
 
-        switch (pstate) {
-
-          // process is already "done", just ignore exit signal
-          case DONE:
+        int ps = get_state_dirtyread();
+        if (ps == STATE.DONE.ordinal() ||
+                ps == STATE.EXITING.ordinal() ||
+                exit_reason != null)
+        {
+            // we have already received one exit signal, ignore
+            // subsequent ones...
             return;
-
-          // we have already received one exit signal, ignore
-          // subsequent ones...
-          case EXITING:
-            // TODO: warn that this process is not yet dead. why?
-            return;
-
-          case INIT:
-          case RUNNING:
-            break;
-
-          default:
-            throw new Error("unknown state? "+pstate);
         }
         process_incoming_exit(from, reason, is_erlang_exit2);
     }
@@ -441,6 +479,66 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
             Task.yield();
         }
 
+    }
+
+    /*--------- Process state locking -------------------*/
+
+    /** Returns the state value.
+     * Must be paired with exit_action_mutator_unlock! */
+    protected final int exit_action_mutator_lock() {
+        int v = pstate_and_mutator_count.getAndAdd(MUTATOR_COUNT_ONE);
+        return v & PSTATE_MASK;
+    }
+
+    protected final void exit_action_mutator_unlock() {
+        pstate_and_mutator_count.getAndAdd(-MUTATOR_COUNT_ONE);
+    }
+
+    protected final void set_state_to_done_and_wait_for_stability() throws Pausable {
+        // Set state to DONE:
+        int state_and_mutator_count = try_set_state(STATE.DONE);
+
+        // Wait for any exit-action mutator count to drop to zero:
+        int iter_count = 0;
+        while ((state_and_mutator_count & MUTATOR_COUNT_MASK) != 0) {
+            if ((++iter_count) % 16 == 0) Task.yield();
+            state_and_mutator_count = pstate_and_mutator_count.get();
+        }
+
+        // Invariant: state is DONE and there are no exit-action mutators.
+        assert pstate_and_mutator_count.get() == STATE.DONE.ordinal();
+    }
+
+    protected final void set_state(STATE new_state) {
+        if (try_set_state(new_state) == -1) {
+            System.err.println("Internal consistency error: bad process state transition to "+new_state+" ("+pstate_and_mutator_count.get()+")");
+            // But go on regardless...
+        }
+    }
+
+    protected final void set_state_if_later(STATE new_state) {
+        try_set_state(new_state); // ignore any error result
+    }
+
+    /** Returns old state and mutator count (packed) - or (-1) if state transition is invalid. */
+    private final int try_set_state(STATE new_state) {
+        int old_value, new_value;
+        int new_state_value = new_state.ordinal();
+        do {
+            old_value = pstate_and_mutator_count.get();
+            int old_state_value = old_value & PSTATE_MASK;
+            if (old_state_value >= new_state_value) return -1;
+            new_value = (old_value & MUTATOR_COUNT_MASK) | new_state_value;
+        } while (!pstate_and_mutator_count.compareAndSet(old_value, new_value));
+        return old_value;
+    }
+
+    protected final int get_state_dirtyread() {
+        return pstate_and_mutator_count.get() & PSTATE_MASK;
+    }
+
+    protected final int get_pstate_for_debug() {
+        return pstate_and_mutator_count.get();
     }
 
     /*--------- Miscellaneous ---------------------------*/

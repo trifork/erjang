@@ -20,9 +20,7 @@
 package erjang;
 
 import erjang.m.erlang.DistEntry;
-import kilim.Mailbox;
 import kilim.Pausable;
-import kilim.Task;
 
 /**
  * This is a PID on this node
@@ -71,9 +69,9 @@ public class EInternalPID extends EPID implements ELocalHandle {
 	 * @see erjang.EPID#is_alive()
 	 */
 	@Override
-	public boolean is_alive() {
+	public boolean is_alive_dirtyread() {
         EProc task = this.task; // Take local copy
-        return task != null && task.is_alive();
+        return task != null && task.is_alive_dirtyread();
 	}
 	
 	public ELocalHandle testLocalHandle() {
@@ -184,19 +182,17 @@ public class EInternalPID extends EPID implements ELocalHandle {
 	/**
 	 * @param eTimerTask
 	 */
-	public void add_exit_hook(ExitHook hook) {
+	public boolean add_exit_hook(ExitHook hook) {
 		EProc task = this.task;
-		if (task != null && is_alive())
-			task.add_exit_hook(hook);
+		return (task != null) && task.add_exit_hook(hook);
 	}
 
 	/**
 	 * @param eTimerTask
 	 */
-	public void remove_exit_hook(ExitHook hook) {
+	public boolean remove_exit_hook(ExitHook hook) {
 		EProc task = this.task;
-		if (task != null)
-			task.remove_exit_hook(hook);
+		return (task != null) && task.remove_exit_hook(hook);
 	}
 
 	/**

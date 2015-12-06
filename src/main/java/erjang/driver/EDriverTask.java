@@ -313,7 +313,8 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 	@Override
 	public Task start() {
 		Task result = super.start();
-		this.pstate = STATE.RUNNING;
+
+        set_state(STATE.RUNNING);
 		return result;
 	}
 	
@@ -356,8 +357,7 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 				}
 
 			} finally {
-				// this.runner = null;
-				this.pstate = STATE.DONE;
+                set_state_to_done_and_wait_for_stability();
 			}
 
 			// System.err.println("task "+this+" exited with "+result);
@@ -495,8 +495,8 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 	 * @throws Pausable 
 	 */
 	public EObject control(EProc caller, int op, ByteBuffer cmd2) throws Pausable {
-
-		if (pstate == STATE.RUNNING || pstate == STATE.INIT) {
+        int pstate = get_state_dirtyread();
+		if (pstate == STATE.RUNNING.ordinal() || pstate == STATE.INIT.ordinal()) {
 			// ok
 		} else {
 			log.warning("port "+this.self_handle()+" in state: "+pstate);
@@ -566,7 +566,8 @@ public abstract class EDriverTask extends ETask<EInternalPort> implements
 	 * @throws Pausable 
 	 */
 	public EObject call(EProc caller, int op, EObject data) throws Pausable {
-		if (pstate != STATE.RUNNING) {
+        int pstate = get_state_dirtyread();
+        if (pstate != STATE.RUNNING.ordinal()) {
 			throw ERT.badarg();
 		}
 

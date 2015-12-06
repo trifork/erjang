@@ -2,16 +2,12 @@
 
 -compile(export_all).
 
+-include_lib("eunit/include/eunit.hrl").
 -include("triq.hrl").
--include("unit.hrl").
 
 % ../../../../../jerl -sname erj -pz ../../../../../triq/ebin
 % c(ets_race_tests, [{i, "../../../../../triq/include"}]).
 % ets_race_tests:test().
-
-%%%========== Entry point: ====================
-test() ->
-    eunit_test(?MODULE).
 
 give_away_die_race_test() ->
     N = 10000,
@@ -30,8 +26,6 @@ give_away_die_race() ->
     end.
 
 
-
-
 expect_to_leave_N_tables(N, Action) when is_integer(N),
                                             is_function(Action,0) ->
     Before = ets:all(),
@@ -39,3 +33,7 @@ expect_to_leave_N_tables(N, Action) when is_integer(N),
     timer:sleep(500),
     After = ets:all(),
     ?assertEqual(N, length(After -- Before)).
+
+
+test() ->
+    eunit:test(?MODULE).

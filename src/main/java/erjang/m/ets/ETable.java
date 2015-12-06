@@ -168,22 +168,21 @@ abstract class ETable implements ExitHook {
 		if (dyingPID == owner_pid()) {
 			
 			EInternalPID heirPID = this.heirPID;
-            if (heirPID != null && heirPID != dyingPID) {
-                transfer_ownership_to(heirPID,
-                        this.heirData == null ? ERT.NIL : this.heirData);
+            if (heirPID != null && heirPID != dyingPID &&
+                transfer_ownership_to(heirPID, this.heirData == null ? ERT.NIL : this.heirData))
+            {
+                // Transfered
             } else {
                 //System.err.println("received exit from owner "+dyingPID+" => delete");
 				delete();
 			}
-			
 		} else {
 			Native.log.warning("table "+aname+" ("+tid+") received exit from unrelated "+dyingPID);
 		}
 	}
 
-    public void transfer_ownership_to(EInternalPID new_owner, EObject transfer_data) throws Pausable {
+    public boolean transfer_ownership_to(EInternalPID new_owner, EObject transfer_data) throws Pausable {
         EInternalPID former_owner = owner_pid();
-        System.err.println("DB| transfer ownership of "+tid+" from "+former_owner+" to "+new_owner+" with tag "+transfer_data);
         EProc new_owner_task;
         if ((new_owner_task = new_owner.task()) != null) {
             //System.err.println("received exit from owner "+former_owner
@@ -194,14 +193,20 @@ abstract class ETable implements ExitHook {
                     former_owner,
                     transfer_data);
 
+            WeakReference<EProc> former_owner_ref = this.owner;
             this.owner = new WeakReference<EProc>(new_owner_task);
-            new_owner_task.add_exit_hook(this);
-            former_owner.remove_exit_hook(this);
 
-            new_owner.send(former_owner, msg);
-        } else {
-            delete();
+            if (new_owner_task.add_exit_hook(this)) {
+                // OK - transfered
+                new_owner.send(former_owner, msg);
+                return true;
+            } else {
+                // The process is done and did not accept the hook
+                // Roll back:
+                this.owner = former_owner_ref;
+            }
         }
+        return false;
     }
 
     void delete() {
@@ -391,7 +396,7 @@ abstract class ETable implements ExitHook {
 			if (tup.elem1 == Native.am_heir
 					&& (pid=tup.elem2.testInternalPID()) != null)
 			{
-				if (!pid.is_alive()) {
+				if (!pid.is_alive_dirtyread()) {
 					this.heirPID = null;
 					this.heirData = ERT.NIL;
 					return;
@@ -402,10 +407,9 @@ abstract class ETable implements ExitHook {
 				this.heirData = tup.elem3;
 				this.heirPID = pid;
 
-				pid.add_exit_hook(this);
 
-				if (old != null) {
-					old.remove_exit_hook(this);
+                if (old == null || old.remove_exit_hook(this)) {
+                    pid.add_exit_hook(this);
 				}
 				
 				return;
