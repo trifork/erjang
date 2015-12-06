@@ -101,6 +101,10 @@ public abstract class EObject {
 		return null;
 	}
 
+  public EMap testMap() {
+    return null;
+  }
+
 	public ECons testNonEmptyList() {
 		return null;
 	}
@@ -361,8 +365,9 @@ public abstract class EObject {
 	public static final int CMP_ORDER_PORT = 4;
 	public static final int CMP_ORDER_PID = 5;
 	public static final int CMP_ORDER_TUPLE = 6;
-	public static final int CMP_ORDER_LIST = 7;
-	public static final int CMP_ORDER_BITSTRING = 8;
+	public static final int CMP_ORDER_MAP = 7;
+	public static final int CMP_ORDER_LIST = 8;
+	public static final int CMP_ORDER_BITSTRING = 9;
 	
 	/** 
 	 * 	number[0] < atom[1] < reference[2] < fun[3] < port[4] < pid[5] < tuple[6] < list[7] < bit string[8]
@@ -375,7 +380,17 @@ public abstract class EObject {
 	public EAtom is_function(EObject arity) {
 		return ERT.FALSE;
 	}
-	
+
+    @BIF
+    public EAtom is_map() {
+        return ERT.FALSE;
+    }
+    
+    @BIF(type=BIF.Type.GUARD, name="is_map")
+    public EAtom is_map_g() {
+        return null;
+    }    
+
 	/**
 	 * @param o2
 	 * @return

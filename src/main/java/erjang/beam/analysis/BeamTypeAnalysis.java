@@ -45,6 +45,7 @@ import erjang.EDouble;
 import erjang.EFun;
 import erjang.EInteger;
 import erjang.EList;
+import erjang.EMap;
 import erjang.EString;
 import erjang.ENil;
 import erjang.ENumber;
@@ -76,12 +77,12 @@ import erjang.beam.ModuleVisitor;
 import erjang.beam.Arg.Kind;
 import erjang.beam.repr.Insn;
 import erjang.beam.repr.ExtFun;
+import erjang.beam.repr.Insn.MapUpdate;
 import erjang.beam.repr.Insn.S;
 import erjang.beam.repr.Operands;
 import erjang.beam.repr.Operands.Int;
 import erjang.beam.repr.Operands.SourceOperand;
 import erjang.beam.repr.Operands.XReg;
-import static erjang.beam.repr.Operands.SourceOperand;
 import static erjang.beam.repr.Operands.DestinationOperand;
 import static erjang.beam.CodeAtoms.*;
 
@@ -109,6 +110,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 	static final Type ESEQ_TYPE = Type.getType(ESeq.class);
 	static final Type ELIST_TYPE = Type.getType(EList.class);
 	static final Type EFUN_TYPE = Type.getType(EFun.class);
+	static final Type EMAP_TYPE = Type.getType(EMap.class);
 	static final Type EPID_TYPE = Type.getType(EPID.class);
 	static final Type EPORT_TYPE = Type.getType(EPort.class);
 	static final Type EREFERENCE_TYPE = Type.getType(ERef.class);
@@ -613,6 +615,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						
 						// Tests:
 						// LS:
+					case is_map:
 					case is_integer:
 					case is_float:
 					case is_number:
@@ -1124,8 +1127,64 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						vis.visitBitStringAppend(opcode, decode_labelref(insn.label, type_map.exh), extra_size, src, unit, flags, dst);
 						break;
 					}
-					//default:
-					//	throw new Error("unhandled insn: " + insn_.toSymbolicTuple());
+					
+					case has_map_fields:
+                    {
+                        Insn.MapQuery insn = (Insn.MapQuery) insn_;
+                        
+                        Arg src = src_arg(insn_idx, insn.src);
+                        int label = decode_labelref(insn.defaultLabel, type_map.exh);
+
+                        Arg[] keys = new Arg[ insn.kvs.size(true) ];
+                        Arg[] dest = new Arg[0];
+                        for (int i = 0; i < keys.length; i++) {
+                            keys[i] = src_arg(insn_idx, insn.kvs.getKey(i, true) );
+                        }
+                        
+                        vis.visitMapQuery(opcode, label, src, keys, dest);
+                        break;
+                    }
+                    
+					case get_map_elements:
+					{
+						Insn.MapQuery insn = (Insn.MapQuery) insn_;
+						
+						Arg src = src_arg(insn_idx, insn.src);
+						int label = decode_labelref(insn.defaultLabel, type_map.exh);
+
+						Arg[] keys = new Arg[ insn.kvs.size(false) ];
+						Arg[] dest = new Arg[ insn.kvs.size(false) ];
+						for (int i = 0; i < keys.length; i++) {
+							keys[i] = src_arg(insn_idx, insn.kvs.getKey(i, false) );
+							dest[i] = dest_arg(insn_idx, insn.kvs.getKeyDest(i) );
+						}
+						
+						vis.visitMapQuery(opcode, label, src, keys, dest);
+						break;
+					}
+					
+					case put_map_assoc:
+					case put_map_exact:
+					{
+						Insn.MapUpdate insn = (Insn.MapUpdate) insn_;
+						
+						Arg src = src_arg(insn_idx, insn.src);
+						Arg dst = src_arg(insn_idx, insn.dest);
+						int label = decode_labelref(insn.defaultLabel, type_map.exh);
+
+						Arg[] keys = new Arg[ insn.kvs.size() ];
+						Arg[] srcs = new Arg[ insn.kvs.size() ];
+						for (int i = 0; i < keys.length; i++) {
+							keys[i] = src_arg(insn_idx, insn.kvs.getKey(i, false) );
+							srcs[i] = src_arg(insn_idx, insn.kvs.getKeySrc(i) );
+						}
+						
+						vis.visitMapUpdate(opcode, label, src, dst, keys, srcs);
+						break;
+					}
+					
+					default:
+						throw new Error("unhandled insn: " + insn_.toSymbolicTuple());
 					}
 
 				}
@@ -1665,6 +1724,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 
 						// Tests:
 						// LS:
+					case is_map:
 					case is_integer:
 					case is_float:
 					case is_number:
@@ -2100,11 +2160,52 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						continue next_insn;
 					}
 
-                                        case line: {
-                                            // TODO: Implement LINE instruction!
-                                            continue next_insn;
-                                        }
+					case line: {
+						// TODO: Implement LINE instruction!
+						continue next_insn;
+					}
 
+					case get_map_elements:
+					case has_map_fields:
+					{
+						Insn.MapQuery insn = (Insn.MapQuery) insn_;
+						current = branch(current, insn.defaultLabel, insn_idx);
+
+						checkArg(current, insn.src);
+
+						Operands.SelectList kvs = insn.kvs;
+						int len = kvs.size();
+						for (int i=0; i<len; i++) {
+
+							if (code == BeamOpcode.get_map_elements) {
+								DestinationOperand dest = kvs.getKeyDest(i);
+								current = setType(current, dest, EOBJECT_TYPE);
+							}
+						}
+						
+						continue next_insn;
+					}
+					
+					case put_map_assoc:
+					case put_map_exact:
+					{
+						MapUpdate insn = (Insn.MapUpdate) insn_;
+						current = branch(current, insn.defaultLabel, insn_idx);
+
+						checkArg(current, insn.src);
+
+						Operands.SelectList kvs = insn.kvs;
+						int len = kvs.size();
+						for (int i=0; i<len; i++) {
+							checkArg(current, kvs.getKeySrc(i));
+						}
+						
+						current = setType(current, insn.dest, EMAP_TYPE);
+						
+						continue next_insn;
+					}
+					
+					
 					default: {
 						ETuple insn = insn_.toSymbolicTuple();
 						throw new Error("unhandled: " + insn + "::" + current);
@@ -2421,6 +2522,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 				case is_reference: return EREFERENCE_TYPE;
 				case is_float:     return EDOUBLE_TYPE;
 				case is_function:  return EFUN_TYPE;
+				case is_map:       return EMAP_TYPE;
 
 				case is_list:
 				case is_nonempty_list:

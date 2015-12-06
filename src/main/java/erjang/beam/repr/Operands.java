@@ -191,6 +191,18 @@ public class Operands {
 		public int size() {return list.length / 2;}
 		public Operand getValue(int i) {return list[2*i];}
 		public Label getLabel(int i)   {return (Label)list[2*i+1];}
+		
+		// when used in MapQuery/MapUpdate insns
+        public int size(boolean keys_only) {
+            if (keys_only) return list.length;
+            return list.length / 2;
+        }
+		public SourceOperand getKey(int i, boolean keys_only) {
+		    if (keys_only) return (SourceOperand)list[i];
+		    return (SourceOperand)list[2*i];
+		}
+		public DestinationOperand getKeyDest(int i)   {return (DestinationOperand)list[2*i+1];}
+		public SourceOperand getKeySrc(int i)   {return (SourceOperand)list[2*i+1];}
 
 		public EObject toSymbolic() {
 			EObject[] elems = new EObject[list.length];
