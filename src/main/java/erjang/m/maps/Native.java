@@ -88,13 +88,20 @@ public class Native extends ENative {
 		return self.values();
 	}
 	
-	@BIF public static
-	ESeq to_list(EObject map) {
-		EMap self = map.testMap();
-		if (self == null) throw ERT.badmap(map);
-		return self.to_list();
-	}
-	
+    @BIF public static
+    ESeq to_list(EObject map) {
+        EMap self = map.testMap();
+        if (self == null) throw ERT.badmap(map);
+        return self.to_list();
+    }
+    
+    @BIF public static
+    EMap from_list(EObject map) {
+        ESeq seq = map.testSeq();
+        if (seq == null) throw ERT.badarg(map);
+        return EMap.from_list(seq);
+    }
+    
 	@BIF public static
 	EMap merge(EObject map1, EObject map2) {
 

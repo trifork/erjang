@@ -229,6 +229,7 @@ public final class EMap extends EObject {
                 throw ERT.badarg(list);
             }
             res = res.assoc(t.elem1, t.elem2);
+            list = list.tail();
         }
         return new EMap(res);
     }
