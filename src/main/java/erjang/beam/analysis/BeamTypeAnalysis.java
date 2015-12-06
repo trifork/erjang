@@ -1129,6 +1129,22 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 					}
 					
 					case has_map_fields:
+                    {
+                        Insn.MapQuery insn = (Insn.MapQuery) insn_;
+                        
+                        Arg src = src_arg(insn_idx, insn.src);
+                        int label = decode_labelref(insn.defaultLabel, type_map.exh);
+
+                        Arg[] keys = new Arg[ insn.kvs.size(true) ];
+                        Arg[] dest = new Arg[0];
+                        for (int i = 0; i < keys.length; i++) {
+                            keys[i] = src_arg(insn_idx, insn.kvs.getKey(i, true) );
+                        }
+                        
+                        vis.visitMapQuery(opcode, label, src, keys, dest);
+                        break;
+                    }
+                    
 					case get_map_elements:
 					{
 						Insn.MapQuery insn = (Insn.MapQuery) insn_;
@@ -1136,13 +1152,11 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						Arg src = src_arg(insn_idx, insn.src);
 						int label = decode_labelref(insn.defaultLabel, type_map.exh);
 
-						Arg[] keys = new Arg[ insn.kvs.size() ];
-						Arg[] dest = new Arg[ insn.kvs.size() ];
+						Arg[] keys = new Arg[ insn.kvs.size(false) ];
+						Arg[] dest = new Arg[ insn.kvs.size(false) ];
 						for (int i = 0; i < keys.length; i++) {
-							keys[i] = src_arg(insn_idx, insn.kvs.getKey(i) );
-							if (opcode == BeamOpcode.get_map_elements) {
-								dest[i] = dest_arg(insn_idx, insn.kvs.getKeyDest(i) );
-							}
+							keys[i] = src_arg(insn_idx, insn.kvs.getKey(i, false) );
+							dest[i] = dest_arg(insn_idx, insn.kvs.getKeyDest(i) );
 						}
 						
 						vis.visitMapQuery(opcode, label, src, keys, dest);
@@ -1161,7 +1175,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						Arg[] keys = new Arg[ insn.kvs.size() ];
 						Arg[] srcs = new Arg[ insn.kvs.size() ];
 						for (int i = 0; i < keys.length; i++) {
-							keys[i] = src_arg(insn_idx, insn.kvs.getKey(i) );
+							keys[i] = src_arg(insn_idx, insn.kvs.getKey(i, false) );
 							srcs[i] = src_arg(insn_idx, insn.kvs.getKeySrc(i) );
 						}
 						

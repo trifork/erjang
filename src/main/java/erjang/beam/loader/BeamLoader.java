@@ -1297,11 +1297,10 @@ public class BeamLoader extends CodeTables {
 			}
 			case SELECTLIST_TAG2: {
 				int length = readCodeInteger();
-				assert(length % 2 == 0);
+				//if(length % 2 != 0) throw new Error("bad select list length: "+length);
 				Operand[] list = new Operand[length];
-				for (int i=0; i<length; ) {
-					list[i++] = readOperand();
-					list[i++] = readOperand();
+				for (int i=0; i<length; i++) {
+					list[i] = readOperand();
 				}
 				return new SelectList(list);
 			}
