@@ -25,9 +25,11 @@ import java.util.zip.DeflaterOutputStream;
 
 import erjang.BIF;
 import erjang.EBinary;
+import erjang.EBitString;
 import erjang.ENative;
 import erjang.EObject;
 import erjang.ERT;
+import erjang.m.erlang.ErlConvert;
 
 public class Native extends ENative {
 
@@ -36,7 +38,11 @@ public class Native extends ENative {
 		
 		EBinary b = bin.testBinary();
 		if (b == null) {
-			throw ERT.badarg(bin);
+		    EBitString bin2 = ErlConvert.iolist_to_binary(bin);
+	        b = bin2.testBinary();
+	        if (b == null) {
+	            throw ERT.badarg(bin);
+	        }
 		}
 		
 		Deflater defl = new Deflater();
