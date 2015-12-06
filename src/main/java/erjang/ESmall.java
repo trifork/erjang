@@ -42,6 +42,34 @@ public final class ESmall extends EInteger {
 		}
 	}
 
+	@Override
+	public byte[] encode_unsigned() {
+	    if (value < 0) throw ERT.badarg(this);
+        if (value < 0x100) {
+            return new byte[]{ 
+                    (byte)( value & 0xff )
+            };
+        }
+        if (value < 0x10000) {
+            return new byte[]{ 
+                    (byte)((value&0xff00) >> 8), 
+                    (byte)( value&0x00ff ) 
+            };
+        }
+        if (value < 0x1000000) {
+            return new byte[]{ 
+                    (byte)((value&0xff0000) >> 16), 
+                    (byte)((value&0x00ff00) >> 8), 
+                    (byte)( value&0x0000ff ) 
+            };
+        }
+        return new byte[]{ 
+                (byte)((value&0xff000000) >>> 24), 
+                (byte)((value&0x00ff0000) >>> 16), 
+                (byte)((value&0x0000ff00) >>> 8), 
+                (byte)( value&0x000000ff ) 
+        };
+	}
 
 	@Override
 	public ESmall testSmall() {

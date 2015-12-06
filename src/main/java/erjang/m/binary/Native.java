@@ -161,15 +161,32 @@ public class Native extends ENative {
 	 */
 	@BIF
 	public static EBinary encode_unsigned(EObject unsigned) {
-		throw new NotImplemented();
+	    EInteger i = unsigned.testInteger();
+	    if (i == null) throw ERT.badarg(unsigned);
+	    byte[] bytes = i.encode_unsigned();
+	    return EBinary.make(bytes);
 	}
+	
+	static final EAtom am_big = EAtom.intern("big");
 	
 	/**
 	 * encode_unsigned(Unsigned,Endianess) -> binary()
 	 */
 	@BIF
 	public static EBinary encode_unsigned(EObject unsigned, EObject endianess) {
-		throw new NotImplemented();
+        EInteger i = unsigned.testInteger();
+        if (i == null) throw ERT.badarg(unsigned);
+        byte[] bytes = i.encode_unsigned();
+        if (endianess == am_big) {
+            return EBinary.make(bytes);
+        } else {
+            for (int idx = 0; idx < bytes.length/2; idx++) {
+                byte save = bytes[idx];
+                bytes[idx] = bytes[bytes.length-1-idx];
+                bytes[bytes.length-1-idx] = save;
+            }
+            return EBinary.make(bytes);
+        }
 	}
 	
 	/**

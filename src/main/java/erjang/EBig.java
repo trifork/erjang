@@ -73,7 +73,10 @@ public final class EBig extends EInteger {
 		return lhs.value.equals(value);
 	}
 
-
+	@Override
+	public byte[] encode_unsigned() {
+	    return value.toByteArray();
+ 	}
 	
 	/*
 	 * (non-Javadoc)

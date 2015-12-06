@@ -51,4 +51,6 @@ public abstract class EInteger extends ENumber {
 		return ei.read_tagged_integer();
 	}
 
+    public abstract byte[] encode_unsigned();
+
 }
