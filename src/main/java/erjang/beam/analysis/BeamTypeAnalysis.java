@@ -2430,7 +2430,7 @@ public class BeamTypeAnalysis extends ModuleAdapter {
 						throw new Error("matching without a state");
 					}
 
-					return setType(current, insn.dest7, EBINARY_TYPE);
+					return setType(current, insn.dest7, EBITSTRING_TYPE);
 				}
 
 

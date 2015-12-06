@@ -1,0 +1,19 @@
+#!/bin/bash
+BINDIR=$(dirname "$0")
+
+JERLEXEC_CMD=`which "$0"`
+OTP_ROOTDIR=`dirname "$JERLEXEC_CMD"`/../..   # Out of erts-XXX/bin
+ERJANG_DIR="$OTP_ROOTDIR/erjang-0.2"
+
+export ERL_BOOTSTRAP_EBIN="$ERJANG_DIR/bootstrap"
+
+exec java \
+    -server \
+    -Djava.library.path="$ERJANG_DIR/jnif" \
+    -Xmx1g -Xss50m \
+    -XX:PermSize=128m \
+    -jar "$ERJANG_DIR/erjang-0.2.jar" \
+\
+    -progname "$JERLEXEC_CMD" \
+    -root "$ROOTDIR" \
+    "$@"

@@ -43,7 +43,7 @@
     </and>
   </condition>
 
-  <target name="all" depends="clean,weave,jar" />
+  <target name="all" depends="clean,weave,jar,preloaded_files" />
   <target name="all_with_test" depends="all,weavetest" />
   <target name="test" depends="all_with_test,testwoven,perf_test" />
 
@@ -152,7 +152,8 @@
   </target>
 
   <!-- This runs those tests depend on generated classes in testclasses-->
-  <target name="testwoven" depends="weavetest,ensure_otp">
+  <target name="testwoven" depends="weavetest,ensure_otp,justtestwoven"/>
+  <target name="justtestwoven" depends="weavetest,ensure_otp">
     <echo message="Testing Tasks ======================" />
     <mkdir dir="test-outputs" />
     <junit fork="yes" showoutput="yes" printsummary="true">
@@ -257,6 +258,18 @@
 
     <echo message="Erlang version is ${erjang.otp.version}" />
 
+  </target>
+
+  <target name="preloaded_files" depends="ensure_otp">
+    <description>Place bootstrap files by erjangify-release.sh</description>
+    <copy todir="bootstrap" flatten="yes">
+      <fileset dir="${erjang.otp.root}/lib"
+               includes="erts-*/ebin/**/*.beam"/>
+      <!-- <dirset dir="${erjang.otp.root}/lib"> -->
+      <!--   <include name="erts-*/ebin"/> -->
+        <!-- <includesfile name="*.beam"/> -->
+      <!-- </dirset> -->
+    </copy>
   </target>
 
 

@@ -512,6 +512,9 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 		copy.empty_out_q_subs = new ArrayList<EHandle>();
 		copy.active = ActiveType.PASSIVE;
 
+        copy.tcp_clear_input(); // Do not share mutable state!
+        copy.http_state = new IntCell();
+
 		final EDriverTask this_task = port().task();
 		EDriverTask driver = new EDriverTask(caller, copy) {
 			public EObject getName() {
@@ -798,7 +801,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 		if (!is_open())
 			return;
 
-		if (ch.isOpen())
+		if (ch.isOpen() && active==ActiveType.ACTIVE)
 			select(ch, ERL_DRV_READ, SelectMode.SET);
 
 		if (log.isLoggable(Level.FINE))
@@ -2655,7 +2658,8 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 			out.flip();
 			ByteBuffer header = out;
 
-			data = new EBinList(header, EBinary.make(tail));
+            EBinary tailAsEBin = EBinary.make(tail);
+            data = header.remaining()==0 ? tailAsEBin : new EBinList(header, tailAsEBin);
 		}
 
 		msg = ETuple.make(am_tcp, port(), data);
@@ -3031,7 +3035,7 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 		return send_async_ok(op.id, op.caller);
 	}
 
-	AsyncOp deq_async() {
+	public AsyncOp deq_async() {
 		return deq_async_w_tmo();
 	}
 
