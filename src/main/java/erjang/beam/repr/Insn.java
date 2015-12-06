@@ -27,6 +27,7 @@ import static erjang.beam.CodeAtoms.GCBIF_ATOM;
 import static erjang.beam.CodeAtoms.NOFAIL_ATOM;
 import static erjang.beam.CodeAtoms.START_ATOM;
 import static erjang.beam.CodeAtoms.TEST_ATOM;
+
 import erjang.EList;
 import erjang.EObject;
 import erjang.ERT;
@@ -40,7 +41,6 @@ import erjang.beam.repr.Operands.BitString;
 import erjang.beam.repr.Operands.ByteString;
 import erjang.beam.repr.Operands.DestinationOperand;
 import erjang.beam.repr.Operands.Label;
-import erjang.beam.repr.Operands.MapList;
 import erjang.beam.repr.Operands.SelectList;
 import erjang.beam.repr.Operands.SourceOperand;
 import erjang.beam.repr.Operands.XReg;

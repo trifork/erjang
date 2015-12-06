@@ -910,4 +910,9 @@ public class EOutputStream extends ByteArrayOutputStream {
 	public ByteBuffer toByteBuffer() {
     	return ByteBuffer.wrap(super.buf, 0, super.count);
 	}
+
+	public void write_map_head(int arity) {
+	    write1(EExternal.mapTag);
+	    write4BE(arity);
+	}
 }

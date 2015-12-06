@@ -338,4 +338,18 @@ public final class EMap extends EObject {
 		}
 	}
     
+	@Override
+	public void encode(EOutputStream eos) {
+		eos.write_map_head(this.map_size());
+		
+        for(ISeq<IMapEntry<EObject, EObject>> iit = _map.seq();
+                iit != null;
+                iit = iit.next())
+        {
+            IMapEntry<EObject, EObject> ent = iit.first();
+            eos.write_any(ent.getKey());
+            eos.write_any(ent.getValue());
+        }
+	}
+	
 }

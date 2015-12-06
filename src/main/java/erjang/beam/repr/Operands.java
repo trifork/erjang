@@ -206,27 +206,6 @@ public class Operands {
 		}
     }
 
-    public static class MapList extends Operand {
-		Operand[] list;
-		public MapList(Operand[] list) {this.list=list;}
-
-		@Override
-		public MapList asMapList() {return this;}
-
-		public int size() {return list.length / 2;}
-		public SourceOperand      getKey(int i)    {return list[2*i].asSource();}
-		public DestinationOperand getDest(int i)   {return list[2*i+1].asDestination();}
-		public SourceOperand      getSource(int i) {return list[2*i+1].asSource();}
-
-		public EObject toSymbolic() {
-			EObject[] elems = new EObject[list.length];
-			for (int i=0; i<list.length; i++) {
-				elems[i] = list[i].toSymbolic();
-			}
-			return ETuple.make(LIST_ATOM, ESeq.fromArray(elems));
-		}
-    }
-
     public static class AllocList extends Operand {
 		static final int WORDS  = 0;
 		static final int FLOATS = 1;
