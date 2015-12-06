@@ -381,11 +381,15 @@ public abstract class EObject {
 		return ERT.FALSE;
 	}
 
-	@BIF
-	public EAtom is_map() {
-		return ERT.FALSE;
-	}
-	
+    @BIF
+    public EAtom is_map() {
+        return ERT.FALSE;
+    }
+    
+    @BIF(type=BIF.Type.GUARD, name="is_map")
+    public EAtom is_map_g() {
+        return null;
+    }    
 
 	/**
 	 * @param o2

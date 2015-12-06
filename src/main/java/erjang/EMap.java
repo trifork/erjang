@@ -60,6 +60,11 @@ public final class EMap extends EObject {
 	public EAtom is_map() {
 		return ERT.TRUE;
 	}
+	
+	@Override
+	public EAtom is_map_g() {
+        return ERT.TRUE;
+	}
 
 	@Override
 	int compare_same(EObject rhs) {
