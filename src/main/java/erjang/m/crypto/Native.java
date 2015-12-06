@@ -12,6 +12,7 @@ import erjang.EBinary;
 import erjang.ENative;
 import erjang.EObject;
 import erjang.ERT;
+import erjang.ESmall;
 
 public class Native extends ENative {
 
@@ -69,6 +70,18 @@ public class Native extends ENative {
 		byte[] res = md5.digest();
 		
 		return EBinary.make(res);
+	}
+	
+	@BIF
+	public static EBinary rand_bytes(EObject howmany)
+	{
+	    ESmall sm = howmany.testSmall();
+	    if (sm == null || sm.value < 0) throw ERT.badarg(howmany);
+	    byte[] bytes = new byte[sm.value];
+	    
+	    rand.nextBytes(bytes);
+	    
+	    return EBinary.make(bytes);
 	}
 	
 	@BIF
