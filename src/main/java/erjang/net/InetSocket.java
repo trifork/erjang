@@ -167,11 +167,17 @@ public abstract class InetSocket {
 						+ this.getClass().getName());
 	}
 
-	public int getReceiveBufferSize() throws IOException {
-		throw new PosixIOException(Posix.EINVAL,
-				"getReceiveBufferSize() not supported on "
-						+ this.getClass().getName());
-	}
+    public int getReceiveBufferSize() throws IOException {
+        throw new PosixIOException(Posix.EINVAL,
+                "getReceiveBufferSize() not supported on "
+                        + this.getClass().getName());
+    }
+
+    public int getLinger() throws IOException {
+        throw new PosixIOException(Posix.EINVAL,
+                "getLinger() not supported on "
+                        + this.getClass().getName());
+    }
 
 	public InetSocketAddress getRemoteAddress() {
 		throw new erjang.NotImplemented();

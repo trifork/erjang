@@ -28,7 +28,7 @@ public class LazyInetSocket extends InetSocket {
 	InetSocketAddress bindingAddress;
 
 	// Server, Client, Datagram
-	public Integer so_rcv_buf;
+    public Integer so_rcv_buf;
 	public Integer so_snd_buf;
 	public Integer so_timeout;
 	public Boolean so_reuse_addr;
@@ -340,6 +340,15 @@ public class LazyInetSocket extends InetSocket {
 		}
 	}
 
+	@Override
+	public int getLinger() throws IOException {
+        if (delegate == null) {
+            return delegate.getLinger();
+        } else {
+            return so_linger == null ? 0 : so_linger.intValue();
+        }
+	}
+	
 	@Override
 	public void setSendBufferSize(int size) throws IOException {
 		if (delegate == null) {

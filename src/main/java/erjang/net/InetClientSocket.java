@@ -77,6 +77,11 @@ public class InetClientSocket extends InetSocket {
 	}
 	
 	@Override
+	public int getLinger() throws IOException {
+        return ch.socket().getSoLinger();
+	}
+	
+	@Override
 	public void setTimeout(int timeout) throws IOException {
 		ch.socket().setSoTimeout(timeout);
 	}
@@ -96,8 +101,6 @@ public class InetClientSocket extends InetSocket {
 		ch.socket().setSoLinger(on, timeout);
 	}
 	
-	
-
 	@Override
 	public InetSocket accept() throws IOException {
 		throw new erjang.NotImplemented();

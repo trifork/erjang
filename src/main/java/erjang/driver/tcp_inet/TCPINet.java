@@ -1857,6 +1857,14 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 						// ignore //
 						continue;
 					}
+				case INET_OPT_LINGER:
+				{
+				    int linger = fd.getLinger();
+				    ptr.write(opt);
+				    ptr.writeInt(linger > 0 ? 1 : 0);
+				    ptr.writeInt(linger < 0 ? 0 : linger);
+				    continue;
+				}
 				default:
 					throw new NotImplemented("getopt " + ((int) opt));
 				}

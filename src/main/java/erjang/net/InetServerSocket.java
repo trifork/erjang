@@ -71,7 +71,7 @@ public class InetServerSocket extends InetSocket {
 	public int getReceiveBufferSize() throws IOException {
 		return ch.socket().getReceiveBufferSize();
 	}
-	
+		
 	@Override
 	public void setTimeout(int timeout) throws IOException {
 		ch.socket().setSoTimeout(timeout);
