@@ -1,5 +1,5 @@
 
-#ifndef __JNFI_H
+#ifndef __JNIF_H
 #define __JNIF_H
 
 #include <jni.h>

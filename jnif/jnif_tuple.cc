@@ -32,6 +32,15 @@ ERL_NIF_TERM enif_make_tuple_from_array(ErlNifEnv* ee, const ERL_NIF_TERM arr[],
 
 }
 
+struct array_dtor : jnif_dtor {
+  ERL_NIF_TERM *array;
+  array_dtor(ERL_NIF_TERM *g) : array(g) {}
+  void release(ErlNifEnv* ee) {
+    free( array );
+  }
+};
+
+
 int enif_get_tuple(ErlNifEnv* ee, ERL_NIF_TERM tpl, int* arity, const ERL_NIF_TERM** a0)
 {
   JNIEnv *je = ee->je;
@@ -53,7 +62,7 @@ int enif_get_tuple(ErlNifEnv* ee, ERL_NIF_TERM tpl, int* arity, const ERL_NIF_TE
     (*array)[i] = jnif_retain(ee, je->CallObjectMethod( tup, m_etuple__elm, i+1) );
   }
 
-  // TODO: free *array in environment
+  ee->dtors.push_back (new array_dtor(*array));
 
   return NIF_TRUE;
 }

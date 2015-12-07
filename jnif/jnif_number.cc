@@ -2,6 +2,7 @@
 #include "jnif.h"
 #include <limits>
 #include <cstdint>
+#include "erl_int_sizes_config.h"
 
 static jmethodID m_eobject__testNumber;
 static jmethodID m_eobject__testInteger;
@@ -204,15 +205,22 @@ extern ERL_NIF_TERM enif_make_ulong (ErlNifEnv* ee, unsigned long i)
   return jnif_retain(ee, boxed);
 }
 
+
+#if SIZEOF_LONG == 8
+#define UINT64_FMT "%lu"
+#else
+#define UINT64_FMT "%llu"
+#endif
+
 extern ERL_NIF_TERM enif_make_uint64 (ErlNifEnv* ee, ErlNifUInt64 i)
 {
   jobject boxed;
 
   if (i > 0x7fffffffffffffffULL) {
-    const int n = snprintf(NULL, 0, "%llu", i);
+    const int n = snprintf(NULL, 0, UINT64_FMT, i);
     assert(n > 0);
     char buf[n+1];
-    int c = snprintf(buf, n+1, "%llu", i);
+    int c = snprintf(buf, n+1, UINT64_FMT, i);
     assert(buf[n] == '\0');
 
     jobject str = ee->je->NewStringUTF(buf);

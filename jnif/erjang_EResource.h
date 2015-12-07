@@ -23,10 +23,12 @@ extern "C" {
 #define erjang_EResource_CMP_ORDER_PID 5L
 #undef erjang_EResource_CMP_ORDER_TUPLE
 #define erjang_EResource_CMP_ORDER_TUPLE 6L
+#undef erjang_EResource_CMP_ORDER_MAP
+#define erjang_EResource_CMP_ORDER_MAP 7L
 #undef erjang_EResource_CMP_ORDER_LIST
-#define erjang_EResource_CMP_ORDER_LIST 7L
+#define erjang_EResource_CMP_ORDER_LIST 8L
 #undef erjang_EResource_CMP_ORDER_BITSTRING
-#define erjang_EResource_CMP_ORDER_BITSTRING 8L
+#define erjang_EResource_CMP_ORDER_BITSTRING 9L
 /*
  * Class:     erjang_EResource
  * Method:    jni_finalize

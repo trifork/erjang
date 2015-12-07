@@ -11,7 +11,9 @@
 
 /** global data */
 
+#ifndef __MACH__
 static void* self_so_handle;
+#endif
 
 static JavaVM *jvm;
 
@@ -139,7 +141,7 @@ JNIEXPORT jlong JNICALL Java_erjang_NIF_jni_1load
   if (path == NULL)
     return 0;
   void * so_handle = dlopen( path, /* RTLD_LAZY | */
-#ifdef __MACH
+#ifdef __MACH__
 RTLD_NOW | RTLD_LOCAL | RTLD_FIRST
 #else
 #ifdef __GNU
@@ -338,10 +340,13 @@ static void init_jvm_data(JavaVM *vm, JNIEnv* je)
  *  RTLD_GLOBAL flag.
  */
 static int export_jnif_symbols() {
+#ifndef __MACH__
   self_so_handle = dlopen("libjnif.so", RTLD_NOW | RTLD_GLOBAL);
   if (self_so_handle == NULL) {
     fprintf(stderr, "JNIF: self-exporting failed (error: %s)\n", dlerror());
   }
+#endif
+  return 1;
 }
 
 
@@ -374,8 +379,10 @@ extern "C" void JNI_OnUnload(JavaVM *vm, void *reserved)
     }
     jvm = NULL;
 
+#ifndef __MACH__
     if (self_so_handle != NULL) {
       dlclose(self_so_handle);
     }
+#endif
   }
 }
