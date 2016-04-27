@@ -433,7 +433,7 @@ public class JavaObject extends EPseudoTerm {
 							
 							EFun job = EFunCG.get_fun_with_handler("erlang", "apply", 0, new EFunHandler() {
 								@Override
-								public EObject invoke(EProc proc, EObject[] _) throws Pausable {
+								public EObject invoke(EProc proc, EObject[] unused) throws Pausable {
 
 									EObject aa = JavaObject.box(proc, args);
 									EObject at = JavaObject.box(proc, method.getParameterTypes());

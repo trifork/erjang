@@ -85,8 +85,9 @@
 
   <target name="compile" depends="gen-interpreter,create-dirs">
     <echo message="Compiling src ===================" />
-  	<echo message="** expect 7 warnings about sun.misc.Signal ** " />
-    <javac includeantruntime="false" debug="true" srcdir="src/main/java" destdir="target/classes" classpathref="erjang.classpath" deprecation="off" debuglevel="lines,vars,source" target="1.7" source="1.7" fork="true"/>
+    <javac includeantruntime="false" debug="true" srcdir="src/main/java" destdir="target/classes" classpathref="erjang.classpath" deprecation="off" debuglevel="lines,vars,source" target="1.7" source="1.7" fork="true">
+      <compilerarg value="-XDignore.symbol.file"/>
+    </javac>
   </target>
 
   <target name="testcompile" depends="compile">
