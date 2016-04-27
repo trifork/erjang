@@ -117,6 +117,7 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
     protected Throwable killer;
 
     private Mailbox<EObject> print_trace;
+    private Runnable run_on_stack;
 
     /*==================== Instance methods ====================================*/
 
@@ -336,8 +337,24 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
             }
             print_trace = null;
         }
-    }
 
+        if (run_on_stack != null) {
+            Runnable mb = run_on_stack;
+            run_on_stack = null;
+
+            if (mb != null) {
+
+                System.out.println("running..."+mb.toString());
+
+                try {
+                    mb.run();
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                }
+            }
+
+        }
+    }
 
     /** because the above is called a bazillion times, we split this out to make it easier to inline */
     private void do_check_exit() throws ErlangExitSignal {
@@ -546,6 +563,12 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
 
     public void printStackTrace(Mailbox<EObject> info) {
         this.print_trace = info;
+        this.resume();
+    }
+
+    public void runOnStack(Runnable info) {
+        System.out.println("runOnStack...");
+        this.run_on_stack = info;
         this.resume();
     }
 
