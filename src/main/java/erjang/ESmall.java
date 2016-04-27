@@ -210,7 +210,7 @@ public final class ESmall extends EInteger {
 	}
 
 	/**
-	 * @param arity
+	 * @param v
 	 * @return
 	 */
 	public static ESmall make(int v) {
@@ -300,7 +300,7 @@ public final class ESmall extends EInteger {
 		return other.r_multiply(value);
 	}
 
-	public ENumber r_multiply(int lhs) {
+	public EInteger r_multiply(int lhs) {
 		return ERT.box((long) lhs * (long) value);
 	}
 
@@ -308,7 +308,7 @@ public final class ESmall extends EInteger {
 		return ERT.box(lhs * value);
 	}
 
-	public ENumber r_multiply(BigInteger lhs) {
+	public EInteger r_multiply(BigInteger lhs) {
 		return ERT.box(lhs.multiply(BigInteger.valueOf(value)));
 	}
 

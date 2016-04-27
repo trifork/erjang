@@ -52,6 +52,7 @@ public abstract class TestUtil {
     
 	public static void erl_compile0(String fileName) throws Exception {
 		execGetOutput(new String[] {EJ_PRG,
+		                "+S2",
 						"-noshell",
 						"-noinput",
 						"-root", OTP_HOME,

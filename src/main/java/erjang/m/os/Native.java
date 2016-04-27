@@ -173,7 +173,7 @@ public class Native extends ENative {
 
 	@BIF
 	static public ETuple3 timestamp() {
-		long now = erjang.m.erlang.ErlBif.now_raw_micros();
+		long now = erjang.m.erlang.ErlTime.now_raw_micros();
 		int micros = (int)(now % 1000000); now /= 1000000;
 		int secs   = (int)(now % 1000000); now /= 1000000;
 		int megas  = (int)now;

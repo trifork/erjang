@@ -127,6 +127,10 @@ public final class EBig extends EInteger {
 		return type;
 	}
 
+	static BigInteger BIG_ONE = BigInteger.valueOf(1);
+
+	public EInteger inc() { return ERT.box(value.add(BIG_ONE)); }
+
 	@Override
 	public EBig abs() {
 		return new EBig(value.abs());
@@ -136,7 +140,7 @@ public final class EBig extends EInteger {
 		return other.add(value, guard);
 	}
 
-	public ENumber add(int lhs, boolean guard) {
+	public EInteger add(int lhs, boolean guard) {
 		return ERT.box(BigInteger.valueOf(lhs).add(value));
 	}
 
@@ -217,7 +221,7 @@ public final class EBig extends EInteger {
 		return other.r_multiply(value);
 	}
 
-	public ENumber r_multiply(int lhs) {
+	public EInteger r_multiply(int lhs) {
 		return ERT.box(BigInteger.valueOf(lhs).multiply(value));
 	}
 

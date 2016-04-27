@@ -30,7 +30,7 @@ public class Native extends ENative {
 	public Class<?>[] getNativeClasses() {
 		return new Class[] { BinOps.class, ErlBif.class, ErlProc.class,
 				ErlList.class, ErlConvert.class, ErlPort.class, ErlHash.class, ErlDist.class,
-				ErlFun.class, ERT.class };
+				ErlFun.class, ERT.class, ErlTime.class };
 	}
 
 }

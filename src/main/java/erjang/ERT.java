@@ -1031,10 +1031,15 @@ public class ERT {
 	 */
 	public static int threadPoolSize() {
 		String threads = ErjangConfig.getString("erjang.beam.option.S");
-		if (threads != null)
-			return Integer.parseInt(threads);
-		else
-			return Math.max(1, Runtime.getRuntime().availableProcessors()/2);
+		if (threads != null) {
+		    try {
+		        return Math.max(2, Integer.parseInt(threads));
+		    } catch (NumberFormatException e) {
+		        // ignore //
+		    }
+        }
+		
+		return Math.max(2, Runtime.getRuntime().availableProcessors()/2);
 	}
 
 	public static int asyncThreadPoolSize() {

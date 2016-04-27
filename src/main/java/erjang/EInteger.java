@@ -39,7 +39,8 @@ public abstract class EInteger extends ENumber {
 	}
 
 	public abstract EInteger dec();
-	
+	public abstract EInteger inc();
+
 	/**
 	 * @return
 	 */
@@ -52,5 +53,7 @@ public abstract class EInteger extends ENumber {
 	}
 
     public abstract byte[] encode_unsigned();
+
+	public EInteger r_multiply(int lhs) { throw ERT.badarith(new ESmall(lhs), this); }
 
 }

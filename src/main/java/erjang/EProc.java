@@ -79,10 +79,10 @@ public final class EProc extends ETask<EInternalPID> {
 	private static final EObject am_noproc = EAtom.intern("noproc");
 
     private static final EAtom[] priorities = new EAtom[] {
-            EAtom.intern("max"),
-            EAtom.intern("high"),
-            EAtom.intern("normal"),
-            EAtom.intern("low"),
+            am_max,
+            am_high,
+            am_normal,
+            am_low
     };
 
     private static final ExitHook[] NO_HOOKS = new ExitHook[0];
@@ -460,6 +460,9 @@ public final class EProc extends ETask<EInternalPID> {
 
         } else if (spec == am_error_handler) {
             return new ETuple2(am_error_handler, am_error_handler);
+
+        } else if (spec == am_priority) {
+            return new ETuple2(am_priority, am_normal);
 
         } else {
             log.warning("NotImplemented: process_info("+spec+")");
