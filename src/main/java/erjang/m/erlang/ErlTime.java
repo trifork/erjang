@@ -4,6 +4,7 @@ import erjang.*;
 
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BinaryOperator;
 
 /**
  * Created by krab on 26/04/16.
@@ -138,6 +139,24 @@ public class ErlTime {
             }
             return iu.value;
         }
+    }
+
+    static AtomicReference<EInteger> uniqueValue = new AtomicReference<EInteger>(ESmall.ONE);
+
+    @BIF
+    public static EInteger unique_integer() {
+
+        return uniqueValue.getAndAccumulate(ESmall.ONE, new BinaryOperator<EInteger>() {
+            @Override
+            public EInteger apply(EInteger i1, EInteger i2) {
+                return (EInteger)i1.add(i2);
+            }
+        });
+    }
+
+    @BIF
+    public static EInteger unique_integer(EObject opts) {
+        return unique_integer();
     }
 
 }
