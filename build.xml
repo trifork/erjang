@@ -92,7 +92,7 @@
 
   <target name="testcompile" depends="compile">
     <echo message="Compiling test ===================" />
-    <javac includeantruntime="false" debug="true" srcdir="src/test/java" destdir="target/test-classes" debuglevel="lines,vars,source" target="1.7">
+    <javac includeantruntime="false" debug="true" srcdir="src/test/java" destdir="target/test-classes" debuglevel="lines,vars,source" target="1.7" source="1.7">
       <classpath>
         <pathelement location="target/test-classes" />
       </classpath>
@@ -102,7 +102,7 @@
 
   <target name="gen-test-compile" depends="testcompile,gen-test-classes">
     <echo message="Compiling generated test classes ===================" />
-    <javac includeantruntime="false" debug="true" srcdir="src/test/java" destdir="target/test-classes" debuglevel="lines,vars,source" target="1.7">
+    <javac includeantruntime="false" debug="true" srcdir="src/test/java" destdir="target/test-classes" debuglevel="lines,vars,source" target="1.7" source="1.7">
       <classpath>
         <pathelement location="target/test-classes" />
       </classpath>
