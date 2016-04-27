@@ -1859,10 +1859,16 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 					}
 				case INET_OPT_LINGER:
 				{
-				    int linger = fd.getLinger();
-				    ptr.write(opt);
-				    ptr.writeInt(linger > 0 ? 1 : 0);
-				    ptr.writeInt(linger < 0 ? 0 : linger);
+				    if (fd == null) {
+				        ptr.write(opt);
+				        ptr.writeInt(0);
+				        ptr.writeInt(0);
+				    } else {
+    				    int linger = fd.getLinger();
+    				    ptr.write(opt);
+    				    ptr.writeInt(linger > 0 ? 1 : 0);
+    				    ptr.writeInt(linger < 0 ? 0 : linger);
+				    }
 				    continue;
 				}
 				default:
@@ -2659,6 +2665,9 @@ public class TCPINet extends EDriverInstance implements java.lang.Cloneable {
 		if (mode == INET_MODE_LIST) {
 			out.flip();
 			data = EString.make(out);
+		} else if (hsz == 0) {
+		    out.flip();
+		    data = EBinary.make(out);
 		} else {
 			out.position(hsz);
 			ByteBuffer tail = out.slice();
