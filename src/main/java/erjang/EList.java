@@ -65,7 +65,8 @@ public final class EList extends ESeq {
 	
 	@Override
 	public String toString() {
-		
+
+		/*
 		try {
 			// TODO: make this faster, we generate too many exceptions
 			// on account of this piece of code!
@@ -74,6 +75,7 @@ public final class EList extends ESeq {
 		} catch (ErlangException e) {
 			// ignor e//
 		}
+		*/
 		
 		StringBuffer sb = new StringBuffer("[");
 
