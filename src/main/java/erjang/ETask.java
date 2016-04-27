@@ -343,9 +343,6 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
             run_on_stack = null;
 
             if (mb != null) {
-
-                System.out.println("running..."+mb.toString());
-
                 try {
                     mb.run();
                 } catch (Throwable e) {
@@ -567,7 +564,6 @@ public abstract class ETask<H extends EHandle> extends kilim.Task {
     }
 
     public void runOnStack(Runnable info) {
-        System.out.println("runOnStack...");
         this.run_on_stack = info;
         this.resume();
     }
