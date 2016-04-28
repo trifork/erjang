@@ -181,7 +181,13 @@ public class ERT {
 	 * @return
 	 */
 	public static EPID loopkup_pid(ESeq name) {
-		throw new NotImplemented();
+		String str = name.stringValue();
+		for (EProc p : EProc.all_tasks.values()) {
+			if (p.self_handle().toString().equals( str ) ) {
+				return p.self_handle();
+			}
+		}
+		throw ERT.badarg(name);
 	}
 
 	// "definer" holds a reference to ClassLoader#defineClass
