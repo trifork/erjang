@@ -31,23 +31,7 @@ import java.util.TreeSet;
 import com.trifork.clj_ds.IPersistentCollection;
 import com.trifork.clj_ds.ISeq;
 
-import erjang.EAtom;
-import erjang.EBitString;
-import erjang.ECons;
-import erjang.EFun;
-import erjang.ENumber;
-import erjang.EObject;
-import erjang.EPID;
-import erjang.EPort;
-import erjang.EPseudoTerm;
-import erjang.ERT;
-import erjang.ERef;
-import erjang.ESeq;
-import erjang.ETuple;
-import erjang.ETuple3;
-import erjang.ErlangError;
-import erjang.ErlangException;
-import erjang.NotImplemented;
+import erjang.*;
 import erjang.beam.BIFUtil;
 import erjang.beam.BuiltInFunction;
 
@@ -250,8 +234,13 @@ public class EMatchSpec extends EPseudoTerm {
 
 	static class ActionCall extends Expr {
 
+
 		EAtom action;
 		Expr[] args;
+
+		ErlangError badarg(EObject[] vals) {
+			return ERT.badarg(ETuple2.make_tuple(action, EList.fromArray(vals)));
+		}
 
 		public ActionCall(ETuple t, ParseContext ctx) {
 
@@ -265,6 +254,7 @@ public class EMatchSpec extends EPseudoTerm {
 			}
 		}
 
+
 		@Override
 		public EObject eval(EMatchContext ctx) {
 			EObject[] vals = new EObject[args.length];
@@ -277,7 +267,80 @@ public class EMatchSpec extends EPseudoTerm {
 			for (int i = 0; i < vals.length; i++) {
 				aa.add(vals[i]);
 			}
-			throw new NotImplemented("ActionCall " + action + " " + aa);
+			if (action == am_enable_trace || action == am_disable_trace) {
+
+				boolean what = (action == am_enable_trace);
+
+				EProc proc = EMatchSpec.current_caller();
+
+				if (proc == null) {
+					throw badarg(vals);
+				}
+
+				ERT.TraceFlags tf;
+				ESeq opts;
+				if (vals.length == 1) {
+					tf = proc.get_own_trace_flags();
+					opts = vals[0].testSeq();
+
+				} else if (vals.length == 2) {
+					EInternalPID pid = resolve(vals[0]);
+					tf = pid.task().get_own_trace_flags();
+					opts = vals[1].testSeq();
+				} else {
+					throw badarg(vals);
+				}
+
+				tf.update(what, opts, proc.self_handle());
+				return ERT.TRUE;
+
+
+			} else if (action == am_trace) {
+
+				EProc proc = EMatchSpec.current_caller();
+
+				if (proc == null) {
+					throw badarg(vals);
+				}
+
+				EInternalPID pid;
+				ESeq enable, disable;
+				if (vals.length == 2) {
+					pid = proc.self_handle();
+					disable = vals[0].testSeq();
+					enable = vals[1].testSeq();
+				} else if (vals.length == 3) {
+					pid = resolve(vals[0]);
+					disable = vals[0].testSeq();
+					enable = vals[1].testSeq();
+				} else {
+					throw badarg(vals);
+				}
+
+				if (pid == null || disable == null || enable == null) {
+					return ERT.FALSE;
+				}
+
+				try {
+					ERT.TraceFlags tf = pid.task().get_own_trace_flags();
+					tf.update(false, disable, proc.self_handle());
+					tf.update(true, enable, proc.self_handle());
+					return ERT.TRUE;
+				} catch (ErlangError e) {
+					return ERT.FALSE;
+				}
+
+			} else {
+				throw new NotImplemented("ActionCall " + action + " " + aa);
+			}
+		}
+
+		static EInternalPID resolve(EObject pidOrName) {
+			EPID res = pidOrName.testPID();
+			if (res == null) {
+				res = ERT.whereis(pidOrName).testInternalPID();
+			}
+			return null;
 		}
 
 	}
@@ -1084,6 +1147,24 @@ public class EMatchSpec extends EPseudoTerm {
 	public boolean matches(EObject candidate) {
 		return match(candidate) == ERT.TRUE;
 	}
+
+	final static ThreadLocal<EProc> caller = new ThreadLocal<EProc>();
+
+	public static EProc current_caller() {
+		return caller.get();
+	}
+
+	public boolean matches(EProc proc, EObject candidate)
+	{
+		EProc old = caller.get();
+		caller.set(proc);
+		try {
+			return this.matches(candidate);
+		} finally {
+			caller.set(old);
+		}
+	}
+
 
 	public EObject match(EObject candidate) {
 		for (int i = 0; i < funs.length; i++) {

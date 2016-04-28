@@ -18,24 +18,18 @@
 
 package erjang;
 
-import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.net.URL;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.HashSet;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import erjang.beam.Compiler;
 import erjang.codegen.EFunCG;
 import erjang.m.erlang.ErlBif;
+import erjang.m.ets.EMatchSpec;
 import erjang.m.java.JavaObject;
 import kilim.Pausable;
 
@@ -51,6 +45,8 @@ public class EModuleManager {
 	// static FunctionInfo undefined_function = null;
 	static EAtom am_prep_stop = EAtom.intern("prep_stop");
 	static EAtom am___info__ = EAtom.intern("__info__");
+	static EAtom am_call = EAtom.intern("call");
+	static EAtom am_trace = EAtom.intern("trace");
 
 	static class FunctionInfo {
 		private final FunID fun;
@@ -65,7 +61,7 @@ public class EModuleManager {
 		EModule defining_module;
 		EFun resolved_value;
 		boolean is_exported;
-		
+
 		Collection<FunctionBinder> resolve_points = new HashSet<FunctionBinder>();
 		private EFun error_handler;
 
@@ -82,11 +78,15 @@ public class EModuleManager {
 		 * @throws IllegalAccessException
 		 * @throws IllegalArgumentException
 		 */
-		synchronized void add_import(final FunctionBinder ref) throws Exception {
+		synchronized void add_import(final FunctionBinder ref) {
 			resolve_points.add(ref);
 			if (is_exported && resolved_value != null) {
 				// System.out.println("binding "+fun+" "+resolved_value+" -> "+ref);
-				ref.bind(resolved_value);
+				if (traceHandler == null) {
+					ref.bind(resolved_value);
+				} else {
+					ref.bind(traceHandler.self);
+				}
 			} else {
 				EFun h = getFunErrorHandler();
 				ref.bind(h);
@@ -103,7 +103,7 @@ public class EModuleManager {
 			}
 		}
 
-		private EFun getFunction() {
+		private EFun getTargetFunction() {
 			if (resolved_value != null) {
 				return resolved_value;
 			} else {
@@ -203,9 +203,13 @@ public class EModuleManager {
 		
 		void bind(EFun value) throws Exception {
 			this.resolved_value = value;
-			for (FunctionBinder f : resolve_points) {
-				// System.out.println("binding " + fun2 + " " + value + " -> " + f);
-				f.bind(value);
+			if (traceHandler == null) {
+				for (FunctionBinder f : resolve_points) {
+					// System.out.println("binding " + fun2 + " " + value + " -> " + f);
+					f.bind(value);
+				}
+			} else {
+				traceHandler.target = value;
 			}
 		}
 
@@ -214,7 +218,11 @@ public class EModuleManager {
 		 * 
 		 */
 		public EFun resolve() {
-			return getFunction();
+			if (traceHandler == null) {
+				return getTargetFunction();
+			} else {
+				return traceHandler.self;
+			}
 		}
 
 		/**
@@ -222,6 +230,70 @@ public class EModuleManager {
 		 */
 		public boolean exported() {
 			return resolved_value != null && is_exported;
+		}
+
+		public void trace_pattern(TraceSpec spec) {
+			if (traceHandler == null) {
+				traceHandler = new TraceHandler(this);
+			}
+
+			traceHandler.trace_spec = spec;
+		}
+
+		TraceHandler traceHandler;
+	}
+
+	static class TraceHandler implements EFunHandler {
+
+		AtomicLong counter = new AtomicLong(0);
+		TraceSpec trace_spec = new TraceSpec(ERT.FALSE, ERT.NIL);
+
+		EFun target;
+		final EFun self;
+
+		TraceHandler(FunctionInfo h) {
+			owner = h;
+			target = h.getTargetFunction();
+			self = EFunCG.get_fun_with_handler(
+					h.fun.module.getName(),
+					h.fun.function.getName(),
+					h.fun.arity,
+					this,
+					TraceHandler.class.getClassLoader());
+
+		}
+
+		final FunctionInfo owner;
+
+		@Override
+		public EObject invoke(EProc proc, EObject[] args) throws Pausable {
+			long state = before(proc, args);
+			try {
+				return target.invoke(proc, args);
+			} finally {
+				after(proc, state);
+			}
+		}
+
+		long before(EProc proc, EObject[] args) throws Pausable {
+			if (!proc.get_trace_flags().call || trace_spec.is_false) return 0;
+			ESeq argList = null;
+			if (trace_spec.is_true || trace_spec.ms.matches(proc, argList = EList.make((Object[])args))) {
+				counter.incrementAndGet();
+
+				// send {trace, Pid, call, {M, F, Args}}
+
+				EObject arg = (proc.get_trace_flags().arity)
+						? ERT.box(owner.fun.arity)
+						: (argList == null ? EList.make((Object[])args) : argList);
+
+				ERT.do_trace(proc, am_call, ETuple3.make_tuple(owner.fun.module, owner.fun.function, arg));
+			}
+			return 0;
+		}
+
+		void after(EProc proc, long state) {
+
 		}
 	}
 
@@ -246,7 +318,7 @@ public class EModuleManager {
 		 * @return
 		 * @throws Exception
 		 */
-		public void add_import(FunID fun, FunctionBinder ref) throws Exception {
+		public void add_import(FunID fun, FunctionBinder ref) {
 			FunctionInfo info = get_function_info(fun);
 			info.add_import(ref);
 		}
@@ -282,7 +354,7 @@ public class EModuleManager {
 		}
 
 		/**
-		 * @param start
+		 * @param fun
 		 * @return
 		 */
 		public EFun resolve(FunID fun) {
@@ -452,9 +524,28 @@ public class EModuleManager {
             
 		}
 
+		public int trace_pattern(EAtom fun, int argi, TraceSpec spec) {
+			ArrayList<FunctionInfo> fis = new ArrayList<FunctionInfo>();
+			for ( Map.Entry<FunID,FunctionInfo> ent : binding_points.entrySet()) {
+				FunID fid = ent.getKey();
+				boolean is_fun = (fun == am__) || (fun == fid.function);
+				boolean is_arg = argi == -1 || (argi == fid.arity);
+
+				if (is_fun & is_arg) {
+				  fis.add(ent.getValue());
+				}
+			}
+
+			for (int i = 0; i < fis.size(); i++) {
+				fis.get(i).trace_pattern(spec);
+			}
+
+			return fis.size();
+		}
+
 	}
 
-	public static void add_import(FunID fun, FunctionBinder ref) throws Exception {
+	public static void add_import(FunID fun, FunctionBinder ref) {
 		get_module_info(fun.module).add_import(fun, ref);
 	}
 
@@ -522,7 +613,7 @@ public class EModuleManager {
 	/**
 	 * @param m
 	 * @param f
-	 * @param value
+	 * @param a
 	 * @return
 	 */
 	public static boolean function_exported(EAtom m, EAtom f, int a) {
@@ -563,7 +654,7 @@ public class EModuleManager {
 	}
 
 	public static abstract class FunctionBinder {
-		public abstract void bind(EFun value) throws Exception;
+		public abstract void bind(EFun value);
 		public abstract FunID getFunID();
 	}
 
@@ -595,4 +686,58 @@ public class EModuleManager {
 		return mi.resident;
 	}
 
+
+	static final EAtom am__ = EAtom.intern("_");
+
+	public EModuleManager() {
+	}
+
+	public static int trace_pattern(EAtom mod, EAtom fun, EObject arg, EObject spec, EObject opts) {
+
+		int argi = (arg == am__) ? -1 : arg.testSmall().asInt();
+
+		ArrayList<ModuleInfo> mis = new ArrayList<ModuleInfo>();
+		if (mod == am__) {
+			ModuleInfo mi;
+			synchronized (infos) {
+				mis.addAll(infos.values());
+			}
+		} else {
+			ModuleInfo mi = get_module_info(mod);
+			mis.add(mi);
+		}
+
+		TraceSpec tspec = new TraceSpec(spec, opts);
+
+		int count = 0;
+		for (int i = 0; i < mis.size(); i++) {
+			ModuleInfo mi = mis.get(i);
+			count += mi.trace_pattern(fun, argi, tspec);
+		}
+
+		return count;
+	}
+
+	static class TraceSpec {
+
+		boolean is_true;
+		boolean is_false;
+		EMatchSpec ms;
+		public boolean do_count;
+
+		TraceSpec(EObject spec, EObject opts) {
+			ESeq seq = spec.testSeq();
+			if (spec.isNil() || spec == ERT.TRUE) {
+			    is_true = true;
+			} else if (spec == ERT.FALSE) {
+				is_false = true;
+			} else if (seq != null) {
+			   ms = EMatchSpec.compile(seq);
+			} else {
+			   throw ERT.badarg(spec);
+			}
+
+		}
+
+	}
 }

@@ -140,7 +140,7 @@ public class EExecDriverTask extends EDriverTask {
 			*/
 
 			if (f == null) {
-				throw new ErlangError(EAtom.intern("enoent"));
+				throw new ErlangError(ETuple2.make_tuple(EAtom.intern("enoent"), new EString(cmd[0])));
 			}
 
 			if (!f.canExecute()) {

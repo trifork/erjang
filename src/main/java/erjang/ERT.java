@@ -1152,7 +1152,7 @@ public class ERT {
 			debug(text);
 		}
 	}
-	
+
 	static class NullInputStream extends InputStream {
 		@Override
 		public int read() throws IOException {
@@ -1312,4 +1312,145 @@ public class ERT {
 				
 			}
 		}); */
+
+
+	public static void do_trace(EProc proc, EAtom what, EObject info) throws Pausable {
+
+		EPID pid = proc.get_trace_flags().tracer;
+
+		EObject msg = ETuple4.make_tuple(am_trace, proc.self_handle(), what, info);
+
+		pid.send(proc.self_handle(), msg);
+
+	}
+
+
+	@BIF
+	public static EInteger trace_pattern(EObject arg0, EObject arg1, EObject arg2) {
+
+		ETuple3 mfa = ETuple3.cast(arg0);
+		EAtom mod, fun;
+
+		if (mfa == null
+				|| (mod=mfa.elem1.testAtom()) == null
+				|| (fun=mfa.elem2.testAtom()) == null) {
+			throw ERT.badarg(arg0, arg1, arg2);
+		}
+
+		int count = EModuleManager.trace_pattern(mod, fun, mfa.elem3, arg1, arg2);
+
+		return ERT.box(count);
+	}
+
+	static TraceFlags global_trace_flags = new TraceFlags();
+
+	@BIF
+	public static EInteger trace(EProc self_proc, EObject arg0, EObject arg1, EObject arg2) {
+		EInternalPID pid = arg0.testInternalPID();
+		EAtom all = arg0.testAtom();
+		EObject how = arg1.testBoolean();
+		ESeq flags = arg2.testSeq();
+
+		if ((pid == null && all != am_all) || how == null || flags == null)
+		{
+			throw ERT.badarg(arg0, arg1, arg2);
+		}
+
+		EInternalPID self = self_proc.self_handle();
+
+		if (all == am_all) {
+			ESeq allprocs = EProc.processes();
+			int result = allprocs.length();
+			global_trace_flags.update(how == ERT.TRUE, flags, self);
+			while (!allprocs.isNil()) {
+				EProc proc = allprocs.head().testInternalPID().task();
+				allprocs = allprocs.tail();
+
+				if (proc.trace_flags != null) {
+					proc.trace_flags.update(how == ERT.TRUE, flags, self);
+				}
+			}
+
+			return ERT.box(result);
+
+		} else {
+			EProc proc = pid.task();
+
+			if (!proc.is_alive_dirtyread()) {
+				return ESmall.ZERO;
+			}
+
+			if (proc.trace_flags == null) {
+				proc.trace_flags = global_trace_flags.clone();
+			}
+
+			proc.trace_flags.update(how == ERT.TRUE, flags, self);
+
+			return ESmall.ONE;
+		}
+
+
+	}
+
+	static EAtom am_trace = EAtom.intern("trace");
+	static EAtom am_call = EAtom.intern("call");
+	static EAtom am_all = EAtom.intern("all");
+	static EAtom am_send = EAtom.intern("send");
+	static EAtom am_receive = EAtom.intern("receive");
+	static EAtom am_procs = EAtom.intern("procs");
+	static EAtom am_tracer = EAtom.intern("tracer");
+
+	static public class TraceFlags implements Cloneable {
+
+		boolean call = false;
+		boolean arity = false;
+		boolean send = false;
+		boolean receive = false;
+		boolean procs = false;
+		EPID tracer = null;
+
+		public TraceFlags clone() {
+			try {
+				return (TraceFlags)super.clone();
+			} catch (CloneNotSupportedException e) {
+				throw new RuntimeException(e);
+			}
+		}
+
+		public void update(boolean how, ESeq flags, EPID self)
+		{
+			ETuple2 t;
+			EPID p;
+			while(!flags.isNil()) {
+				EObject flag = flags.head();
+				flags = flags.tail();
+
+				if (flag == am_arity) {
+					arity = how;
+				} else if (flag == am_call) {
+					call = how;
+				} else if (flag == am_send) {
+					send = how;
+				} else if (flag == am_receive) {
+					receive = how;
+				} else if (flag == am_procs) {
+					procs = how;
+				} else if ((t=ETuple2.cast(flag))!= null
+						&& t.elem1==am_tracer) {
+					tracer = t.elem2.testPID();
+				} else if (flag == am_all) {
+					call    = how;
+					arity   = how;
+					send    = how;
+					receive = how;
+				} else {
+					throw ERT.badarg(flag);
+				}
+			}
+
+			if (how==true && tracer == null) {
+				tracer = self;
+			}
+		}
+	}
 }

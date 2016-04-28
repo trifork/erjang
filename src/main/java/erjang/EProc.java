@@ -138,6 +138,7 @@ public final class EProc extends ETask<EInternalPID> {
 
     /** For process clean-up. Protected by exit-action mutator lock. */
     private final List<ExitHook> exit_hooks = new ArrayList<ExitHook>();
+    ERT.TraceFlags trace_flags;
 
 
     /*==================== Construction =============================*/
@@ -776,4 +777,17 @@ public final class EProc extends ETask<EInternalPID> {
 			}
 		});
 	}
+
+    public ERT.TraceFlags get_trace_flags() {
+        if (trace_flags == null)
+            return ERT.global_trace_flags;
+        return trace_flags;
+    }
+
+    public ERT.TraceFlags get_own_trace_flags() {
+        if (trace_flags == null)
+            trace_flags = ERT.global_trace_flags.clone();
+        return trace_flags;
+    }
+
 }

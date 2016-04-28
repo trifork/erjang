@@ -19,20 +19,9 @@
 
 package erjang.m.erlang;
 
+import erjang.*;
+import erjang.m.ets.EMatchSpec;
 import kilim.Pausable;
-import erjang.BIF;
-import erjang.EAtom;
-import erjang.EFun;
-import erjang.EFunHandler;
-import erjang.EModuleManager;
-import erjang.EObject;
-import erjang.EProc;
-import erjang.ERT;
-import erjang.ESeq;
-import erjang.ESmall;
-import erjang.ETuple;
-import erjang.ETuple2;
-import erjang.FunID;
 
 /**
  * BIFs for fun_info/1, fun_info/2 and make_fun/3
@@ -109,5 +98,7 @@ public class ErlFun {
 		
 		return EModuleManager.resolve(new FunID(mod, fun, arity.value));
 	}
+
+
 	
 }

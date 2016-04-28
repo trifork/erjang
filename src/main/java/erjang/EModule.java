@@ -168,8 +168,12 @@ public abstract class EModule {
 			return funID;
 		}
 
-		public void bind(EFun value) throws Exception {
-			field.set(null, value);
+		public void bind(EFun value) {
+			try {
+				field.set(null, value);
+			} catch (IllegalAccessException e) {
+				throw new RuntimeException(e);
+			}
 		}
 
 		public String toString() {
