@@ -317,6 +317,7 @@ public class ERT {
 
 	public static final ENil NIL = new ENil();
 	public static final EAtom am_EXIT = EAtom.intern("EXIT");
+	public static final EAtom am_ERROR = EAtom.intern("ERROR");
 	public static final EAtom IGNORED = EAtom.intern("ignored");
 	private static final EAtom am_badmatch = EAtom.intern("badmatch");
 	private static final EAtom am_case_clause = EAtom.intern("case_clause");
@@ -1330,6 +1331,16 @@ public class ERT {
 
 	}
 
+	public static void do_trace(EProc proc, EAtom what, EObject info, EObject message) throws Pausable {
+
+		EPID pid = proc.get_trace_flags().tracer;
+
+		EObject msg = ETuple.make(am_trace, proc.self_handle(), what, info, message);
+
+		pid.send(proc.self_handle(), msg);
+
+	}
+
 
 	@BIF
 	public static EInteger trace_pattern(EObject arg0, EObject arg1, EObject arg2) {
@@ -1405,6 +1416,7 @@ public class ERT {
 	static EAtom am_receive = EAtom.intern("receive");
 	static EAtom am_procs = EAtom.intern("procs");
 	static EAtom am_tracer = EAtom.intern("tracer");
+	static EAtom am_silent = EAtom.intern("silent");
 
 	static public class TraceFlags implements Cloneable {
 
@@ -1414,6 +1426,7 @@ public class ERT {
 		boolean receive = false;
 		boolean procs = false;
 		EPID tracer = null;
+		public boolean silent;
 
 		public TraceFlags clone() {
 			try {
@@ -1441,6 +1454,8 @@ public class ERT {
 					receive = how;
 				} else if (flag == am_procs) {
 					procs = how;
+				} else if (flag == am_silent) {
+					silent = how;
 				} else if ((t=ETuple2.cast(flag))!= null
 						&& t.elem1==am_tracer) {
 					tracer = t.elem2.testPID();

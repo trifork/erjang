@@ -271,11 +271,11 @@ public class EMatchSpec extends EPseudoTerm {
 
 				boolean what = (action == am_enable_trace);
 
-				EProc proc = EMatchSpec.current_caller();
-
-				if (proc == null) {
-					throw badarg(vals);
+				TraceState state = EMatchSpec.current_state();
+				if (state == null) {
+					return ERT.am_ERROR;
 				}
+				EProc proc = state.proc;
 
 				ERT.TraceFlags tf;
 				ESeq opts;
@@ -288,16 +288,20 @@ public class EMatchSpec extends EPseudoTerm {
 					tf = pid.task().get_own_trace_flags();
 					opts = vals[1].testSeq();
 				} else {
-					throw badarg(vals);
+					return ERT.FALSE;
 				}
 
 				tf.update(what, opts, proc.self_handle());
 				return ERT.TRUE;
 
 
-			} else if (action == am_trace) {
+			} else if (action == am_trace && (vals.length==2 || vals.length==3)) {
 
-				EProc proc = EMatchSpec.current_caller();
+				TraceState state = EMatchSpec.current_state();
+				if (state == null) {
+					return ERT.am_ERROR;
+				}
+				EProc proc = state.proc;
 
 				if (proc == null) {
 					throw badarg(vals);
@@ -314,7 +318,7 @@ public class EMatchSpec extends EPseudoTerm {
 					disable = vals[0].testSeq();
 					enable = vals[1].testSeq();
 				} else {
-					throw badarg(vals);
+					return ERT.FALSE;
 				}
 
 				if (pid == null || disable == null || enable == null) {
@@ -329,6 +333,42 @@ public class EMatchSpec extends EPseudoTerm {
 				} catch (ErlangError e) {
 					return ERT.FALSE;
 				}
+
+			} else if (action == am_silent && vals.length==1) {
+				TraceState state = EMatchSpec.current_state();
+				if (state == null) {
+					return ERT.am_ERROR;
+				}
+				EProc proc = state.proc;
+
+				proc.get_own_trace_flags().silent = (vals[0].testBoolean() == ERT.TRUE);
+				return ERT.TRUE;
+
+			} else if (action == am_message && vals.length==1) {
+				TraceState state = EMatchSpec.current_state();
+				if (state == null) {
+					return ERT.am_ERROR;
+				}
+
+				state.message = vals[0];
+				return ERT.TRUE;
+
+			} else if (action == am_return_trace && vals.length==0) {
+				TraceState state = EMatchSpec.current_state();
+				if (state == null) {
+					return ERT.am_ERROR;
+				}
+				state.return_trace = true;
+				return ERT.TRUE;
+
+			} else if (action == am_exception_trace && vals.length==0) {
+				TraceState state = EMatchSpec.current_state();
+				if (state == null) {
+					return ERT.am_ERROR;
+				}
+				state.return_trace = true;
+				state.exception_trace = true;
+				return ERT.TRUE;
 
 			} else {
 				throw new NotImplemented("ActionCall " + action + " " + aa);
@@ -1148,18 +1188,32 @@ public class EMatchSpec extends EPseudoTerm {
 		return match(candidate) == ERT.TRUE;
 	}
 
-	final static ThreadLocal<EProc> caller = new ThreadLocal<EProc>();
+	final static ThreadLocal<TraceState> caller = new ThreadLocal<TraceState>();
 
-	public static EProc current_caller() {
+	public static TraceState current_state() {
 		return caller.get();
 	}
 
-	public boolean matches(EProc proc, EObject candidate)
+	public static class TraceState {
+	    final EProc proc;
+		public EObject message = ERT.TRUE;
+		public boolean return_trace;
+		public boolean exception_trace;
+
+		TraceState(EProc proc) { this.proc = proc; }
+	}
+
+	public TraceState matches(EProc proc, EObject candidate)
 	{
-		EProc old = caller.get();
-		caller.set(proc);
+		TraceState old = caller.get();
+		TraceState out = new TraceState(proc);
+		caller.set(out);
 		try {
-			return this.matches(candidate);
+			if ( this.matches(candidate) )
+				return out;
+			else
+				return null;
+
 		} finally {
 			caller.set(old);
 		}

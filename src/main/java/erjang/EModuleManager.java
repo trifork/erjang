@@ -46,6 +46,8 @@ public class EModuleManager {
 	static EAtom am_prep_stop = EAtom.intern("prep_stop");
 	static EAtom am___info__ = EAtom.intern("__info__");
 	static EAtom am_call = EAtom.intern("call");
+	static EAtom am_return_from = EAtom.intern("return_from");
+	static EAtom am_exception_from = EAtom.intern("exception_from");
 	static EAtom am_trace = EAtom.intern("trace");
 
 	static class FunctionInfo {
@@ -267,34 +269,61 @@ public class EModuleManager {
 
 		@Override
 		public EObject invoke(EProc proc, EObject[] args) throws Pausable {
-			long state = before(proc, args);
+			ESeq argList = EList.fromArray(args);
+			EMatchSpec.TraceState state = before(proc, argList);
+
+			if (state == null || (state.return_trace==false && state.exception_trace==false))
+				return ErlBif.apply_last(proc, target, argList);
+
+			EObject result;
 			try {
-				return target.invoke(proc, args);
-			} finally {
-				after(proc, state);
+				result = target.invoke(proc, args);
+
+			} catch (ErlangException e) {
+
+				if (state.exception_trace && !proc.get_trace_flags().silent) {
+					ETuple3 info = ETuple3.make_tuple(owner.fun.module, owner.fun.function, ERT.box(owner.fun.arity));
+					ERT.do_trace(proc, am_exception_from, info, new ETuple2(e.getExClass(), e.reason()));
+				}
+
+				throw e;
 			}
+
+			if (state.return_trace && !proc.get_trace_flags().silent) {
+				ETuple3 info = ETuple3.make_tuple(owner.fun.module, owner.fun.function, ERT.box(owner.fun.arity));
+				ERT.do_trace(proc, am_return_from, info, result);
+			}
+
+			return result;
 		}
 
-		long before(EProc proc, EObject[] args) throws Pausable {
-			if (!proc.get_trace_flags().call || trace_spec.is_false) return 0;
-			ESeq argList = null;
-			if (trace_spec.is_true || trace_spec.ms.matches(proc, argList = EList.make((Object[])args))) {
+		EMatchSpec.TraceState before(EProc proc, ESeq argList) throws Pausable {
+			if (!proc.get_trace_flags().call || trace_spec.is_false)
+				return null;
+
+			EMatchSpec.TraceState state = null;
+			if ((trace_spec.ms==null && trace_spec.is_true) || (state=trace_spec.ms.matches(proc, argList)) != null) {
 				counter.incrementAndGet();
 
 				// send {trace, Pid, call, {M, F, Args}}
 
 				EObject arg = (proc.get_trace_flags().arity)
 						? ERT.box(owner.fun.arity)
-						: (argList == null ? EList.make((Object[])args) : argList);
+						: argList;
 
-				ERT.do_trace(proc, am_call, ETuple3.make_tuple(owner.fun.module, owner.fun.function, arg));
+				if (!proc.get_trace_flags().silent && (state==null||state.message != ERT.FALSE)) {
+					ETuple3 info = ETuple3.make_tuple(owner.fun.module, owner.fun.function, arg);
+					if ((state == null || state.message == ERT.TRUE))
+						ERT.do_trace(proc, am_call, info);
+					else
+						ERT.do_trace(proc, am_call, info, state.message);
+
+				}
+
 			}
-			return 0;
+			return state;
 		}
 
-		void after(EProc proc, long state) {
-
-		}
 	}
 
 	static class ModuleInfo {
