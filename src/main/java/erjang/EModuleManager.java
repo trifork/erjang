@@ -252,20 +252,20 @@ public class EModuleManager {
 
 		EFun target;
 		final EFun self;
+		final FunID funID;
+
 
 		TraceHandler(FunctionInfo h) {
-			owner = h;
+			funID = h.fun;
 			target = h.getTargetFunction();
 			self = EFunCG.get_fun_with_handler(
-					h.fun.module.getName(),
-					h.fun.function.getName(),
-					h.fun.arity,
+					funID.module.getName(),
+					funID.function.getName(),
+					funID.arity,
 					this,
 					TraceHandler.class.getClassLoader());
 
 		}
-
-		final FunctionInfo owner;
 
 		@Override
 		public EObject invoke(EProc proc, EObject[] args) throws Pausable {
@@ -282,7 +282,7 @@ public class EModuleManager {
 			} catch (ErlangException e) {
 
 				if (state.exception_trace && !proc.get_trace_flags().silent) {
-					ETuple3 info = ETuple3.make_tuple(owner.fun.module, owner.fun.function, ERT.box(owner.fun.arity));
+					ETuple3 info = ETuple3.make_tuple(funID.module, funID.function, ERT.box(funID.arity));
 					ERT.do_trace(proc, am_exception_from, info, new ETuple2(e.getExClass(), e.reason()));
 				}
 
@@ -290,7 +290,7 @@ public class EModuleManager {
 			}
 
 			if (state.return_trace && !proc.get_trace_flags().silent) {
-				ETuple3 info = ETuple3.make_tuple(owner.fun.module, owner.fun.function, ERT.box(owner.fun.arity));
+				ETuple3 info = ETuple3.make_tuple(funID.module, funID.function, ERT.box(funID.arity));
 				ERT.do_trace(proc, am_return_from, info, result);
 			}
 
@@ -308,11 +308,11 @@ public class EModuleManager {
 				// send {trace, Pid, call, {M, F, Args}}
 
 				EObject arg = (proc.get_trace_flags().arity)
-						? ERT.box(owner.fun.arity)
+						? ERT.box(funID.arity)
 						: argList;
 
 				if (!proc.get_trace_flags().silent && (state==null||state.message != ERT.FALSE)) {
-					ETuple3 info = ETuple3.make_tuple(owner.fun.module, owner.fun.function, arg);
+					ETuple3 info = ETuple3.make_tuple(funID.module, funID.function, arg);
 					if ((state == null || state.message == ERT.TRUE))
 						ERT.do_trace(proc, am_call, info);
 					else
