@@ -49,6 +49,9 @@ public class EModuleManager {
 	static EAtom am_return_from = EAtom.intern("return_from");
 	static EAtom am_exception_from = EAtom.intern("exception_from");
 	static EAtom am_trace = EAtom.intern("trace");
+	static EAtom am_global = EAtom.intern("global");
+	static EAtom am_local = EAtom.intern("local");
+	static EAtom am_meta = EAtom.intern("meta");
 
 	static class FunctionInfo {
 		private final FunID fun;
@@ -203,7 +206,7 @@ public class EModuleManager {
 			bind(value);
 		}
 		
-		void bind(EFun value) throws Exception {
+		void bind(EFun value) {
 			this.resolved_value = value;
 			if (traceHandler == null) {
 				for (FunctionBinder f : resolve_points) {
@@ -234,12 +237,22 @@ public class EModuleManager {
 			return resolved_value != null && is_exported;
 		}
 
-		public void trace_pattern(TraceSpec spec) {
+		public void trace_pattern(EObject spec, TraceOpts opts) {
 			if (traceHandler == null) {
+				if (spec == ERT.FALSE)
+					return;
 				traceHandler = new TraceHandler(this);
+
+			} else if (spec==ERT.FALSE) {
+
+				// uninstall tracer //
+				EFun target = traceHandler.target;
+				traceHandler = null;
+				bind(target);
+				return;
 			}
 
-			traceHandler.trace_spec = spec;
+			traceHandler.apply(opts);
 		}
 
 		TraceHandler traceHandler;
@@ -248,11 +261,15 @@ public class EModuleManager {
 	static class TraceHandler implements EFunHandler {
 
 		AtomicLong counter = new AtomicLong(0);
-		TraceSpec trace_spec = new TraceSpec(ERT.FALSE, ERT.NIL);
 
 		EFun target;
 		final EFun self;
 		final FunID funID;
+		private EMatchSpec match_spec;
+
+		public void apply(TraceOpts spec) {
+			this.match_spec = spec.match_spec;
+		}
 
 
 		TraceHandler(FunctionInfo h) {
@@ -298,11 +315,11 @@ public class EModuleManager {
 		}
 
 		EMatchSpec.TraceState before(EProc proc, ESeq argList) throws Pausable {
-			if (!proc.get_trace_flags().call || trace_spec.is_false)
+			if (!proc.get_trace_flags().call)
 				return null;
 
 			EMatchSpec.TraceState state = null;
-			if ((trace_spec.ms==null && trace_spec.is_true) || (state=trace_spec.ms.matches(proc, argList)) != null) {
+			if (match_spec==null || (state=match_spec.matches(proc, argList)) != null) {
 				counter.incrementAndGet();
 
 				// send {trace, Pid, call, {M, F, Args}}
@@ -553,7 +570,7 @@ public class EModuleManager {
             
 		}
 
-		public int trace_pattern(EAtom fun, int argi, TraceSpec spec) {
+		public int trace_pattern(EAtom fun, int argi, EObject spec, TraceOpts opts) {
 			ArrayList<FunctionInfo> fis = new ArrayList<FunctionInfo>();
 			for ( Map.Entry<FunID,FunctionInfo> ent : binding_points.entrySet()) {
 				FunID fid = ent.getKey();
@@ -566,7 +583,7 @@ public class EModuleManager {
 			}
 
 			for (int i = 0; i < fis.size(); i++) {
-				fis.get(i).trace_pattern(spec);
+				fis.get(i).trace_pattern(spec, opts);
 			}
 
 			return fis.size();
@@ -721,7 +738,7 @@ public class EModuleManager {
 	public EModuleManager() {
 	}
 
-	public static int trace_pattern(EAtom mod, EAtom fun, EObject arg, EObject spec, EObject opts) {
+	public static int trace_pattern(EPID self, EAtom mod, EAtom fun, EObject arg, EObject spec, EObject opts) {
 
 		int argi = (arg == am__) ? -1 : arg.testSmall().asInt();
 
@@ -736,36 +753,47 @@ public class EModuleManager {
 			mis.add(mi);
 		}
 
-		TraceSpec tspec = new TraceSpec(spec, opts);
+		TraceOpts topts = new TraceOpts(self, spec, opts);
 
 		int count = 0;
 		for (int i = 0; i < mis.size(); i++) {
 			ModuleInfo mi = mis.get(i);
-			count += mi.trace_pattern(fun, argi, tspec);
+			count += mi.trace_pattern(fun, argi, spec, topts);
 		}
 
 		return count;
 	}
 
-	static class TraceSpec {
+	static class TraceOpts {
 
-		boolean is_true;
-		boolean is_false;
-		EMatchSpec ms;
-		public boolean do_count;
+		EMatchSpec match_spec = null;
+		boolean is_global = true;
+		EPID meta = null;
 
-		TraceSpec(EObject spec, EObject opts) {
+		TraceOpts(EPID self, EObject spec, EObject opts) {
 			ESeq seq = spec.testSeq();
-			if (spec.isNil() || spec == ERT.TRUE) {
-			    is_true = true;
-			} else if (spec == ERT.FALSE) {
-				is_false = true;
-			} else if (seq != null) {
-			   ms = EMatchSpec.compile(seq);
-			} else {
-			   throw ERT.badarg(spec);
+			if (seq != null) {
+				match_spec = EMatchSpec.compile(seq);
 			}
 
+			ESeq o = opts.testSeq();
+			if (o == null) return;
+
+			while(!o.isNil()) {
+				EObject v = o.head();
+				o = o.tail();
+
+				ETuple2 t2;
+				if (v == am_global) {
+					is_global = true;
+				} else if (v == am_local) {
+					is_global = false;
+				} else if (v == am_meta) {
+					meta = self;
+				} else if ((t2=ETuple2.cast(v)) != null && t2.elem1 == am_meta) {
+					meta = t2.elem2.testPID();
+				}
+			}
 		}
 
 	}

@@ -1343,7 +1343,7 @@ public class ERT {
 
 
 	@BIF
-	public static EInteger trace_pattern(EObject arg0, EObject arg1, EObject arg2) {
+	public static EInteger trace_pattern(EProc proc, EObject arg0, EObject arg1, EObject arg2) {
 
 		ETuple3 mfa = ETuple3.cast(arg0);
 		EAtom mod, fun;
@@ -1354,7 +1354,7 @@ public class ERT {
 			throw ERT.badarg(arg0, arg1, arg2);
 		}
 
-		int count = EModuleManager.trace_pattern(mod, fun, mfa.elem3, arg1, arg2);
+		int count = EModuleManager.trace_pattern(proc.self_handle(), mod, fun, mfa.elem3, arg1, arg2);
 
 		return ERT.box(count);
 	}
