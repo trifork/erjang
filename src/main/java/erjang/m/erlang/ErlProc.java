@@ -23,6 +23,7 @@ import java.lang.management.MemoryMXBean;
 import java.lang.management.MemoryPoolMXBean;
 import java.lang.management.MemoryType;
 import java.lang.management.MemoryUsage;
+import java.nio.ByteOrder;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -103,6 +104,9 @@ public class ErlProc {
 	private static final EAtom am_debug_compiled = EAtom.intern("debug_compiled");
 	private static final EAtom am_lock_checking = EAtom.intern("lock_checking");
 	private static final EAtom am_compat_rel = EAtom.intern("compat_rel");
+	private static final EAtom am_endian = EAtom.intern("endian");
+	private static final EAtom am_little = EAtom.intern("little");
+	private static final EAtom am_big = EAtom.intern("big");
 
 	@BIF
 	public static EObject process_info(EObject pid, EObject what) {
@@ -573,6 +577,12 @@ public class ErlProc {
 		} else if (type == am_compat_rel) {
 		    // we return same value as R14
 		    return new ESmall(14);
+		} else if (type == am_endian) {
+			if (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN) {
+				return am_little;
+			} else {
+				return am_big;
+			}
 		}
 		
 		ETuple2 tup;
