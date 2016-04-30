@@ -18,6 +18,7 @@
 
 package erjang;
 
+import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -152,12 +153,16 @@ public abstract class EModule {
 	}
 
 	public static class FieldBinder extends EModuleManager.FunctionBinder {
-		final Field field;
+		WeakReference<Field> fieldRef;
+		final WeakReference<Class> classRef;
 		final FunID funID;
 		final String mod;
+		final String fieldName;
 
-	        public FieldBinder(Field field, FunID funID, String mod) {
-			this.field = field;
+		public FieldBinder(Field field, FunID funID, String mod) {
+			this.fieldRef = new WeakReference<Field>(field);
+			this.classRef = new WeakReference<Class>(field.getDeclaringClass());
+			fieldName = field.getName();
 			field.setAccessible(true);
 			this.funID = funID;
 			this.mod = mod;
@@ -169,6 +174,22 @@ public abstract class EModule {
 		}
 
 		public void bind(EFun value) {
+			Field field = fieldRef.get();
+			if (field == null) {
+				Class clazz = classRef.get();
+				if (clazz == null) {
+					return;
+				} else {
+					try {
+						field = clazz.getDeclaredField(fieldName);
+						field.setAccessible(true);
+						this.fieldRef = new WeakReference<Field>(field);
+
+					} catch (NoSuchFieldException e) {
+						return;
+					}
+				}
+			}
 			try {
 				field.set(null, value);
 			} catch (IllegalAccessException e) {
@@ -177,7 +198,7 @@ public abstract class EModule {
 		}
 
 		public String toString() {
-			return "<FieldBinder for "+funID+" in "+mod+": "+field+">";
+			return "<FieldBinder for "+funID+" in "+mod+": "+classRef.get()+">";
 		}
 	}
 
