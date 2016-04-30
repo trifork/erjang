@@ -459,7 +459,6 @@ public class CompilerVisitor implements ModuleVisitor, Opcodes {
 			if (((tup=term.testTuple()) != null || term.testCons() != null)  
 					&& term != ERT.NIL
 					&& !type.equals(ESTRING_TYPE)
-					&& !( tup != null && tup.arity()==5 && tup.elm(1) == ETuple.am_Elixir_Regex)
 					) {
 				EBinary bin = ErlConvert.term_to_binary(term, EList.make(ErlConvert.am_compressed));
 				bin.emit_const(mv);

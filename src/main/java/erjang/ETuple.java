@@ -579,9 +579,6 @@ public abstract class ETuple extends EObject implements Cloneable /* , Indexed *
 		return false;
 	}
 
-	public static final EAtom am_Elixir_Regex = EAtom.intern("Elixir.Regex");
-	public static final EAtom am_re_pattern = EAtom.intern("re_pattern");
-	
 	static String tos(EObject o) {
 		EBinary bin = o.testBinary();
 		return new String(bin.getByteArray(), IO.UTF8);
@@ -599,19 +596,7 @@ public abstract class ETuple extends EObject implements Cloneable /* , Indexed *
 
 		for (int i = 0; i < arity(); i++) {
 			fa.visitInsn(Opcodes.DUP);
-
-			if (i == 1 && arity() == 5 && elm(1) == am_Elixir_Regex) {
-				
-			//	System.err.println("emitting pattern /"+tos(elm(3))+"/"+tos(elm(4)));
-
-				elm(3).emit_const(fa);
-				elm(4).emit_const(fa);
-				fa.visitMethodInsn(Opcodes.INVOKESTATIC, "erjang/ERT", "compile_elixir_regex", 
-									"(Lerjang/EObject;Lerjang/EObject;)Lerjang/EObject;");
-			} else {
-				((EObject) elm(i + 1)).emit_const(fa);
-			}
-			
+			((EObject) elm(i + 1)).emit_const(fa);
 			fa.visitFieldInsn(Opcodes.PUTFIELD, type.getInternalName(), "elem"
 					+ (i + 1), ETERM_TYPE.getDescriptor());
 		}
@@ -643,22 +628,7 @@ public abstract class ETuple extends EObject implements Cloneable /* , Indexed *
         
         EBinary bin;
 		ETuple e2;
-		if (arity == 5 && elm(1) == am_Elixir_Regex && (e2=elm(2).testTuple()) != null) 
-        {
-			// in short: it's a compiled regex
-			
-		//	System.err.println("serializing pattern /"+tos(elm(3))+"/"+tos(elm(4)));
-        	EObject elm2 = ERT.compile_elixir_regex(elm(3), elm(4));
-        	
-    		eos.write_tuple_head(arity);
-    		eos.write_any(elm(1));
-    		eos.write_any(elm2);
-    		eos.write_any(elm(3));
-    		eos.write_any(elm(4));
-    		eos.write_any(elm(5));
-    		return;
-        }
-        
+
 		eos.write_tuple_head(arity);
 
         for (int i = 1; i <= arity; i++) {

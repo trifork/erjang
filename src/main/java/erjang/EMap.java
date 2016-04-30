@@ -127,12 +127,22 @@ public final class EMap extends EObject {
 	public ETermPattern compileMatch(Set<Integer> out) {
 		return EPattern.compilePattern(this, out);
 	}
-	
+
+	public static final EAtom am_Elixir_Regex = EAtom.intern("Elixir.Regex");
+	public static final EAtom am___struct__ = EAtom.intern("__struct__");
+	public static final EAtom am_re_pattern = EAtom.intern("re_pattern");
+	public static final EAtom am_source = EAtom.intern("source");
+	public static final EAtom am_opts = EAtom.intern("opts");
+
 	@Override
 	public Type emit_const(MethodVisitor mv) {
 
 //		System.out.println("EMIT" +this);
-		
+
+		boolean is_elixir_regex =
+				has_key(am___struct__)
+						&& get(am___struct__) == am_Elixir_Regex;
+
 		Type type = Type.getType(this.getClass());
 
 		mv.visitFieldInsn(Opcodes.GETSTATIC, type.getInternalName(), "EMPTY", "Lerjang/EMap;");
@@ -146,7 +156,21 @@ public final class EMap extends EObject {
 //        	System.out.println("CONST #{ "+ ent.getKey() + " => " + ent.getValue() + "}");
         	
         	ent.getKey().emit_const(mv);
-        	ent.getValue().emit_const(mv);
+
+			if (is_elixir_regex && ent.getKey() == am_re_pattern) {
+				get(am_source).emit_const(mv);
+				if (has_key(am_opts)) {
+					get(am_opts).emit_const(mv);
+				} else {
+					EBinary.fromString("").emit_const(mv);
+				}
+				mv.visitMethodInsn(Opcodes.INVOKESTATIC, "erjang/ERT", "compile_elixir_regex",
+						"(Lerjang/EObject;Lerjang/EObject;)Lerjang/EObject;");
+
+			} else {
+				ent.getValue().emit_const(mv);
+			}
+
         	mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, type.getInternalName(), "put", "(Lerjang/EObject;Lerjang/EObject;)Lerjang/EMap;");
         }
 
