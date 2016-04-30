@@ -173,12 +173,12 @@ public abstract class EModule {
 			return funID;
 		}
 
-		public void bind(EFun value) {
+		public boolean bind(EFun value) {
 			Field field = fieldRef.get();
 			if (field == null) {
 				Class clazz = classRef.get();
 				if (clazz == null) {
-					return;
+					return false;
 				} else {
 					try {
 						field = clazz.getDeclaredField(fieldName);
@@ -186,12 +186,13 @@ public abstract class EModule {
 						this.fieldRef = new WeakReference<Field>(field);
 
 					} catch (NoSuchFieldException e) {
-						return;
+						throw new RuntimeException(e);
 					}
 				}
 			}
 			try {
 				field.set(null, value);
+				return true;
 			} catch (IllegalAccessException e) {
 				throw new RuntimeException(e);
 			}

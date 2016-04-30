@@ -103,9 +103,24 @@ public class EModuleManager {
 		}
 		
 		synchronized void unbind() throws Exception {
+			Collection<FunctionBinder> gone = null;
+
 			for (FunctionBinder f : resolve_points) {
-				f.bind(getFunErrorHandler());
+				if (f.bind(getFunErrorHandler()) == false) {
+					if (gone == null) { gone = new ArrayList<>(); }
+					gone.add(f);
+				}
 			}
+
+			if (traceHandler != null) {
+				traceHandler.target = getFunErrorHandler();
+			}
+
+			if (gone != null) { resolve_points.removeAll(gone); }
+		}
+
+		boolean isImportedSomewhere() {
+			return !resolve_points.isEmpty();
 		}
 
 		private EFun getTargetFunction() {
@@ -209,9 +224,16 @@ public class EModuleManager {
 		void bind(EFun value) {
 			this.resolved_value = value;
 			if (traceHandler == null) {
+				Collection<FunctionBinder> gone = null;
 				for (FunctionBinder f : resolve_points) {
 					// System.out.println("binding " + fun2 + " " + value + " -> " + f);
-					f.bind(value);
+					if (f.bind(value) == false) {
+						if (gone == null) { gone = new ArrayList<>(); }
+						gone.add(f);
+					}
+				}
+				if (gone != null) {
+					resolve_points.removeAll(gone);
 				}
 			} else {
 				traceHandler.target = value;
@@ -427,12 +449,20 @@ public class EModuleManager {
 			if (resident == null) {
 				return ERT.am_undefined;
 			}
-			
+
+			java.lang.System.gc();
+
 			resident = null;
+			ArrayList<FunID> unreferenced = new ArrayList<>();
 			for (FunctionInfo fi : this.binding_points.values()) {
 				fi.unbind();
+				if (!fi.isImportedSomewhere()) {
+					unreferenced.add(fi.fun);
+				}
 			}
-			binding_points.clear(); // ?
+			for (FunID fid : unreferenced) {
+				binding_points.remove(fid);
+			}
 			this.resident = null;
 			this.module_md5 = empty_md5;
 			
@@ -700,7 +730,7 @@ public class EModuleManager {
 	}
 
 	public static abstract class FunctionBinder {
-		public abstract void bind(EFun value);
+		public abstract boolean bind(EFun value);
 		public abstract FunID getFunID();
 	}
 

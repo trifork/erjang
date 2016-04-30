@@ -377,8 +377,9 @@ public class AbstractInterpreter {
 			return funID;
 		}
 
-		public void bind(EFun value) {
+		public boolean bind(EFun value) {
 			vector[index] = value;
+			return true;
 		}
 	}
 
