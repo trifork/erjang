@@ -9,6 +9,8 @@ ERJANG_DIR=`dirname "$EJ_CMD"`
 
 exec java \
     -server \
+    -XX:+CMSClassUnloadingEnabled \
+    -XX:+UseConcMarkSweepGC \
     -Djava.library.path=$ERJANG_DIR/jnif \
     -Xmx1g -Xss50m \
     -jar $ERJANG_DIR/erjang-0.2.jar \
