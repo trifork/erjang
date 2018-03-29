@@ -1,5 +1,6 @@
 # Generated files:
 /target
+/classes
 *_TEST.java
 /x86_64-apple-darwin12.4.0
 /x86_64-unknown-linux-gnu
@@ -7,7 +8,11 @@ test-outputs
 /bootstrap
 /test_server/*.beam
 */.erjang/*.jar
+erjang.log
 *.beam
+erjang*.jar
+otp*.jar
+src/main/java/erjang/beam/interpreter
 
 # IDE specifics:
 /.idea
