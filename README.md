@@ -24,6 +24,17 @@ Total time: 20 seconds
 ````
 Then, just run `java -jar erjang-R16B01.jar`
 
+Or you can build it with a local erlang distribution. Use the build-with ant task with an src parameter pointing at the erlang distribution's directory:
+
+````
+>which erl
+      /usr/local/bin/erl
+
+>ant build-with -Dsrc=/usr/lib/erlang
+      ...
+      BUILD SUCCESSFUL
+````
+
 ### How does it work?
 
 It loads Erlang's binary `.beam` file format, compiles it into Java's `.class` file format, and loads it into the JVM.   It will eventually have it's own implementation of all Erlang's BIFs (built-in-functions) written in Java.  

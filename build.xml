@@ -310,7 +310,7 @@
     </jar>
   </target>
 
-  <target name="otpjar" depends="get_otp_version">
+  <target name="otpjar">
     <jar jarfile="otp-${erjang.otp.version}.jar" basedir="${erjang.otp.root}">
       <exclude name="**/*.so" />
       <exclude name="**/*.dll" />
@@ -330,6 +330,9 @@
   </target>
 
   <target name="alljar" depends="jar,otpjar">
+    <property name="erjang.otp.root" value="${basedir}/${otp_arch}" />
+    <antcall target="get_otp_version" />
+    <antcall target="otpjar" />
     <jar jarfile="erjang-${erjang.otp.version}.jar" basedir="${erjang.otp.root}">
       <!-- include all of erjang -->
       <zipgroupfileset dir="." includes="erjang-${erjang.version}.jar" />
@@ -341,6 +344,22 @@
       </manifest>
     </jar>
   </target>
+
+<target name="build-with" if="isLinux" depends="arch" description="create jar from a predownloaded (and decompressed) sources directory">
+  <property name="erjang.otp.root" value="${basedir}/${otp_arch}" />
+  <symlink link="${otp_arch}" resource="${src}" overwrite="true"/>
+  <antcall target="jar" />
+  <antcall target="otpjar" />
+  <jar jarfile="erjang.jar" basedir="${erjang.otp.root}">
+    <!-- include all of erjang -->
+    <zipgroupfileset dir="." includes="erjang-${erjang.version}.jar" />
+    <!-- include all of OTP -->
+    <zipgroupfileset dir="." includes="otp.jar" />
+    <manifest>
+      <attribute name="Main-Class" value="erjang.Main" />
+    </manifest>
+  </jar>
+</target>
 
   <target name="javadoc" description="generate Javadoc documentation">
     <javadoc destdir="target/doc">
